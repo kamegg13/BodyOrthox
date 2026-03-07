@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+
+<html class="light" lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1b70c0",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#111921",
+                        "ios-gray": "#8E8E93",
+                        "ios-bg": "#F2F2F7",
+                        "ios-error": "#FF3B30",
+                        "ios-success": "#34C759",
+                        "ios-warning": "#FF9500",
+                        "ios-text-primary": "#1C1C1E"
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "12pt",
+                        "3xl": "14pt",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        .ios-shadow { shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-white text-ios-text-primary">
+<div class="relative flex h-screen w-full flex-col bg-white overflow-hidden">
+<!-- CupertinoNavigationBar -->
+<nav class="flex items-center bg-white/80 backdrop-blur-md sticky top-0 z-50 px-4 py-3 border-b border-gray-100 justify-between">
+<div class="flex items-center text-primary cursor-pointer">
+<span class="material-symbols-outlined text-[28px]">chevron_left</span>
+</div>
+<h1 class="text-ios-text-primary text-[17px] font-semibold leading-tight tracking-tight">Dupont Jean</h1>
+<button class="text-primary text-[17px] font-medium hover:opacity-70">Exporter</button>
+</nav>
+<!-- Scrollable Content -->
+<main class="flex-1 overflow-y-auto pb-32">
+<!-- Section 1: Primary Finding Card -->
+<section class="px-4 pt-6">
+<div class="relative flex flex-col items-stretch justify-start rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden">
+<!-- Left Border Accent -->
+<div class="absolute left-0 top-0 bottom-0 w-[4pt] bg-ios-error"></div>
+<div class="p-5 pl-7">
+<div class="flex justify-between items-start mb-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-ios-gray text-[20px]">directions_walk</span>
+<span class="text-ios-gray text-[15px] font-medium uppercase tracking-wide">Genou gauche</span>
+</div>
+<span class="bg-ios-error text-white text-[12px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">Hors norme</span>
+</div>
+<div class="mt-4">
+<h2 class="text-[34px] font-bold leading-tight tracking-tight text-ios-text-primary">42°</h2>
+<p class="text-ios-gray text-[16px] mt-1">Norme 60-70° pour 67 ans</p>
+</div>
+<!-- Image Placeholder for articulation context -->
+<div class="mt-6 w-full h-48 bg-ios-bg rounded-xl bg-center bg-no-repeat bg-cover border border-gray-100" data-alt="X-ray or clinical scan of a knee joint angle analysis" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuD711Wuu70pKXUOZGmOgBYinZ4eMs-TOIHsmSiiqUgbD-r4vSRNmtxOhJtvymq9Vz1ZtGlfBJ0RRjAsmjAwCQ0LslNsn1iGK3g1D5Gpwc904VMBojgmhOJ_fJ7r1wW6ybQXhaYdtoUCPrwPNB_16ULIs_zE7JynICB7CgBKOKBs1n7Oa9GRoPAi28S_ruMDbHB0mrvkt88pRV5cQBawY8uPiFzJBuDEm3PAo5NrQNE7aIfH_RO-RiDN28LW5b98NLw-PZWYyMQ5RM8");'>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 2: Other Joints -->
+<section class="px-4 mt-8">
+<h3 class="text-[20px] font-bold leading-tight mb-4">Autres articulations</h3>
+<div class="grid grid-cols-2 gap-3">
+<!-- Hanche Card -->
+<div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
+<div class="flex items-center gap-1 mb-2">
+<span class="text-ios-gray text-[13px] font-semibold uppercase">Hanche</span>
+</div>
+<div class="text-[24px] font-bold text-ios-success">89°</div>
+<p class="text-ios-gray text-[13px] mt-1">Dans la norme</p>
+</div>
+<!-- Cheville Card -->
+<div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
+<div class="flex items-center gap-1 mb-2">
+<span class="text-ios-gray text-[13px] font-semibold uppercase">Cheville</span>
+</div>
+<div class="text-[24px] font-bold text-ios-warning">41°</div>
+<p class="text-ios-gray text-[13px] mt-1">À surveiller</p>
+</div>
+</div>
+</section>
+<!-- Section 3: Mode Toggle -->
+<section class="px-4 mt-8">
+<div class="flex h-10 w-full items-center justify-center rounded-lg bg-ios-bg p-1">
+<label class="flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-md px-2 bg-white shadow-sm text-ios-text-primary text-[13px] font-semibold">
+<span class="truncate">Vue simple</span>
+<input checked="" class="invisible w-0" name="view-toggle" type="radio" value="simple"/>
+</label>
+<label class="flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-md px-2 text-ios-gray text-[13px] font-medium">
+<span class="truncate">Vue expert</span>
+<input class="invisible w-0" name="view-toggle" type="radio" value="expert"/>
+</label>
+</div>
+</section>
+<!-- Section 4: ML Confidence Chip -->
+<section class="px-4 mt-4 flex justify-center">
+<div class="flex items-center gap-1.5 px-3 py-1.5 bg-ios-bg rounded-full">
+<span class="material-symbols-outlined text-ios-gray text-[16px]">check_circle</span>
+<span class="text-ios-gray text-[12px] font-medium">Confiance ML : 91%</span>
+</div>
+</section>
+<!-- Section 5: Disclaimer -->
+<section class="px-8 mt-10">
+<p class="text-ios-gray text-[12px] leading-relaxed text-center">
+                    Données documentaires — diagnostic sous responsabilité du praticien
+                </p>
+</section>
+</main>
+<!-- Bottom Sticky Bar -->
+<div class="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-gray-200 p-4 pb-8">
+<button class="w-full h-[56px] bg-primary text-white rounded-3xl text-[17px] font-semibold shadow-md active:scale-[0.98] transition-transform">
+                Exporter PDF
+            </button>
+</div>
+</div>
+</body></html>

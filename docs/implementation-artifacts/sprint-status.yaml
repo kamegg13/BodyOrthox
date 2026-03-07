@@ -1,0 +1,84 @@
+# generated: 2026-03-05
+# project: BodyOrthox
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: docs/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-03-05
+project: BodyOrthox
+project_key: NOKEY
+tracking_system: file-system
+story_location: docs/implementation-artifacts
+
+development_status:
+  # ─── Epic 1 : Fondation Sécurisée ───────────────────────────────────────────
+  epic-1: in-progress
+  1-1-initialisation-du-projet-infrastructure-technique: done
+  1-2-acces-biometrique-par-face-id-touch-id: done
+  1-3-chiffrement-local-aes-256-isolation-reseau: done
+  epic-1-retrospective: optional
+
+  # ─── Epic 2 : Gestion des Patients ──────────────────────────────────────────
+  epic-2: done
+  2-1-creer-un-profil-patient: done
+  2-2-consulter-la-liste-des-patients-et-selectionner-pour-analyse: done
+  2-3-historique-des-analyses-dun-patient: done
+  2-4-timeline-de-progression-clinique-et-suppression-patient: done
+  epic-2-retrospective: optional
+
+  # ─── Epic 3 : Capture Guidée & Analyse ML ───────────────────────────────────
+  epic-3: in-progress
+  3-1-lancement-de-session-guidage-camera: done
+  3-2-script-rgpd-demarrage-enregistrement: done
+  3-3-pipeline-ml-on-device-extraction-des-angles: done
+  3-4-affichage-des-resultats-avec-normes-de-reference: done
+  3-5-replay-expert-correction-manuelle: ready-for-dev
+  epic-3-retrospective: optional
+
+  # ─── Epic 4 : Rapport PDF & Export ──────────────────────────────────────────
+  epic-4: in-progress
+  4-1-generation-du-rapport-pdf-structure: ready-for-dev
+  4-2-export-du-rapport-via-share-sheet-ios: ready-for-dev
+  epic-4-retrospective: optional
+
+  # ─── Epic 5 : Monétisation Freemium ─────────────────────────────────────────
+  epic-5: in-progress
+  5-1-quota-freemium-compteur-visible: ready-for-dev
+  5-2-upgrade-pro-gestion-de-labonnement: ready-for-dev
+  epic-5-retrospective: optional
+
+  # ─── Epic 6 : Onboarding & Expérience Utilisateur ───────────────────────────
+  epic-6: in-progress
+  6-1-wizard-donboarding-motivationnel: ready-for-dev
+  6-2-layout-adaptatif-iphone-ipad: ready-for-dev
+  6-3-notification-locale-analyse-prete: ready-for-dev
+  epic-6-retrospective: optional

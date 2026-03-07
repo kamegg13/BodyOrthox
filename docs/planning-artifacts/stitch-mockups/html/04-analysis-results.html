@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+
+<html class="light" lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1b70c0",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#111921",
+                        "ios-gray": "#8E8E93",
+                        "ios-bg": "#F2F2F7",
+                        "ios-red": "#FF3B30",
+                        "ios-green": "#34C759",
+                        "ios-orange": "#FF9500"
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "12px",
+                        "3xl": "14px",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        .ios-shadow { shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-white dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col">
+<!-- Cupertino Navigation Bar -->
+<nav class="sticky top-0 z-50 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 h-11 flex items-center justify-between">
+<div class="flex items-center gap-1 text-primary cursor-pointer">
+<span class="material-symbols-outlined text-2xl">chevron_left</span>
+<span class="text-[17px]">Retour</span>
+</div>
+<h1 class="text-[17px] font-semibold absolute left-1/2 -translate-x-1/2">Dupont Jean</h1>
+<button class="text-primary font-semibold text-[17px]">Exporter</button>
+</nav>
+<!-- Main Scrollable Content -->
+<main class="flex-1 overflow-y-auto px-4 pt-6 pb-32">
+<!-- Section 1: Primary Finding Card -->
+<section>
+<div class="relative bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm flex">
+<div class="w-1 bg-ios-red h-full absolute left-0 top-0"></div>
+<div class="p-4 pl-5 w-full">
+<div class="flex justify-between items-start mb-2">
+<div class="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+<span class="material-symbols-outlined text-lg">directions_walk</span>
+<span class="text-[15px] font-medium">Genou gauche</span>
+</div>
+<span class="bg-ios-red text-white text-[12px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tight">Hors norme</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[34px] font-bold leading-tight text-slate-900 dark:text-white">42°</span>
+<p class="text-[15px] text-ios-gray mt-1">Norme 60-70° pour 67 ans</p>
+</div>
+<!-- Visual Representation Placeholder -->
+<div class="mt-4 w-full h-40 bg-ios-bg dark:bg-slate-800 rounded-lg bg-cover bg-center" data-alt="Orthopedic knee joint x-ray analysis visualization" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCef_4Bw0S3qTOCpr04aRs1Z51b6P_3EOgrIfQrSCN9p8mfcWPOC6FkS0EAxX7oWOoNwSGE6IwlhWSwu3fLw0X9GtS9UE7d4cOxdTLBHLLP4l2-64Zint5vlfOMHZxfbDVA80OyK3jjhExkn4StcIPagnR0FPHrloYuUroryuHEOnKmsOp_3wtf5M-5TgvciMn5BcCl9TskUkwhEi7SXZObcSSmylXi3yRsDXvBtgbH9qJZb7N5uCCQV4c4-cAyQSofil-j2vhESck');">
+</div>
+</div>
+</div>
+</section>
+<!-- Section 2: Other Joints -->
+<section class="mt-8">
+<h2 class="text-[20px] font-bold mb-4">Autres articulations</h2>
+<div class="grid grid-cols-2 gap-2">
+<!-- Hanche Card -->
+<div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
+<p class="text-ios-gray text-[13px] font-medium uppercase mb-1">Hanche</p>
+<p class="text-[22px] font-semibold text-ios-green">89°</p>
+<p class="text-[13px] text-slate-500 mt-1 leading-tight">Dans la norme</p>
+</div>
+<!-- Cheville Card -->
+<div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
+<p class="text-ios-gray text-[13px] font-medium uppercase mb-1">Cheville</p>
+<p class="text-[22px] font-semibold text-ios-orange">41°</p>
+<p class="text-[13px] text-slate-500 mt-1 leading-tight">À surveiller</p>
+</div>
+</div>
+</section>
+<!-- Section 3: Mode Toggle -->
+<section class="mt-8">
+<div class="bg-ios-bg dark:bg-slate-800 p-0.5 rounded-lg flex">
+<button class="flex-1 bg-white dark:bg-slate-700 shadow-sm py-1.5 rounded-md text-[13px] font-semibold">Vue simple</button>
+<button class="flex-1 py-1.5 text-[13px] font-medium text-slate-500 dark:text-slate-400">Vue expert</button>
+</div>
+</section>
+<!-- Section 4: ML Confidence Chip -->
+<section class="mt-4 flex justify-center">
+<div class="bg-ios-bg dark:bg-slate-800 px-3 py-1 rounded-full flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-ios-gray">check_circle</span>
+<span class="text-[12px] font-medium text-ios-gray">Confiance ML : 91%</span>
+</div>
+</section>
+<!-- Section 5: Disclaimer -->
+<section class="mt-8 mb-4">
+<p class="text-[12px] text-ios-gray text-center leading-relaxed max-w-[280px] mx-auto">
+                Données documentaires — diagnostic sous responsabilité du praticien
+            </p>
+</section>
+</main>
+<!-- Bottom Sticky Bar -->
+<div class="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-background-dark/95 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 p-4 pb-8">
+<button class="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-4 rounded-3xl text-[17px] flex items-center justify-center gap-2 transition-colors">
+<span class="material-symbols-outlined">picture_as_pdf</span>
+            Exporter PDF
+        </button>
+</div>
+</body></html>

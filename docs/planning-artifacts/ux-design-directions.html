@@ -1,0 +1,3182 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BodyOrthox — Directions de Design</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+        background: #1a1a2e;
+        color: #fff;
+        min-height: 100vh;
+      }
+
+      header {
+        padding: 40px 48px 32px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+      }
+      header p {
+        margin-top: 8px;
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 15px;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 8px;
+        padding: 24px 48px 0;
+        overflow-x: auto;
+      }
+      .tab {
+        padding: 10px 20px;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: transparent;
+        color: rgba(255, 255, 255, 0.6);
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        white-space: nowrap;
+        transition: all 0.2s;
+      }
+      .tab:hover {
+        border-color: rgba(255, 255, 255, 0.35);
+        color: rgba(255, 255, 255, 0.9);
+      }
+      .tab.active {
+        background: #fff;
+        color: #1a1a2e;
+        border-color: #fff;
+      }
+
+      .screen-selector {
+        display: flex;
+        gap: 4px;
+        padding: 20px 48px 0;
+      }
+      .screen-btn {
+        padding: 6px 14px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: transparent;
+        color: rgba(255, 255, 255, 0.5);
+        cursor: pointer;
+        font-size: 13px;
+        transition: all 0.2s;
+      }
+      .screen-btn.active {
+        background: rgba(255, 255, 255, 0.15);
+        color: #fff;
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+
+      .showcase {
+        padding: 32px 48px 64px;
+      }
+      .direction-panel {
+        display: none;
+      }
+      .direction-panel.active {
+        display: block;
+      }
+
+      .direction-meta {
+        margin-bottom: 28px;
+      }
+      .direction-meta h2 {
+        font-size: 22px;
+        font-weight: 700;
+      }
+      .direction-meta .badge {
+        display: inline-block;
+        margin-top: 8px;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+      }
+      .direction-meta p {
+        margin-top: 12px;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 14px;
+        line-height: 1.6;
+        max-width: 560px;
+      }
+
+      .phones-row {
+        display: flex;
+        gap: 24px;
+        flex-wrap: wrap;
+      }
+      .phone-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+      }
+      .phone-label {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.4);
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+      }
+
+      /* iPhone frame */
+      .phone {
+        width: 280px;
+        height: 560px;
+        background: #000;
+        border-radius: 44px;
+        border: 8px solid #2a2a2a;
+        box-shadow:
+          0 0 0 1px #3a3a3a,
+          0 32px 64px rgba(0, 0, 0, 0.6);
+        overflow: hidden;
+        position: relative;
+        flex-shrink: 0;
+      }
+      .phone::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100px;
+        height: 28px;
+        background: #000;
+        border-radius: 0 0 18px 18px;
+        z-index: 100;
+      }
+      .phone-inner {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        position: relative;
+      }
+
+      /* ========= DIRECTION A — Clinical White ========= */
+      .da {
+        background: #f2f2f7;
+      }
+      .da .nav-bar {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        padding: 52px 20px 12px;
+        border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+      }
+      .da .nav-title {
+        font-size: 17px;
+        font-weight: 600;
+        color: #1c1c1e;
+      }
+      .da .home-content {
+        padding: 24px 20px;
+      }
+      .da .greeting {
+        font-size: 13px;
+        color: #8e8e93;
+        margin-bottom: 4px;
+      }
+      .da .home-main-btn {
+        width: 100%;
+        background: #1b6fbf;
+        border-radius: 14px;
+        padding: 18px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-top: 20px;
+      }
+      .da .btn-icon {
+        width: 44px;
+        height: 44px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+      }
+      .da .btn-text h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #fff;
+      }
+      .da .btn-text p {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.75);
+        margin-top: 2px;
+      }
+      .da .section-header {
+        font-size: 13px;
+        font-weight: 600;
+        color: #8e8e93;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin: 24px 0 8px;
+      }
+      .da .patient-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin-bottom: 1px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .da .patient-card:first-of-type {
+        border-radius: 12px 12px 2px 2px;
+      }
+      .da .patient-card:last-of-type {
+        border-radius: 2px 2px 12px 12px;
+      }
+      .da .patient-name {
+        font-size: 15px;
+        font-weight: 500;
+        color: #1c1c1e;
+      }
+      .da .patient-meta {
+        font-size: 12px;
+        color: #8e8e93;
+        margin-top: 2px;
+      }
+      .da .chevron {
+        color: #c7c7cc;
+        font-size: 13px;
+      }
+      .da .tab-bar {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-top: 0.5px solid rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: space-around;
+        padding: 8px 0 24px;
+      }
+      .da .tab-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        font-size: 10px;
+        color: #8e8e93;
+      }
+      .da .tab-item.active {
+        color: #1b6fbf;
+      }
+      .da .tab-icon {
+        font-size: 22px;
+      }
+
+      /* Caméra A */
+      .da-cam {
+        background: #000;
+      }
+      .da-cam .cam-overlay {
+        position: relative;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+      .da-cam .cam-top {
+        padding: 52px 20px 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .da-cam .cam-close {
+        font-size: 22px;
+        color: #fff;
+      }
+      .da-cam .cam-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: #fff;
+      }
+      .da-cam .cam-feed {
+        flex: 1;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #111;
+      }
+      .da-cam .cam-person {
+        font-size: 80px;
+        opacity: 0.3;
+      }
+      .da-cam .cam-frame {
+        position: absolute;
+        width: 180px;
+        height: 320px;
+        border: 3px solid #34c759;
+        border-radius: 16px;
+        box-shadow:
+          0 0 0 2000px rgba(0, 0, 0, 0.4),
+          0 0 24px rgba(52, 199, 89, 0.4);
+      }
+      .da-cam .cam-hint {
+        position: absolute;
+        bottom: 16px;
+        background: rgba(52, 199, 89, 0.15);
+        border: 1px solid rgba(52, 199, 89, 0.4);
+        border-radius: 8px;
+        padding: 6px 14px;
+        font-size: 13px;
+        color: #34c759;
+        font-weight: 500;
+      }
+      .da-cam .cam-bottom {
+        padding: 16px 20px 40px;
+        display: flex;
+        justify-content: center;
+      }
+      .da-cam .cam-btn {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        background: #34c759;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        box-shadow: 0 4px 20px rgba(52, 199, 89, 0.4);
+      }
+      .da-cam .rgpd-bar {
+        background: rgba(255, 255, 255, 0.08);
+        padding: 8px 20px;
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.5);
+        text-align: center;
+      }
+
+      /* Résultat A */
+      .da-res {
+        background: #f2f2f7;
+      }
+      .da-res .nav-bar {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        padding: 52px 20px 12px;
+        border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+      }
+      .da-res .nav-back {
+        font-size: 15px;
+        color: #1b6fbf;
+      }
+      .da-res .nav-title {
+        font-size: 17px;
+        font-weight: 600;
+        color: #1c1c1e;
+      }
+      .da-res .export-btn {
+        font-size: 15px;
+        color: #1b6fbf;
+        font-weight: 600;
+      }
+      .da-res .result-content {
+        padding: 16px 16px 100px;
+        overflow-y: auto;
+      }
+      .da-res .patient-info {
+        background: #fff;
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin-bottom: 16px;
+      }
+      .da-res .patient-info-name {
+        font-size: 17px;
+        font-weight: 600;
+        color: #1c1c1e;
+      }
+      .da-res .patient-info-meta {
+        font-size: 13px;
+        color: #8e8e93;
+        margin-top: 2px;
+      }
+      .da-res .highlight-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+      }
+      .da-res .highlight-label {
+        font-size: 13px;
+        color: #8e8e93;
+        margin-bottom: 4px;
+      }
+      .da-res .highlight-value {
+        font-size: 36px;
+        font-weight: 700;
+        color: #ff9500;
+        line-height: 1;
+      }
+      .da-res .highlight-norm {
+        font-size: 13px;
+        color: #8e8e93;
+        margin-top: 4px;
+      }
+      .da-res .highlight-badge {
+        display: inline-block;
+        background: #fff3e0;
+        color: #ff9500;
+        border-radius: 6px;
+        padding: 3px 8px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-top: 8px;
+      }
+      .da-res .articulations {
+        background: #fff;
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 12px;
+      }
+      .da-res .art-row {
+        padding: 12px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 0.5px solid #f2f2f7;
+      }
+      .da-res .art-row:last-child {
+        border-bottom: none;
+      }
+      .da-res .art-name {
+        font-size: 15px;
+        color: #1c1c1e;
+      }
+      .da-res .art-value {
+        font-size: 17px;
+        font-weight: 600;
+      }
+      .da-res .art-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 6px;
+      }
+      .da-res .export-bar {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 16px 20px 32px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-top: 0.5px solid rgba(0, 0, 0, 0.1);
+      }
+      .da-res .export-full-btn {
+        width: 100%;
+        background: #1b6fbf;
+        color: #fff;
+        border-radius: 14px;
+        padding: 16px;
+        font-size: 17px;
+        font-weight: 600;
+        text-align: center;
+      }
+
+      /* ========= DIRECTION B — Dark Clinical ========= */
+      .db {
+        background: #0d0d14;
+      }
+      .db .nav-bar {
+        padding: 52px 20px 16px;
+      }
+      .db .nav-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -0.5px;
+      }
+      .db .nav-sub {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.4);
+        margin-top: 4px;
+      }
+      .db .home-content {
+        padding: 16px 20px;
+      }
+      .db .cta-card {
+        background: linear-gradient(135deg, #1b6fbf, #0d4a8a);
+        border-radius: 20px;
+        padding: 24px;
+        margin-bottom: 16px;
+      }
+      .db .cta-icon {
+        font-size: 32px;
+        margin-bottom: 12px;
+      }
+      .db .cta-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #fff;
+      }
+      .db .cta-sub {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.6);
+        margin-top: 4px;
+      }
+      .db .cta-btn {
+        margin-top: 16px;
+        background: #fff;
+        color: #1b6fbf;
+        border-radius: 12px;
+        padding: 12px 20px;
+        font-size: 15px;
+        font-weight: 700;
+        display: inline-block;
+      }
+      .db .stats-row {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+      .db .stat-card {
+        flex: 1;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 14px;
+        padding: 14px;
+      }
+      .db .stat-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: #fff;
+      }
+      .db .stat-label {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.4);
+        margin-top: 4px;
+      }
+      .db .recent-label {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.4);
+        margin-bottom: 10px;
+      }
+      .db .recent-card {
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 12px;
+        padding: 14px;
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+      }
+      .db .recent-name {
+        font-size: 15px;
+        font-weight: 500;
+        color: #fff;
+      }
+      .db .recent-meta {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.4);
+        margin-top: 3px;
+      }
+      .db .recent-badge {
+        background: rgba(52, 199, 89, 0.15);
+        color: #34c759;
+        border-radius: 8px;
+        padding: 4px 10px;
+        font-size: 12px;
+        font-weight: 600;
+        height: fit-content;
+      }
+
+      /* Résultat B */
+      .db-res {
+        background: #0d0d14;
+      }
+      .db-res .nav-bar {
+        padding: 52px 20px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+      }
+      .db-res .nav-back {
+        font-size: 15px;
+        color: #1b6fbf;
+      }
+      .db-res .nav-title {
+        font-size: 17px;
+        font-weight: 600;
+        color: #fff;
+      }
+      .db-res .export-btn {
+        font-size: 15px;
+        color: #1b6fbf;
+        font-weight: 600;
+      }
+      .db-res .result-content {
+        padding: 16px 16px 100px;
+      }
+      .db-res .big-number-card {
+        background: linear-gradient(
+          135deg,
+          rgba(255, 149, 0, 0.15),
+          rgba(255, 149, 0, 0.05)
+        );
+        border: 1px solid rgba(255, 149, 0, 0.2);
+        border-radius: 20px;
+        padding: 20px;
+        margin-bottom: 12px;
+      }
+      .db-res .big-num-label {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.5);
+      }
+      .db-res .big-num-value {
+        font-size: 48px;
+        font-weight: 800;
+        color: #ff9500;
+        line-height: 1;
+        margin: 4px 0;
+      }
+      .db-res .big-num-norm {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.4);
+      }
+      .db-res .big-num-status {
+        display: inline-block;
+        background: rgba(255, 149, 0, 0.2);
+        color: #ff9500;
+        border-radius: 8px;
+        padding: 4px 10px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-top: 10px;
+      }
+      .db-res .arts-card {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        overflow: hidden;
+        margin-bottom: 12px;
+      }
+      .db-res .arts-header {
+        padding: 12px 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.4);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .db-res .art-row {
+        padding: 14px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      }
+      .db-res .art-row:last-child {
+        border-bottom: none;
+      }
+      .db-res .art-name {
+        font-size: 15px;
+        color: rgba(255, 255, 255, 0.8);
+      }
+      .db-res .art-value {
+        font-size: 17px;
+        font-weight: 700;
+      }
+      .db-res .export-bar {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 16px 20px 32px;
+        background: rgba(13, 13, 20, 0.95);
+        backdrop-filter: blur(20px);
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .db-res .export-full-btn {
+        width: 100%;
+        background: #1b6fbf;
+        color: #fff;
+        border-radius: 14px;
+        padding: 16px;
+        font-size: 17px;
+        font-weight: 600;
+        text-align: center;
+      }
+
+      /* ========= DIRECTION C — Warm Clinical ========= */
+      .dc {
+        background: #faf8f5;
+      }
+      .dc .nav-bar {
+        background: #fff;
+        padding: 52px 20px 14px;
+        box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
+      }
+      .dc .nav-title {
+        font-size: 22px;
+        font-weight: 700;
+        color: #2d2d2d;
+      }
+      .dc .home-content {
+        padding: 20px 16px;
+      }
+      .dc .welcome-text {
+        font-size: 15px;
+        color: #7a7a7a;
+        margin-bottom: 20px;
+      }
+      .dc .main-cta {
+        background: #2e7d52;
+        border-radius: 18px;
+        padding: 22px 20px;
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+      .dc .cta-circle {
+        width: 48px;
+        height: 48px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        flex-shrink: 0;
+      }
+      .dc .cta-text h3 {
+        font-size: 17px;
+        font-weight: 700;
+        color: #fff;
+      }
+      .dc .cta-text p {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.7);
+        margin-top: 3px;
+      }
+      .dc .secondary-btns {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+      .dc .sec-btn {
+        flex: 1;
+        background: #fff;
+        border-radius: 14px;
+        padding: 14px 12px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+      }
+      .dc .sec-btn-icon {
+        font-size: 22px;
+        margin-bottom: 6px;
+      }
+      .dc .sec-btn-label {
+        font-size: 13px;
+        font-weight: 500;
+        color: #2d2d2d;
+      }
+      .dc .sec-btn-meta {
+        font-size: 11px;
+        color: #7a7a7a;
+        margin-top: 2px;
+      }
+      .dc .recent-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: #2d2d2d;
+        margin-bottom: 10px;
+      }
+      .dc .patient-row {
+        background: #fff;
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      }
+      .dc .patient-avatar {
+        width: 40px;
+        height: 40px;
+        background: #e8f4ee;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        flex-shrink: 0;
+      }
+      .dc .patient-info .p-name {
+        font-size: 15px;
+        font-weight: 500;
+        color: #2d2d2d;
+      }
+      .dc .patient-info .p-meta {
+        font-size: 12px;
+        color: #7a7a7a;
+        margin-top: 2px;
+      }
+      .dc .tab-bar {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(255, 255, 255, 0.95);
+        border-top: 0.5px solid rgba(0, 0, 0, 0.08);
+        display: flex;
+        justify-content: space-around;
+        padding: 8px 0 24px;
+      }
+      .dc .tab-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        font-size: 10px;
+        color: #7a7a7a;
+      }
+      .dc .tab-item.active {
+        color: #2e7d52;
+      }
+      .dc .tab-icon {
+        font-size: 22px;
+      }
+
+      /* ========= DIRECTION D — Bold Data ========= */
+      .dd {
+        background: #fff;
+      }
+      .dd .header {
+        background: #1b6fbf;
+        padding: 52px 20px 24px;
+      }
+      .dd .header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+      }
+      .dd .app-name {
+        font-size: 13px;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.7);
+        letter-spacing: 2px;
+        text-transform: uppercase;
+      }
+      .dd .header-action {
+        width: 36px;
+        height: 36px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        color: #fff;
+      }
+      .dd .header-cta {
+        margin-top: 16px;
+      }
+      .dd .cta-label {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.6);
+      }
+      .dd .cta-btn-bold {
+        margin-top: 10px;
+        background: #fff;
+        color: #1b6fbf;
+        border-radius: 12px;
+        padding: 14px 20px;
+        font-size: 16px;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .dd .home-body {
+        padding: 20px 20px;
+      }
+      .dd .kpi-row {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .dd .kpi-box {
+        flex: 1;
+        border: 1.5px solid #e5e5e5;
+        border-radius: 14px;
+        padding: 14px;
+      }
+      .dd .kpi-val {
+        font-size: 26px;
+        font-weight: 800;
+        color: #1c1c1e;
+        letter-spacing: -1px;
+      }
+      .dd .kpi-unit {
+        font-size: 14px;
+        font-weight: 400;
+        color: #8e8e93;
+      }
+      .dd .kpi-label {
+        font-size: 12px;
+        color: #8e8e93;
+        margin-top: 4px;
+      }
+      .dd .list-title {
+        font-size: 17px;
+        font-weight: 700;
+        color: #1c1c1e;
+        margin-bottom: 12px;
+      }
+      .dd .p-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 0;
+        border-bottom: 1px solid #f0f0f0;
+      }
+      .dd .p-row:last-child {
+        border-bottom: none;
+      }
+      .dd .p-name {
+        font-size: 15px;
+        font-weight: 600;
+        color: #1c1c1e;
+      }
+      .dd .p-meta {
+        font-size: 12px;
+        color: #8e8e93;
+        margin-top: 3px;
+      }
+      .dd .p-angle {
+        font-size: 17px;
+        font-weight: 800;
+      }
+
+      /* Résultat D */
+      .dd-res {
+        background: #fff;
+      }
+      .dd-res .result-header {
+        background: #1b6fbf;
+        padding: 52px 20px 24px;
+      }
+      .dd-res .rh-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .dd-res .rh-back {
+        font-size: 15px;
+        color: rgba(255, 255, 255, 0.8);
+      }
+      .dd-res .rh-title {
+        font-size: 17px;
+        font-weight: 600;
+        color: #fff;
+      }
+      .dd-res .rh-export {
+        font-size: 15px;
+        font-weight: 700;
+        color: #fff;
+      }
+      .dd-res .rh-patient {
+        margin-top: 16px;
+        font-size: 22px;
+        font-weight: 700;
+        color: #fff;
+      }
+      .dd-res .rh-date {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.6);
+        margin-top: 4px;
+      }
+      .dd-res .rh-big {
+        margin-top: 20px;
+        padding: 16px;
+        background: rgba(0, 0, 0, 0.15);
+        border-radius: 14px;
+      }
+      .dd-res .rh-big-label {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.6);
+      }
+      .dd-res .rh-big-val {
+        font-size: 48px;
+        font-weight: 900;
+        color: #fff;
+        letter-spacing: -2px;
+        line-height: 1;
+      }
+      .dd-res .rh-big-norm {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.5);
+        margin-top: 4px;
+      }
+      .dd-res .result-body {
+        padding: 16px 20px 100px;
+      }
+      .dd-res .art-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 0;
+        border-bottom: 1px solid #f0f0f0;
+      }
+      .dd-res .art-item:last-child {
+        border-bottom: none;
+      }
+      .dd-res .art-name {
+        font-size: 15px;
+        color: #1c1c1e;
+      }
+      .dd-res .art-norm {
+        font-size: 12px;
+        color: #8e8e93;
+        margin-top: 3px;
+      }
+      .dd-res .art-val {
+        font-size: 22px;
+        font-weight: 800;
+      }
+      .dd-res .export-bar {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 16px 20px 32px;
+        background: #fff;
+        border-top: 1px solid #f0f0f0;
+      }
+      .dd-res .export-full-btn {
+        width: 100%;
+        background: #1b6fbf;
+        color: #fff;
+        border-radius: 14px;
+        padding: 16px;
+        font-size: 17px;
+        font-weight: 700;
+        text-align: center;
+      }
+
+      /* ========= DIRECTION E — Pure Cupertino ========= */
+      .de {
+        background: #f2f2f7;
+      }
+      .de .nav-bar {
+        background: rgba(242, 242, 247, 0.95);
+        backdrop-filter: blur(20px);
+        padding: 52px 16px 10px;
+      }
+      .de .nav-title {
+        font-size: 34px;
+        font-weight: 700;
+        color: #1c1c1e;
+        letter-spacing: -0.5px;
+      }
+      .de .search-bar {
+        background: rgba(118, 118, 128, 0.12);
+        border-radius: 10px;
+        padding: 8px 12px;
+        margin-top: 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .de .search-icon {
+        font-size: 14px;
+        color: #8e8e93;
+      }
+      .de .search-text {
+        font-size: 15px;
+        color: #8e8e93;
+      }
+      .de .content {
+        padding: 16px;
+        padding-bottom: 90px;
+      }
+      .de .section {
+        margin-bottom: 20px;
+      }
+      .de .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #8e8e93;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 0 4px;
+        margin-bottom: 8px;
+      }
+      .de .inset-group {
+        background: #fff;
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      .de .inset-row {
+        display: flex;
+        align-items: center;
+        padding: 12px 16px;
+        border-bottom: 0.5px solid rgba(0, 0, 0, 0.08);
+        gap: 12px;
+      }
+      .de .inset-row:last-child {
+        border-bottom: none;
+      }
+      .de .row-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+      .de .row-text {
+        flex: 1;
+      }
+      .de .row-label {
+        font-size: 15px;
+        color: #1c1c1e;
+      }
+      .de .row-sub {
+        font-size: 12px;
+        color: #8e8e93;
+        margin-top: 2px;
+      }
+      .de .row-chevron {
+        font-size: 13px;
+        color: #c7c7cc;
+      }
+      .de .tab-bar {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-top: 0.5px solid rgba(0, 0, 0, 0.12);
+        display: flex;
+        justify-content: space-around;
+        padding: 8px 0 24px;
+      }
+      .de .tab-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        font-size: 10px;
+        color: #8e8e93;
+      }
+      .de .tab-item.active {
+        color: #007aff;
+      }
+      .de .tab-icon {
+        font-size: 22px;
+      }
+
+      /* ========= DIRECTION F — Confident Blue ========= */
+      .df {
+        background: #eef4fb;
+      }
+      .df .header {
+        background: #1b6fbf;
+        padding: 52px 20px 32px;
+        border-radius: 0 0 28px 28px;
+      }
+      .df .header-greeting {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.7);
+      }
+      .df .header-title {
+        font-size: 22px;
+        font-weight: 700;
+        color: #fff;
+        margin-top: 2px;
+      }
+      .df .header-btn {
+        margin-top: 20px;
+        background: #fff;
+        border-radius: 16px;
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .df .hb-icon {
+        font-size: 24px;
+      }
+      .df .hb-text h3 {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1b6fbf;
+      }
+      .df .hb-text p {
+        font-size: 12px;
+        color: #8e8e93;
+        margin-top: 2px;
+      }
+      .df .hb-arrow {
+        margin-left: auto;
+        font-size: 18px;
+        color: #1b6fbf;
+      }
+      .df .body {
+        padding: 20px 16px 90px;
+      }
+      .df .mini-stats {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+      .df .mini-stat {
+        flex: 1;
+        background: #fff;
+        border-radius: 14px;
+        padding: 14px;
+        box-shadow: 0 2px 8px rgba(27, 111, 191, 0.08);
+      }
+      .df .ms-val {
+        font-size: 24px;
+        font-weight: 800;
+        color: #1b6fbf;
+      }
+      .df .ms-label {
+        font-size: 11px;
+        color: #8e8e93;
+        margin-top: 4px;
+      }
+      .df .section-title {
+        font-size: 17px;
+        font-weight: 700;
+        color: #1c1c1e;
+        margin-bottom: 12px;
+      }
+      .df .p-card {
+        background: #fff;
+        border-radius: 14px;
+        padding: 14px 16px;
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 8px rgba(27, 111, 191, 0.06);
+      }
+      .df .p-name {
+        font-size: 15px;
+        font-weight: 600;
+        color: #1c1c1e;
+      }
+      .df .p-date {
+        font-size: 12px;
+        color: #8e8e93;
+        margin-top: 3px;
+      }
+      .df .p-pill {
+        background: #eef4fb;
+        color: #1b6fbf;
+        border-radius: 8px;
+        padding: 4px 10px;
+        font-size: 13px;
+        font-weight: 700;
+      }
+      .df .tab-bar {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-top: 0.5px solid rgba(0, 0, 0, 0.08);
+        display: flex;
+        justify-content: space-around;
+        padding: 8px 0 24px;
+      }
+      .df .tab-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        font-size: 10px;
+        color: #8e8e93;
+      }
+      .df .tab-item.active {
+        color: #1b6fbf;
+      }
+      .df .tab-icon {
+        font-size: 22px;
+      }
+
+      /* Rationale section */
+      .rationale {
+        margin-top: 32px;
+        padding: 24px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        display: none;
+      }
+      .rationale.active {
+        display: block;
+      }
+      .rationale h3 {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 16px;
+      }
+      .rationale-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      .rationale-item h4 {
+        font-size: 13px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.9);
+        margin-bottom: 6px;
+      }
+      .rationale-item p {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.5);
+        line-height: 1.5;
+      }
+
+      .choose-btn {
+        margin-top: 20px;
+        padding: 12px 24px;
+        background: #fff;
+        color: #1a1a2e;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        border: none;
+      }
+      .choose-btn:hover {
+        background: #e0e0e0;
+      }
+
+      .selected-badge {
+        display: none;
+        margin-top: 12px;
+        padding: 8px 16px;
+        background: rgba(52, 199, 89, 0.15);
+        border: 1px solid rgba(52, 199, 89, 0.3);
+        border-radius: 8px;
+        color: #34c759;
+        font-size: 14px;
+        font-weight: 600;
+        text-align: center;
+      }
+      .selected-badge.visible {
+        display: block;
+      }
+
+      /* Compare view */
+      .compare-row {
+        display: flex;
+        gap: 16px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 16px;
+      }
+
+      @media (max-width: 768px) {
+        header,
+        .tabs,
+        .screen-selector,
+        .showcase {
+          padding-left: 20px;
+          padding-right: 20px;
+        }
+        .phones-row {
+          justify-content: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>BodyOrthox — Directions de Design</h1>
+      <p>
+        6 directions visuelles · Sélectionnez un onglet pour explorer ·
+        Choisissez votre direction préférée
+      </p>
+    </header>
+
+    <div class="tabs">
+      <button class="tab active" onclick="showDir('a', this)">
+        A — Clinical White
+      </button>
+      <button class="tab" onclick="showDir('b', this)">
+        B — Dark Professional
+      </button>
+      <button class="tab" onclick="showDir('c', this)">
+        C — Warm Clinical
+      </button>
+      <button class="tab" onclick="showDir('d', this)">D — Bold Data</button>
+      <button class="tab" onclick="showDir('e', this)">
+        E — Pure Cupertino
+      </button>
+      <button class="tab" onclick="showDir('f', this)">
+        F — Confident Blue
+      </button>
+    </div>
+
+    <div class="screen-selector">
+      <button class="screen-btn active" onclick="showScreen('home', this)">
+        Accueil
+      </button>
+      <button class="screen-btn" onclick="showScreen('camera', this)">
+        Guidage Caméra
+      </button>
+      <button class="screen-btn" onclick="showScreen('result', this)">
+        Résultats
+      </button>
+    </div>
+
+    <div class="showcase">
+      <!-- ===== DIRECTION A ===== -->
+      <div class="direction-panel active" id="dir-a">
+        <div class="direction-meta">
+          <h2>Direction A — Clinical White</h2>
+          <span
+            class="badge"
+            style="background: rgba(27, 111, 191, 0.15); color: #1b6fbf"
+            >iOS Natif · Confiance · Précision</span
+          >
+          <p>
+            Pure clarté médicale. Fond blanc dominant, couleurs fonctionnelles
+            uniquement. Chaque élément justifie sa présence. Le plus proche de
+            l'esthétique Santé iOS que Dr. Marc connaît.
+          </p>
+        </div>
+
+        <!-- Home A -->
+        <div class="phones-row" id="screen-home-a">
+          <div class="phone-wrap">
+            <div class="phone-label">Accueil</div>
+            <div class="phone">
+              <div class="phone-inner da">
+                <div class="da nav-bar">
+                  <div class="da nav-title">BodyOrthox</div>
+                </div>
+                <div class="da home-content">
+                  <div class="da greeting">Bonjour, Dr. Marc</div>
+                  <div class="da home-main-btn">
+                    <div class="da btn-icon">🎬</div>
+                    <div class="da btn-text">
+                      <h3>Nouvelle analyse</h3>
+                      <p>30 secondes · Genou · Hanche · Cheville</p>
+                    </div>
+                  </div>
+                  <div class="da section-header">Patients récents</div>
+                  <div
+                    class="da patient-card"
+                    style="border-radius: 12px 12px 2px 2px"
+                  >
+                    <div>
+                      <div class="da patient-name">Martin Paul</div>
+                      <div class="da patient-meta">
+                        3 analyses · Dernière 03/03
+                      </div>
+                    </div>
+                    <div class="da chevron">›</div>
+                  </div>
+                  <div
+                    class="da patient-card"
+                    style="border-radius: 2px 2px 12px 12px"
+                  >
+                    <div>
+                      <div class="da patient-name">Dubois Claire</div>
+                      <div class="da patient-meta">
+                        1 analyse · Dernière 28/02
+                      </div>
+                    </div>
+                    <div class="da chevron">›</div>
+                  </div>
+                  <div class="da section-header">Ce mois</div>
+                  <div
+                    class="da patient-card"
+                    style="border-radius: 12px; justify-content: space-between"
+                  >
+                    <div class="da patient-name">7 analyses réalisées</div>
+                    <div
+                      style="font-size: 13px; color: #1b6fbf; font-weight: 600"
+                    >
+                      3 restantes
+                    </div>
+                  </div>
+                </div>
+                <div class="da tab-bar">
+                  <div class="da tab-item active">
+                    <div class="da tab-icon">🏠</div>
+                    Accueil
+                  </div>
+                  <div class="da tab-item">
+                    <div class="da tab-icon">👥</div>
+                    Patients
+                  </div>
+                  <div class="da tab-item">
+                    <div class="da tab-icon">📊</div>
+                    Historique
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Camera A -->
+        <div class="phones-row" id="screen-camera-a" style="display: none">
+          <div class="phone-wrap">
+            <div class="phone-label">Guidage Caméra</div>
+            <div class="phone">
+              <div class="phone-inner da-cam">
+                <div class="cam-overlay">
+                  <div class="rgpd-bar">
+                    Vidéo analysée localement · Non transmise
+                  </div>
+                  <div class="cam-top">
+                    <span class="cam-close">✕</span
+                    ><span class="cam-title">Martin Paul</span
+                    ><span style="width: 22px"></span>
+                  </div>
+                  <div class="cam-feed">
+                    <div class="cam-person">🚶</div>
+                    <div class="cam-frame"></div>
+                    <div class="cam-hint">✓ Vue de profil détectée</div>
+                  </div>
+                  <div class="cam-bottom">
+                    <div class="cam-btn">▶</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Result A -->
+        <div class="phones-row" id="screen-result-a" style="display: none">
+          <div class="phone-wrap">
+            <div class="phone-label">Résultats</div>
+            <div class="phone">
+              <div class="phone-inner da-res">
+                <div class="da-res nav-bar">
+                  <span class="da-res nav-back">‹ Patients</span>
+                  <span class="da-res nav-title">Analyse</span>
+                  <span class="da-res export-btn">Exporter</span>
+                </div>
+                <div class="da-res result-content">
+                  <div class="da-res patient-info">
+                    <div class="da-res patient-info-name">Martin Paul</div>
+                    <div class="da-res patient-info-meta">
+                      67 ans · Marche · 03/03/2026
+                    </div>
+                  </div>
+                  <div class="da-res highlight-card">
+                    <div class="da-res highlight-label">
+                      ⚠ Articulation hors norme
+                    </div>
+                    <div class="da-res highlight-value">42°</div>
+                    <div class="da-res highlight-norm">
+                      Flexion genou gauche · Norme : 60–70°
+                    </div>
+                    <div class="da-res highlight-badge">Sous la norme –18°</div>
+                  </div>
+                  <div class="da-res articulations">
+                    <div class="da-res art-row">
+                      <span class="da-res art-name">Genou gauche</span>
+                      <span class="da-res art-value" style="color: #ff3b30"
+                        ><span
+                          class="da-res art-dot"
+                          style="background: #ff3b30"
+                        ></span
+                        >42°</span
+                      >
+                    </div>
+                    <div class="da-res art-row">
+                      <span class="da-res art-name">Genou droit</span>
+                      <span class="da-res art-value" style="color: #34c759"
+                        ><span
+                          class="da-res art-dot"
+                          style="background: #34c759"
+                        ></span
+                        >67°</span
+                      >
+                    </div>
+                    <div class="da-res art-row">
+                      <span class="da-res art-name">Hanche</span>
+                      <span class="da-res art-value" style="color: #34c759"
+                        ><span
+                          class="da-res art-dot"
+                          style="background: #34c759"
+                        ></span
+                        >89°</span
+                      >
+                    </div>
+                    <div class="da-res art-row">
+                      <span class="da-res art-name">Cheville</span>
+                      <span class="da-res art-value" style="color: #ff9500"
+                        ><span
+                          class="da-res art-dot"
+                          style="background: #ff9500"
+                        ></span
+                        >41°</span
+                      >
+                    </div>
+                  </div>
+                  <div
+                    style="
+                      background: #fff;
+                      border-radius: 12px;
+                      padding: 12px 16px;
+                      font-size: 13px;
+                      color: #8e8e93;
+                      line-height: 1.5;
+                    "
+                  >
+                    BodyOrthox est un outil de documentation clinique. Ces
+                    données ne constituent pas un acte diagnostique.
+                  </div>
+                </div>
+                <div class="da-res export-bar">
+                  <div class="da-res export-full-btn">
+                    ↑ Exporter le rapport PDF
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rationale active" id="rationale-a">
+          <h3>Analyse — Direction A</h3>
+          <div class="rationale-grid">
+            <div class="rationale-item">
+              <h4>Points forts</h4>
+              <p>
+                Immédiatement reconnu par Dr. Marc (esthétique Santé iOS).
+                Lisibilité maximale des chiffres cliniques. Discret en
+                consultation.
+              </p>
+            </div>
+            <div class="rationale-item">
+              <h4>Points d'attention</h4>
+              <p>
+                Peut sembler "générique" comparé à une app concurrente
+                distinctive. Identité BodyOrthox moins marquée.
+              </p>
+            </div>
+            <div class="rationale-item">
+              <h4>Idéal si</h4>
+              <p>
+                Priorité à la confiance immédiate et à l'adoption rapide par des
+                praticiens conservateurs.
+              </p>
+            </div>
+            <div class="rationale-item">
+              <h4>Convient à</h4>
+              <p>
+                Flux 4 taps, premiers early-adopters, contexte cabinet libéral
+                classique.
+              </p>
+            </div>
+          </div>
+        </div>
+        <button class="choose-btn" onclick="chooseDir('A — Clinical White')">
+          Choisir cette direction
+        </button>
+        <div class="selected-badge" id="badge-a">
+          ✓ Direction A sélectionnée
+        </div>
+      </div>
+
+      <!-- ===== DIRECTION B ===== -->
+      <div class="direction-panel" id="dir-b">
+        <div class="direction-meta">
+          <h2>Direction B — Dark Professional</h2>
+          <span
+            class="badge"
+            style="background: rgba(255, 149, 0, 0.15); color: #ff9500"
+            >Mode Sombre · Impact · Données</span
+          >
+          <p>
+            Interface sombre professionnelle. Les chiffres cliniques ressortent
+            avec force sur fond noir. Impression "outil sérieux, pas app grand
+            public". Adapté aux cabinets modernes.
+          </p>
+        </div>
+
+        <!-- Home B -->
+        <div class="phones-row" id="screen-home-b">
+          <div class="phone-wrap">
+            <div class="phone-label">Accueil</div>
+            <div class="phone">
+              <div class="phone-inner db">
+                <div class="db nav-bar">
+                  <div class="db nav-title">Bonjour, Dr. Marc</div>
+                  <div class="db nav-sub">Jeudi 4 mars 2026</div>
+                </div>
+                <div class="db home-content">
+                  <div class="db cta-card">
+                    <div class="db cta-icon">🎬</div>
+                    <div class="db cta-title">Nouvelle analyse</div>
+                    <div class="db cta-sub">30 secondes · 3 articulations</div>
+                    <div class="db cta-btn">Démarrer →</div>
+                  </div>
+                  <div class="db stats-row">
+                    <div class="db stat-card">
+                      <div class="db stat-value">7</div>
+                      <div class="db stat-label">Analyses ce mois</div>
+                    </div>
+                    <div class="db stat-card">
+                      <div class="db stat-value">
+                        3<span
+                          class="db kpi-unit"
+                          style="
+                            font-size: 14px;
+                            color: rgba(255, 255, 255, 0.4);
+                          "
+                        ></span>
+                      </div>
+                      <div class="db stat-label">Restantes (freemium)</div>
+                    </div>
+                  </div>
+                  <div class="db recent-label">PATIENTS RÉCENTS</div>
+                  <div class="db recent-card">
+                    <div>
+                      <div class="db recent-name">Martin Paul</div>
+                      <div class="db recent-meta">Genou G: 42° · 03/03</div>
+                    </div>
+                    <div class="db recent-badge">↑ Voir</div>
+                  </div>
+                  <div class="db recent-card">
+                    <div>
+                      <div class="db recent-name">Dubois Claire</div>
+                      <div class="db recent-meta">Cheville: 38° · 28/02</div>
+                    </div>
+                    <div
+                      class="db recent-badge"
+                      style="
+                        background: rgba(52, 199, 89, 0.15);
+                        color: #34c759;
+                      "
+                    >
+                      ✓ Normal
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Camera B (same dark treatment) -->
+        <div class="phones-row" id="screen-camera-b" style="display: none">
+          <div class="phone-wrap">
+            <div class="phone-label">Guidage Caméra</div>
+            <div class="phone">
+              <div class="phone-inner da-cam">
+                <div class="cam-overlay">
+                  <div class="rgpd-bar">
+                    Vidéo analysée localement · Non transmise
+                  </div>
+                  <div class="cam-top">
+                    <span class="cam-close">✕</span
+                    ><span class="cam-title">Martin Paul</span
+                    ><span style="width: 22px"></span>
+                  </div>
+                  <div class="cam-feed">
+                    <div class="cam-person">🚶</div>
+                    <div
+                      class="cam-frame"
+                      style="
+                        border-color: #ff9500;
+                        box-shadow:
+                          0 0 0 2000px rgba(0, 0, 0, 0.5),
+                          0 0 24px rgba(255, 149, 0, 0.4);
+                      "
+                    ></div>
+                    <div
+                      class="cam-hint"
+                      style="
+                        background: rgba(255, 149, 0, 0.15);
+                        border-color: rgba(255, 149, 0, 0.4);
+                        color: #ff9500;
+                      "
+                    >
+                      Approchez-vous de 30cm
+                    </div>
+                  </div>
+                  <div class="cam-bottom">
+                    <div
+                      class="cam-btn"
+                      style="background: #4a4a5a; box-shadow: none"
+                    >
+                      ▶
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Result B -->
+        <div class="phones-row" id="screen-result-b" style="display: none">
+          <div class="phone-wrap">
+            <div class="phone-label">Résultats</div>
+            <div class="phone">
+              <div class="phone-inner db-res">
+                <div class="db-res nav-bar">
+                  <span class="db-res nav-back">‹</span>
+                  <span class="db-res nav-title">Résultat</span>
+                  <span class="db-res export-btn">Exporter</span>
+                </div>
+                <div class="db-res result-content">
+                  <div class="db-res big-number-card">
+                    <div class="db-res big-num-label">
+                      GENOU GAUCHE · HORS NORME
+                    </div>
+                    <div class="db-res big-num-value">42°</div>
+                    <div class="db-res big-num-norm">
+                      Norme attendue : 60–70° pour 67 ans
+                    </div>
+                    <div class="db-res big-num-status">Déficit –18°</div>
+                  </div>
+                  <div class="db-res arts-card">
+                    <div class="db-res arts-header">
+                      Toutes les articulations
+                    </div>
+                    <div class="db-res art-row">
+                      <span class="db-res art-name">Genou droit</span
+                      ><span class="db-res art-value" style="color: #34c759"
+                        >67°</span
+                      >
+                    </div>
+                    <div class="db-res art-row">
+                      <span class="db-res art-name">Hanche</span
+                      ><span class="db-res art-value" style="color: #34c759"
+                        >89°</span
+                      >
+                    </div>
+                    <div class="db-res art-row">
+                      <span class="db-res art-name">Cheville droite</span
+                      ><span class="db-res art-value" style="color: #ff9500"
+                        >41°</span
+                      >
+                    </div>
+                    <div class="db-res art-row">
+                      <span class="db-res art-name">Cheville gauche</span
+                      ><span class="db-res art-value" style="color: #34c759"
+                        >44°</span
+                      >
+                    </div>
+                  </div>
+                </div>
+                <div class="db-res export-bar">
+                  <div class="db-res export-full-btn">
+                    ↑ Exporter Martin_Paul_Marche_2026-03-03.pdf
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rationale" id="rationale-b">
+          <h3>Analyse — Direction B</h3>
+          <div class="rationale-grid">
+            <div class="rationale-item">
+              <h4>Points forts</h4>
+              <p>
+                Les chiffres cliniques ressortent avec un impact maximal.
+                Sentiment d'outil professionnel. Différenciation forte
+                visuellement.
+              </p>
+            </div>
+            <div class="rationale-item">
+              <h4>Points d'attention</h4>
+              <p>
+                Moins familier pour Dr. Marc (iPhone clair habituel). Lecture en
+                lumière vive de cabinet à vérifier.
+              </p>
+            </div>
+            <div class="rationale-item">
+              <h4>Idéal si</h4>
+              <p>
+                Volonté de se démarquer fortement et de cibler des praticiens
+                tech-savvy.
+              </p>
+            </div>
+            <div class="rationale-item">
+              <h4>Convient à</h4>
+              <p>
+                Cabinets modernes, cliniques équipées, usage en lumière
+                contrôlée.
+              </p>
+            </div>
+          </div>
+        </div>
+        <button class="choose-btn" onclick="chooseDir('B — Dark Professional')">
+          Choisir cette direction
+        </button>
+        <div class="selected-badge" id="badge-b">
+          ✓ Direction B sélectionnée
+        </div>
+      </div>
+
+      <!-- ===== DIRECTION C ===== -->
+      <div class="direction-panel" id="dir-c">
+        <div class="direction-meta">
+          <h2>Direction C — Warm Clinical</h2>
+          <span
+            class="badge"
+            style="background: rgba(46, 125, 82, 0.15); color: #2e7d52"
+            >Chaleureux · Accessible · Médical vert</span
+          >
+          <p>
+            Vert médical au lieu du bleu traditionnel. Chaleur et accessibilité
+            — l'app qui rassure autant le médecin que le patient. Plus humain,
+            moins corporate.
+          </p>
+        </div>
+
+        <div class="phones-row" id="screen-home-c">
+          <div class="phone-wrap">
+            <div class="phone-label">Accueil</div>
+            <div class="phone">
+              <div class="phone-inner dc">
+                <div class="dc nav-bar">
+                  <div class="dc nav-title">BodyOrthox</div>
+                </div>
+                <div class="dc home-content">
+                  <div class="dc welcome-text">
+                    Bonjour Dr. Marc, prêt pour vos consultations ?
+                  </div>
+                  <div class="dc main-cta">
+                    <div class="dc cta-circle">🎬</div>
+                    <div class="dc cta-text">
+                      <h3>Nouvelle analyse</h3>
+                      <p>3 articulations · 30 secondes</p>
+                    </div>
+                  </div>
+                  <div class="dc secondary-btns">
+                    <div class="dc sec-btn">
+                      <div class="dc sec-btn-icon">👥</div>
+                      <div class="dc sec-btn-label">Patients</div>
+                      <div class="dc sec-btn-meta">12 dossiers</div>
+                    </div>
+                    <div class="dc sec-btn">
+                      <div class="dc sec-btn-icon">📋</div>
+                      <div class="dc sec-btn-label">Historique</div>
+                      <div class="dc sec-btn-meta">7 ce mois</div>
+                    </div>
+                  </div>
+                  <div class="dc recent-title">Patients récents</div>
+                  <div class="dc patient-row">
+                    <div class="dc patient-avatar">👤</div>
+                    <div class="dc patient-info">
+                      <div class="p-name">Martin Paul</div>
+                      <div class="p-meta">Genou G: 42° · 03/03</div>
+                    </div>
+                  </div>
+                  <div class="dc patient-row">
+                    <div class="dc patient-avatar">👤</div>
+                    <div class="dc patient-info">
+                      <div class="p-name">Dubois Claire</div>
+                      <div class="p-meta">Cheville: 38° · 28/02</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="dc tab-bar">
+                  <div class="dc tab-item active">
+                    <div class="dc tab-icon">🏠</div>
+                    Accueil
+                  </div>
+                  <div class="dc tab-item">
+                    <div class="dc tab-icon">👥</div>
+                    Patients
+                  </div>
+                  <div class="dc tab-item">
+                    <div class="dc tab-icon">📊</div>
+                    Rapports
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="phones-row" id="screen-camera-c" style="display: none">
+          <div class="phone-wrap">
+            <div class="phone-label">Guidage Caméra</div>
+            <div class="phone">
+              <div class="phone-inner da-cam">
+                <div class="cam-overlay">
+                  <div class="rgpd-bar">
+                    Cette vidéo reste sur votre appareil
+                  </div>
+                  <div class="cam-top">
+                    <span class="cam-close">✕</span
+                    ><span class="cam-title">Martin Paul</span
+                    ><span style="width: 22px"></span>
+                  </div>
+                  <div class="cam-feed">
+                    <div class="cam-person">🚶</div>
+                    <div class="cam-frame"></div>
+                    <div class="cam-hint">✓ Prêt à filmer</div>
+                  </div>
+                  <div class="cam-bottom"><div class="cam-btn">▶</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="phones-row" id="screen-result-c" style="display: none">
+          <div class="phone-wrap">
+            <div class="phone-label">Résultats</div>
+            <div class="phone">
+              <div class="phone-inner" style="background: #faf8f5">
+                <div
+                  style="
+                    background: #fff;
+                    padding: 52px 20px 12px;
+                    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-end;
+                  "
+                >
+                  <span style="font-size: 15px; color: #2e7d52">‹ Retour</span>
+                  <span
+                    style="font-size: 17px; font-weight: 600; color: #2d2d2d"
+                    >Analyse</span
+                  >
+                  <span
+                    style="font-size: 15px; font-weight: 600; color: #2e7d52"
+                    >Exporter</span
+                  >
+                </div>
+                <div style="padding: 16px; padding-bottom: 100px">
+                  <div
+                    style="
+                      background: #fff;
+                      border-radius: 16px;
+                      padding: 16px;
+                      margin-bottom: 12px;
+                      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+                    "
+                  >
+                    <div
+                      style="
+                        font-size: 13px;
+                        color: #7a7a7a;
+                        margin-bottom: 6px;
+                      "
+                    >
+                      Martin Paul · 67 ans · 03/03/2026
+                    </div>
+                    <div
+                      style="
+                        font-size: 13px;
+                        color: #e65100;
+                        font-weight: 600;
+                        margin-bottom: 4px;
+                      "
+                    >
+                      ⚠ Genou gauche hors norme
+                    </div>
+                    <div
+                      style="
+                        font-size: 40px;
+                        font-weight: 800;
+                        color: #e65100;
+                        line-height: 1;
+                      "
+                    >
+                      42°
+                    </div>
+                    <div
+                      style="font-size: 13px; color: #7a7a7a; margin-top: 4px"
+                    >
+                      Norme : 60–70° pour son profil
+                    </div>
+                  </div>
+                  <div
+                    style="
+                      background: #fff;
+                      border-radius: 16px;
+                      overflow: hidden;
+                      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+                    "
+                  >
+                    <div
+                      style="
+                        padding: 12px 16px;
+                        border-bottom: 1px solid #f0f0f0;
+                        display: flex;
+                        justify-content: space-between;
+                      "
+                    >
+                      <span style="color: #2d2d2d">Genou droit</span
+                      ><span style="font-weight: 700; color: #2e7d52">67°</span>
+                    </div>
+                    <div
+                      style="
+                        padding: 12px 16px;
+                        border-bottom: 1px solid #f0f0f0;
+                        display: flex;
+                        justify-content: space-between;
+                      "
+                    >
+                      <span style="color: #2d2d2d">Hanche</span
+                      ><span style="font-weight: 700; color: #2e7d52">89°</span>
+                    </div>
+                    <div
+                      style="
+                        padding: 12px 16px;
+                        display: flex;
+                        justify-content: space-between;
+                      "
+                    >
+                      <span style="color: #2d2d2d">Cheville</span
+                      ><span style="font-weight: 700; color: #ff9500">41°</span>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  style="
+                    position: absolute;
+                    bottom: 0;
+                    left: 0;
+                    right: 0;
+                    padding: 16px 20px 32px;
+                    background: rgba(255, 255, 255, 0.95);
+                    border-top: 1px solid rgba(0, 0, 0, 0.06);
+                  "
+                >
+                  <div
+                    style="
+                      background: #2e7d52;
+                      color: #fff;
+                      border-radius: 14px;
+                      padding: 16px;
+                      font-size: 17px;
+                      font-weight: 600;
+                      text-align: center;
+                    "
+                  >
+                    ↑ Exporter le rapport PDF
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rationale" id="rationale-c">
+          <h3>Analyse — Direction C</h3>
+          <div class="rationale-grid">
+            <div class="rationale-item">
+              <h4>Points forts</h4>
+              <p>
+                Chaleur humaine — rassure le patient en consultation.
+                Différenciation du bleu médical classique. Accessible aux
+                non-techniciens.
+              </p>
+            </div>
+            <div class="rationale-item">
+              <h4>Points d'attention</h4>
+              <p>
+                Le vert médical est moins standard. Certains praticiens
+                pourraient préférer le bleu "plus sérieux". Association avec
+                l'urgence médicale (rouge/vert) à gérer.
+              </p>
+            </div>
+            <div class="rationale-item">
+              <h4>Idéal si</h4>
+              <p>
+                Volonté de se positionner comme "l'app médicale qui ne fait pas
+                peur" — approche patient-centric.
+              </p>
+            </div>
+            <div class="rationale-item">
+              <h4>Convient à</h4>
+              <p>
+                Cabinets mixtes, praticiens soucieux de l'expérience patient,
+                usage en présence active du patient.
+              </p>
+            </div>
+          </div>
+        </div>
+        <button class="choose-btn" onclick="chooseDir('C — Warm Clinical')">
+          Choisir cette direction
+        </button>
+        <div class="selected-badge" id="badge-c">
+          ✓ Direction C sélectionnée
+        </div>
+      </div>
+
+      <!-- ===== DIRECTION D ===== -->
+      <div class="direction-panel" id="dir-d">
+        <div class="direction-meta">
+          <h2>Direction D — Bold Data</h2>
+          <span
+            class="badge"
+            style="background: rgba(27, 111, 191, 0.2); color: #1b6fbf"
+            >Données · Stripe-like · Impact</span
+          >
+          <p>
+            Les chiffres cliniques en géants. Inspiré de Stripe Dashboard — les
+            données sont l'UI. Header bleu fort, chiffres massifs, hiérarchie
+            brutalement claire.
+          </p>
+        </div>
+
+        <div class="phones-row" id="screen-home-d">
+          <div class="phone-wrap">
+            <div class="phone-label">Accueil</div>
+            <div class="phone">
+              <div class="phone-inner dd">
+                <div class="dd header">
+                  <div class="dd header-top">
+                    <div class="dd app-name">BodyOrthox</div>
+                    <div class="dd header-action">+</div>
+                  </div>
+                  <div class="dd header-cta">
+                    <div class="dd cta-label">Prêt pour Dr. Marc</div>
+                    <div class="dd cta-btn-bold">🎬 Nouvelle analyse</div>
+                  </div>
+                </div>
+                <div class="dd home-body">
+                  <div class="dd kpi-row">
+                    <div class="dd kpi-box">
+                      <div class="dd kpi-val">
+                        7<span class="dd kpi-unit">/10</span>
+                      </div>
+                      <div class="dd kpi-label">Analyses ce mois</div>
+                    </div>
+                    <div class="dd kpi-box">
+                      <div class="dd kpi-val">12</div>
+                      <div class="dd kpi-label">Patients actifs</div>
+                    </div>
+                  </div>
+                  <div class="dd list-title">Dernières analyses</div>
+                  <div class="dd p-row">
+                    <div>
+                      <div class="dd p-name">Martin Paul</div>
+                      <div class="dd p-meta">Genou G · 03/03</div>
+                    </div>
+                    <div class="dd p-angle" style="color: #ff3b30">42°</div>
+                  </div>
+                  <div class="dd p-row">
+                    <div>
+                      <div class="dd p-name">Dubois Claire</div>
+                      <div class="dd p-meta">Cheville · 28/02</div>
+                    </div>
+                    <div class="dd p-angle" style="color: #34c759">65°</div>
+                  </div>
+                  <div class="dd p-row">
+                    <div>
+                      <div class="dd p-name">Bernard Louis</div>
+                      <div class="dd p-meta">Hanche · 25/02</div>
+                    </div>
+                    <div class="dd p-angle" style="color: #34c759">91°</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="phones-row" id="screen-camera-d" style="display: none">
+          <div class="phone-wrap">
+            <div class="phone-label">Guidage Caméra</div>
+            <div class="phone">
+              <div class="phone-inner da-cam">
+                <div class="cam-overlay">
+                  <div class="rgpd-bar">
+                    Vidéo analysée localement · Non transmise
+                  </div>
+                  <div class="cam-top">
+                    <span class="cam-close">✕</span
+                    ><span class="cam-title">Martin Paul</span
+                    ><span style="width: 22px"></span>
+                  </div>
+                  <div class="cam-feed">
+                    <div class="cam-person">🚶</div>
+                    <div class="cam-frame"></div>
+                    <div class="cam-hint">✓ Prêt · Appuyez pour démarrer</div>
+                  </div>
+                  <div class="cam-bottom"><div class="cam-btn">▶</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="phones-row" id="screen-result-d" style="display: none">
+          <div class="phone-wrap">
+            <div class="phone-label">Résultats</div>
+            <div class="phone">
+              <div class="phone-inner dd-res">
+                <div class="dd-res result-header">
+                  <div class="dd-res rh-top">
+                    <span class="dd-res rh-back">‹</span
+                    ><span class="dd-res rh-title">Résultat</span
+                    ><span class="dd-res rh-export">Exporter</span>
+                  </div>
+                  <div class="dd-res rh-patient">Martin Paul</div>
+                  <div class="dd-res rh-date">67 ans · Marche · 03/03/2026</div>
+                  <div class="dd-res rh-big">
+                    <div class="dd-res rh-big-label">GENOU GAUCHE</div>
+                    <div class="dd-res rh-big-val">42°</div>
+                    <div class="dd-res rh-big-norm">
+                      Norme : 60–70° · Déficit : –18°
+                    </div>
+                  </div>
+                </div>
+                <div class="dd-res result-body">
+                  <div class="dd-res art-item">
+                    <div>
+                      <div class="dd-res art-name">Genou droit</div>
+                      <div class="dd-res art-norm">60–70° attendus</div>
+                    </div>
+                    <div class="dd-res art-val" style="color: #34c759">67°</div>
+                  </div>
+                  <div class="dd-res art-item">
+                    <div>
+                      <div class="dd-res art-name">Hanche</div>
+                      <div class="dd-res art-norm">85–95° attendus</div>
+                    </div>
+                    <div class="dd-res art-val" style="color: #34c759">89°</div>
+                  </div>
+                  <div class="dd-res art-item">
+                    <div>
+                      <div class="dd-res art-name">Cheville</div>
+                      <div class="dd-res art-norm">40–50° attendus</div>
+                    </div>
+                    <div class="dd-res art-val" style="color: #ff9500">41°</div>
+                  </div>
+                </div>
+                <div class="dd-res export-bar">
+                  <div class="dd-res export-full-btn">
+                    ↑ Exporter le rapport PDF
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rationale" id="rationale-d">
+          <h3>Analyse — Direction D</h3>
+          <div class="rationale-grid">
+            <div class="rationale-item">
+              <h4>Points forts</h4>
+              <p>
+                Clarté des données maximale. Les KPI sont immédiatement
+                lisibles. Impression de dashboard médical sérieux. Hiérarchie
+                Stripe appliquée au médical.
+              </p>
+            </div>
+            <div class="rationale-item">
+              <h4>Points d'attention</h4>
+              <p>
+                Header bleu fort prend de la place. La home avec KPI peut
+                sembler "trop dashboard" pour un praticien qui veut juste
+                filmer.
+              </p>
+            </div>
+            <div class="rationale-item">
+              <h4>Idéal si</h4>
+              <p>
+                Le suivi de progression est une feature utilisée autant que la
+                capture — praticiens qui reviennent souvent consulter
+                l'historique.
+              </p>
+            </div>
+            <div class="rationale-item">
+              <h4>Convient à</h4>
+              <p>
+                Usage intensif, plusieurs patients par jour, volonté d'analyser
+                les tendances.
+              </p>
+            </div>
+          </div>
+        </div>
+        <button class="choose-btn" onclick="chooseDir('D — Bold Data')">
+          Choisir cette direction
+        </button>
+        <div class="selected-badge" id="badge-d">
+          ✓ Direction D sélectionnée
+        </div>
+      </div>
+
+      <!-- ===== DIRECTION E ===== -->
+      <div class="direction-panel" id="dir-e">
+        <div class="direction-meta">
+          <h2>Direction E — Pure Cupertino</h2>
+          <span
+            class="badge"
+            style="background: rgba(0, 122, 255, 0.15); color: #007aff"
+            >iOS Natif · Familier · Zero friction</span
+          >
+          <p>
+            Indiscernable d'une app Apple native. Settings, Santé, Contacts —
+            même langage visuel. La confiance par la familiarité absolue. Zéro
+            surprise, zéro apprentissage.
+          </p>
+        </div>
+
+        <div class="phones-row" id="screen-home-e">
+          <div class="phone-wrap">
+            <div class="phone-label">Accueil</div>
+            <div class="phone">
+              <div class="phone-inner de">
+                <div class="de nav-bar">
+                  <div class="de nav-title">BodyOrthox</div>
+                  <div class="de search-bar">
+                    <span class="de search-icon">🔍</span
+                    ><span class="de search-text">Rechercher un patient</span>
+                  </div>
+                </div>
+                <div class="de content">
+                  <div class="de section">
+                    <div class="de section-title">Action principale</div>
+                    <div class="de inset-group">
+                      <div class="de inset-row">
+                        <div class="de row-icon" style="background: #007aff">
+                          🎬
+                        </div>
+                        <div class="de row-text">
+                          <div class="de row-label">Nouvelle analyse</div>
+                          <div class="de row-sub">
+                            Martin Paul · 30 secondes
+                          </div>
+                        </div>
+                        <div class="de row-chevron">›</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="de section">
+                    <div class="de section-title">Patients récents</div>
+                    <div class="de inset-group">
+                      <div class="de inset-row">
+                        <div class="de row-icon" style="background: #34c759">
+                          👤
+                        </div>
+                        <div class="de row-text">
+                          <div class="de row-label">Martin Paul</div>
+                          <div class="de row-sub">Genou G : 42° · 03/03</div>
+                        </div>
+                        <div class="de row-chevron">›</div>
+                      </div>
+                      <div class="de inset-row">
+                        <div class="de row-icon" style="background: #34c759">
+                          👤
+                        </div>
+                        <div class="de row-text">
+                          <div class="de row-label">Dubois Claire</div>
+                          <div class="de row-sub">Cheville : 65° · 28/02</div>
+                        </div>
+                        <div class="de row-chevron">›</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="de section">
+                    <div class="de section-title">Ce mois · 7/10 analyses</div>
+                    <div class="de inset-group">
+                      <div class="de inset-row">
+                        <div class="de row-icon" style="background: #ff9500">
+                          📊
+                        </div>
+                        <div class="de row-text">
+                          <div class="de row-label">Abonnement Pro</div>
+                          <div class="de row-sub">
+                            3 analyses restantes · Passer au Pro
+                          </div>
+                        </div>
+                        <div class="de row-chevron">›</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="de tab-bar">
+                  <div class="de tab-item active">
+                    <div class="de tab-icon">🏠</div>
+                    Accueil
+                  </div>
+                  <div class="de tab-item">
+                    <div class="de tab-icon">👥</div>
+                    Patients
+                  </div>
+                  <div class="de tab-item">
+                    <div class="de tab-icon">⚙️</div>
+                    Réglages
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="phones-row" id="screen-camera-e" style="display: none">
+          <div class="phone-wrap">
+            <div class="phone-label">Guidage Caméra</div>
+            <div class="phone">
+              <div class="phone-inner da-cam">
+                <div class="cam-overlay">
+                  <div class="rgpd-bar">
+                    Vidéo analysée localement · Non transmise
+                  </div>
+                  <div class="cam-top">
+                    <span class="cam-close">✕</span
+                    ><span class="cam-title">Martin Paul</span
+                    ><span style="width: 22px"></span>
+                  </div>
+                  <div class="cam-feed">
+                    <div class="cam-person">🚶</div>
+                    <div class="cam-frame"></div>
+                    <div class="cam-hint">✓ Vue de profil · Prêt</div>
+                  </div>
+                  <div class="cam-bottom"><div class="cam-btn">▶</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="phones-row" id="screen-result-e" style="display: none">
+          <div class="phone-wrap">
+            <div class="phone-label">Résultats</div>
+            <div class="phone">
+              <div class="phone-inner" style="background: #f2f2f7">
+                <div
+                  style="
+                    background: rgba(242, 242, 247, 0.95);
+                    padding: 52px 16px 10px;
+                    border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-end;
+                  "
+                >
+                  <span style="font-size: 15px; color: #007aff"
+                    >‹ Patients</span
+                  >
+                  <span
+                    style="font-size: 17px; font-weight: 600; color: #1c1c1e"
+                    >Résultat</span
+                  >
+                  <span
+                    style="font-size: 15px; font-weight: 600; color: #007aff"
+                    >Exporter</span
+                  >
+                </div>
+                <div style="padding: 16px; padding-bottom: 90px">
+                  <div
+                    style="
+                      background: #fff;
+                      border-radius: 12px;
+                      overflow: hidden;
+                      margin-bottom: 16px;
+                    "
+                  >
+                    <div
+                      style="
+                        padding: 16px;
+                        border-bottom: 0.5px solid rgba(0, 0, 0, 0.08);
+                      "
+                    >
+                      <div style="font-size: 13px; color: #8e8e93">
+                        Martin Paul · 67 ans
+                      </div>
+                      <div
+                        style="
+                          font-size: 24px;
+                          font-weight: 700;
+                          color: #ff3b30;
+                          margin-top: 4px;
+                        "
+                      >
+                        42°
+                        <span
+                          style="
+                            font-size: 15px;
+                            font-weight: 400;
+                            color: #8e8e93;
+                          "
+                          >Genou gauche</span
+                        >
+                      </div>
+                      <div
+                        style="font-size: 13px; color: #8e8e93; margin-top: 4px"
+                      >
+                        Norme : 60–70° · Déficit –18°
+                      </div>
+                    </div>
+                    <div
+                      style="
+                        padding: 12px 16px;
+                        display: flex;
+                        justify-content: space-between;
+                        border-bottom: 0.5px solid rgba(0, 0, 0, 0.06);
+                      "
+                    >
+                      <span style="font-size: 15px; color: #1c1c1e"
+                        >Genou droit</span
+                      ><span
+                        style="
+                          font-size: 15px;
+                          font-weight: 600;
+                          color: #34c759;
+                        "
+                        >67°</span
+                      >
+                    </div>
+                    <div
+                      style="
+                        padding: 12px 16px;
+                        display: flex;
+                        justify-content: space-between;
+                        border-bottom: 0.5px solid rgba(0, 0, 0, 0.06);
+                      "
+                    >
+                      <span style="font-size: 15px; color: #1c1c1e">Hanche</span
+                      ><span
+                        style="
+                          font-size: 15px;
+                          font-weight: 600;
+                          color: #34c759;
+                        "
+                        >89°</span
+                      >
+                    </div>
+                    <div
+                      style="
+                        padding: 12px 16px;
+                        display: flex;
+                        justify-content: space-between;
+                      "
+                    >
+                      <span style="font-size: 15px; color: #1c1c1e"
+                        >Cheville</span
+                      ><span
+                        style="
+                          font-size: 15px;
+                          font-weight: 600;
+                          color: #ff9500;
+                        "
+                        >41°</span
+                      >
+                    </div>
+                  </div>
+                  <div
+                    style="
+                      background: #fff;
+                      border-radius: 12px;
+                      padding: 12px 16px;
+                      font-size: 13px;
+                      color: #8e8e93;
+                      line-height: 1.5;
+                    "
+                  >
+                    Outil de documentation clinique — ne se substitue pas au
+                    jugement clinique.
+                  </div>
+                </div>
+                <div
+                  style="
+                    position: absolute;
+                    bottom: 0;
+                    left: 0;
+                    right: 0;
+                    padding: 12px 16px 32px;
+                    background: rgba(242, 242, 247, 0.95);
+                  "
+                >
+                  <div
+                    style="
+                      background: #007aff;
+                      color: #fff;
+                      border-radius: 12px;
+                      padding: 14px;
+                      font-size: 17px;
+                      font-weight: 600;
+                      text-align: center;
+                    "
+                  >
+                    Partager le rapport ↑
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rationale" id="rationale-e">
+          <h3>Analyse — Direction E</h3>
+          <div class="rationale-grid">
+            <div class="rationale-item">
+              <h4>Points forts</h4>
+              <p>
+                Zéro apprentissage — Dr. Marc reconnaît chaque composant.
+                Confiance absolue par familiarité. Développement le plus rapide
+                (composants Cupertino natifs).
+              </p>
+            </div>
+            <div class="rationale-item">
+              <h4>Points d'attention</h4>
+              <p>
+                Identité BodyOrthox quasi inexistante — "ressemble à une app
+                Apple". Moins mémorable. Différenciation nulle visuellement.
+              </p>
+            </div>
+            <div class="rationale-item">
+              <h4>Idéal si</h4>
+              <p>
+                MVP ultra-rapide à livrer, priorité absolue à l'adoption,
+                utilisateurs très conservateurs.
+              </p>
+            </div>
+            <div class="rationale-item">
+              <h4>Convient à</h4>
+              <p>
+                Première version TestFlight pour early-adopters, validation
+                fonctionnelle avant UI finale.
+              </p>
+            </div>
+          </div>
+        </div>
+        <button class="choose-btn" onclick="chooseDir('E — Pure Cupertino')">
+          Choisir cette direction
+        </button>
+        <div class="selected-badge" id="badge-e">
+          ✓ Direction E sélectionnée
+        </div>
+      </div>
+
+      <!-- ===== DIRECTION F ===== -->
+      <div class="direction-panel" id="dir-f">
+        <div class="direction-meta">
+          <h2>Direction F — Confident Blue</h2>
+          <span
+            class="badge"
+            style="background: rgba(27, 111, 191, 0.15); color: #1b6fbf"
+            >Identité forte · Moderne · Distinctive</span
+          >
+          <p>
+            Header bleu arrondi, fond bleu pâle. Identité BodyOrthox forte et
+            mémorable. Moderne sans être dark. Le juste milieu entre Clinical
+            White (trop générique) et Dark Professional (trop sombre).
+          </p>
+        </div>
+
+        <div class="phones-row" id="screen-home-f">
+          <div class="phone-wrap">
+            <div class="phone-label">Accueil</div>
+            <div class="phone">
+              <div class="phone-inner df">
+                <div class="df header">
+                  <div class="df header-greeting">Bonjour, Dr. Marc</div>
+                  <div class="df header-title">BodyOrthox</div>
+                  <div class="df header-btn">
+                    <span class="df hb-icon">🎬</span>
+                    <div class="df hb-text">
+                      <h3>Nouvelle analyse</h3>
+                      <p>30 secondes · 3 articulations</p>
+                    </div>
+                    <span class="df hb-arrow">→</span>
+                  </div>
+                </div>
+                <div class="df body">
+                  <div class="df mini-stats">
+                    <div class="df mini-stat">
+                      <div class="df ms-val">7</div>
+                      <div class="df ms-label">Analyses ce mois</div>
+                    </div>
+                    <div class="df mini-stat">
+                      <div class="df ms-val">12</div>
+                      <div class="df ms-label">Patients actifs</div>
+                    </div>
+                    <div class="df mini-stat">
+                      <div class="df ms-val">3</div>
+                      <div class="df ms-label">Restantes</div>
+                    </div>
+                  </div>
+                  <div class="df section-title">Patients récents</div>
+                  <div class="df p-card">
+                    <div>
+                      <div class="df p-name">Martin Paul</div>
+                      <div class="df p-date">03/03 · Genou G</div>
+                    </div>
+                    <div
+                      class="df p-pill"
+                      style="background: #fff0ee; color: #ff3b30"
+                    >
+                      42°
+                    </div>
+                  </div>
+                  <div class="df p-card">
+                    <div>
+                      <div class="df p-name">Dubois Claire</div>
+                      <div class="df p-date">28/02 · Cheville</div>
+                    </div>
+                    <div
+                      class="df p-pill"
+                      style="background: #e8f8ee; color: #34c759"
+                    >
+                      65°
+                    </div>
+                  </div>
+                  <div class="df p-card">
+                    <div>
+                      <div class="df p-name">Bernard Louis</div>
+                      <div class="df p-date">25/02 · Hanche</div>
+                    </div>
+                    <div class="df p-pill">91°</div>
+                  </div>
+                </div>
+                <div class="df tab-bar">
+                  <div class="df tab-item active">
+                    <div class="df tab-icon">🏠</div>
+                    Accueil
+                  </div>
+                  <div class="df tab-item">
+                    <div class="df tab-icon">👥</div>
+                    Patients
+                  </div>
+                  <div class="df tab-item">
+                    <div class="df tab-icon">📊</div>
+                    Historique
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="phones-row" id="screen-camera-f" style="display: none">
+          <div class="phone-wrap">
+            <div class="phone-label">Guidage Caméra</div>
+            <div class="phone">
+              <div class="phone-inner da-cam">
+                <div class="cam-overlay">
+                  <div class="rgpd-bar">
+                    Vidéo analysée localement · Non transmise
+                  </div>
+                  <div class="cam-top">
+                    <span class="cam-close">✕</span
+                    ><span class="cam-title">Martin Paul</span
+                    ><span style="width: 22px"></span>
+                  </div>
+                  <div class="cam-feed">
+                    <div class="cam-person">🚶</div>
+                    <div class="cam-frame"></div>
+                    <div class="cam-hint">✓ Vue de profil détectée</div>
+                  </div>
+                  <div class="cam-bottom">
+                    <div
+                      class="cam-btn"
+                      style="
+                        background: #1b6fbf;
+                        box-shadow: 0 4px 20px rgba(27, 111, 191, 0.4);
+                      "
+                    >
+                      ▶
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="phones-row" id="screen-result-f" style="display: none">
+          <div class="phone-wrap">
+            <div class="phone-label">Résultats</div>
+            <div class="phone">
+              <div class="phone-inner" style="background: #eef4fb">
+                <div
+                  style="
+                    background: #1b6fbf;
+                    padding: 52px 20px 24px;
+                    border-radius: 0 0 28px 28px;
+                  "
+                >
+                  <div
+                    style="
+                      display: flex;
+                      justify-content: space-between;
+                      align-items: center;
+                      margin-bottom: 16px;
+                    "
+                  >
+                    <span
+                      style="font-size: 15px; color: rgba(255, 255, 255, 0.8)"
+                      >‹ Patients</span
+                    >
+                    <span style="font-size: 17px; font-weight: 600; color: #fff"
+                      >Analyse</span
+                    >
+                    <span style="font-size: 15px; font-weight: 700; color: #fff"
+                      >Exporter</span
+                    >
+                  </div>
+                  <div style="font-size: 13px; color: rgba(255, 255, 255, 0.7)">
+                    Martin Paul · 67 ans · 03/03/2026
+                  </div>
+                  <div
+                    style="
+                      font-size: 48px;
+                      font-weight: 900;
+                      color: #fff;
+                      letter-spacing: -2px;
+                      line-height: 1;
+                      margin-top: 8px;
+                    "
+                  >
+                    42°
+                  </div>
+                  <div
+                    style="
+                      font-size: 13px;
+                      color: rgba(255, 255, 255, 0.6);
+                      margin-top: 4px;
+                    "
+                  >
+                    Genou gauche · Norme : 60–70°
+                  </div>
+                  <div
+                    style="
+                      display: inline-block;
+                      background: rgba(255, 255, 255, 0.15);
+                      color: #fff;
+                      border-radius: 8px;
+                      padding: 4px 10px;
+                      font-size: 12px;
+                      font-weight: 600;
+                      margin-top: 8px;
+                    "
+                  >
+                    ⚠ Déficit –18°
+                  </div>
+                </div>
+                <div style="padding: 16px; padding-bottom: 100px">
+                  <div
+                    style="
+                      background: #fff;
+                      border-radius: 16px;
+                      overflow: hidden;
+                      box-shadow: 0 2px 8px rgba(27, 111, 191, 0.08);
+                      margin-top: 16px;
+                    "
+                  >
+                    <div
+                      style="
+                        padding: 12px 16px;
+                        display: flex;
+                        justify-content: space-between;
+                        border-bottom: 0.5px solid rgba(0, 0, 0, 0.06);
+                      "
+                    >
+                      <span style="color: #1c1c1e">Genou droit</span
+                      ><span
+                        style="
+                          font-weight: 800;
+                          font-size: 17px;
+                          color: #34c759;
+                        "
+                        >67°</span
+                      >
+                    </div>
+                    <div
+                      style="
+                        padding: 12px 16px;
+                        display: flex;
+                        justify-content: space-between;
+                        border-bottom: 0.5px solid rgba(0, 0, 0, 0.06);
+                      "
+                    >
+                      <span style="color: #1c1c1e">Hanche</span
+                      ><span
+                        style="
+                          font-weight: 800;
+                          font-size: 17px;
+                          color: #34c759;
+                        "
+                        >89°</span
+                      >
+                    </div>
+                    <div
+                      style="
+                        padding: 12px 16px;
+                        display: flex;
+                        justify-content: space-between;
+                      "
+                    >
+                      <span style="color: #1c1c1e">Cheville</span
+                      ><span
+                        style="
+                          font-weight: 800;
+                          font-size: 17px;
+                          color: #ff9500;
+                        "
+                        >41°</span
+                      >
+                    </div>
+                  </div>
+                </div>
+                <div
+                  style="
+                    position: absolute;
+                    bottom: 0;
+                    left: 0;
+                    right: 0;
+                    padding: 16px 20px 32px;
+                    background: rgba(238, 244, 251, 0.95);
+                    border-top: 1px solid rgba(27, 111, 191, 0.1);
+                  "
+                >
+                  <div
+                    style="
+                      background: #1b6fbf;
+                      color: #fff;
+                      border-radius: 14px;
+                      padding: 16px;
+                      font-size: 17px;
+                      font-weight: 700;
+                      text-align: center;
+                    "
+                  >
+                    ↑ Exporter le rapport PDF
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rationale" id="rationale-f">
+          <h3>Analyse — Direction F</h3>
+          <div class="rationale-grid">
+            <div class="rationale-item">
+              <h4>Points forts</h4>
+              <p>
+                Identité BodyOrthox forte et mémorable. Fond bleu pâle
+                distinctif sans être dark. Header arrondi moderne. Équilibre
+                parfait confiance / différenciation.
+              </p>
+            </div>
+            <div class="rationale-item">
+              <h4>Points d'attention</h4>
+              <p>
+                Fond bleu pâle peut sembler moins "propre" que le blanc pur. À
+                valider en lumière vive de cabinet.
+              </p>
+            </div>
+            <div class="rationale-item">
+              <h4>Idéal si</h4>
+              <p>
+                Volonté d'une identité de marque forte tout en restant dans les
+                codes médicaux professionnels.
+              </p>
+            </div>
+            <div class="rationale-item">
+              <h4>Convient à</h4>
+              <p>
+                Position premium, communication marketing forte, ambition
+                au-delà du simple outil.
+              </p>
+            </div>
+          </div>
+        </div>
+        <button class="choose-btn" onclick="chooseDir('F — Confident Blue')">
+          Choisir cette direction
+        </button>
+        <div class="selected-badge" id="badge-f">
+          ✓ Direction F sélectionnée
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let currentDir = "a";
+      let currentScreen = "home";
+
+      function showDir(dir, tab) {
+        document
+          .querySelectorAll(".direction-panel")
+          .forEach((p) => p.classList.remove("active"));
+        document
+          .querySelectorAll(".tab")
+          .forEach((t) => t.classList.remove("active"));
+        document
+          .querySelectorAll(".rationale")
+          .forEach((r) => r.classList.remove("active"));
+        document.getElementById("dir-" + dir).classList.add("active");
+        document.getElementById("rationale-" + dir).classList.add("active");
+        tab.classList.add("active");
+        currentDir = dir;
+        updateScreenVisibility();
+      }
+
+      function showScreen(screen, btn) {
+        document
+          .querySelectorAll(".screen-btn")
+          .forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentScreen = screen;
+        updateScreenVisibility();
+      }
+
+      function updateScreenVisibility() {
+        const dirs = ["a", "b", "c", "d", "e", "f"];
+        const screens = ["home", "camera", "result"];
+        dirs.forEach((d) => {
+          screens.forEach((s) => {
+            const el = document.getElementById("screen-" + s + "-" + d);
+            if (el)
+              el.style.display =
+                d === currentDir && s === currentScreen ? "flex" : "none";
+          });
+        });
+      }
+
+      function chooseDir(name) {
+        const dirs = ["a", "b", "c", "d", "e", "f"];
+        dirs.forEach((d) =>
+          document.getElementById("badge-" + d).classList.remove("visible"),
+        );
+        document.getElementById("badge-" + currentDir).classList.add("visible");
+        // Store choice
+        localStorage.setItem("bodyorthox-direction", name + "|" + currentDir);
+        console.log("Direction choisie:", name);
+      }
+
+      // Init
+      updateScreenVisibility();
+    </script>
+  </body>
+</html>
