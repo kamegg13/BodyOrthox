@@ -444,6 +444,14 @@ lib/core/
 - **Daltonisme** : le chevron trailing est informatif, pas sémantique — aucun état couleur sur les tiles de liste (pas de rouge/vert sur le tile)
 - **Touch target** : `ListTile` Material a une hauteur minimale de 48pt par défaut — vérifie que `minVerticalPadding` respecte les 44pt HIG
 
+### Mockup de référence
+
+> Écran Stitch généré le 04/03/2026. Utiliser comme référence visuelle pour l'implémentation.
+
+| Écran                                          | Screenshot                                                       | HTML interactif                                            |
+| ---------------------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------- |
+| Home — liste patients + CTA "Nouvelle analyse" | `docs/planning-artifacts/stitch-mockups/screenshots/01-home.png` | `docs/planning-artifacts/stitch-mockups/html/01-home.html` |
+
 ### References
 
 - [Source: docs/planning-artifacts/epics.md#Story-2.2] — User story + AC originaux (FR2, FR3, NFR-P6)

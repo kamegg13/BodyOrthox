@@ -62,6 +62,7 @@ dependencies:
   # Utilitaires de manipulation de chemins de fichiers
   path: ^1.9.1
   camera: ^0.12.0
+  cross_file: ^0.3.5
   permission_handler: ^12.0.1
 
   # ML on-device — activé Story 3.3 (AC1, AC2, AC3)

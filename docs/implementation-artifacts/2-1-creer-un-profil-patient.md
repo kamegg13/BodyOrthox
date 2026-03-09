@@ -631,6 +631,15 @@ void main() {
 
 ---
 
+### Mockup de référence
+
+> Écrans Stitch générés le 04/03/2026. Utiliser comme référence visuelle pour l'implémentation.
+
+| Écran                        | Screenshot                                                                    | HTML interactif                                                         |
+| ---------------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Nouveau patient — variante A | `docs/planning-artifacts/stitch-mockups/screenshots/06-nouveau-patient-a.png` | `docs/planning-artifacts/stitch-mockups/html/06-nouveau-patient-a.html` |
+| Nouveau patient — variante B | `docs/planning-artifacts/stitch-mockups/screenshots/07-nouveau-patient-b.png` | `docs/planning-artifacts/stitch-mockups/html/07-nouveau-patient-b.html` |
+
 ### References
 
 - [Source: docs/planning-artifacts/epics.md#Story-2.1] — User story statement et Acceptance Criteria originaux

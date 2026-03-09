@@ -1,8 +1,19 @@
 # generated: 2026-03-05
+# updated: 2026-03-08 — Sprint Change Proposal approuvé
 # project: BodyOrthox
 # project_key: NOKEY
 # tracking_system: file-system
 # story_location: docs/implementation-artifacts
+
+# SPRINT CHANGE 2026-03-08 :
+# ==========================
+# - Codebase reset complet (flutter create from scratch)
+# - Pivot clinique : vidéo sagittale → photo statique HKA
+# - Stories supprimées du MVP : 1.2, 1.3, 3.1, 3.2
+# - Nouvel Epic Architecture ajouté (prioritaire)
+# - Toutes les stories repassent en backlog suite au reset codebase
+# - Nouvel ordre : Epic 1 → Epic Arch → Epic 3 (HKA) → Epic 4 → Epic 2 → Epic 5 → Epic 6
+# - Ref: docs/planning-artifacts/sprint-change-proposal-2026-03-08.md
 
 # STATUS DEFINITIONS:
 # ==================
@@ -11,74 +22,70 @@
 #   - in-progress: Epic actively being worked on
 #   - done: All stories in epic completed
 #
-# Epic Status Transitions:
-#   - backlog → in-progress: Automatically when first story is created (via create-story)
-#   - in-progress → done: Manually when all stories reach 'done' status
-#
 # Story Status:
 #   - backlog: Story only exists in epic file
 #   - ready-for-dev: Story file created in stories folder
 #   - in-progress: Developer actively working on implementation
-#   - review: Ready for code review (via Dev's code-review workflow)
+#   - review: Ready for code review
 #   - done: Story completed
-#
-# Retrospective Status:
-#   - optional: Can be completed but not required
-#   - done: Retrospective has been completed
-#
-# WORKFLOW NOTES:
-# ===============
-# - Epic transitions to 'in-progress' automatically when first story is created
-# - Stories can be worked in parallel if team capacity allows
-# - SM typically creates next story after previous one is 'done' to incorporate learnings
-# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-05
+updated: 2026-03-08
 project: BodyOrthox
 project_key: NOKEY
 tracking_system: file-system
 story_location: docs/implementation-artifacts
 
 development_status:
-  # ─── Epic 1 : Fondation Sécurisée ───────────────────────────────────────────
-  epic-1: in-progress
-  1-1-initialisation-du-projet-infrastructure-technique: done
-  1-2-acces-biometrique-par-face-id-touch-id: done
-  1-3-chiffrement-local-aes-256-isolation-reseau: done
+  # ─── Epic 1 : Fondation Sécurisée (simplifié) ────────────────────────────────
+  # Stories 1.2 et 1.3 reportées post-MVP (Sprint Change 2026-03-08)
+  epic-1: backlog
+  1-1-initialisation-du-projet-infrastructure-technique: backlog
+  # 1-2 et 1-3 : retirées du MVP — voir sprint-change-proposal-2026-03-08.md
   epic-1-retrospective: optional
 
-  # ─── Epic 2 : Gestion des Patients ──────────────────────────────────────────
-  epic-2: done
-  2-1-creer-un-profil-patient: done
-  2-2-consulter-la-liste-des-patients-et-selectionner-pour-analyse: done
-  2-3-historique-des-analyses-dun-patient: done
-  2-4-timeline-de-progression-clinique-et-suppression-patient: done
-  epic-2-retrospective: optional
+  # ─── Epic Architecture : AnalysisModule & Registry (NOUVEAU) ─────────────────
+  # Prioritaire — conditionne Epic 3 et tous les futurs modules d'analyse
+  epic-architecture: in-progress
+  arch-1-interface-analysis-module: done
+  arch-2-hka-module-premier-module-concret: review
+  epic-architecture-retrospective: optional
 
-  # ─── Epic 3 : Capture Guidée & Analyse ML ───────────────────────────────────
-  epic-3: in-progress
-  3-1-lancement-de-session-guidage-camera: done
-  3-2-script-rgpd-demarrage-enregistrement: done
-  3-3-pipeline-ml-on-device-extraction-des-angles: done
-  3-4-affichage-des-resultats-avec-normes-de-reference: done
-  3-5-replay-expert-correction-manuelle: ready-for-dev
+  # ─── Epic 3 : Capture Photo & Analyse HKA (refondu) ─────────────────────────
+  # Stories 3.1 et 3.2 supprimées du MVP
+  # Story 3.0 ajoutée (Capture Photo HKA)
+  # Stories 3.3 et 3.4 réécrites pour HKA
+  # Story 3.5 réimplémentée proprement (pattern correction manuelle HKA)
+  epic-3: backlog
+  3-0-capture-photo-hka: backlog
+  3-3-pipeline-ml-hka-photo: backlog
+  3-4-affichage-resultats-angle-hka: backlog
+  3-5-correction-manuelle-points-hka: backlog
   epic-3-retrospective: optional
 
-  # ─── Epic 4 : Rapport PDF & Export ──────────────────────────────────────────
-  epic-4: in-progress
-  4-1-generation-du-rapport-pdf-structure: ready-for-dev
-  4-2-export-du-rapport-via-share-sheet-ios: ready-for-dev
+  # ─── Epic 4 : Rapport PDF & Export (adapté HKA) ──────────────────────────────
+  epic-4: backlog
+  4-1-generation-du-rapport-pdf-structure: backlog
+  4-2-export-du-rapport-via-share-sheet-ios: backlog
   epic-4-retrospective: optional
 
-  # ─── Epic 5 : Monétisation Freemium ─────────────────────────────────────────
-  epic-5: in-progress
-  5-1-quota-freemium-compteur-visible: ready-for-dev
-  5-2-upgrade-pro-gestion-de-labonnement: ready-for-dev
+  # ─── Epic 2 : Gestion des Patients (repositionné après Epic 4) ───────────────
+  epic-2: backlog
+  2-1-creer-un-profil-patient: backlog
+  2-2-consulter-la-liste-des-patients-et-selectionner-pour-analyse: backlog
+  2-3-historique-des-analyses-dun-patient: backlog
+  2-4-timeline-de-progression-clinique-et-suppression-patient: backlog
+  epic-2-retrospective: optional
+
+  # ─── Epic 5 : Monétisation Freemium (module-aware) ───────────────────────────
+  epic-5: backlog
+  5-1-quota-freemium-module-aware: backlog
+  5-2-upgrade-pro-gestion-de-labonnement: backlog
   epic-5-retrospective: optional
 
-  # ─── Epic 6 : Onboarding & Expérience Utilisateur ───────────────────────────
-  epic-6: in-progress
-  6-1-wizard-donboarding-motivationnel: ready-for-dev
-  6-2-layout-adaptatif-iphone-ipad: ready-for-dev
-  6-3-notification-locale-analyse-prete: ready-for-dev
+  # ─── Epic 6 : Onboarding & Expérience Utilisateur (adapté HKA) ───────────────
+  epic-6: backlog
+  6-1-wizard-donboarding-motivationnel: backlog
+  6-2-layout-adaptatif-iphone-ipad: backlog
+  6-3-notification-locale-analyse-prete: backlog
   epic-6-retrospective: optional
