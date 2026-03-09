@@ -61,7 +61,7 @@ dependencies:
 
   # Utilitaires de manipulation de chemins de fichiers
   path: ^1.9.1
-  camera: ^0.12.0
+  image_picker: ^1.1.2  # Native iOS UIImagePickerController (remplace camera: ^0.12.0 — Sprint Change 2026-03-08)
   cross_file: ^0.3.5
   permission_handler: ^12.0.1
 
@@ -95,6 +95,10 @@ dev_dependencies:
 dependency_overrides:
   sqlite3_flutter_libs:
     path: ./local_packages/sqlite3_flutter_libs_stub
+  # image_picker stub pour dart analyze dans le sandbox Claude Code (TLS pub.dev restreint).
+  # En production, supprimer cette ligne — image_picker: ^1.1.2 dans dependencies suffit.
+  image_picker:
+    path: ./local_packages/image_picker_stub
 
 flutter:
   uses-material-design: true

@@ -39,16 +39,16 @@ story_location: docs/implementation-artifacts
 development_status:
   # ─── Epic 1 : Fondation Sécurisée (simplifié) ────────────────────────────────
   # Stories 1.2 et 1.3 reportées post-MVP (Sprint Change 2026-03-08)
-  epic-1: backlog
-  1-1-initialisation-du-projet-infrastructure-technique: backlog
+  epic-1: done
+  1-1-initialisation-du-projet-infrastructure-technique: done
   # 1-2 et 1-3 : retirées du MVP — voir sprint-change-proposal-2026-03-08.md
   epic-1-retrospective: optional
 
   # ─── Epic Architecture : AnalysisModule & Registry (NOUVEAU) ─────────────────
   # Prioritaire — conditionne Epic 3 et tous les futurs modules d'analyse
-  epic-architecture: in-progress
+  epic-architecture: done
   arch-1-interface-analysis-module: done
-  arch-2-hka-module-premier-module-concret: review
+  arch-2-hka-module-premier-module-concret: done
   epic-architecture-retrospective: optional
 
   # ─── Epic 3 : Capture Photo & Analyse HKA (refondu) ─────────────────────────
@@ -56,9 +56,9 @@ development_status:
   # Story 3.0 ajoutée (Capture Photo HKA)
   # Stories 3.3 et 3.4 réécrites pour HKA
   # Story 3.5 réimplémentée proprement (pattern correction manuelle HKA)
-  epic-3: backlog
-  3-0-capture-photo-hka: backlog
-  3-3-pipeline-ml-hka-photo: backlog
+  epic-3: in-progress
+  3-0-capture-photo-hka: done
+  3-3-pipeline-ml-hka-photo: done
   3-4-affichage-resultats-angle-hka: backlog
   3-5-correction-manuelle-points-hka: backlog
   epic-3-retrospective: optional

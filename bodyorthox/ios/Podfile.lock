@@ -1,6 +1,4 @@
 PODS:
-  - camera_avfoundation (0.0.1):
-    - Flutter
   - Flutter (1.0.0)
   - flutter_local_notifications (0.0.1):
     - Flutter
@@ -105,7 +103,6 @@ PODS:
     - SQLCipher/common
 
 DEPENDENCIES:
-  - camera_avfoundation (from `.symlinks/plugins/camera_avfoundation/ios`)
   - Flutter (from `Flutter`)
   - flutter_local_notifications (from `.symlinks/plugins/flutter_local_notifications/ios`)
   - flutter_secure_storage_darwin (from `.symlinks/plugins/flutter_secure_storage_darwin/darwin`)
@@ -138,8 +135,6 @@ SPEC REPOS:
     - SQLCipher
 
 EXTERNAL SOURCES:
-  camera_avfoundation:
-    :path: ".symlinks/plugins/camera_avfoundation/ios"
   Flutter:
     :path: Flutter
   flutter_local_notifications:
@@ -158,7 +153,6 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/purchases_flutter/ios"
 
 SPEC CHECKSUMS:
-  camera_avfoundation: 968a9a5323c79a99c166ad9d7866bfd2047b5a9b
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_local_notifications: a5a732f069baa862e728d839dd2ebb904737effb
   flutter_secure_storage_darwin: acdb3f316ed05a3e68f856e0353b133eec373a23

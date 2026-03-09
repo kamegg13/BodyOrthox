@@ -12,10 +12,11 @@
 //
 // [Source: docs/implementation-artifacts/arch-2-hka-module-premier-module-concret.md]
 import 'package:cross_file/cross_file.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 
-import 'package:bodyorthox/core/analysis/analysis_module.dart';
-import 'package:bodyorthox/core/analysis/analysis_result.dart';
+import '../../../core/analysis/analysis_module.dart';
+import '../../../core/analysis/analysis_result.dart';
 
 import 'hka_angle_calculator.dart';
 
@@ -26,8 +27,9 @@ import 'hka_angle_calculator.dart';
 
 /// Interface interne pour PoseDetector — permet le mock via mocktail en tests.
 ///
-/// Exposée publiquement uniquement pour les tests unitaires.
+/// Exposée publiquement uniquement pour les tests unitaires (@visibleForTesting).
 /// Le code production utilise uniquement [HKAModule].
+@visibleForTesting
 abstract class PoseDetectorInterface {
   Future<List<Pose>> processImage(InputImage image);
   Future<void> close();
@@ -156,8 +158,8 @@ class HKAModule implements AnalysisModule {
           'confidence_right': confidenceRight,
         }),
       );
-    } on Exception catch (e) {
-      // AC#6 — toute exception est encapsulée, jamais propagée
+    } catch (e) {
+      // AC#6 — toute exception/erreur est encapsulée, jamais propagée (inclut Error et Exception)
       return AnalysisFailure(PhotoProcessingError(e.toString()));
     } finally {
       // AC#7 — libérer les ressources ML Kit dans tous les chemins

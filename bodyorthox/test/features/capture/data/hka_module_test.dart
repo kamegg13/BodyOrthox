@@ -28,14 +28,23 @@ PoseLandmark _lm({
 }) =>
     PoseLandmark(type: type, x: x, y: y, z: 0, likelihood: likelihood);
 
-/// Crée une Pose avec 6 landmarks HKA gauche+droit, tous à likelihood donné.
+/// Crée une Pose complète avec 6 landmarks HKA gauche+droit.
 ///
-/// Coordonnées : jambe gauche sur x=0, droite sur x=200 → angle HKA ≈ 180° (ligne droite).
-Pose _makePose({double likelihood = 0.9}) {
+/// Coordonnées : jambe gauche sur x=0, droite sur x=200 → angle HKA = 180° (ligne droite).
+/// [leftHipLikelihood] permet de surcharger le likelihood d'un landmark individuel
+/// pour les tests de bas score de confiance.
+Pose _makePose({
+  double likelihood = 0.9,
+  double? leftHipLikelihood,
+}) {
   return Pose(
     landmarks: {
-      PoseLandmarkType.leftHip:
-          _lm(type: PoseLandmarkType.leftHip, x: 0, y: 0, likelihood: likelihood),
+      PoseLandmarkType.leftHip: _lm(
+        type: PoseLandmarkType.leftHip,
+        x: 0,
+        y: 0,
+        likelihood: leftHipLikelihood ?? likelihood,
+      ),
       PoseLandmarkType.leftKnee:
           _lm(type: PoseLandmarkType.leftKnee, x: 0, y: 100, likelihood: likelihood),
       PoseLandmarkType.leftAnkle:
@@ -46,6 +55,25 @@ Pose _makePose({double likelihood = 0.9}) {
           _lm(type: PoseLandmarkType.rightKnee, x: 200, y: 100, likelihood: likelihood),
       PoseLandmarkType.rightAnkle:
           _lm(type: PoseLandmarkType.rightAnkle, x: 200, y: 200, likelihood: likelihood),
+    },
+  );
+}
+
+/// Crée une Pose avec un landmark manquant (pour tester la gestion des null — AC#2).
+Pose _makePoseWithMissingLandmark() {
+  return Pose(
+    landmarks: {
+      // leftHip intentionnellement absent
+      PoseLandmarkType.leftKnee:
+          _lm(type: PoseLandmarkType.leftKnee, x: 0, y: 100),
+      PoseLandmarkType.leftAnkle:
+          _lm(type: PoseLandmarkType.leftAnkle, x: 0, y: 200),
+      PoseLandmarkType.rightHip:
+          _lm(type: PoseLandmarkType.rightHip, x: 200, y: 0),
+      PoseLandmarkType.rightKnee:
+          _lm(type: PoseLandmarkType.rightKnee, x: 200, y: 100),
+      PoseLandmarkType.rightAnkle:
+          _lm(type: PoseLandmarkType.rightAnkle, x: 200, y: 200),
     },
   );
 }
@@ -81,7 +109,7 @@ void main() {
       final success = result as AnalysisSuccess;
       expect(success.measurements.keys,
           containsAll(['hka_left', 'hka_right', 'confidence_left', 'confidence_right']));
-      // Ligne droite → angle ≈ 180°
+      // Ligne droite → angle = 180°
       expect(success.measurements['hka_left'], 180.0);
       expect(success.measurements['hka_right'], 180.0);
       expect(success.measurements['confidence_left'], closeTo(0.9, 1e-9));
@@ -96,27 +124,34 @@ void main() {
 
       verify(() => mockDetector.close()).called(1);
     });
+
+    test('appels successifs créent un nouveau détecteur à chaque fois (cycle de vie)', () async {
+      // Deux MockDetectors distincts — un par appel analyze().
+      final mockDetector2 = _MockPoseDetector();
+      when(() => mockDetector2.close()).thenAnswer((_) async {});
+      when(() => mockDetector2.processImage(any()))
+          .thenAnswer((_) async => [_makePose()]);
+
+      var callCount = 0;
+      final multiCallModule = HKAModule(
+        detectorFactory: () => callCount++ == 0 ? mockDetector : mockDetector2,
+      );
+
+      when(() => mockDetector.processImage(any()))
+          .thenAnswer((_) async => [_makePose()]);
+
+      await multiCallModule.analyze(testPhoto);
+      await multiCallModule.analyze(testPhoto);
+
+      // Chaque détecteur est créé et fermé exactement une fois.
+      verify(() => mockDetector.close()).called(1);
+      verify(() => mockDetector2.close()).called(1);
+    });
   });
 
   group('HKAModule — MLLowConfidence (AC#4)', () {
     test('retourne AnalysisFailure(MLLowConfidence) quand min likelihood < 0.7', () async {
-      // Un landmark à 0.5, les autres à 0.9
-      final pose = Pose(
-        landmarks: {
-          PoseLandmarkType.leftHip:
-              _lm(type: PoseLandmarkType.leftHip, x: 0, y: 0, likelihood: 0.5),
-          PoseLandmarkType.leftKnee:
-              _lm(type: PoseLandmarkType.leftKnee, x: 0, y: 100, likelihood: 0.9),
-          PoseLandmarkType.leftAnkle:
-              _lm(type: PoseLandmarkType.leftAnkle, x: 0, y: 200, likelihood: 0.9),
-          PoseLandmarkType.rightHip:
-              _lm(type: PoseLandmarkType.rightHip, x: 200, y: 0, likelihood: 0.9),
-          PoseLandmarkType.rightKnee:
-              _lm(type: PoseLandmarkType.rightKnee, x: 200, y: 100, likelihood: 0.9),
-          PoseLandmarkType.rightAnkle:
-              _lm(type: PoseLandmarkType.rightAnkle, x: 200, y: 200, likelihood: 0.9),
-        },
-      );
+      final pose = _makePose(likelihood: 0.9, leftHipLikelihood: 0.5);
       when(() => mockDetector.processImage(any()))
           .thenAnswer((_) async => [pose]);
 
@@ -129,24 +164,8 @@ void main() {
     });
 
     test('close() est appelé après MLLowConfidence (AC#7)', () async {
-      final pose = Pose(
-        landmarks: {
-          PoseLandmarkType.leftHip:
-              _lm(type: PoseLandmarkType.leftHip, x: 0, y: 0, likelihood: 0.5),
-          PoseLandmarkType.leftKnee:
-              _lm(type: PoseLandmarkType.leftKnee, x: 0, y: 100, likelihood: 0.9),
-          PoseLandmarkType.leftAnkle:
-              _lm(type: PoseLandmarkType.leftAnkle, x: 0, y: 200, likelihood: 0.9),
-          PoseLandmarkType.rightHip:
-              _lm(type: PoseLandmarkType.rightHip, x: 200, y: 0, likelihood: 0.9),
-          PoseLandmarkType.rightKnee:
-              _lm(type: PoseLandmarkType.rightKnee, x: 200, y: 100, likelihood: 0.9),
-          PoseLandmarkType.rightAnkle:
-              _lm(type: PoseLandmarkType.rightAnkle, x: 200, y: 200, likelihood: 0.9),
-        },
-      );
       when(() => mockDetector.processImage(any()))
-          .thenAnswer((_) async => [pose]);
+          .thenAnswer((_) async => [_makePose(likelihood: 0.9, leftHipLikelihood: 0.5)]);
 
       await module.analyze(testPhoto);
 
@@ -165,6 +184,17 @@ void main() {
       expect((result as AnalysisFailure).error, isA<MLDetectionFailed>());
     });
 
+    test('retourne MLDetectionFailed quand un landmark est absent de la Pose (AC#2)', () async {
+      // Pose détectée mais leftHip manquant dans landmarks map
+      when(() => mockDetector.processImage(any()))
+          .thenAnswer((_) async => [_makePoseWithMissingLandmark()]);
+
+      final result = await module.analyze(testPhoto);
+
+      expect(result, isA<AnalysisFailure>());
+      expect((result as AnalysisFailure).error, isA<MLDetectionFailed>());
+    });
+
     test('close() est appelé après MLDetectionFailed (AC#7)', () async {
       when(() => mockDetector.processImage(any()))
           .thenAnswer((_) async => []);
@@ -176,7 +206,7 @@ void main() {
   });
 
   group('HKAModule — PhotoProcessingError (AC#6)', () {
-    test('retourne AnalysisFailure(PhotoProcessingError) quand processImage throw', () async {
+    test('retourne AnalysisFailure(PhotoProcessingError) quand processImage throw Exception', () async {
       when(() => mockDetector.processImage(any()))
           .thenThrow(Exception('io error'));
 
@@ -186,6 +216,17 @@ void main() {
       final failure = result as AnalysisFailure;
       expect(failure.error, isA<PhotoProcessingError>());
       expect((failure.error as PhotoProcessingError).cause, contains('io error'));
+    });
+
+    test('retourne AnalysisFailure(PhotoProcessingError) quand processImage throw Error', () async {
+      // Error (pas Exception) doit aussi être encapsulé — AC#6
+      when(() => mockDetector.processImage(any()))
+          .thenThrow(StateError('unexpected state'));
+
+      final result = await module.analyze(testPhoto);
+
+      expect(result, isA<AnalysisFailure>());
+      expect((result as AnalysisFailure).error, isA<PhotoProcessingError>());
     });
 
     test('close() est appelé même quand processImage throw (AC#7 — finally)', () async {

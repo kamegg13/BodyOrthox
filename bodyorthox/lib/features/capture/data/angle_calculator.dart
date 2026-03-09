@@ -4,8 +4,6 @@ import 'dart:math' as math;
 
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 
-import '../domain/articular_angles.dart';
-import '../domain/confidence_score.dart';
 
 /// Calcule les angles articulaires à partir des landmarks ML Kit.
 ///
@@ -83,71 +81,6 @@ class AngleCalculator {
     final mid = sorted.length ~/ 2;
     if (sorted.length.isOdd) return sorted[mid];
     return (sorted[mid - 1] + sorted[mid]) / 2.0;
-  }
-
-  /// Calcule les angles et scores de confiance agrégés sur toutes les poses.
-  ///
-  /// Retourne null si aucune pose valide disponible.
-  static ({ArticularAngles angles, ConfidenceScore confidence})? calculate(
-    List<Pose> poses,
-    String side,
-  ) {
-    if (poses.isEmpty) return null;
-
-    final kneeAngles = <double>[];
-    final hipAngles = <double>[];
-    final ankleAngles = <double>[];
-    final kneeConfs = <double>[];
-    final hipConfs = <double>[];
-    final ankleConfs = <double>[];
-
-    for (final pose in poses) {
-      final kAngle = kneeAngle(pose, side);
-      final hAngle = hipAngle(pose, side);
-      final aAngle = ankleAngle(pose, side);
-
-      if (kAngle > 0) kneeAngles.add(kAngle);
-      if (hAngle > 0) hipAngles.add(hAngle);
-      if (aAngle > 0) ankleAngles.add(aAngle);
-
-      // Scores de confiance par articulation (T4.5)
-      final kConf = jointConfidence([
-        _landmark(pose, side, 'hip'),
-        _landmark(pose, side, 'knee'),
-        _landmark(pose, side, 'ankle'),
-      ]);
-      final hConf = jointConfidence([
-        _landmark(pose, side, 'shoulder'),
-        _landmark(pose, side, 'hip'),
-        _landmark(pose, side, 'knee'),
-      ]);
-      final aConf = jointConfidence([
-        _landmark(pose, side, 'knee'),
-        _landmark(pose, side, 'ankle'),
-        _landmark(pose, side, 'footIndex'),
-      ]);
-
-      if (kConf > 0) kneeConfs.add(kConf);
-      if (hConf > 0) hipConfs.add(hConf);
-      if (aConf > 0) ankleConfs.add(aConf);
-    }
-
-    if (kneeAngles.isEmpty && hipAngles.isEmpty && ankleAngles.isEmpty) {
-      return null;
-    }
-
-    return (
-      angles: ArticularAngles(
-        kneeAngle: aggregateAngles(kneeAngles),
-        hipAngle: aggregateAngles(hipAngles),
-        ankleAngle: aggregateAngles(ankleAngles),
-      ),
-      confidence: ConfidenceScore(
-        kneeScore: aggregateAngles(kneeConfs),
-        hipScore: aggregateAngles(hipConfs),
-        ankleScore: aggregateAngles(ankleConfs),
-      ),
-    );
   }
 
   static PoseLandmark? _landmark(Pose pose, String side, String joint) {

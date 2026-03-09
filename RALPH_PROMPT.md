@@ -1,4 +1,4 @@
-# Ralph Loop — Cycle Story N+1 (Create → Dev → Review)
+# Ralph Loop — Epic 3 Complet (Create → Dev → Review × N stories)
 
 ## Contexte projet
 
@@ -6,6 +6,8 @@ Projet Flutter iOS : BodyOrthox, analyse biomécanique on-device (Google ML Kit)
 Sprint status : `docs/implementation-artifacts/sprint-status.yaml`
 Stories : `docs/implementation-artifacts/`
 Proof : `docs/proof.md`
+
+**Objectif de cette session Ralph Loop :** Compléter TOUTES les stories restantes de l'Epic 3 (`epic-3`).
 
 ---
 
@@ -21,10 +23,12 @@ Proof : `docs/proof.md`
 
 1. Lire `docs/implementation-artifacts/sprint-status.yaml`
 2. Lire `docs/proof.md` (s'il existe)
-3. Identifier la **story cible** = première story dans l'ordre du sprint avec statut `backlog` ou `ready-for-dev`
-   - Ordre du sprint : Epic 1 → Epic Arch → Epic 3 → Epic 4 → Epic 2 → Epic 5 → Epic 6
-   - Ignorer les epics et rétrospectives
-   - Ignorer les stories `done`, `in-progress`, `review`
+3. Identifier les **stories Epic 3** = toutes les stories dont la clé commence par `3-` dans `development_status`
+4. Vérifier si TOUTES les stories Epic 3 sont en statut `done`
+   - Si oui → passer aux **Conditions de complétion** ci-dessous
+5. Identifier la **story cible** = première story Epic 3 dans l'ordre numérique avec statut `backlog` ou `ready-for-dev` ou `in-progress` ou `review`
+   - Ordre : `3-4` avant `3-5`
+   - Ignorer les stories `done`
 
 ### Étape 1 — CREATE STORY (si story cible = `backlog`)
 
@@ -74,26 +78,28 @@ flutter test [path ou suite]
 
 ## Conditions de complétion
 
-La story N+1 est COMPLÈTE quand TOUTES ces conditions sont vraies :
+L'**Epic 3 est COMPLET** quand TOUTES ces conditions sont vraies :
 
-1. La story est en statut `done` dans `sprint-status.yaml`
-2. `flutter test` retourne 0 échec (output dans `docs/proof.md`)
-3. `docs/proof.md` contient la preuve avec l'output réel de flutter test
-4. La code review a été effectuée (ou aucune issue bloquante)
+1. Toutes les stories Epic 3 (clé `3-*`) sont en statut `done` dans `sprint-status.yaml`
+2. `docs/proof.md` contient la preuve pour chaque story (output dart analyze ou flutter test)
+3. La code review a été effectuée pour chaque story (ou aucune issue bloquante)
 
 Quand toutes les conditions sont remplies, écrire dans le terminal :
 
 ```
-<promise>STORY COMPLETE</promise>
+<promise>EPIC 3 COMPLETE</promise>
 ```
+
+**IMPORTANT :** Ne pas écrire la promise tant qu'une story Epic 3 est encore en `backlog`, `ready-for-dev`, `in-progress` ou `review`. Continuer à travailler sur la prochaine story.
 
 ---
 
 ## Règles strictes
 
-- **Ne jamais inventer des outputs de tests** — exécuter réellement `flutter test`
+- **Ne jamais inventer des outputs de tests** — exécuter réellement les tests
 - **Ne jamais marquer une tâche complète si les tests échouent**
 - **Ne jamais skip une validation pour avancer plus vite**
 - Si une erreur bloque après 3 tentatives : noter le blocage dans `docs/proof.md` et continuer avec ce qui est possible
 - Communiquer en **français**
 - Rester dans le répertoire `bodyorthox/` pour les commandes flutter
+- `flutter test` non exécutable dans le sandbox (socket EPERM) → utiliser `dart analyze` avec `DART=/opt/homebrew/Caskroom/flutter/3.41.4/flutter/bin/cache/dart-sdk/bin/dart` comme substitut documenté
