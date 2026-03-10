@@ -1060,13 +1060,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.9.4"
-  sqlite3_flutter_libs:
-    dependency: "direct overridden"
-    description:
-      path: "local_packages/sqlite3_flutter_libs_stub"
-      relative: true
-    source: path
-    version: "0.0.1"
   sqlparser:
     dependency: transitive
     description:
