@@ -398,6 +398,15 @@ Ces packages doivent être ajoutés si absents. Vérifier d'abord dans `pubspec.
 - Co-location des tests avec les fichiers source (pas de dossier `test/` miroir séparé)
 - La route `/onboarding` est déclarée dans `core/router/app_router.dart` avec `go_router_builder`
 
+### Mockup de référence
+
+> Écrans Stitch générés le 08/03/2026 — pivot HKA. Utiliser comme référence visuelle pour l'implémentation.
+
+| Écran                                                                       | Screenshot                                                                            | HTML interactif                                                                 |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Onboarding 1/3 — Démo analyse HKA (position anatomique frontale, axe H-K-A) | `docs/planning-artifacts/stitch-mockups/screenshots/10-onboarding-1-3-hka.png`        | `docs/planning-artifacts/stitch-mockups/html/10-onboarding-1-3-hka.html`        |
+| Onboarding 3/3 — Export sécurisé (`AnalyseHKA`)                             | `docs/planning-artifacts/stitch-mockups/screenshots/11-onboarding-3-3-export-hka.png` | `docs/planning-artifacts/stitch-mockups/html/11-onboarding-3-3-export-hka.html` |
+
 ### References
 
 - Epics & Stories : [Source: docs/planning-artifacts/epics.md#Story-6.1]

@@ -495,8 +495,37 @@ iOS natif, fond blanc dominant, couleurs fonctionnelles uniquement. Chaque élé
 **Écrans clés retenus :**
 
 - Home : CTA "Nouvelle analyse" dominant + liste patients épurée + tab bar Cupertino
-- Caméra : plein écran noir, cadre vert `#34C759`, bouton démarrer conditionnel
-- Résultats : card highlight hors-norme en tête + tableau articulations + bouton export full-width
+- Capture : plein écran, bannière RGPD légère, bouton "Prendre une photo" (pivot HKA — 08/03/2026)
+- Résultats : card Angle HKA dominant + BodySkeletonOverlay axe H-K-A + normes genu varum/valgum (pivot HKA — 08/03/2026)
+
+---
+
+### Mockups Stitch — Inventaire
+
+> Projet Stitch : **BodyOrthox Home** (ID `4499963344980375656`)
+> Dossier local : `docs/planning-artifacts/stitch-mockups/`
+
+#### Écrans actifs (post-pivot HKA — 08/03/2026)
+
+| #   | Titre Stitch                                                  | Screenshot                                     | HTML interactif                          | Stories        |
+| --- | ------------------------------------------------------------- | ---------------------------------------------- | ---------------------------------------- | -------------- |
+| 01  | Home — liste patients + CTA                                   | `screenshots/01-home.png`                      | `html/01-home.html`                      | Story 2.2      |
+| 06  | Nouveau patient — variante A                                  | `screenshots/06-nouveau-patient-a.png`         | `html/06-nouveau-patient-a.html`         | Story 2.1      |
+| 07  | Nouveau patient — variante B                                  | `screenshots/07-nouveau-patient-b.png`         | `html/07-nouveau-patient-b.html`         | Story 2.1      |
+| 09  | Capture Photo HKA                                             | `screenshots/09-capture-photo-hka.png`         | `html/09-capture-photo-hka.html`         | Story 3.0      |
+| 10  | Onboarding 1/3 — Démo HKA (vue frontale anatomique)           | `screenshots/10-onboarding-1-3-hka.png`        | `html/10-onboarding-1-3-hka.html`        | Story 6.1      |
+| 11  | Onboarding 3/3 — Export sécurisé HKA                          | `screenshots/11-onboarding-3-3-export-hka.png` | `html/11-onboarding-3-3-export-hka.html` | Story 4.2, 6.1 |
+| 12  | Résultats Analyse HKA (174.2°, Genu varum, axe H-K-A, normes) | `screenshots/12-resultats-hka.png`             | `html/12-resultats-hka.html`             | Story 3.4      |
+
+#### Écrans dépréciés (pré-pivot — vidéo sagittale)
+
+| #   | Titre                                     | Raison                                             |
+| --- | ----------------------------------------- | -------------------------------------------------- |
+| 02  | Generated Screen A (capture vidéo guidée) | Pipeline vidéo supprimé — sprint change 08/03/2026 |
+| 03  | Generated Screen B (capture vidéo)        | Pipeline vidéo supprimé                            |
+| 04  | Analysis Results (angles sagittaux)       | Remplacé par analyse HKA                           |
+| 05  | Résultats d'analyse (angles multiples)    | Remplacé par analyse HKA                           |
+| 08  | Onboarding 1/3 (démo marche)              | Remplacé par démo HKA frontale                     |
 
 ### Design Rationale
 

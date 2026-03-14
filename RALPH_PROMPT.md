@@ -1,78 +1,105 @@
-# Ralph Loop — Story 3.5 + Epic 4
+# Ralph Loop — Epic 3 Complet (Create → Dev → Review × N stories)
 
-## Contexte
+## Contexte projet
 
-App iOS Flutter BodyOrthox — analyse biomécanique on-device.
-Projet : /Users/karimmeguenni-tani/BodyOrthox
+Projet Flutter iOS : BodyOrthox, analyse biomécanique on-device (Google ML Kit), 100% offline.
+Sprint status : `docs/implementation-artifacts/sprint-status.yaml`
+Stories : `docs/implementation-artifacts/`
+Proof : `docs/proof.md`
 
-## Ta mission : Story 3.5 + Epic 4 complet
+**Objectif de cette session Ralph Loop :** Compléter TOUTES les stories restantes de l'Epic 3 (`epic-3`).
 
-### Etape 1 — Identifie la prochaine story
+---
 
-Lis docs/implementation-artifacts/sprint-status.yaml
-Trouve la premiere story qui nest PAS done dans cet ordre :
+## Ton rôle dans chaque itération
 
-- 3-5-replay-expert-correction-manuelle
-- 4-1-generation-du-rapport-pdf-structure
-- 4-2-export-du-rapport-via-share-sheet-ios
+À chaque itération, tu lis l'état courant des fichiers et tu détermines automatiquement quelle phase exécuter. Tu travailles en mode **#yolo** : pas de questions inutiles, pas de pauses, décisions autonomes sur les ambiguïtés mineures.
 
-### Etape 2 — Analyse des sous-taches et dependances
+---
 
-Lis le fichier story docs/implementation-artifacts/{story-id}.md
-Extrais toutes les sous-taches. Construis le graphe de dependances :
+## Algorithme de décision (exécute à chaque itération)
 
-- Sous-taches independantes = parallelisables
-- Sous-taches dependantes = sequentielles
-  Dependances critiques :
-  3-5 : replay viewer puis overlay angles et correction manuelle en parallele
-  4-1 : PDF layout engine puis vue simplifiee et vue detaillee en parallele puis disclaimer et metadonnees en parallele
-  4-2 : share sheet integration puis nommage fichier et AirDrop en parallele
+### Étape 0 — Lire l'état courant
 
-### Etape 3 — Dev Story avec TDD et Parallel Agents
+1. Lire `docs/implementation-artifacts/sprint-status.yaml`
+2. Lire `docs/proof.md` (s'il existe)
+3. Identifier les **stories Epic 3** = toutes les stories dont la clé commence par `3-` dans `development_status`
+4. Vérifier si TOUTES les stories Epic 3 sont en statut `done`
+   - Si oui → passer aux **Conditions de complétion** ci-dessous
+5. Identifier la **story cible** = première story Epic 3 dans l'ordre numérique avec statut `backlog` ou `ready-for-dev` ou `in-progress` ou `review`
+   - Ordre : `3-4` avant `3-5`
+   - Ignorer les stories `done`
 
-Invoque le skill /bmad-bmm-dev-story pour la story courante.
-Pour chaque groupe de sous-taches selon le graphe :
+### Étape 1 — CREATE STORY (si story cible = `backlog`)
 
-a) Sous-taches independantes : invoque le skill dispatching-parallel-agents - Un agent par sous-tache independante - Chaque agent : test dabord (Red) puis implementation (Green) puis refactor - Attend la fin de tous les agents avant le groupe suivant
+- Invoquer le skill `/bmad-bmm-create-story` en mode #yolo
+- La story doit être complète avec tous ses champs (ACs, Tasks, Dev Notes)
+- Mettre à jour `sprint-status.yaml` : story → `ready-for-dev`
+- Continuer à l'étape 2 dans la même itération si possible
 
-b) Sous-taches dependantes : execution sequentielle - Test (Red) puis implementation (Green) puis refactoring
+### Étape 2 — DEV STORY (si story cible = `ready-for-dev` ou `in-progress`)
 
-Lance flutter test apres chaque groupe et affiche le resultat.
+Invoquer le skill `/bmad-bmm-dev-story` en mode #yolo avec les contraintes suivantes :
 
-### Etape 4 — Tests E2E
+**KISS absolu** :
 
-Invoque le skill /bmad-bmm-qa-generate-e2e-tests sur la story.
-Utilise dispatching-parallel-agents pour les tests independants.
-Affiche le resultat complet.
+- Code le plus simple possible qui satisfait les ACs — zero over-engineering
+- Pas de couches d'abstraction inutiles, pas de features non demandées
+- Si deux approches existent, choisir la plus simple
 
-### Etape 5 — Code Review
+**TDD obligatoire** :
 
-Invoque le skill /bmad-bmm-code-review sur la story.
-Si problemes trouves : retourne Etape 3 pour corriger uniquement les sous-taches concernees.
-Si approuvee : continue.
+- Écrire les tests AVANT le code de production (red → green → refactor)
+- Chaque AC doit avoir au moins un test qui le valide directement
+- Utiliser `flutter test` pour confirmer que les tests passent
 
-### Etape 6 — Marque la story done
+**Preuve obligatoire** — après chaque `flutter test`, écrire dans `docs/proof.md` :
 
-Lance flutter test --coverage et affiche le resultat.
-Met a jour docs/implementation-artifacts/sprint-status.yaml :
+```
+## [STORY-KEY] — [DATE]
+### Commande exécutée
+flutter test [path ou suite]
 
-- story status vers done
-- Si toutes Epic 3 done : epic-3 vers done
-- Si toutes Epic 4 done : epic-4 vers done
+### Output réel
+[Coller l'output complet de flutter test — nombre de tests, statut, temps]
 
-### Etape 7 — Verification finale
+### Verdict
+✅ [N] tests passent / ❌ [N] tests échouent
+```
 
-Si 3-5 et 4-1 et 4-2 sont toutes done ET flutter test passe :
-Affiche le resume complet puis output : <promise>3.5 TO EPIC4 COMPLETE</promise>
-Sinon : recommence Etape 1 avec la story suivante.
+### Étape 3 — CODE REVIEW (si story cible = `review`)
 
-## Regles
+- Invoquer le skill `/bmad-bmm-code-review` en mode #yolo
+- Si des issues sont trouvées : les corriger immédiatement
+- Relancer `flutter test` et mettre à jour `docs/proof.md` avec les nouveaux résultats
+- Mettre à jour `sprint-status.yaml` : story → `done`
 
-- Jamais de code production avant le test (TDD)
-- flutter test vert obligatoire avant de marquer une story done
-- Les agents paralleles ne touchent JAMAIS les memes fichiers
-- 100 pourcent offline, zero dependance reseau
-- Design system : Primary #1B6FBF, Cupertino+Material3, touch targets 44x44pt
-- Story 3-5 : disclaimer obligatoire sur les points articulaires corriges manuellement
-- Story 4-1 : PDF local moins de 5s, disclaimer LegalConstants.mdrDisclaimer permanent sur chaque page
-- Story 4-2 : share sheet iOS natif uniquement, nom fichier NomPatient_AnalyseMarche_DATE.pdf pre-rempli
+---
+
+## Conditions de complétion
+
+L'**Epic 3 est COMPLET** quand TOUTES ces conditions sont vraies :
+
+1. Toutes les stories Epic 3 (clé `3-*`) sont en statut `done` dans `sprint-status.yaml`
+2. `docs/proof.md` contient la preuve pour chaque story (output dart analyze ou flutter test)
+3. La code review a été effectuée pour chaque story (ou aucune issue bloquante)
+
+Quand toutes les conditions sont remplies, écrire dans le terminal :
+
+```
+<promise>EPIC 3 COMPLETE</promise>
+```
+
+**IMPORTANT :** Ne pas écrire la promise tant qu'une story Epic 3 est encore en `backlog`, `ready-for-dev`, `in-progress` ou `review`. Continuer à travailler sur la prochaine story.
+
+---
+
+## Règles strictes
+
+- **Ne jamais inventer des outputs de tests** — exécuter réellement les tests
+- **Ne jamais marquer une tâche complète si les tests échouent**
+- **Ne jamais skip une validation pour avancer plus vite**
+- Si une erreur bloque après 3 tentatives : noter le blocage dans `docs/proof.md` et continuer avec ce qui est possible
+- Communiquer en **français**
+- Rester dans le répertoire `bodyorthox/` pour les commandes flutter
+- `flutter test` non exécutable dans le sandbox (socket EPERM) → utiliser `dart analyze` avec `DART=/opt/homebrew/Caskroom/flutter/3.41.4/flutter/bin/cache/dart-sdk/bin/dart` comme substitut documenté

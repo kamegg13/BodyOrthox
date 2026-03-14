@@ -420,6 +420,14 @@ lib/features/results/
 dart run build_runner build --delete-conflicting-outputs
 ```
 
+### Mockup de référence
+
+> Écran généré le 08/03/2026 — pivot HKA. HTML créé manuellement, PNG capturé via Chrome headless.
+
+| Écran                                                                                       | Screenshot                                                                | HTML interactif                                                     |
+| ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Résultats Analyse HKA — Angle HKA dominant + Axe mécanique H-K-A + Normes genu varum/valgum | `docs/planning-artifacts/stitch-mockups/screenshots/12-resultats-hka.png` | `docs/planning-artifacts/stitch-mockups/html/12-resultats-hka.html` |
+
 ### References
 
 - [Source: docs/planning-artifacts/epics.md#Story-3.4] — User story, acceptance criteria, FR15, FR16, FR38

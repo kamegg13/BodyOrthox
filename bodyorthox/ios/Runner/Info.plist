@@ -49,6 +49,8 @@
 	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>BodyOrthox utilise la caméra pour photographier le patient debout.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>BodyOrthox protège l'accès à vos données patients avec Face ID. Aucune donnée biométrique n'est stockée par l'application.</string>
 	<key>UILaunchStoryboardName</key>

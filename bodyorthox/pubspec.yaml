@@ -14,11 +14,9 @@ dependencies:
   cupertino_icons: ^1.0.8
 
   # Database + Chiffrement AES-256
-  # sqlcipher_flutter_libs 0.7.0 est la dernière version disponible (marquée EOL).
-  # La stratégie d'intégration complète (NativeDatabase + PRAGMA key) est en Story 1.3.
-  # sqlite3_flutter_libs est exclu via dependency_overrides (incompatible avec sqlcipher).
   drift: ^2.31.0
   sqlcipher_flutter_libs: ^0.7.0
+  sqlite3_flutter_libs: ^0.5.24 # Fournit libsqlite3.so requis par drift sur Android
 
   # Annotations (@visibleForTesting, etc.)
   meta: ^1.16.0
@@ -61,10 +59,11 @@ dependencies:
 
   # Utilitaires de manipulation de chemins de fichiers
   path: ^1.9.1
-  camera: ^0.12.0
+  image_picker: ^1.1.2
+  cross_file: ^0.3.5
   permission_handler: ^12.0.1
 
-  # ML on-device — activé Story 3.3 (AC1, AC2, AC3)
+  # ML on-device
   google_mlkit_pose_detection: ^0.11.0
 
 dev_dependencies:
@@ -82,18 +81,11 @@ dev_dependencies:
 
   # Tests
   mocktail: ^1.0.4
-  # riverpod_test incompatible avec riverpod 3.x — utiliser mocktail + ProviderContainer directement
-
   riverpod_generator: ^4.0.3
 
-# ⚠️ INCOMPATIBILITÉ CRITIQUE — sqlite3_flutter_libs et sqlcipher_flutter_libs
-# sont mutuellement exclusifs. drift inclut sqlite3_flutter_libs comme dépendance
-# transitive → on doit l'exclure explicitement via le stub local.
-# sqlcipher_flutter_libs fournit sa propre implémentation SQLite chiffrée (AES-256).
-# Sans cette exclusion, le build iOS échoue avec des symboles en double.
 dependency_overrides:
-  sqlite3_flutter_libs:
-    path: ./local_packages/sqlite3_flutter_libs_stub
+  image_picker:
+    path: ./local_packages/image_picker_stub
 
 flutter:
   uses-material-design: true

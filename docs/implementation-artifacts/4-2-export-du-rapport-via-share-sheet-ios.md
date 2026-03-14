@@ -212,6 +212,14 @@ dependencies:
 
 `path_provider` est généralement déjà présent dans le projet. Vérifier `pubspec.yaml` avant ajout.
 
+### Mockup de référence
+
+> Écran Stitch généré le 08/03/2026 — pivot HKA. Utiliser comme référence visuelle pour l'implémentation.
+
+| Écran                                                                                | Screenshot                                                                            | HTML interactif                                                                 |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Onboarding 3/3 — Export sécurisé avec nommage `DupontJean_AnalyseHKA_2026-03-08.pdf` | `docs/planning-artifacts/stitch-mockups/screenshots/11-onboarding-3-3-export-hka.png` | `docs/planning-artifacts/stitch-mockups/html/11-onboarding-3-3-export-hka.html` |
+
 ### Références
 
 - [Source: docs/planning-artifacts/epics.md#Story 4.2 — FR24, FR29]

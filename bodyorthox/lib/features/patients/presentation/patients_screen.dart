@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show Divider;
+import 'package:flutter/material.dart' show Divider, Material, Colors;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -140,10 +140,13 @@ class _PatientListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      itemCount: patients.length,
-      separatorBuilder: (_, __) => const Divider(height: 1, indent: 16),
-      itemBuilder: (context, index) => PatientListTile(patient: patients[index]),
+    return Material(
+      color: Colors.transparent,
+      child: ListView.separated(
+        itemCount: patients.length,
+        separatorBuilder: (_, __) => const Divider(height: 1, indent: 16),
+        itemBuilder: (context, index) => PatientListTile(patient: patients[index]),
+      ),
     );
   }
 }

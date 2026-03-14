@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../auth/auth_provider.dart';
 import '../auth/biometric_guard.dart';
-import '../../features/capture/presentation/capture_screen.dart';
+import '../../features/capture/presentation/capture_photo_hka_screen.dart';
 import '../../features/results/presentation/results_screen.dart';
+import '../../features/results/presentation/hka_results_screen.dart';
+import '../../core/analysis/analysis_result.dart';
 import '../../features/patients/presentation/create_patient_screen.dart';
 import '../../features/patients/presentation/patient_detail_screen.dart';
 import '../../features/patients/presentation/patient_timeline_screen.dart';
@@ -73,6 +75,22 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/lock',
         builder: (context, state) => const BiometricLockScreen(),
       ),
+      // ── Story 3.0 : Capture Photo HKA ─────────────────────────────────────
+      /// Route top-level `/capture` — CapturePhotoHkaScreen (AC2 : caméra native).
+      /// Navigué depuis la fiche patient (Story 2.2, implémenté en Story 3.0+).
+      GoRoute(
+        path: '/capture',
+        builder: (context, state) => const CapturePhotoHkaScreen(),
+      ),
+      // ── Story 3.0 + 3.4 : Résultats HKA ──────────────────────────────────
+      /// Route top-level `/results` — reçoit [AnalysisSuccess] via state.extra.
+      /// Placeholder jusqu'à Story 3.4 (HkaResultsScreen complet).
+      GoRoute(
+        path: '/results',
+        builder: (context, state) => HkaResultsScreen(
+          analysisSuccess: state.extra as AnalysisSuccess?,
+        ),
+      ),
       GoRoute(
         path: '/',
         redirect: (_, __) => '/patients',
@@ -91,12 +109,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               patientId: state.pathParameters['patientId']!,
             ),
             routes: [
-              GoRoute(
-                path: 'capture',
-                builder: (context, state) => CaptureScreen(
-                  patientId: state.pathParameters['patientId']!,
-                ),
-              ),
               GoRoute(
                 path: 'analyses/:analysisId',
                 builder: (context, state) => ResultsScreen(

@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+      name="viewport"
+    />
+    <title>Résultats Analyse HKA</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+      rel="stylesheet"
+    />
+    <style type="text/tailwindcss">
+      :root {
+        --primary: #1b6fbf;
+        --primary-light: #e8f1fb;
+        --bg: #f2f2f7;
+        --card: #ffffff;
+        --label: #1c1c1e;
+        --secondary: #8e8e93;
+        --success: #34c759;
+        --warning: #ff9500;
+        --info: #1b6fbf;
+        --amber-bg: #fff3e0;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        font-family:
+          -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI",
+          Helvetica, Arial, sans-serif;
+        color: var(--label);
+      }
+      .material-symbols-outlined {
+        font-variation-settings:
+          "FILL" 0,
+          "wght" 300,
+          "GRAD" 0,
+          "opsz" 24;
+        vertical-align: middle;
+      }
+      .card {
+        background: var(--card);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+      }
+      .badge-orange {
+        background: var(--warning);
+        color: #fff;
+        border-radius: 8px;
+        padding: 3px 10px;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-block;
+      }
+    </style>
+    <style>
+      body {
+        min-height: max(884px, 100dvh);
+      }
+    </style>
+  </head>
+  <body class="flex flex-col" style="min-height: 884px">
+    <!-- NAV BAR -->
+    <nav
+      style="
+        background: #fff;
+        border-bottom: 1px solid #e5e5ea;
+        padding: 0 16px;
+      "
+      class="flex items-center justify-between h-[52px] sticky top-0 z-50"
+    >
+      <button
+        class="flex items-center gap-1"
+        style="color: var(--primary); font-size: 17px"
+      >
+        <span class="material-symbols-outlined" style="font-size: 20px"
+          >chevron_left</span
+        >
+        Analyse HKA
+      </button>
+      <span style="font-size: 17px; font-weight: 600; color: var(--label)"
+        >Résultats</span
+      >
+      <button style="color: var(--primary); font-size: 17px; font-weight: 400">
+        Exporter
+      </button>
+    </nav>
+
+    <!-- SCROLLABLE CONTENT -->
+    <main class="flex-1 overflow-y-auto px-4 pt-3 pb-6">
+      <!-- PATIENT ROW -->
+      <p
+        style="
+          color: var(--secondary);
+          font-size: 13px;
+          margin-bottom: 12px;
+          text-align: center;
+        "
+      >
+        Dupont Jean · 58 ans · 08/03/2026
+      </p>
+
+      <!-- SEGMENTED CONTROL -->
+      <div
+        style="
+          background: #e5e5ea;
+          border-radius: 9px;
+          padding: 2px;
+          display: flex;
+          margin-bottom: 16px;
+        "
+      >
+        <div
+          style="
+            flex: 1;
+            background: #fff;
+            border-radius: 7px;
+            padding: 6px 0;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--label);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+          "
+        >
+          Vue simple
+        </div>
+        <div
+          style="
+            flex: 1;
+            padding: 6px 0;
+            text-align: center;
+            font-size: 13px;
+            color: var(--secondary);
+          "
+        >
+          Vue expert
+        </div>
+      </div>
+
+      <!-- CARD 1 — RÉSULTAT PRINCIPAL -->
+      <div
+        class="card"
+        style="
+          background: var(--primary-light);
+          border-radius: 16px;
+          padding: 20px;
+        "
+      >
+        <p
+          style="
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            color: var(--secondary);
+            text-transform: uppercase;
+            margin: 0 0 6px;
+          "
+        >
+          Angle HKA
+        </p>
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+          "
+        >
+          <span
+            style="
+              font-size: 40px;
+              font-weight: 700;
+              color: var(--label);
+              letter-spacing: -1px;
+            "
+            >174.2°</span
+          >
+          <span class="badge-orange">Genu varum</span>
+        </div>
+        <p style="font-size: 14px; color: var(--secondary); margin: 0 0 12px">
+          Inférieur à la norme adulte (177–183°)
+        </p>
+        <div style="display: flex; align-items: center; gap: 6px">
+          <span
+            style="
+              width: 8px;
+              height: 8px;
+              border-radius: 50%;
+              background: var(--success);
+              display: inline-block;
+            "
+          ></span>
+          <span style="font-size: 13px; color: var(--success); font-weight: 500"
+            >Score ML : 91%</span
+          >
+        </div>
+      </div>
+
+      <!-- CARD 2 — SKELETON OVERLAY -->
+      <div class="card">
+        <p style="font-size: 17px; font-weight: 600; margin: 0 0 16px">
+          Axe mécanique H-K-A
+        </p>
+
+        <!-- SVG silhouette + axe -->
+        <div style="display: flex; justify-content: center">
+          <svg
+            width="200"
+            height="240"
+            viewBox="0 0 200 240"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <!-- Corps silhouette (simplifié, vue frontale) -->
+            <!-- Tête -->
+            <circle cx="100" cy="22" r="14" fill="#D1D1D6" />
+            <!-- Cou -->
+            <rect x="95" y="34" width="10" height="10" rx="3" fill="#D1D1D6" />
+            <!-- Torse -->
+            <rect x="76" y="44" width="48" height="52" rx="6" fill="#D1D1D6" />
+            <!-- Bras gauche -->
+            <rect x="58" y="46" width="18" height="42" rx="8" fill="#D1D1D6" />
+            <!-- Bras droit -->
+            <rect x="124" y="46" width="18" height="42" rx="8" fill="#D1D1D6" />
+            <!-- Hanches -->
+            <rect x="76" y="92" width="48" height="20" rx="6" fill="#D1D1D6" />
+            <!-- Cuisse gauche -->
+            <rect x="78" y="110" width="18" height="52" rx="8" fill="#D1D1D6" />
+            <!-- Cuisse droite -->
+            <rect
+              x="104"
+              y="110"
+              width="18"
+              height="52"
+              rx="8"
+              fill="#D1D1D6"
+            />
+            <!-- Jambe gauche -->
+            <rect x="80" y="158" width="14" height="48" rx="7" fill="#D1D1D6" />
+            <!-- Jambe droite -->
+            <rect
+              x="106"
+              y="158"
+              width="14"
+              height="48"
+              rx="7"
+              fill="#D1D1D6"
+            />
+            <!-- Pied gauche -->
+            <ellipse cx="87" cy="212" rx="13" ry="7" fill="#D1D1D6" />
+            <!-- Pied droit -->
+            <ellipse cx="113" cy="212" rx="13" ry="7" fill="#D1D1D6" />
+
+            <!-- AXE MÉCANIQUE HKA (côté droit du patient = gauche image) -->
+            <!-- Ligne bleue H → K → A avec angle -->
+            <line
+              x1="113"
+              y1="102"
+              x2="117"
+              y2="162"
+              stroke="#1B6FBF"
+              stroke-width="2.5"
+              stroke-linecap="round"
+            />
+            <line
+              x1="117"
+              y1="162"
+              x2="113"
+              y2="212"
+              stroke="#1B6FBF"
+              stroke-width="2.5"
+              stroke-linecap="round"
+            />
+
+            <!-- Arc de l'angle au genou -->
+            <path
+              d="M 110,155 A 12,12 0 0,1 121,168"
+              stroke="#FF9500"
+              stroke-width="1.5"
+              fill="none"
+              stroke-linecap="round"
+            />
+
+            <!-- Valeur angle -->
+            <text
+              x="126"
+              y="168"
+              font-size="10"
+              fill="#FF9500"
+              font-weight="600"
+            >
+              174.2°
+            </text>
+
+            <!-- Points H, K, A -->
+            <!-- H - hanche -->
+            <circle cx="113" cy="102" r="6" fill="#1B6FBF" />
+            <text
+              x="122"
+              y="106"
+              font-size="11"
+              fill="#1B6FBF"
+              font-weight="700"
+            >
+              H
+            </text>
+            <!-- K - genou -->
+            <circle cx="117" cy="162" r="6" fill="#1B6FBF" />
+            <text
+              x="126"
+              y="154"
+              font-size="11"
+              fill="#1B6FBF"
+              font-weight="700"
+            >
+              K
+            </text>
+            <!-- A - cheville -->
+            <circle cx="113" cy="208" r="6" fill="#1B6FBF" />
+            <text
+              x="122"
+              y="212"
+              font-size="11"
+              fill="#1B6FBF"
+              font-weight="700"
+            >
+              A
+            </text>
+          </svg>
+        </div>
+      </div>
+
+      <!-- CARD 3 — NORMES -->
+      <div class="card" style="padding: 0; overflow: hidden">
+        <p
+          style="
+            font-size: 17px;
+            font-weight: 600;
+            margin: 0;
+            padding: 14px 16px 10px;
+          "
+        >
+          Normes HKA adulte
+        </p>
+        <div style="border-top: 1px solid #f2f2f7">
+          <!-- Neutre -->
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 10px;
+              padding: 11px 16px;
+              background: #fff;
+            "
+          >
+            <span
+              style="
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                background: var(--success);
+                flex-shrink: 0;
+              "
+            ></span>
+            <span style="font-size: 15px; color: var(--label)"
+              >Neutre : 177–183°</span
+            >
+          </div>
+
+          <!-- Genu varum — actif -->
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 10px;
+              padding: 11px 16px;
+              background: var(--amber-bg);
+              border-top: 1px solid #ffe0b2;
+              border-bottom: 1px solid #ffe0b2;
+            "
+          >
+            <span
+              style="
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                background: var(--warning);
+                flex-shrink: 0;
+              "
+            ></span>
+            <div>
+              <span
+                style="font-size: 15px; color: var(--label); font-weight: 500"
+                >Genu varum : &lt; 177°</span
+              >
+              <span
+                style="
+                  margin-left: 8px;
+                  font-size: 11px;
+                  background: var(--warning);
+                  color: #fff;
+                  border-radius: 5px;
+                  padding: 1px 6px;
+                  font-weight: 600;
+                "
+                >Patient</span
+              >
+            </div>
+          </div>
+
+          <!-- Genu valgum -->
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 10px;
+              padding: 11px 16px;
+              background: #fff;
+              border-top: 1px solid #f2f2f7;
+            "
+          >
+            <span
+              style="
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                background: var(--info);
+                flex-shrink: 0;
+              "
+            ></span>
+            <span style="font-size: 15px; color: var(--label)"
+              >Genu valgum : &gt; 183°</span
+            >
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- BOUTON EXPORT -->
+    <footer
+      style="
+        background: #fff;
+        padding: 16px 16px 32px;
+        border-top: 1px solid #e5e5ea;
+      "
+    >
+      <button
+        style="
+          width: 100%;
+          height: 52px;
+          background: var(--primary);
+          color: #fff;
+          border: none;
+          border-radius: 14px;
+          font-size: 17px;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          box-shadow: 0 4px 12px rgba(27, 111, 191, 0.3);
+          cursor: pointer;
+        "
+      >
+        <span class="material-symbols-outlined" style="font-size: 22px"
+          >picture_as_pdf</span
+        >
+        Exporter le rapport PDF
+      </button>
+    </footer>
+  </body>
+</html>

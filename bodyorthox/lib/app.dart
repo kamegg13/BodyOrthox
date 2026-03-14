@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'core/analysis/analysis_provider.dart';
+import 'core/analysis/analysis_registry.dart';
 import 'core/config/app_config.dart';
 import 'core/config/app_config_provider.dart';
 import 'core/router/app_router.dart';
+import 'features/capture/data/hka_module.dart';
 import 'shared/design_system/app_colors.dart';
 import 'shared/design_system/app_typography.dart';
 
@@ -28,6 +31,13 @@ class BodyOrthoxApp extends StatelessWidget {
       overrides: [
         // Expose AppConfig globalement — accessible via ref.read(appConfigProvider).
         appConfigProvider.overrideWithValue(config),
+        // Enregistre HKAModule dans le registry au démarrage (AC#8).
+        // PoseDetector est créé à chaque analyze() via la factory par défaut.
+        analysisRegistryProvider.overrideWith((ref) {
+          final registry = AnalysisRegistry();
+          registry.register(HKAModule());
+          return registry;
+        }),
       ],
       child: const _BodyOrthoxRouter(),
     );
