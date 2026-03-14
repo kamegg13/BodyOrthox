@@ -1,0 +1,11 @@
+{
+  "name": "BodyOrthox",
+  "displayName": "BodyOrthox",
+  "version": "1.0.0",
+  "android": {
+    "package": "com.bodyorthox.app"
+  },
+  "ios": {
+    "bundleIdentifier": "com.bodyorthox.app"
+  }
+}
