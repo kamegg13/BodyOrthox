@@ -1,0 +1,85 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main, master]
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "Build profile"
+        required: true
+        default: "preview"
+        type: choice
+        options:
+          - preview
+          - production
+
+jobs:
+  build-android:
+    name: Build Android APK (EAS)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: bodyorthox-rn
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: bodyorthox-rn/package-lock.json
+
+      - name: Setup Expo & EAS CLI
+        run: npm install -g expo-cli eas-cli
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Run tests before build
+        run: npm test -- --ci --forceExit
+
+      - name: Build Android APK with EAS
+        run: |
+          PROFILE="${{ github.event.inputs.profile || 'preview' }}"
+          eas build \
+            --platform android \
+            --profile $PROFILE \
+            --non-interactive \
+            --output ./build/bodyorthox.apk
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Upload APK as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bodyorthox-android-${{ github.sha }}
+          path: bodyorthox-rn/build/bodyorthox.apk
+          retention-days: 30
+
+      # Create a GitHub Release on tag push with the APK attached
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: bodyorthox-rn/build/bodyorthox.apk
+          name: "BodyOrthox ${{ github.ref_name }}"
+          body: |
+            ## BodyOrthox ${{ github.ref_name }}
+
+            ### Installation Android
+            1. Télécharger `bodyorthox.apk` ci-dessous
+            2. Sur votre Android : Paramètres → Sécurité → Autoriser sources inconnues
+            3. Ouvrir le fichier APK et installer
+
+            ### Changements
+            Voir les commits depuis la dernière version.
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
