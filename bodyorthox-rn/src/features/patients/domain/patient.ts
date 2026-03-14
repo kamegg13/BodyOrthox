@@ -1,0 +1,57 @@
+import { v4 as uuidv4 } from 'uuid';
+
+export interface MorphologicalProfile {
+  heightCm?: number;
+  weightKg?: number;
+  bmi?: number;
+  notes?: string;
+}
+
+export interface Patient {
+  readonly id: string;
+  readonly name: string;
+  readonly dateOfBirth: string; // ISO 8601 YYYY-MM-DD
+  readonly morphologicalProfile: MorphologicalProfile | null;
+  readonly createdAt: string; // ISO 8601 UTC
+}
+
+export interface CreatePatientInput {
+  name: string;
+  dateOfBirth: string;
+  morphologicalProfile?: MorphologicalProfile;
+}
+
+export function createPatient(input: CreatePatientInput): Patient {
+  if (!input.name.trim()) {
+    throw new Error('Le nom du patient est obligatoire.');
+  }
+  if (!input.dateOfBirth) {
+    throw new Error('La date de naissance est obligatoire.');
+  }
+  const dob = new Date(input.dateOfBirth);
+  if (isNaN(dob.getTime())) {
+    throw new Error('La date de naissance est invalide.');
+  }
+  if (dob > new Date()) {
+    throw new Error('La date de naissance ne peut pas être dans le futur.');
+  }
+
+  return {
+    id: uuidv4(),
+    name: input.name.trim(),
+    dateOfBirth: input.dateOfBirth,
+    morphologicalProfile: input.morphologicalProfile ?? null,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+export function patientAge(patient: Patient): number {
+  const dob = new Date(patient.dateOfBirth);
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  const m = today.getMonth() - dob.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+    age--;
+  }
+  return age;
+}
