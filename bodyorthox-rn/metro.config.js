@@ -1,17 +1,10 @@
-const { getDefaultConfig } = require('expo/metro-config');
-const { withNativeWind } = require('nativewind/metro');
+const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
 
-const config = getDefaultConfig(__dirname);
+const config = {
+  resolver: {
+    platforms: ['ios', 'android', 'native', 'web'],
+    sourceExts: ['js', 'jsx', 'ts', 'tsx', 'json', 'web.js', 'web.ts', 'web.tsx'],
+  },
+};
 
-// Enable web support
-config.resolver.platforms = ['ios', 'android', 'native', 'web'];
-
-// Support platform-specific extensions for web
-config.resolver.sourceExts = [
-  ...config.resolver.sourceExts,
-  'web.tsx',
-  'web.ts',
-  'web.js',
-];
-
-module.exports = config;
+module.exports = mergeConfig(getDefaultConfig(__dirname), config);

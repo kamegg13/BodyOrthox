@@ -1,62 +1,11 @@
 {
-  "expo": {
-    "name": "BodyOrthox",
-    "slug": "bodyorthox",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#1a1a2e"
-    },
-    "ios": {
-      "supportsTablet": false,
-      "bundleIdentifier": "com.bodyorthox.app",
-      "infoPlist": {
-        "NSCameraUsageDescription": "BodyOrthox utilise la caméra pour analyser la biomécanique posturale.",
-        "NSFaceIDUsageDescription": "BodyOrthox utilise Face ID pour sécuriser l'accès aux données patients.",
-        "NSPhotoLibraryUsageDescription": "BodyOrthox peut enregistrer les rapports dans votre galerie."
-      }
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#1a1a2e"
-      },
-      "package": "com.bodyorthox.app",
-      "permissions": [
-        "CAMERA",
-        "USE_BIOMETRIC",
-        "USE_FINGERPRINT",
-        "VIBRATE",
-        "RECEIVE_BOOT_COMPLETED"
-      ]
-    },
-    "web": {
-      "favicon": "./assets/favicon.png",
-      "bundler": "metro",
-      "output": "server"
-    },
-    "plugins": [
-      "expo-router",
-      "expo-camera",
-      "expo-local-authentication",
-      "expo-sqlite",
-      "expo-secure-store",
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/notification-icon.png",
-          "color": "#4a90d9"
-        }
-      ]
-    ],
-    "experiments": {
-      "typedRoutes": true
-    },
-    "scheme": "bodyorthox"
+  "name": "BodyOrthox",
+  "displayName": "BodyOrthox",
+  "version": "1.0.0",
+  "android": {
+    "package": "com.bodyorthox.app"
+  },
+  "ios": {
+    "bundleIdentifier": "com.bodyorthox.app"
   }
 }

@@ -1,18 +1,17 @@
 import { WebBiometricService } from '../biometric-service.web';
 
-// Mock expo-local-authentication before importing native service
-jest.mock('expo-local-authentication', () => ({
-  hasHardwareAsync: jest.fn().mockResolvedValue(false),
-  isEnrolledAsync: jest.fn().mockResolvedValue(false),
-  authenticateAsync: jest.fn().mockResolvedValue({ success: false }),
-  AuthenticationType: {
-    FINGERPRINT: 1,
-    FACIAL_RECOGNITION: 2,
-  },
-}));
+// Mock react-native-biometrics before importing native service
+const mockIsSensorAvailable = jest.fn();
+const mockSimplePrompt = jest.fn();
+
+jest.mock('react-native-biometrics', () => {
+  return jest.fn().mockImplementation(() => ({
+    isSensorAvailable: mockIsSensorAvailable,
+    simplePrompt: mockSimplePrompt,
+  }));
+});
 
 // Import after mock is set up
-import * as LocalAuthentication from 'expo-local-authentication';
 import { NativeBiometricService } from '../biometric-service.native';
 
 describe('WebBiometricService', () => {
@@ -47,61 +46,59 @@ describe('NativeBiometricService', () => {
   });
 
   describe('isAvailable', () => {
-    it('returns false when no hardware', async () => {
-      (LocalAuthentication.hasHardwareAsync as jest.Mock).mockResolvedValue(false);
+    it('returns false when sensor not available', async () => {
+      mockIsSensorAvailable.mockResolvedValue({ available: false, biometryType: null });
       const available = await service.isAvailable();
       expect(available).toBe(false);
     });
 
-    it('returns false when not enrolled', async () => {
-      (LocalAuthentication.hasHardwareAsync as jest.Mock).mockResolvedValue(true);
-      (LocalAuthentication.isEnrolledAsync as jest.Mock).mockResolvedValue(false);
-      const available = await service.isAvailable();
-      expect(available).toBe(false);
-    });
-
-    it('returns true when hardware and enrolled', async () => {
-      (LocalAuthentication.hasHardwareAsync as jest.Mock).mockResolvedValue(true);
-      (LocalAuthentication.isEnrolledAsync as jest.Mock).mockResolvedValue(true);
+    it('returns true when sensor available', async () => {
+      mockIsSensorAvailable.mockResolvedValue({ available: true, biometryType: 'TouchID' });
       const available = await service.isAvailable();
       expect(available).toBe(true);
+    });
+
+    it('returns false on error', async () => {
+      mockIsSensorAvailable.mockImplementation(() => { throw new Error('Hardware error'); });
+      const available = await service.isAvailable();
+      expect(available).toBe(false);
     });
   });
 
   describe('authenticate', () => {
     it('returns success when authentication succeeds', async () => {
-      (LocalAuthentication.authenticateAsync as jest.Mock).mockResolvedValue({ success: true });
+      mockSimplePrompt.mockResolvedValue({ success: true });
       const result = await service.authenticate();
       expect(result.success).toBe(true);
     });
 
-    it('returns failure with user_cancel error', async () => {
-      (LocalAuthentication.authenticateAsync as jest.Mock).mockResolvedValue({
-        success: false,
-        error: 'user_cancel',
-      });
+    it('returns failure with UserCancel error', async () => {
+      mockSimplePrompt.mockResolvedValue({ success: false, error: 'UserCancel' });
       const result = await service.authenticate();
       expect(result.success).toBe(false);
       expect(result.error).toBe('Authentification annulée');
     });
 
     it('returns failure with generic error', async () => {
-      (LocalAuthentication.authenticateAsync as jest.Mock).mockResolvedValue({
-        success: false,
-        error: 'authentication_failed',
-      });
+      mockSimplePrompt.mockResolvedValue({ success: false, error: 'authentication_failed' });
       const result = await service.authenticate();
       expect(result.success).toBe(false);
       expect(result.error).toBe('Authentification échouée');
     });
 
     it('handles thrown exceptions', async () => {
-      (LocalAuthentication.authenticateAsync as jest.Mock).mockImplementation(() => {
-        throw new Error('Hardware error');
-      });
+      mockSimplePrompt.mockImplementation(() => { throw new Error('Hardware error'); });
       const result = await service.authenticate();
       expect(result.success).toBe(false);
       expect(result.error).toBe('Hardware error');
+    });
+
+    it('passes reason to promptMessage', async () => {
+      mockSimplePrompt.mockResolvedValue({ success: true });
+      await service.authenticate('Accès sécurisé');
+      expect(mockSimplePrompt).toHaveBeenCalledWith(
+        expect.objectContaining({ promptMessage: 'Accès sécurisé' })
+      );
     });
   });
 });

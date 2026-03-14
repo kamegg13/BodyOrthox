@@ -40,8 +40,8 @@ jobs:
       - name: Run tests
         run: npm test -- --ci --forceExit
 
-      - name: Export web build
-        run: npx expo export --platform web --output-dir dist
+      - name: Build web bundle
+        run: npm run build:web
         env:
           NODE_ENV: production
 
@@ -51,7 +51,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: bodyorthox-rn/dist
+          path: bodyorthox-rn/web-dist
 
   deploy:
     name: Deploy to GitHub Pages

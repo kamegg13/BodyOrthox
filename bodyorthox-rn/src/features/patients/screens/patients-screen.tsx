@@ -7,7 +7,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { router } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../../../navigation/types';
 import { usePatientsStore } from '../store/patients-store';
 import { PatientListTile } from '../components/patient-list-tile';
 import { Patient } from '../domain/patient';
@@ -17,32 +19,25 @@ import { Colors } from '../../../shared/design-system/colors';
 import { Spacing, BorderRadius } from '../../../shared/design-system/spacing';
 import { Typography } from '../../../shared/design-system/typography';
 
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 const DEBOUNCE_MS = 200;
 
 export function PatientsScreen() {
+  const navigation = useNavigation<Nav>();
   const { patients, isLoading, error, searchQuery, loadPatients, setSearchQuery, clearError } =
     usePatientsStore();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    loadPatients();
-  }, []);
+  useEffect(() => { loadPatients(); }, []);
 
-  const handleSearch = useCallback(
-    (text: string) => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => setSearchQuery(text), DEBOUNCE_MS);
-    },
-    [setSearchQuery]
-  );
+  const handleSearch = useCallback((text: string) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setSearchQuery(text), DEBOUNCE_MS);
+  }, [setSearchQuery]);
 
   const handlePatientPress = useCallback((patient: Patient) => {
-    router.push(`/patients/${patient.id}`);
-  }, []);
-
-  const handleCreatePress = useCallback(() => {
-    router.push('/patients/create');
-  }, []);
+    navigation.navigate('PatientDetail', { patientId: patient.id });
+  }, [navigation]);
 
   if (error) {
     return <ErrorWidget message={error} onRetry={() => { clearError(); loadPatients(); }} />;
@@ -54,7 +49,7 @@ export function PatientsScreen() {
         <Text style={[Typography.h2, styles.title]}>Patients</Text>
         <TouchableOpacity
           style={styles.addButton}
-          onPress={handleCreatePress}
+          onPress={() => navigation.navigate('CreatePatient')}
           accessibilityRole="button"
           accessibilityLabel="Ajouter un patient"
           testID="add-patient-button"
@@ -72,7 +67,6 @@ export function PatientsScreen() {
           defaultValue={searchQuery}
           returnKeyType="search"
           clearButtonMode="while-editing"
-          accessibilityLabel="Rechercher"
           testID="search-input"
         />
       </View>
@@ -94,10 +88,7 @@ export function PatientsScreen() {
           data={patients}
           keyExtractor={item => item.id}
           renderItem={({ item }) => (
-            <PatientListTile
-              patient={item}
-              onPress={handlePatientPress}
-            />
+            <PatientListTile patient={item} onPress={handlePatientPress} />
           )}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
@@ -109,69 +100,26 @@ export function PatientsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
+  container: { flex: 1, backgroundColor: Colors.background },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.lg,
-    paddingBottom: Spacing.md,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: Spacing.lg, paddingTop: Spacing.lg, paddingBottom: Spacing.md,
   },
-  title: {
-    color: Colors.textPrimary,
-  },
+  title: { color: Colors.textPrimary },
   addButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center',
   },
-  addButtonText: {
-    color: Colors.textOnPrimary,
-    fontSize: 24,
-    lineHeight: 28,
-    fontWeight: '400',
-  },
-  searchContainer: {
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.md,
-  },
+  addButtonText: { color: Colors.textOnPrimary, fontSize: 24, lineHeight: 28 },
+  searchContainer: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.md },
   searchInput: {
-    backgroundColor: Colors.backgroundCard,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: BorderRadius.lg,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm + 2,
-    color: Colors.textPrimary,
-    fontSize: 15,
+    backgroundColor: Colors.backgroundCard, borderWidth: 1, borderColor: Colors.border,
+    borderRadius: BorderRadius.lg, paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm + 2, color: Colors.textPrimary, fontSize: 15,
   },
-  list: {
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.xl,
-  },
-  emptyState: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: Spacing.xl,
-    gap: Spacing.md,
-  },
-  emptyIcon: {
-    fontSize: 64,
-  },
-  emptyTitle: {
-    color: Colors.textPrimary,
-    textAlign: 'center',
-  },
-  emptySubtitle: {
-    color: Colors.textSecondary,
-    textAlign: 'center',
-  },
+  list: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xl },
+  emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.xl, gap: Spacing.md },
+  emptyIcon: { fontSize: 64 },
+  emptyTitle: { color: Colors.textPrimary, textAlign: 'center' },
+  emptySubtitle: { color: Colors.textSecondary, textAlign: 'center' },
 });

@@ -1,36 +1,34 @@
-import * as LocalAuthentication from 'expo-local-authentication';
+import ReactNativeBiometrics from 'react-native-biometrics';
 import { IBiometricService, BiometricResult } from './biometric-service';
 
 export class NativeBiometricService implements IBiometricService {
+  private rnBiometrics = new ReactNativeBiometrics();
+
   async isAvailable(): Promise<boolean> {
-    const hasHardware = await LocalAuthentication.hasHardwareAsync();
-    if (!hasHardware) return false;
-    const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-    return isEnrolled;
+    try {
+      const { available } = await this.rnBiometrics.isSensorAvailable();
+      return available;
+    } catch {
+      return false;
+    }
   }
 
   async authenticate(reason = 'Accéder à BodyOrthox'): Promise<BiometricResult> {
     try {
-      const result = await LocalAuthentication.authenticateAsync({
+      const { success, error } = await this.rnBiometrics.simplePrompt({
         promptMessage: reason,
-        fallbackLabel: 'Code PIN',
-        cancelLabel: 'Annuler',
-        disableDeviceFallback: false,
+        cancelButtonText: 'Annuler',
       });
 
-      if (result.success) {
-        return { success: true };
-      }
+      if (success) return { success: true };
 
-      const errorMsg = result.error === 'user_cancel'
-        ? 'Authentification annulée'
-        : 'Authentification échouée';
-
-      return { success: false, error: errorMsg };
-    } catch (error) {
+      const message =
+        error === 'UserCancel' ? 'Authentification annulée' : 'Authentification échouée';
+      return { success: false, error: message };
+    } catch (err) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Erreur inconnue',
+        error: err instanceof Error ? err.message : 'Erreur inconnue',
       };
     }
   }

@@ -1,63 +1,71 @@
-// Mock expo modules
-jest.mock('expo-sqlite', () => ({
-  openDatabaseAsync: jest.fn(),
-  SQLiteDatabase: jest.fn(),
+// Mock react-native-sqlite-storage
+jest.mock('react-native-sqlite-storage', () => ({
+  openDatabase: jest.fn(() => ({
+    transaction: jest.fn(),
+    executeSql: jest.fn(),
+    close: jest.fn(),
+  })),
+  enablePromise: jest.fn(),
+  DEBUG: jest.fn(),
 }));
 
-jest.mock('expo-secure-store', () => ({
-  getItemAsync: jest.fn(),
-  setItemAsync: jest.fn(),
-  deleteItemAsync: jest.fn(),
+// Mock react-native-keychain
+jest.mock('react-native-keychain', () => ({
+  setGenericPassword: jest.fn().mockResolvedValue(true),
+  getGenericPassword: jest.fn().mockResolvedValue({ password: 'mock-key' }),
+  resetGenericPassword: jest.fn().mockResolvedValue(true),
 }));
 
-jest.mock('expo-local-authentication', () => ({
-  hasHardwareAsync: jest.fn().mockResolvedValue(false),
-  isEnrolledAsync: jest.fn().mockResolvedValue(false),
-  authenticateAsync: jest.fn().mockResolvedValue({ success: false }),
-  AuthenticationType: {
-    FINGERPRINT: 1,
-    FACIAL_RECOGNITION: 2,
-  },
-}));
+// Mock react-native-biometrics
+jest.mock('react-native-biometrics', () => {
+  return jest.fn().mockImplementation(() => ({
+    isSensorAvailable: jest.fn().mockResolvedValue({ available: false }),
+    simplePrompt: jest.fn().mockResolvedValue({ success: false }),
+  }));
+});
 
-jest.mock('expo-camera', () => ({
+// Mock react-native-vision-camera
+jest.mock('react-native-vision-camera', () => ({
   Camera: 'Camera',
-  CameraType: { back: 'back', front: 'front' },
-  requestCameraPermissionsAsync: jest.fn().mockResolvedValue({ status: 'granted' }),
-  useCameraPermissions: jest.fn(() => [{ granted: true }, jest.fn()]),
+  useCameraDevice: jest.fn(() => ({ id: 'mock-device' })),
+  useCameraPermission: jest.fn(() => ({
+    hasPermission: true,
+    requestPermission: jest.fn().mockResolvedValue(true),
+  })),
+  useFrameProcessor: jest.fn(),
 }));
 
-jest.mock('expo-file-system', () => ({
-  documentDirectory: '/mock/documents/',
-  cacheDirectory: '/mock/cache/',
-  writeAsStringAsync: jest.fn(),
-  readAsStringAsync: jest.fn(),
-  deleteAsync: jest.fn(),
-  makeDirectoryAsync: jest.fn(),
-  getInfoAsync: jest.fn().mockResolvedValue({ exists: false }),
-}));
-
-jest.mock('expo-print', () => ({
-  printAsync: jest.fn(),
-  printToFileAsync: jest.fn().mockResolvedValue({ uri: '/mock/report.pdf' }),
-}));
-
-jest.mock('expo-sharing', () => ({
-  shareAsync: jest.fn(),
-  isAvailableAsync: jest.fn().mockResolvedValue(true),
-}));
-
-jest.mock('expo-notifications', () => ({
-  scheduleNotificationAsync: jest.fn(),
-  requestPermissionsAsync: jest.fn().mockResolvedValue({ status: 'granted' }),
-  setNotificationHandler: jest.fn(),
-}));
-
+// Mock react-native-reanimated
 jest.mock('react-native-reanimated', () => {
   const Reanimated = require('react-native-reanimated/mock');
   Reanimated.default.call = () => {};
   return Reanimated;
 });
+
+// Mock @react-navigation/native
+jest.mock('@react-navigation/native', () => {
+  const actual = jest.requireActual('@react-navigation/native');
+  return {
+    ...actual,
+    useNavigation: () => ({
+      navigate: jest.fn(),
+      goBack: jest.fn(),
+      replace: jest.fn(),
+      push: jest.fn(),
+    }),
+    useRoute: () => ({
+      params: {},
+    }),
+    NavigationContainer: ({ children }: { children: React.ReactNode }) => children,
+  };
+});
+
+// Mock @notifee/react-native
+jest.mock('@notifee/react-native', () => ({
+  requestPermission: jest.fn().mockResolvedValue({}),
+  createNotification: jest.fn(),
+  displayNotification: jest.fn(),
+}));
 
 // Mock uuid
 jest.mock('uuid', () => ({
@@ -66,11 +74,3 @@ jest.mock('uuid', () => ({
 
 // Silence console.warn in tests
 global.console.warn = jest.fn();
-
-// Mock Platform
-jest.mock('react-native/Libraries/Utilities/Platform', () => ({
-  OS: 'ios',
-  select: (obj: Record<string, unknown>) => obj.ios,
-  isPad: false,
-  Version: 15,
-}));
