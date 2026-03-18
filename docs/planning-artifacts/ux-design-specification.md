@@ -41,7 +41,7 @@ mockupTool: "Google Stitch"
 
 ### Project Vision
 
-BodyOrthox est une application iOS (Flutter) qui permet aux orthopédistes d'analyser objectivement la biomécanique de leurs patients — marche et course — en 30 secondes, depuis n'importe quel cabinet, avec uniquement leur iPhone. L'analyse (genou, hanche, cheville) est réalisée 100% on-device via Google ML Kit (97.2% PCK), sans transmission de données vidéo, sans matériel dédié, à ~39-49€/mois. Architecture locale-first = conformité RGPD native.
+BodyOrthox est une application mobile et web (React Native) qui permet aux orthopédistes d'analyser objectivement la biomécanique de leurs patients — marche et course — en 30 secondes, depuis n'importe quel cabinet, avec uniquement leur iPhone. L'analyse (genou, hanche, cheville) est réalisée 100% on-device via MediaPipe (97.2% PCK), sans transmission de données vidéo, sans matériel dédié, à ~39-49€/mois. Architecture locale-first = conformité RGPD native.
 
 **Proposition de valeur centrale :** Là où Kinetisense/Dartfish coûtent 3-15k€/an avec matériel obligatoire, BodyOrthox offre une analyse clinique portable, opérable seul, en 30 secondes — "le prix d'un abonnement, sur votre iPhone."
 
@@ -86,11 +86,11 @@ Ce flux doit être maîtrisable sans formation, réalisable en 30 secondes, et p
 
 ### Platform Strategy
 
-- **Plateforme :** iOS uniquement (iPhone + iPad), MVP distribué via TestFlight
+- **Plateforme :** iOS + Android + Web (iPhone + iPad + navigateurs), MVP distribué via TestFlight
 - **Mode d'interaction :** Tactile, une main (iPhone portrait), en position debout
 - **Offline-first :** 100% — aucune connexion réseau requise à aucun moment
 - **Capture caméra :** Caméra arrière uniquement, vue de profil strict du patient
-- **Capacités iOS exploitées :** Face ID/Touch ID, Local Notifications, Share Sheet natif, In-App Purchase (RevenueCat), Impeller renderer (58-60 FPS)
+- **Capacités exploitées :** Face ID/Touch ID (react-native-biometrics), Local Notifications (@notifee/react-native), Share Sheet natif, In-App Purchase (react-native-purchases / RevenueCat), react-native-reanimated (animations fluides)
 - **Mockup tool :** Google Stitch
 
 ### Effortless Interactions
@@ -165,7 +165,7 @@ L'app ne remplace pas son jugement clinique — elle l'amplifie. Il doit se sent
 
 - **Calme productif → Analyse silencieuse** : pas de modal bloquant, pas d'écran de chargement en plein écran. Une bannière discrète + notification locale suffisent.
 
-- **Délight → Micro-animations Impeller** : transitions fluides 58-60 FPS, animation d'apparition des angles articulaires, cadre qui pulse doucement quand il est en position correcte.
+- **Délight → Micro-animations react-native-reanimated** : transitions fluides 60 FPS, animation d'apparition des angles articulaires, cadre qui pulse doucement quand il est en position correcte.
 
 - **Naturalité récurrente → Zéro re-onboarding** : l'app mémorise le dernier patient actif, le dernier type d'analyse. Le praticien reprend exactement où il s'était arrêté.
 
@@ -253,24 +253,24 @@ Référence de visualisation de données professionnelles en contexte mobile.
 
 ### Design System Choice
 
-**Approche retenue : Hybride Cupertino + Material Design 3**
+**Approche retenue : React Native Components + Design System Custom**
 
-Navigation et patterns système en Cupertino (iOS natif) ; composants UI riches en Material 3 thémé avec l'identité visuelle BodyOrthox.
+Navigation via React Navigation (native-stack) ; composants UI custom avec l'identité visuelle BodyOrthox, adaptés à chaque plateforme (iOS + Android + Web).
 
 ### Rationale for Selection
 
-- **Cupertino pour la navigation** : swipe-back natif iOS, bottom sheets, CupertinoNavigationBar — Dr. Marc reconnaît chaque geste. La confiance passe par la familiarité.
-- **Material 3 pour les composants** : bibliothèque Flutter la plus riche (cards, progress indicators, sliders annotation, dialogs) — évite de coder des composants from scratch en solo dev.
-- **Thémage Material → identité BodyOrthox** : colorScheme, typography, shape system personnalisés pour une identité médicale professionnelle distincte.
-- **Solo developer** : gain de temps maximal sans sacrifier le feel iOS que la cible utilise quotidiennement.
+- **React Navigation pour la navigation** : swipe-back natif iOS, bottom sheets, native-stack navigation — Dr. Marc reconnaît chaque geste. La confiance passe par la familiarité.
+- **React Native components custom** : composants stylés avec le design system BodyOrthox (View, Text, Pressable, TextInput) — adaptables iOS, Android et Web.
+- **Design tokens → identité BodyOrthox** : colorScheme, typography, shape system personnalisés pour une identité médicale professionnelle distincte.
+- **Solo developer** : gain de temps maximal avec react-native-web pour couvrir 3 plateformes sans sacrifier le feel natif que la cible utilise quotidiennement.
 
 ### Implementation Approach
 
-- `CupertinoApp` comme widget racine avec `MaterialApp` intégré pour accès aux composants Material
-- Navigation : `CupertinoPageRoute` + swipe-back natif sur tout le flux 4 taps
-- Composants système : `CupertinoActionSheet` (share), `CupertinoAlertDialog` (permissions), `CupertinoNavigationBar`
-- Composants UI : Material 3 thémé — `Card`, `FilledButton`, `LinearProgressIndicator`, `BottomSheet`
-- Renderer : Impeller activé par défaut (iOS 16+) — 58-60 FPS garantis
+- `NavigationContainer` comme composant racine avec native-stack navigation
+- Navigation : native-stack navigation + swipe-back natif sur tout le flux 4 taps
+- Composants système : ActionSheet (React Native) (share), Alert (React Native) (permissions), React Navigation header
+- Composants UI : design system custom — `View` avec shadow (cards), `Pressable` stylé (boutons), progress bars custom, `BottomSheet`
+- Animations : react-native-reanimated — 60 FPS sur toutes les plateformes
 
 ### Customization Strategy
 
@@ -371,7 +371,7 @@ Comme Tinder a réduit la rencontre à "swipe", BodyOrthox réduit l'analyse bio
 
 - Transition vers écran patient libre
 - Bannière discrète : "Analyse en cours..."
-- ML tourne en isolate Flutter — UI non bloquée
+- ML tourne en native thread / Web Worker — UI non bloquée
 - Notification locale : "Analyse prête — Genou 42°/67° · Hanche 89° · Cheville 41°"
 
 **5. Résultat — "Le moment aha"**
@@ -494,7 +494,7 @@ iOS natif, fond blanc dominant, couleurs fonctionnelles uniquement. Chaque élé
 
 **Écrans clés retenus :**
 
-- Home : CTA "Nouvelle analyse" dominant + liste patients épurée + tab bar Cupertino
+- Home : CTA "Nouvelle analyse" dominant + liste patients épurée + Bottom Tab Navigator
 - Capture : plein écran, bannière RGPD légère, bouton "Prendre une photo" (pivot HKA — 08/03/2026)
 - Résultats : card Angle HKA dominant + BodySkeletonOverlay axe H-K-A + normes genu varum/valgum (pivot HKA — 08/03/2026)
 
@@ -536,9 +536,9 @@ iOS natif, fond blanc dominant, couleurs fonctionnelles uniquement. Chaque élé
 
 ### Implementation Approach
 
-- `CupertinoNavigationBar` pour toutes les nav bars
-- `CupertinoTabBar` pour la tab bar principale
-- Cards résultat en `Material Card` thémé (elevation 0, border radius 12pt)
+- React Navigation header pour toutes les nav bars
+- Bottom Tab Navigator pour la tab bar principale
+- Cards résultat en `View` avec shadow custom (elevation 0, border radius 12pt)
 - Couleurs système iOS (`systemGreen`, `systemOrange`, `systemRed`) pour les états articulaires
 - Background principal : `#F2F2F7` (iOS systemGroupedBackground)
 - Cards : `#FFFFFF` (iOS secondarySystemGroupedBackground)
@@ -574,7 +574,7 @@ flowchart TD
 
     N --> O[📹 Enregistrement\nPatient marche/court]
     O --> P[⏹️ Arrête capture]
-    P --> Q[⏳ Analyse on-device\nGoogle ML Kit\n~20 secondes]
+    P --> Q[⏳ Analyse on-device\nMediaPipe\n~20 secondes]
     Q --> R[📊 Résultats\nAngles genou + hanche + cheville]
 
     R --> S{Niveau d'affichage}
@@ -620,7 +620,7 @@ flowchart TD
     J --> I
     I -->|Oui| G
 
-    B -->|Analyse échouée| K[❌ ML Kit ne détecte pas la pose]
+    B -->|Analyse échouée| K[❌ MediaPipe ne détecte pas la pose]
     K --> L['Corps entier dans le cadre ?\nEssayez de reculer']
     L --> M[Bouton Réessayer\nRetour cadre guidé]
     M --> B
@@ -773,30 +773,30 @@ Patterns récurrents identifiés à travers les 4 journeys.
 
 ### Design System Components
 
-Composants disponibles dans le design system Hybride Cupertino + Material 3 — réutilisés sans customisation lourde.
+Composants disponibles dans le design system React Native Components + Design System Custom — réutilisés sans customisation lourde.
 
-**Cupertino (navigation + interactions système) :**
+**Navigation + interactions système (React Navigation) :**
 
 | Composant                  | Usage BodyOrthox                                     |
 | -------------------------- | ---------------------------------------------------- |
-| `CupertinoNavigationBar`   | Barre titre sur tous les écrans du flux              |
-| `CupertinoTabBar`          | Navigation principale (Home / Patients / Historique) |
-| `CupertinoActionSheet`     | Share sheet export PDF                               |
-| `CupertinoAlertDialog`     | Permissions caméra, confirmations                    |
-| `CupertinoTextField`       | Formulaire création patient                          |
-| `CupertinoSearchTextField` | Recherche dans la liste patients                     |
+| React Navigation header    | Barre titre sur tous les écrans du flux              |
+| Bottom Tab Navigator       | Navigation principale (Home / Patients / Historique) |
+| ActionSheet (React Native) | Share sheet export PDF                               |
+| Alert (React Native)       | Permissions caméra, confirmations                    |
+| `TextInput`                | Formulaire création patient                          |
+| `TextInput` with search    | Recherche dans la liste patients                     |
 
-**Material 3 thémé (composants UI) :**
+**Composants UI custom :**
 
-| Composant                   | Usage BodyOrthox                    |
-| --------------------------- | ----------------------------------- |
-| `Card`                      | Container résultats, cartes patient |
-| `FilledButton`              | CTA "Nouvelle analyse", "Exporter"  |
-| `LinearProgressIndicator`   | Barre progression capture           |
-| `CircularProgressIndicator` | Loading états ponctuels             |
-| `BottomSheet`               | Paywall upgrade, options avancées   |
-| `ListTile`                  | Base des items liste patients       |
-| `Badge`                     | Compteur freemium sur l'onglet      |
+| Composant                                | Usage BodyOrthox                    |
+| ---------------------------------------- | ----------------------------------- |
+| `View` with shadow (card)                | Container résultats, cartes patient |
+| `TouchableOpacity`/`Pressable` stylé     | CTA "Nouvelle analyse", "Exporter"  |
+| Progress bar custom ou library           | Barre progression capture           |
+| `ActivityIndicator`                      | Loading états ponctuels             |
+| BottomSheet (library)                    | Paywall upgrade, options avancées   |
+| Item liste custom (`View` + `Pressable`) | Base des items liste patients       |
+| Badge custom                             | Compteur freemium sur l'onglet      |
 
 ---
 
@@ -868,7 +868,7 @@ Composants spécifiques à l'analyse biomécanique médicale, non couverts par l
 **Anatomy :**
 
 - Bannière discrète en haut (sous la nav bar), hauteur 36pt, semi-transparente
-- Spinner linear animé (Impeller 60fps)
+- Spinner linear animé (react-native-reanimated 60fps)
 - Texte : "Analyse en cours..." → "Analyse prête — 42°/67°/41°"
 
 **States :**
@@ -890,7 +890,7 @@ Composants spécifiques à l'analyse biomécanique médicale, non couverts par l
 - Points articulaires : cercles `#1B6FBF` de 8pt sur les jointures détectées
 - Segments osseux : lignes de 2pt entre les points
 - Labels angles : callout SF Pro Semibold sur les 3 articulations cibles
-- Timeline scrubber : slider Material 3 en bas
+- Timeline scrubber : slider custom en bas
 
 **States :**
 
@@ -926,7 +926,7 @@ Composants spécifiques à l'analyse biomécanique médicale, non couverts par l
 - Handle + titre : "Vous avez utilisé vos 10 analyses"
 - Rappel de valeur : historique des dernières analyses (preuve que ça marche)
 - Comparaison Freemium / Pro en 2 colonnes
-- CTA : "Débloquer Pro — 49€/mois" (`FilledButton`) + "Plus tard" (`TextButton`)
+- CTA : "Débloquer Pro — 49€/mois" (`Pressable` filled) + "Plus tard" (`Pressable` text)
 - Badge Apple Pay si disponible sur le device
 
 **States :** `triggered` → `purchasing` (spinner CTA) → `success` (animation légère + message)
@@ -938,9 +938,9 @@ Composants spécifiques à l'analyse biomécanique médicale, non couverts par l
 **Principes :**
 
 1. **Tokens first** — Tous les composants custom utilisent les tokens du design system (colorScheme, textTheme, spacing) — jamais de valeurs hardcodées
-2. **Impeller-ready** — Animations conçues pour 60fps, RepaintBoundary placé stratégiquement
-3. **Testables** — Chaque composant exposé avec des props suffisantes pour les golden tests
-4. **VoiceOver-first** — Semantic labels intégrés dès le design, pas ajoutés après
+2. **Reanimated-ready** — Animations conçues pour 60fps via react-native-reanimated, composants optimisés
+3. **Testables** — Chaque composant exposé avec des props suffisantes pour les tests (React Native Testing Library)
+4. **Accessibility-first** — accessibilityLabel intégrés dès le design, pas ajoutés après
 
 ---
 
@@ -956,10 +956,10 @@ Composants spécifiques à l'analyse biomécanique médicale, non couverts par l
 
 **Phase 2 — Résultats et export**
 
-| Composant                          | Flux              | Priorité     |
-| ---------------------------------- | ----------------- | ------------ |
-| `BodySkeletonOverlay`              | Vue expert replay | 🟠 Important |
-| `PatientListItem` (ListTile thémé) | Liste patients    | 🟠 Important |
+| Composant                             | Flux              | Priorité     |
+| ------------------------------------- | ----------------- | ------------ |
+| `BodySkeletonOverlay`                 | Vue expert replay | 🟠 Important |
+| `PatientListItem` (item liste custom) | Liste patients    | 🟠 Important |
 
 **Phase 3 — Freemium et conversion**
 
@@ -974,13 +974,13 @@ Composants spécifiques à l'analyse biomécanique médicale, non couverts par l
 
 **Règle d'or : 1 écran = 1 action primaire maximum.**
 
-| Niveau           | Composant               | Style                                                 | Usage                                          |
-| ---------------- | ----------------------- | ----------------------------------------------------- | ---------------------------------------------- |
-| **Primary**      | `FilledButton`          | Fond `#1B6FBF`, texte blanc, full-width, 56pt hauteur | "Nouvelle analyse", "Exporter PDF", "Démarrer" |
-| **Secondary**    | `OutlinedButton`        | Bord `#1B6FBF`, fond transparent                      | "Voir le détail", "Ajouter un patient"         |
-| **Tertiary**     | `TextButton`            | Texte `#1B6FBF`, pas de bord                          | "Annuler", "Plus tard", "Ignorer"              |
-| **Destructive**  | `TextButton` rouge      | Texte `#FF3B30` uniquement                            | "Supprimer l'analyse" — jamais en primary      |
-| **Conditionnel** | `FilledButton` disabled | Fond gris `#C7C7CC`, curseur inactif                  | "Démarrer" si cadre caméra non prêt            |
+| Niveau           | Composant                   | Style                                                 | Usage                                          |
+| ---------------- | --------------------------- | ----------------------------------------------------- | ---------------------------------------------- |
+| **Primary**      | `Pressable` filled          | Fond `#1B6FBF`, texte blanc, full-width, 56pt hauteur | "Nouvelle analyse", "Exporter PDF", "Démarrer" |
+| **Secondary**    | `Pressable` outlined        | Bord `#1B6FBF`, fond transparent                      | "Voir le détail", "Ajouter un patient"         |
+| **Tertiary**     | `Pressable` text            | Texte `#1B6FBF`, pas de bord                          | "Annuler", "Plus tard", "Ignorer"              |
+| **Destructive**  | `Pressable` text rouge      | Texte `#FF3B30` uniquement                            | "Supprimer l'analyse" — jamais en primary      |
+| **Conditionnel** | `Pressable` filled disabled | Fond gris `#C7C7CC`, curseur inactif                  | "Démarrer" si cadre caméra non prêt            |
 
 **Règle spécifique BodyOrthox :** Le bouton "Démarrer" de la caméra est le seul bouton dont l'activation est conditionnée par un état externe (état `ready` du `GuidedCameraOverlay`). Tous les autres boutons sont toujours actifs.
 
@@ -993,12 +993,12 @@ Composants spécifiques à l'analyse biomécanique médicale, non couverts par l
 | Type                | Composant                         | Comportement                                    | Exemple                                                 |
 | ------------------- | --------------------------------- | ----------------------------------------------- | ------------------------------------------------------- |
 | **Succès**          | `AnalysisProgressBanner.complete` | Check vert + valeurs en texte + auto-dismiss 3s | "Analyse prête — Genou 42° · Hanche 89° · Cheville 41°" |
-| **Erreur critique** | `CupertinoAlertDialog`            | Titre + description + 1 action ("Réessayer")    | Permission caméra refusée                               |
+| **Erreur critique** | Alert (React Native)              | Titre + description + 1 action ("Réessayer")    | Permission caméra refusée                               |
 | **Warning inline**  | Texte + icône `#FF9500`           | Dans le flux, pas modal                         | "Vue non-profil — Orientez de profil"                   |
 | **Info**            | Caption gris                      | Texte statique                                  | Notice RGPD avant capture                               |
 | **Loading**         | `AnalysisProgressBanner`          | Non-bloquant, bannière                          | Analyse ML en cours                                     |
 
-**Anti-pattern critique :** Jamais de modal bloquant pour le loading. L'analyse ML tourne en isolate Flutter — l'UI reste navigable.
+**Anti-pattern critique :** Jamais de modal bloquant pour le loading. L'analyse ML tourne en native thread / Web Worker — l'UI reste navigable.
 
 ---
 
@@ -1007,7 +1007,7 @@ Composants spécifiques à l'analyse biomécanique médicale, non couverts par l
 BodyOrthox a un seul formulaire significatif dans le MVP : **création patient**.
 
 - 3 champs maximum : Prénom + Nom + Date de naissance
-- Clavier iOS automatiquement adapté : texte pour nom, `CupertinoDatePicker` pour DOB
+- Clavier automatiquement adapté : texte pour nom, DatePicker natif pour DOB
 - Validation inline en temps réel — pas de validation groupée au submit
 - Erreur de champ : bord rouge + message ≤ 8 mots sous le champ
 - CTA "Créer" : désactivé tant que tous les champs requis ne sont pas remplis
@@ -1017,13 +1017,13 @@ BodyOrthox a un seul formulaire significatif dans le MVP : **création patient**
 
 ### Navigation Patterns
 
-| Situation           | Pattern                       | Comportement                                                                     |
-| ------------------- | ----------------------------- | -------------------------------------------------------------------------------- |
-| **Flux principal**  | `CupertinoPageRoute` push/pop | Swipe-back natif activé sur tout le flux 4 taps                                  |
-| **Tab bar**         | `CupertinoTabBar` 3 onglets   | Analyses / Patients / Compte — tab active `#1B6FBF`                              |
-| **Retour**          | iOS natif uniquement          | Swipe-back ou `<` Cupertino. Pas de bouton "Fermer" custom dans le flux          |
-| **Modaux**          | `BottomSheet`                 | Pour actions secondaires (paywall, options). Pas de push navigation              |
-| **Deep link notif** | Navigation directe            | Notification locale "Analyse prête" → `AnalysisResultScreen` du patient concerné |
+| Situation           | Pattern                        | Comportement                                                                            |
+| ------------------- | ------------------------------ | --------------------------------------------------------------------------------------- |
+| **Flux principal**  | native-stack push/pop          | Swipe-back natif activé sur tout le flux 4 taps                                         |
+| **Tab bar**         | Bottom Tab Navigator 3 onglets | Analyses / Patients / Compte — tab active `#1B6FBF`                                     |
+| **Retour**          | Natif uniquement               | Swipe-back (iOS) ou bouton retour (Android). Pas de bouton "Fermer" custom dans le flux |
+| **Modaux**          | `BottomSheet`                  | Pour actions secondaires (paywall, options). Pas de push navigation                     |
+| **Deep link notif** | Navigation directe             | Notification locale "Analyse prête" → `AnalysisResultScreen` du patient concerné        |
 
 **Règle importante :** Le swipe-back natif est préservé sur tous les écrans du flux. Aucun écran ne capture le geste swipe pour un autre usage.
 
@@ -1033,8 +1033,8 @@ BodyOrthox a un seul formulaire significatif dans le MVP : **création patient**
 
 | Situation                                       | Pattern                                  | Timing                                                         |
 | ----------------------------------------------- | ---------------------------------------- | -------------------------------------------------------------- |
-| **Permissions système** (caméra, notifications) | `CupertinoAlertDialog` iOS natif         | Au premier usage, jamais au lancement                          |
-| **Confirmation destructive**                    | `CupertinoActionSheet` option rouge      | Après tap sur action destructive                               |
+| **Permissions système** (caméra, notifications) | Alert natif (React Native)               | Au premier usage, jamais au lancement                          |
+| **Confirmation destructive**                    | ActionSheet option rouge                 | Après tap sur action destructive                               |
 | **Paywall upgrade**                             | `ContextualPaywallSheet` (BottomSheet)   | Après la 10e analyse, jamais en interruption                   |
 | **Notice RGPD**                                 | Texte inline caption (1 ligne)           | Au-dessus du bouton "Démarrer", toujours visible, jamais modal |
 | **Score ML faible**                             | Warning inline dans `ArticularAngleCard` | Post-analyse, pas de modal                                     |
@@ -1043,12 +1043,12 @@ BodyOrthox a un seul formulaire significatif dans le MVP : **création patient**
 
 ### Empty States & Loading States
 
-| État                    | Composant                          | Contenu                                                            |
-| ----------------------- | ---------------------------------- | ------------------------------------------------------------------ |
-| **Liste patients vide** | Illustration + CTA                 | "Ajoutez votre premier patient" + `FilledButton` "Nouveau patient" |
-| **Historique vide**     | Texte + CTA                        | "Aucune analyse pour [Patient]" + "Lancer une analyse"             |
-| **Loading initial**     | `CircularProgressIndicator` centré | Max 2 secondes (données locales uniquement)                        |
-| **Analyse en cours**    | `AnalysisProgressBanner`           | Non-bloquant — UI navigable                                        |
+| État                    | Composant                  | Contenu                                                                |
+| ----------------------- | -------------------------- | ---------------------------------------------------------------------- |
+| **Liste patients vide** | Illustration + CTA         | "Ajoutez votre premier patient" + `Pressable` filled "Nouveau patient" |
+| **Historique vide**     | Texte + CTA                | "Aucune analyse pour [Patient]" + "Lancer une analyse"                 |
+| **Loading initial**     | `ActivityIndicator` centré | Max 2 secondes (données locales uniquement)                            |
+| **Analyse en cours**    | `AnalysisProgressBanner`   | Non-bloquant — UI navigable                                            |
 
 ---
 
@@ -1074,7 +1074,7 @@ BodyOrthox a un seul formulaire significatif dans le MVP : **création patient**
 
 **Suppression automatique de la vidéo :**
 
-- Proposée après l'export du PDF via `CupertinoActionSheet`
+- Proposée après l'export du PDF via ActionSheet (React Native)
 - Option default : "Supprimer la vidéo brute"
 - Ton : rassurant — "La vidéo est stockée localement. Vous pouvez la supprimer maintenant."
 
@@ -1082,7 +1082,7 @@ BodyOrthox a un seul formulaire significatif dans le MVP : **création patient**
 
 ### Responsive Strategy
 
-BodyOrthox est iOS uniquement. Pas de desktop, pas de web. Cibles : iPhone portrait (principal) et iPad (secondaire pour la vue résultats en consultation).
+BodyOrthox cible iOS + Android + Web. Cibles : iPhone/Android portrait (principal), iPad (secondaire pour la vue résultats en consultation) et navigateurs web.
 
 | Appareil                        | Orientation          | Layout                                                 |
 | ------------------------------- | -------------------- | ------------------------------------------------------ |
@@ -1097,7 +1097,7 @@ BodyOrthox est iOS uniquement. Pas de desktop, pas de web. Cibles : iPhone portr
 
 ### Breakpoint Strategy
 
-Flutter utilise des logical points (`MediaQuery.of(context).size.width`).
+React Native utilise des density-independent pixels (`useWindowDimensions().width` / `Dimensions.get('window').width`).
 
 | Breakpoint | Largeur   | Adaptation                                     |
 | ---------- | --------- | ---------------------------------------------- |
@@ -1125,14 +1125,14 @@ Justification : app médicale professionnelle, contexte légal français, pratic
 
 **Conformités à implémenter explicitement :**
 
-| Critère                        | Implémentation Flutter                                                                   |
-| ------------------------------ | ---------------------------------------------------------------------------------------- |
-| **Reduce Motion**              | `MediaQuery.of(context).disableAnimations` → fallback statique sur toutes les animations |
-| **High Contrast**              | `MediaQuery.of(context).highContrast` → renforcer les bords des cartes et indicateurs    |
-| **Larger Text**                | Tester Dynamic Type à `accessibilityExtraExtraLarge` — layouts ne doivent pas briser     |
-| **Keyboard navigation (iPad)** | `FocusNode` + `FocusTraversalGroup` sur le flux principal                                |
-| **VoiceOver**                  | `Semantics(label:, hint:)` sur tous les composants custom                                |
-| **Éléments décoratifs**        | `ExcludeSemantics` sur les illustrations et animations purement visuelles                |
+| Critère                        | Implémentation React Native                                                                             |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| **Reduce Motion**              | `AccessibilityInfo.isReduceMotionEnabled()` → fallback statique sur toutes les animations               |
+| **High Contrast**              | `AccessibilityInfo.isHighContrastEnabled()` → renforcer les bords des cartes et indicateurs (iOS)       |
+| **Larger Text**                | Tester Dynamic Type à `accessibilityExtraExtraLarge` — layouts ne doivent pas briser                    |
+| **Keyboard navigation (iPad)** | Support clavier natif sur le flux principal                                                             |
+| **VoiceOver / TalkBack**       | `accessibilityLabel` + `accessibilityHint` sur tous les composants custom                               |
+| **Éléments décoratifs**        | `accessibilityElementsHidden={true}` / `importantForAccessibility="no"` sur illustrations et animations |
 
 ---
 
@@ -1169,32 +1169,34 @@ Justification : app médicale professionnelle, contexte légal français, pratic
 
 ---
 
-### Implementation Guidelines Flutter
+### Implementation Guidelines React Native
 
-```dart
+```typescript
 // Dynamic Type — ne jamais hardcoder les tailles
-Text('42°', style: Theme.of(context).textTheme.displayMedium)
+<Text style={styles.displayMedium}>42°</Text>
+// Utiliser useWindowDimensions() pour adapter les layouts
 
 // Reduce Motion
-final bool reduceMotion = MediaQuery.of(context).disableAnimations;
-AnimationController(
-  duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 300),
-  vsync: this,
-)
+import { AccessibilityInfo } from 'react-native';
+const [reduceMotion, setReduceMotion] = useState(false);
+useEffect(() => {
+  AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
+}, []);
+// Utiliser reduceMotion pour désactiver les animations react-native-reanimated
 
-// VoiceOver sur composant custom
-Semantics(
-  label: 'Flexion genou gauche : 42 degrés, hors norme',
-  child: ArticularAngleCard(...),
-)
+// Accessibilité sur composant custom
+<ArticularAngleCard
+  accessibilityLabel="Flexion genou gauche : 42 degrés, hors norme"
+  {...props}
+/>
 
 // Éléments décoratifs
-ExcludeSemantics(child: BodySkeletonAnimation())
+<View accessibilityElementsHidden={true} importantForAccessibility="no">
+  <BodySkeletonAnimation />
+</View>
 
-// High Contrast
-final bool highContrast = MediaQuery.of(context).highContrast;
-Border.all(
-  color: highContrast ? Colors.black : Colors.transparent,
-  width: highContrast ? 2.0 : 0.0,
-)
+// High Contrast (iOS)
+AccessibilityInfo.isHighContrastEnabled().then((isHighContrast) => {
+  // Renforcer les bords des cartes et indicateurs
+});
 ```

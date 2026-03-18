@@ -80,23 +80,23 @@ FR40: L'app envoie une notification locale lorsqu'une analyse post-capture est t
 
 **Performance**
 NFR-P1: Temps d'analyse post-capture < 30 secondes dans 95% des cas (objectif ~20s)
-NFR-P2: Fluidité interface ≥ 58 FPS constant sur iPhone 12+ (Impeller activé)
+NFR-P2: Fluidité interface ≥ 58 FPS constant sur iPhone 12+ (react-native-reanimated)
 NFR-P3: Démarrage application < 3 secondes cold start sur iPhone 12+
 NFR-P4: Génération rapport PDF < 5 secondes après validation de l'analyse
 NFR-P5: Réactivité UI capture — cadre visuel et détection luminosité en temps réel, latence < 100ms
 NFR-P6: Chargement liste patients < 1 seconde pour 500 patients stockés localement
 
 **Sécurité**
-NFR-S1: Chiffrement données au repos AES-256 (SQLCipher) pour toutes les données Drift — aucune donnée patient en clair
+NFR-S1: Chiffrement données au repos AES-256 (react-native-sqlite-storage) — aucune donnée patient en clair
 NFR-S2: Authentification biométrique iOS obligatoire (Face ID / Touch ID) à chaque ouverture de session
 NFR-S3: Isolation réseau — zéro requête réseau sortante lors d'une analyse (testable par inspection trafic)
-NFR-S4: Clé de chiffrement dérivée du Keychain iOS (flutter_secure_storage) — jamais exposée en mémoire persistante
-NFR-S5: Vidéo brute traitée en mémoire uniquement (isolate Flutter) — jamais écrite sur disque non chiffrée
+NFR-S4: Clé de chiffrement dérivée du Keychain iOS (react-native-keychain) — jamais exposée en mémoire persistante
+NFR-S5: Vidéo brute traitée en mémoire uniquement (native thread / Web Worker) — jamais écrite sur disque non chiffrée
 NFR-S6: Conformité RGPD — architecture locale-first garantit structurellement l'absence de transfert de données personnelles
 
 **Fiabilité**
 NFR-R1: Taux de crash < 0.1% par session utilisateur
-NFR-R2: Atomicité de l'analyse — si l'analyse échoue, aucune donnée corrompue n'est persistée (transactions Drift)
+NFR-R2: Atomicité de l'analyse — si l'analyse échoue, aucune donnée corrompue n'est persistée (transactions SQL)
 NFR-R3: Durabilité des données — les données patients survivent à un crash app, redémarrage appareil, ou mise à jour iOS
 NFR-R4: Taux d'échec ML < 5% sur vidéos correctement filmées (conditions terrain normales)
 NFR-R5: Cohérence des données — aucune analyse partielle stockée (une analyse est soit complète, soit absente)
@@ -111,25 +111,25 @@ NFR-C4: App bundle < 150 MB (modèle ML Kit inclus)
 
 **De l'Architecture :**
 
-- Starter template : `flutter create --org com.bodyorthox --platforms ios --project-name bodyorthox bodyorthox` — constitue la première story d'implémentation (Epic 1, Story 1)
-- Structure Feature-First à scaffolder manuellement immédiatement après `flutter create`
-- Flavors dev/prod configurés manuellement (RevenueCat sandbox vs prod, logs ML Kit, SQLite optionnel non-chiffré en dev)
-- Incompatibilité critique : `sqlcipher_flutter_libs` et `sqlite3_flutter_libs` sont incompatibles — exclusion explicite de `sqlite3_flutter_libs` requise dans pubspec.yaml
-- Code generation via build_runner : `dart run build_runner build --delete-conflicting-outputs` (Freezed + Drift + riverpod_generator + go_router_builder)
-- Index Drift obligatoires : `idx_patients_name` sur `patients(name)` et `idx_analyses_patient` sur `analyses(patient_id, created_at DESC)`
-- Migration Strategy MVP : `MigrationStrategy.recreateTablesOnSchemaChanges()` — migrations manuelles versionnées en Phase 2
-- Distribution MVP : TestFlight uniquement — pas de soumission App Store en Phase 1
-- CI/CD : manuel Xcode (Organizer/Transporter) pour MVP — GitHub Actions + Fastlane différé en Phase 2
+- Starter : `npx react-native init bodyorthox` + configuration webpack pour react-native-web
+- Structure Feature-First dans src/ : core/, features/, shared/, navigation/
+- Configuration dev/prod via app-config.ts avec `__DEV__` flag
+- Database : react-native-sqlite-storage (native) + IndexedDB (web) via IDatabase interface
+- Pas de code generation — TypeScript natif
+- Index SQL : idx_patients_name sur patients(name), idx_analyses_patient sur analyses(patient_id, created_at DESC)
+- Migration Strategy MVP : DROP + CREATE tables (dev), versioned migrations (prod)
+- Distribution MVP : Web (GitHub Pages) + TestFlight (iOS) + APK (Android)
+- CI/CD : GitHub Actions (tests, build Android APK, deploy web GitHub Pages)
 
 **De la spécification UX :**
 
-- Design system hybride Cupertino + Material 3 (Clinical White — fond blanc, SF Pro Display/Text)
+- Design system React Native (dark mode clinical, palette conservée)
 - Palette obligatoire : Primary `#1B6FBF`, Success `#34C759`, Warning `#FF9500`, Error `#FF3B30`, Surface `#FFFFFF`, Text `#1C1C1E`
 - Espacement : base 8pt, marges 16pt, touch target minimum 44×44pt (conformité WCAG + Apple HIG)
 - Composants custom documentés : `GuidedCameraOverlay`, `ArticularAngleCard`, `AnalysisProgressBanner`, `BodySkeletonOverlay`, `FreemiumCounterBadge`, `ContextualPaywallSheet`
 - Layout adaptatif : breakpoint unique `shortestSide >= 600` → iPad, sinon iPhone portrait
 - Accessibilité : VoiceOver compatible, Dynamic Type pour les labels médicaux
-- Animations : durées 200-300ms (Impeller), transitions guidées par iOS Human Interface Guidelines
+- Animations : durées 200-300ms (react-native-reanimated), transitions guidées par iOS Human Interface Guidelines
 
 ### FR Coverage Map
 
@@ -159,7 +159,7 @@ FR23: Epic 4 — Rapport deux niveaux (vue simplifiée / vue détaillée)
 FR24: Epic 4 — Export 1 tap via share sheet iOS natif
 FR25: Epic 4 — Métadonnées session dans le rapport
 FR26: Epic 1 — Authentification biométrique Face ID / Touch ID
-FR27: Epic 1 — Chiffrement local AES-256 (Drift + SQLCipher)
+FR27: Epic 1 — Chiffrement local AES-256 (IDatabase + react-native-sqlite-storage)
 FR28: Epic 1 — Zéro transmission de données vidéo/patient
 FR29: Epic 1 — Fonctionnement 100% offline
 FR30: Epic 1 — Horodatage et traçabilité locale de chaque analyse
@@ -178,7 +178,7 @@ FR40: Epic 6 — Notification locale "Analyse prête"
 
 ### Epic 1 : Fondation Sécurisée
 
-Le praticien peut accéder à l'app de manière sécurisée ; ses données patients sont chiffrées localement et ne quittent jamais son appareil. Cette fondation technique (scaffolding Flutter, SQLCipher, biométrie) rend toutes les autres fonctionnalités possibles.
+Le praticien peut accéder à l'app de manière sécurisée ; ses données patients sont chiffrées localement et ne quittent jamais son appareil. Cette fondation technique (scaffolding React Native, SQLite, biométrie) rend toutes les autres fonctionnalités possibles.
 **FRs couvertes :** FR26, FR27, FR28, FR29, FR30
 
 ### Epic 2 : Gestion des Patients
@@ -210,23 +210,22 @@ Le praticien adopte l'app dès le premier lancement grâce à un onboarding mont
 
 ## Epic 1 : Fondation Sécurisée
 
-Le praticien peut accéder à l'app de manière sécurisée ; ses données patients sont chiffrées localement et ne quittent jamais son appareil. Cette fondation technique (scaffolding Flutter, SQLCipher, biométrie) rend toutes les autres fonctionnalités possibles.
+Le praticien peut accéder à l'app de manière sécurisée ; ses données patients sont chiffrées localement et ne quittent jamais son appareil. Cette fondation technique (scaffolding React Native, SQLite, biométrie) rend toutes les autres fonctionnalités possibles.
 
 ### Story 1.1 : Initialisation du Projet & Infrastructure Technique
 
 As a developer,
-I want a properly initialized Flutter project with Feature-First architecture, flavors dev/prod, and the full dependency stack configured,
+I want a properly initialized React Native project with Feature-First architecture, dev/prod config, and the full dependency stack configured,
 So that all subsequent features can be built on a consistent, maintainable, and buildable foundation.
 
 **Acceptance Criteria:**
 
-**Given** la commande `flutter create --org com.bodyorthox --platforms ios --project-name bodyorthox bodyorthox` est exécutée
-**When** la structure Feature-First est scaffoldée manuellement (`core/`, `features/`, `shared/`) et les flavors dev/prod configurés
-**Then** `flutter run --flavor dev -t lib/main_dev.dart` se lance sans erreur
-**And** `dart run build_runner build --delete-conflicting-outputs` génère le code sans conflit
-**And** `pubspec.yaml` déclare `sqlcipher_flutter_libs` avec exclusion explicite de `sqlite3_flutter_libs`
-**And** les entry points `main_dev.dart` et `main_prod.dart` existent et pointent vers un `AppConfig` flavor-aware
-**And** `analysis_options.yaml` est configuré avec les règles Dart strictes
+**Given** le projet React Native est initialisé avec la structure src/ Feature-First
+**When** les dépendances sont installées et webpack configuré
+**Then** `npm run web` lance le dev server sans erreur sur localhost:8080
+**And** `npm run type-check` passe sans erreur TypeScript
+**And** `npm test` passe avec coverage ≥ 60%
+**And** `package.json` déclare toutes les dépendances RN nécessaires
 
 ### Story 1.2 : Accès Biométrique par Face ID / Touch ID
 
@@ -240,9 +239,9 @@ So that patient data is protected from unauthorized access without requiring a p
 **When** le prompt biométrique iOS est affiché
 **Then** un Face ID / Touch ID réussi donne accès à l'app
 **And** un échec biométrique verrouille l'app sans fallback PIN propriétaire
-**And** le redirect `biometric_guard.dart` dans go_router protège toutes les routes applicatives
-**And** `local_auth` est le seul mécanisme d'authentification — zéro couche auth propriétaire
-**And** l'écran de verrouillage `biometric_lock_screen.dart` est affiché tant que l'auth n'est pas validée
+**And** le navigation guard dans AppNavigator protège toutes les routes applicatives
+**And** react-native-biometrics est le seul mécanisme d'authentification — zéro couche auth propriétaire
+**And** l'écran de verrouillage `biometric-lock-screen.tsx` est affiché tant que l'auth n'est pas validée
 
 ### Story 1.3 : Chiffrement Local AES-256 & Isolation Réseau
 
@@ -252,10 +251,10 @@ So that I comply with RGPD natively and my patients' confidentiality is structur
 
 **Acceptance Criteria:**
 
-**Given** la base de données Drift est ouverte avec SQLCipher via `NativeDatabase.createInBackground`
+**Given** la base de données est ouverte via IDatabase (react-native-sqlite-storage sur native, IndexedDB sur web)
 **When** des données sont écrites (patient, analyse, timestamps)
 **Then** le fichier SQLite sur disque est chiffré AES-256
-**And** la clé de chiffrement est stockée dans le Keychain iOS via `flutter_secure_storage` — jamais en mémoire persistante
+**And** la clé de chiffrement est stockée dans le Keychain iOS via `react-native-keychain` — jamais en mémoire persistante
 **And** chaque analyse inclut un timestamp `created_at` au format ISO 8601 (FR30)
 **And** aucune requête réseau n'est émise pendant aucune opération (vérifiable par inspection trafic)
 **And** l'app fonctionne intégralement en mode avion (NFR-S3, FR29)
@@ -276,9 +275,9 @@ So that I can associate analyses to a named patient and provide age-appropriate 
 
 **Given** l'écran de création patient est ouvert
 **When** je saisis le nom, la date de naissance et le profil morphologique, puis confirme
-**Then** le patient est persisté en base Drift (chiffré, avec UUID v4 et `created_at` ISO 8601)
+**Then** le patient est persisté via IDatabase (chiffré, avec UUID v4 et `created_at` ISO 8601)
 **And** le patient apparaît immédiatement dans la liste patients
-**And** les données respectent le modèle Freezed `Patient` (immutabilité garantie)
+**And** les données respectent l'interface TypeScript `Patient` avec factory function (immutabilité garantie)
 **And** la validation empêche la création d'un patient sans nom
 
 ### Story 2.2 : Consulter la Liste des Patients et Sélectionner pour Analyse
@@ -322,7 +321,7 @@ So that I can track treatment effectiveness and maintain data hygiene.
 **When** j'accède à la vue timeline
 **Then** les angles articulaires sont affichés sur un graphe temporel comparatif (FR5)
 **When** je supprime un patient
-**Then** le patient et toutes ses analyses associées sont supprimés en transaction Drift atomique (NFR-R2, FR6)
+**Then** le patient et toutes ses analyses associées sont supprimés en transaction SQL atomique via IDatabase (NFR-R2, FR6)
 **And** une confirmation explicite est demandée avant suppression irréversible
 **And** aucune donnée orpheline ne subsiste en base après suppression
 
@@ -346,7 +345,7 @@ So that I capture footage that the ML engine can analyze successfully.
 **And** la détection de luminosité ambiante est active et affiche un message actionnable si insuffisante (FR9)
 **And** le guidage de position indique "vue de profil strict" (FR10)
 **And** je peux arrêter et relancer une prise sans quitter l'écran (FR11)
-**And** l'UI reste fluide à ≥ 58 FPS pendant la capture (NFR-P2, Impeller)
+**And** l'UI reste fluide à ≥ 58 FPS pendant la capture (NFR-P2, react-native-reanimated)
 
 ### Story 3.2 : Script RGPD & Démarrage Enregistrement
 
@@ -371,9 +370,9 @@ So that I get clinical measurements in ~20 seconds without any data leaving the 
 **Acceptance Criteria:**
 
 **Given** une vidéo de marche vient d'être enregistrée
-**When** l'analyse démarre en arrière-plan (Flutter isolate via `ml_isolate_runner.dart`)
-**Then** Google ML Kit extrait les poses frame par frame dans l'isolate — vidéo jamais écrite sur disque (NFR-S5, FR13)
-**And** les angles articulaires (genou, hanche, cheville) sont calculés et retournés via `AnalysisResult` sealed class
+**When** l'analyse démarre en arrière-plan (native thread / Web Worker via ml-processor)
+**Then** MediaPipe extrait les poses frame par frame dans le worker — vidéo jamais écrite sur disque (NFR-S5, FR13)
+**And** les angles articulaires (genou, hanche, cheville) sont calculés et retournés via `AnalysisResult` discriminated union
 **And** un score de confiance est calculé pour chaque articulation (FR16)
 **And** l'analyse se termine en < 30s dans 95% des cas (NFR-P1)
 **And** une notification locale "Analyse de [Nom] prête" est envoyée à la fin du traitement (FR14)
@@ -485,7 +484,7 @@ So that the upgrade feels frictionless once I've seen enough value from the free
 **When** le `ContextualPaywallSheet` s'affiche
 **Then** je vois mon historique d'usage (proof of value) avant le CTA d'upgrade
 **And** je peux souscrire à l'abonnement mensuel en 2 taps + Face ID via IAP iOS (FR34)
-**And** RevenueCat (`purchases_flutter`) gère la transaction et retourne le statut d'abonnement
+**And** RevenueCat (react-native-purchases) gère la transaction et retourne le statut d'abonnement
 **And** après upgrade, le quota devient illimité immédiatement
 **And** je peux gérer ou annuler mon abonnement depuis les Réglages iOS natifs sans flow in-app (FR35)
 **And** en cas d'absence de réseau, l'app utilise le statut d'abonnement caché localement (RevenueCat offline cache)
@@ -525,7 +524,7 @@ So that the app feels native whether I'm standing with my iPhone or seated at my
 **Given** l'app est ouverte sur iPad
 **Then** le layout utilise l'espace supplémentaire avec split view liste + détail (`shortestSide >= 600`)
 **And** tous les touch targets sont ≥ 44×44pt sur tous les formats (Apple HIG)
-**And** `LayoutExtensions.isTablet` est le seul breakpoint utilisé — pas de breakpoints dispersés
+**And** `usePlatform()` hook est le seul breakpoint utilisé — pas de breakpoints dispersés
 
 ### Story 6.3 : Notification Locale "Analyse Prête"
 
@@ -538,6 +537,6 @@ So that I can attend to my patient while the analysis runs in the background and
 **Given** une analyse ML est en cours de traitement en background
 **When** le traitement se termine (succès ou échec)
 **Then** une notification locale est envoyée : "L'analyse de [Nom Patient] est prête — 23°/67°/41°" (FR40)
-**And** la notification fonctionne sans connexion réseau (`flutter_local_notifications`)
-**And** tapper la notification navigue directement vers l'écran de résultats via deep link go_router
+**And** la notification fonctionne sans connexion réseau (`@notifee/react-native`)
+**And** tapper la notification navigue directement vers l'écran de résultats via deep link @react-navigation
 **And** aucune notification push / APNs n'est utilisée — local uniquement

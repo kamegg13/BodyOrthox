@@ -40,7 +40,7 @@ completedDate: "2026-03-03"
 
 ## Résumé Exécutif
 
-BodyOrthox est une application mobile iOS (Flutter) qui permet aux orthopédistes d'analyser objectivement la biomécanique de leurs patients — marche et course — en 30 secondes chrono, depuis n'importe quel cabinet, sans matériel dédié et sans formation technique. L'analyse (genou, hanche, cheville) s'exécute 100% on-device via Google ML Kit (97.2% PCK), sans transmission de données vidéo. Résultat : des angles articulaires cliniques, un rapport PDF auto-nommé exportable en 1 tap, un historique de progression patient — à ~39-49€/mois là où les concurrents (Kinetisense, Dartfish) facturent 3 000 à 15 000€/an avec matériel dédié.
+BodyOrthox est une application mobile et web (React Native) qui permet aux orthopédistes d'analyser objectivement la biomécanique de leurs patients — marche et course — en 30 secondes chrono, depuis n'importe quel cabinet, sans matériel dédié et sans formation technique. L'analyse (genou, hanche, cheville) s'exécute 100% on-device via MediaPipe (97.2% PCK), sans transmission de données vidéo. Résultat : des angles articulaires cliniques, un rapport PDF auto-nommé exportable en 1 tap, un historique de progression patient — à ~39-49€/mois là où les concurrents (Kinetisense, Dartfish) facturent 3 000 à 15 000€/an avec matériel dédié.
 
 **Persona principal :** Dr. Marc, orthopédiste libéral, ~42 ans. Sur 3 consultations, ~1 nécessite une analyse biomécanique. Pas de budget matériel, pas d'assistant technique. Il filme seul entre deux examens. Critère d'adoption : "ça marche la première fois, sans explication."
 
@@ -48,13 +48,13 @@ BodyOrthox est une application mobile iOS (Flutter) qui permet aux orthopédiste
 
 ### Ce Qui Rend BodyOrthox Unique
 
-1. **100% On-Device** — Google ML Kit tourne entièrement sur l'iPhone. Aucune donnée vidéo ne quitte l'appareil. Conformité RGPD native sans effort additionnel.
+1. **100% On-Device** — MediaPipe tourne entièrement sur l'appareil. Aucune donnée vidéo ne quitte l'appareil. Conformité RGPD native sans effort additionnel.
 2. **Portabilité absolue** — Zéro matériel, zéro installation, zéro salle dédiée. L'outil s'adapte au cabinet, pas l'inverse.
 3. **Simplicité radicale** — Flux 4 taps, 30 secondes du démarrage au rapport. Le moment "aha" — voir les angles articulaires s'afficher sans rien avoir configuré — est le déclencheur d'adoption.
 4. **Prix disruptif** — ~39-49€/mois vs 3-15k€/an. Perçu comme dépense de productivité, pas investissement matériel.
 5. **Architecture ML évolutive** — Conçu pour absorber les modèles futurs (RTMPose, modèles pathologie-spécifiques) sans refonte architecturale.
 
-**Insight timing :** Google ML Kit a atteint en 2025-2026 une précision cliniquement pertinente (97.2% PCK) — seuil non atteint en 2022-2023. La fenêtre d'opportunité est ouverte maintenant.
+**Insight timing :** MediaPipe a atteint en 2025-2026 une précision cliniquement pertinente (97.2% PCK) — seuil non atteint en 2022-2023. La fenêtre d'opportunité est ouverte maintenant.
 
 **Modèle économique :** Freemium — 10 analyses/mois gratuites → upgrade ~39-49€/mois. La limite est mensuelle (pas temporelle) : l'habitude précède le paiement.
 
@@ -62,11 +62,11 @@ BodyOrthox est une application mobile iOS (Flutter) qui permet aux orthopédiste
 
 | Dimension           | Valeur                                                                                                |
 | ------------------- | ----------------------------------------------------------------------------------------------------- |
-| **Type de projet**  | Application mobile (iOS, Flutter)                                                                     |
+| **Type de projet**  | Application mobile & web (iOS, Android, Web — React Native)                                           |
 | **Domaine**         | Santé / analyse clinique biomécanique                                                                 |
 | **Complexité**      | Haute — médical réglementé, validation clinique, RGPD, responsabilité légale du rapport, ML on-device |
 | **Contexte**        | Greenfield — nouveau produit from scratch                                                             |
-| **Stack technique** | Flutter + Google ML Kit + Drift + SQLCipher (AES-256)                                                 |
+| **Stack technique** | React Native CLI + react-native-web + MediaPipe + SQLite + Zustand                                    |
 | **Architecture**    | Locale-first MVP — zéro cloud, zéro contrainte HDS en Phase 1                                         |
 
 ## Critères de Succès
@@ -103,7 +103,7 @@ BodyOrthox est une application mobile iOS (Flutter) qui permet aux orthopédiste
 | -------------------------------- | ------------------------------------------------ | -------------- |
 | **Temps d'analyse post-capture** | ~20 secondes (objectif) — < 30s dans 95% des cas | Haute          |
 | **Taux d'échec ML**              | < 5% sur vidéos correctement filmées             | Critique       |
-| **Précision angulaire**          | 97.2% PCK (ML Kit baseline)                      | Critique       |
+| **Précision angulaire**          | 97.2% PCK (MediaPipe baseline)                   | Critique       |
 | **Confidentialité**              | Zéro incident de fuite de données                | Non négociable |
 | **Traitement on-device**         | 100% — aucune donnée vidéo transmise             | Non négociable |
 
@@ -216,7 +216,7 @@ Conséquences obligatoires :
 L'architecture locale-first rend BodyOrthox RGPD-conforme nativement :
 
 - Zéro transmission de données vidéo → pas de traitement de données de santé sur serveur
-- Stockage local uniquement (Drift + SQLCipher AES-256) → données sous contrôle exclusif du praticien
+- Stockage local uniquement (react-native-sqlite-storage + AES-256 sur mobile, IndexedDB sur web) → données sous contrôle exclusif du praticien
 - Script de réassurance patient avant capture : _"Cette vidéo est analysée localement sur cet appareil. Elle n'est pas transmise ni stockée sur un serveur externe."_
 - Suppression vidéo brute proposée après analyse
 
@@ -226,13 +226,13 @@ L'architecture locale-first élimine toute contrainte HDS. Aucun hébergement de
 
 ### Contraintes Techniques Réglementaires
 
-| Contrainte                      | Exigence                              | Implémentation                                   |
-| ------------------------------- | ------------------------------------- | ------------------------------------------------ |
-| **Chiffrement données locales** | AES-256 obligatoire                   | Drift + SQLCipher                                |
-| **Accès sécurisé**              | Biométrie iOS native                  | Face ID / Touch ID — pas d'auth propriétaire     |
-| **Isolation données vidéo**     | Vidéo brute jamais persistée en clair | Traitement en mémoire → suppression post-analyse |
-| **Disclaimer rapport**          | Visible sur chaque export PDF         | Pied de page permanent, non modifiable           |
-| **Traçabilité**                 | Horodatage de chaque analyse          | Métadonnées stockées localement en Drift         |
+| Contrainte                      | Exigence                              | Implémentation                                         |
+| ------------------------------- | ------------------------------------- | ------------------------------------------------------ |
+| **Chiffrement données locales** | AES-256 obligatoire                   | react-native-sqlite-storage (native) + IndexedDB (web) |
+| **Accès sécurisé**              | Biométrie iOS native                  | Face ID / Touch ID — pas d'auth propriétaire           |
+| **Isolation données vidéo**     | Vidéo brute jamais persistée en clair | Traitement en mémoire → suppression post-analyse       |
+| **Disclaimer rapport**          | Visible sur chaque export PDF         | Pied de page permanent, non modifiable                 |
+| **Traçabilité**                 | Horodatage de chaque analyse          | Métadonnées stockées localement en SQLite              |
 
 ### Watchlist Requalification DM
 
@@ -253,7 +253,7 @@ Si le marketing dérive vers un champ sémantique "diagnostic", BodyOrthox peut 
 
 **Innovation #1 — On-Device ML Clinique**
 
-Appliquer l'analyse biomécanique via ML embarqué dans un workflow médical opérationnel, à destination de praticiens libéraux, sans infrastructure, à moins de 50€/mois — c'est un premier. La combinaison `Google ML Kit (97.2% PCK) + Flutter + workflow 4 taps` crée une expérience sans équivalent dans ce segment de prix.
+Appliquer l'analyse biomécanique via ML embarqué dans un workflow médical opérationnel, à destination de praticiens libéraux, sans infrastructure, à moins de 50€/mois — c'est un premier. La combinaison `MediaPipe (97.2% PCK) + React Native + workflow 4 taps` crée une expérience sans équivalent dans ce segment de prix.
 
 **Innovation #2 — RGPD by Architecture**
 
@@ -273,56 +273,56 @@ Le moteur ML est découplé du reste de l'application. Lorsque des modèles plus
 | ----------------- | ---------------------------- | ------------------- | ---------------------------------------------------- |
 | **Haut de gamme** | Kinetisense, Dartfish, Vicon | 3k-15k€/an          | Matériel dédié, formation, salle spécialisée         |
 | **Recherche**     | OpenPose, MMPose, RTMPose    | Gratuit/open source | Expertise technique requise, pas de workflow médical |
-| **BodyOrthox**    | ML Kit + Flutter             | ~39-49€/mois        | Zéro — juste l'iPhone du praticien                   |
+| **BodyOrthox**    | MediaPipe + React Native     | ~39-49€/mois        | Zéro — juste le smartphone du praticien              |
 
 ### Validation des Innovations
 
 | Innovation             | Signal de validation                                       | Horizon                  |
 | ---------------------- | ---------------------------------------------------------- | ------------------------ |
 | On-device ML clinique  | Taux d'échec ML < 5% sur 100 vidéos terrain réelles        | Semaine 1-2 avant launch |
-| RGPD by architecture   | Revue technique par un DPO sur l'architecture (1 heure)    | Avant TestFlight         |
+| RGPD by architecture   | Revue technique par un DPO sur l'architecture (1 heure)    | Avant release            |
 | Market gap             | 3 praticiens early-adopters utilisent l'app sans formation | Semaine 1 post-launch    |
 | Architecture évolutive | Swap de modèle ML réalisé en < 1 jour dev                  | Test interne Sprint 1    |
 
 ### Risques Innovation
 
-| Risque                                             | Probabilité        | Mitigation                                                                     |
-| -------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------ |
-| ML Kit insuffisant en conditions terrain réelles   | Moyen              | Tests sur 50+ vidéos avant launch (luminosité variable, morphologies diverses) |
-| Grand acteur copie le concept                      | Faible à 12 mois   | Avance terrain + adoption praticiens = moat relationnel                        |
-| Modèle ML plus précis rend ML Kit obsolète         | Faible court terme | Architecture découplée → swap sans refonte                                     |
-| Requalification DM si précision > seuil diagnostic | Moyen à 24 mois    | Positionnement "documentation" + audit réglementaire à M+6                     |
+| Risque                                              | Probabilité        | Mitigation                                                                     |
+| --------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------ |
+| MediaPipe insuffisant en conditions terrain réelles | Moyen              | Tests sur 50+ vidéos avant launch (luminosité variable, morphologies diverses) |
+| Grand acteur copie le concept                       | Faible à 12 mois   | Avance terrain + adoption praticiens = moat relationnel                        |
+| Modèle ML plus précis rend MediaPipe obsolète       | Faible court terme | Architecture découplée → swap sans refonte                                     |
+| Requalification DM si précision > seuil diagnostic  | Moyen à 24 mois    | Positionnement "documentation" + audit réglementaire à M+6                     |
 
-## Spécificités Mobile iOS
+## Spécificités Plateforme
 
 ### Overview Plateforme
 
-BodyOrthox est une application iOS universelle (iPhone + iPad), développée en Flutter avec le renderer Impeller. Distribution MVP via TestFlight uniquement — aucune soumission App Store pour la phase early-adopter. Cible : iOS 16+. Android hors scope MVP.
+BodyOrthox est une application mobile & web (iOS, Android, Web), développée en React Native CLI avec react-native-web + webpack. Distribution MVP via Web (GitHub Pages) + TestFlight (iOS) + APK (Android). Cible : iOS 16+, Android 10+, navigateurs modernes.
 
 ### Spécifications Plateforme
 
 | Dimension                | Spécification                                                                                |
 | ------------------------ | -------------------------------------------------------------------------------------------- |
-| **Plateforme cible MVP** | iOS uniquement (iPhone + iPad)                                                               |
-| **iOS minimum**          | iOS 16+ (Impeller stable, ML Kit performant)                                                 |
-| **Framework**            | Flutter 3.x + Impeller renderer                                                              |
-| **Appareils**            | iPhone (12 et supérieur recommandé) + iPad (toutes tailles)                                  |
-| **Android**              | Post-MVP — architecture Flutter facilite le portage                                          |
-| **Distribution MVP**     | TestFlight (jusqu'à 10 000 testeurs, 0 review App Store)                                     |
+| **Plateforme cible MVP** | Web (dev/test) + iOS (production) + Android (stretch goal)                                   |
+| **iOS minimum**          | iOS 16+ (MediaPipe performant)                                                               |
+| **Framework**            | React Native 0.79.x + react-native-web + webpack                                             |
+| **Appareils**            | iPhone (12 et supérieur recommandé) + iPad + Android + navigateurs modernes                  |
+| **Android**              | Accessible dès le MVP via React Native                                                       |
+| **Distribution MVP**     | Web (GitHub Pages) + TestFlight (iOS) + APK (Android)                                        |
 | **App Store**            | Décision différée — catégorie (Medical vs Productivity) à trancher avant soumission publique |
 
-**Layout adaptatif :** iPhone portrait (mode consultation debout) + iPad landscape (mode bureau). Flux de capture optimisé iPhone — sur iPad, la caméra arrière est utilisée de la même façon.
+**Layout adaptatif :** iPhone portrait (mode consultation debout) + iPad landscape (mode bureau) + responsive web. Flux de capture optimisé mobile — sur tablette et web, l'interface s'adapte via `usePlatform()` hook.
 
 ### Permissions Système
 
-| Permission              | Usage                                          | Obligatoire                                |
-| ----------------------- | ---------------------------------------------- | ------------------------------------------ |
-| **Camera**              | Capture vidéo de la marche patient             | Oui — sans caméra, l'app ne fonctionne pas |
-| **Face ID / Touch ID**  | Accès sécurisé à l'app et aux données patient  | Oui                                        |
-| **Local Notifications** | Notification "Analyse prête" post-traitement   | Oui                                        |
-| **Photo Library**       | Non requis — partage via share sheet iOS natif | Non                                        |
-| **Microphone**          | Non requis                                     | Non                                        |
-| **Réseau**              | Non requis MVP — architecture locale-first     | Non                                        |
+| Permission              | Usage                                         | Obligatoire                                |
+| ----------------------- | --------------------------------------------- | ------------------------------------------ |
+| **Camera**              | Capture vidéo de la marche patient            | Oui — sans caméra, l'app ne fonctionne pas |
+| **Face ID / Touch ID**  | Accès sécurisé à l'app et aux données patient | Oui                                        |
+| **Local Notifications** | Notification "Analyse prête" post-traitement  | Oui                                        |
+| **Photo Library**       | Non requis — partage via share sheet natif    | Non                                        |
+| **Microphone**          | Non requis                                    | Non                                        |
+| **Réseau**              | Non requis MVP — architecture locale-first    | Non                                        |
 
 **Stratégie :** Permissions demandées au moment contextuel, pas au démarrage. La permission caméra est demandée au premier lancement d'une analyse, avec explication en contexte.
 
@@ -330,10 +330,11 @@ BodyOrthox est une application iOS universelle (iPhone + iPad), développée en 
 
 BodyOrthox est **100% offline par design**. Aucune connexion internet n'est requise à aucun moment du workflow MVP.
 
-- Données stockées localement : Drift + SQLCipher (AES-256)
-- Modèles ML embarqués : Google ML Kit — bundlés dans l'app (pas de téléchargement runtime)
-- Export PDF : généré localement, partagé via share sheet iOS
-- Taille app estimée : ~80-120 MB (modèle ML Kit ~40-60 MB inclus)
+- Données stockées localement : react-native-sqlite-storage (native) + IndexedDB (web)
+- Modèles ML : MediaPipe pose detection — chargés à l'initialisation
+- Export PDF : généré localement, partagé via share sheet natif
+- Taille app estimée : ~60-100 MB (modèle ML inclus)
+- Version web : IndexedDB pour le stockage local
 
 ### Notifications Locales
 
@@ -343,14 +344,15 @@ BodyOrthox est **100% offline par design**. Aucune connexion internet n'est requ
 | ----------------- | --------------------------------- | ---------------------------------------------------- |
 | **Analyse prête** | Fin du traitement ML post-capture | "L'analyse de [Nom Patient] est prête — 23°/67°/41°" |
 
-Implémentation : `flutter_local_notifications`.
+Implémentation : `@notifee/react-native` (native), non disponible en version web.
 
 ### Distribution & Store Compliance
 
-**Phase MVP (TestFlight) :**
+**Phase MVP (Multi-plateforme) :**
 
-- Distribution directe aux early-adopters via lien TestFlight
-- Limite : 90 jours par build, renouvellement simple
+- Distribution web via GitHub Pages (accès immédiat, zéro installation)
+- Distribution iOS via TestFlight (jusqu'à 10 000 testeurs)
+- Distribution Android via APK direct
 - Idéal pour les 15-20 praticiens pilotes
 
 **Pré-requis App Store (à préparer pour M+6) :**
@@ -362,11 +364,11 @@ Implémentation : `flutter_local_notifications`.
 
 ### Considérations d'Implémentation
 
-- **Impeller** activé par défaut sur iOS 16+ — 58-60 FPS garantis pour les animations
-- **Background processing** : ML Kit analysis lancée en `isolate` Flutter pour ne pas bloquer l'UI
-- **Universal layout** : `LayoutBuilder` + breakpoints pour iPhone compact / iPad regular
-- **Biometric auth** : `local_auth` package
-- **In-App Purchase** : `purchases_flutter` (RevenueCat)
+- **react-native-reanimated** pour les animations fluides — 58-60 FPS garantis
+- **Background processing** : MediaPipe analysis lancée en native thread (mobile) / Web Worker (web) pour ne pas bloquer l'UI
+- **Universal layout** : `usePlatform()` hook + breakpoints pour mobile compact / tablette / web
+- **Biometric auth** : `react-native-biometrics` package
+- **In-App Purchase** : `react-native-purchases` (RevenueCat)
 
 ## MVP Scope & Roadmap
 
@@ -380,26 +382,26 @@ L'objectif du MVP n'est pas de valider un concept — c'est de prouver que l'exp
 
 **Règle directrice :** _"Si une feature n'est pas dans Journey 1 (chemin heureux de Dr. Marc), elle n'est pas dans le MVP v1."_
 
-**Objectif :** v1.0 TestFlight en 8-12 semaines.
+**Objectif :** v1.0 (Web + TestFlight + APK) en 8-12 semaines.
 
 ### Features MVP — Priorités
 
-| Priorité | Feature                                              | Rationale                     |
-| -------- | ---------------------------------------------------- | ----------------------------- |
-| 🔴 P0    | Flux 4 taps (patient → filmer → résultat → exporter) | Sans ça, l'app n'existe pas   |
-| 🔴 P0    | Analyse on-device ML Kit (genou, hanche, cheville)   | Core value proposition        |
-| 🔴 P0    | Affichage angles + normes de référence               | Résultat cliniquement lisible |
-| 🔴 P0    | Export PDF nommé automatiquement                     | Workflow secrétaire           |
-| 🔴 P0    | Capture guidée (cadre visuel + détection luminosité) | Qualité données ML            |
-| 🟠 P1    | Gestion patients + historique local                  | Contexte clinique             |
-| 🟠 P1    | Face ID / Touch ID (accès sécurisé)                  | RGPD + confiance              |
-| 🟠 P1    | Script réassurance RGPD avant capture                | Legal + confiance patient     |
-| 🟠 P1    | Compteur freemium + upgrade In-App Purchase          | Modèle économique             |
-| 🟠 P1    | Notification locale "Analyse prête"                  | UX arrière-plan               |
-| 🟡 P2    | Vue annotation expert (replay + angles superposés)   | Valeur ajoutée praticien      |
-| 🟡 P2    | Onboarding wizard 3 écrans                           | Adoption J+1                  |
-| 🟡 P2    | Timeline progression clinique patient                | Rétention long terme          |
-| 🟡 P2    | Interface deux niveaux (simple / expert)             | Réduction charge cognitive    |
+| Priorité | Feature                                               | Rationale                     |
+| -------- | ----------------------------------------------------- | ----------------------------- |
+| 🔴 P0    | Flux 4 taps (patient → filmer → résultat → exporter)  | Sans ça, l'app n'existe pas   |
+| 🔴 P0    | Analyse on-device MediaPipe (genou, hanche, cheville) | Core value proposition        |
+| 🔴 P0    | Affichage angles + normes de référence                | Résultat cliniquement lisible |
+| 🔴 P0    | Export PDF nommé automatiquement                      | Workflow secrétaire           |
+| 🔴 P0    | Capture guidée (cadre visuel + détection luminosité)  | Qualité données ML            |
+| 🟠 P1    | Gestion patients + historique local                   | Contexte clinique             |
+| 🟠 P1    | Face ID / Touch ID (accès sécurisé)                   | RGPD + confiance              |
+| 🟠 P1    | Script réassurance RGPD avant capture                 | Legal + confiance patient     |
+| 🟠 P1    | Compteur freemium + upgrade In-App Purchase           | Modèle économique             |
+| 🟠 P1    | Notification locale "Analyse prête"                   | UX arrière-plan               |
+| 🟡 P2    | Vue annotation expert (replay + angles superposés)    | Valeur ajoutée praticien      |
+| 🟡 P2    | Onboarding wizard 3 écrans                            | Adoption J+1                  |
+| 🟡 P2    | Timeline progression clinique patient                 | Rétention long terme          |
+| 🟡 P2    | Interface deux niveaux (simple / expert)              | Réduction charge cognitive    |
 
 **À reporter en v1.1 si contrainte de temps :**
 
@@ -411,14 +413,14 @@ L'objectif du MVP n'est pas de valider un concept — c'est de prouver que l'exp
 
 **Phase 2 — Growth (M+6 à M+12)**
 
-| Feature                                 | Déclencheur                    | Complexité                 |
-| --------------------------------------- | ------------------------------ | -------------------------- |
-| Stockage cloud + sync multi-appareils   | Demande praticiens multi-sites | Haute (HDS)                |
-| Authentification compte praticien       | Pré-requis cloud               | Haute                      |
-| Rapport patient langage naturel         | Feedback early-adopters        | Faible                     |
-| QR Code rapport (pont mobile → desktop) | Feedback secrétaires           | Faible                     |
-| Support Android                         | Signal marché                  | Moyenne (Flutter facilite) |
-| App Store public                        | > 50 praticiens actifs         | Administrative             |
+| Feature                                 | Déclencheur                    | Complexité                  |
+| --------------------------------------- | ------------------------------ | --------------------------- |
+| Stockage cloud + sync multi-appareils   | Demande praticiens multi-sites | Haute (HDS)                 |
+| Authentification compte praticien       | Pré-requis cloud               | Haute                       |
+| Rapport patient langage naturel         | Feedback early-adopters        | Faible                      |
+| QR Code rapport (pont mobile → desktop) | Feedback secrétaires           | Faible                      |
+| Support Android natif complet           | Signal marché                  | Faible (React Native natif) |
+| App Store public                        | > 50 praticiens actifs         | Administrative              |
 
 **Phase 3 — Expansion (M+12+)**
 
@@ -432,15 +434,15 @@ L'objectif du MVP n'est pas de valider un concept — c'est de prouver que l'exp
 
 ### Mitigation des Risques
 
-**Risque Technique — ML Kit en conditions réelles**
+**Risque Technique — MediaPipe en conditions réelles**
 
-- Mitigation : 50+ vidéos terrain avant premier TestFlight (luminosité variable, morphologies diverses)
+- Mitigation : 50+ vidéos terrain avant première release (luminosité variable, morphologies diverses)
 - Fallback : mode correction manuelle si confiance ML < seuil
 
 **Risque Marché — Adoption praticiens**
 
 - Mitigation : 3 orthopédistes early-adopters identifiés avant dev — feedback hebdomadaire
-- Signal d'alarme : si après 2 semaines TestFlight aucun praticien n'a réalisé 3+ analyses → pivot UX immédiat
+- Signal d'alarme : si après 2 semaines de release aucun praticien n'a réalisé 3+ analyses → pivot UX immédiat
 
 **Risque Solo Dev — Scope creep**
 
@@ -517,7 +519,7 @@ L'objectif du MVP n'est pas de valider un concept — c'est de prouver que l'exp
 | NFR        | Critère                      | Mesure                                                              |
 | ---------- | ---------------------------- | ------------------------------------------------------------------- |
 | **NFR-P1** | Temps d'analyse post-capture | < 30 secondes dans 95% des cas — objectif ~20s                      |
-| **NFR-P2** | Fluidité interface           | ≥ 58 FPS constant sur iPhone 12+ (Impeller activé)                  |
+| **NFR-P2** | Fluidité interface           | ≥ 58 FPS constant sur iPhone 12+ (react-native-reanimated)          |
 | **NFR-P3** | Démarrage application        | < 3 secondes cold start sur iPhone 12+                              |
 | **NFR-P4** | Génération rapport PDF       | < 5 secondes après validation de l'analyse                          |
 | **NFR-P5** | Réactivité UI capture        | Cadre visuel et détection luminosité en temps réel, latence < 100ms |
@@ -527,14 +529,14 @@ L'objectif du MVP n'est pas de valider un concept — c'est de prouver que l'exp
 
 ### Sécurité
 
-| NFR        | Critère                      | Implémentation                                                                                       |
-| ---------- | ---------------------------- | ---------------------------------------------------------------------------------------------------- |
-| **NFR-S1** | Chiffrement données au repos | AES-256 (SQLCipher) pour toutes les données Drift — aucune donnée patient en clair                   |
-| **NFR-S2** | Authentification             | Biométrie iOS obligatoire (Face ID / Touch ID) à chaque ouverture de session                         |
-| **NFR-S3** | Isolation réseau             | Zéro requête réseau sortante lors d'une analyse — testable par inspection trafic                     |
-| **NFR-S4** | Clé de chiffrement           | Dérivée du Keychain iOS — jamais exposée en mémoire persistante                                      |
-| **NFR-S5** | Vidéo brute                  | Traitée en mémoire uniquement — jamais écrite sur disque non chiffrée                                |
-| **NFR-S6** | Conformité RGPD              | L'architecture locale-first garantit structurellement l'absence de transfert de données personnelles |
+| NFR        | Critère                      | Implémentation                                                                                        |
+| ---------- | ---------------------------- | ----------------------------------------------------------------------------------------------------- |
+| **NFR-S1** | Chiffrement données au repos | AES-256 (react-native-sqlite-storage) pour toutes les données SQLite — aucune donnée patient en clair |
+| **NFR-S2** | Authentification             | Biométrie iOS obligatoire (Face ID / Touch ID) à chaque ouverture de session                          |
+| **NFR-S3** | Isolation réseau             | Zéro requête réseau sortante lors d'une analyse — testable par inspection trafic                      |
+| **NFR-S4** | Clé de chiffrement           | Dérivée du Keychain (react-native-keychain) — jamais exposée en mémoire persistante                   |
+| **NFR-S5** | Vidéo brute                  | Traitée en mémoire uniquement — jamais écrite sur disque non chiffrée                                 |
+| **NFR-S6** | Conformité RGPD              | L'architecture locale-first garantit structurellement l'absence de transfert de données personnelles  |
 
 ### Fiabilité
 
@@ -553,4 +555,4 @@ L'objectif du MVP n'est pas de valider un concept — c'est de prouver que l'exp
 | **NFR-C1** | Volume patients    | Support de 500+ patients sans dégradation de performance                 |
 | **NFR-C2** | Volume analyses    | Support de 5 000+ analyses stockées sans dégradation                     |
 | **NFR-C3** | Empreinte stockage | Base de données locale < 500 MB pour 5 000 analyses (hors vidéos brutes) |
-| **NFR-C4** | Taille application | App bundle < 150 MB (modèle ML Kit inclus)                               |
+| **NFR-C4** | Taille application | App bundle < 150 MB (modèle MediaPipe inclus)                            |

@@ -26,88 +26,85 @@ _Ce document se construit collaborativement étape par étape. Les sections sont
 **Exigences Fonctionnelles :**
 40 FRs organisées en 7 catégories : Gestion Patients (FR1-FR6), Capture & Guidage (FR7-FR12), Analyse ML On-Device (FR13-FR19), Rapport & Export (FR20-FR25), Sécurité & Confidentialité (FR26-FR30), Monétisation & Accès (FR31-FR35), Onboarding & UX (FR36-FR40).
 
-Le cœur fonctionnel est le pipeline ML : capture vidéo → extraction pose (Google ML Kit 97.2% PCK) → calcul angles articulaires (genou, hanche, cheville) → score de confiance → affichage résultats → export PDF. Ce flux doit s'exécuter en <30s, 100% on-device, sans aucune transmission de données.
+Le cœur fonctionnel est le pipeline ML : capture vidéo → extraction pose (MediaPipe 97.2% PCK) → calcul angles articulaires (genou, hanche, cheville) → score de confiance → affichage résultats → export PDF. Ce flux doit s'exécuter en <30s, 100% on-device, sans aucune transmission de données.
 
 **Exigences Non-Fonctionnelles critiques :**
 
-| NFR    | Critère                         | Impact architectural                |
-| ------ | ------------------------------- | ----------------------------------- |
-| NFR-P1 | Analyse < 30s (95% des cas)     | Pipeline ML en isolate Flutter      |
-| NFR-P2 | ≥ 58 FPS UI constant            | Impeller activé, UI thread isolé    |
-| NFR-P5 | Latence overlay caméra < 100ms  | Traitement frame temps réel         |
-| NFR-S1 | AES-256 pour toutes les données | Drift + SQLCipher, clé Keychain iOS |
-| NFR-S5 | Vidéo brute jamais sur disque   | Traitement en mémoire uniquement    |
-| NFR-R2 | Atomicité analyses              | Transactions Drift obligatoires     |
-| NFR-R4 | Taux d'échec ML < 5%            | Mode correction manuelle (fallback) |
+| NFR    | Critère                         | Impact architectural                                                 |
+| ------ | ------------------------------- | -------------------------------------------------------------------- |
+| NFR-P1 | Analyse < 30s (95% des cas)     | Pipeline ML en native thread / Web Worker                            |
+| NFR-P2 | ≥ 58 FPS UI constant            | react-native-reanimated activé, UI thread isolé                      |
+| NFR-P5 | Latence overlay caméra < 100ms  | Traitement frame temps réel                                          |
+| NFR-S1 | AES-256 pour toutes les données | react-native-sqlite-storage (native) + IndexedDB (web), clé Keychain |
+| NFR-S5 | Vidéo brute jamais sur disque   | Traitement en mémoire uniquement                                     |
+| NFR-R2 | Atomicité analyses              | Transactions SQL obligatoires                                        |
+| NFR-R4 | Taux d'échec ML < 5%            | Mode correction manuelle (fallback)                                  |
 
 **Échelle & Complexité :**
 
-- Domaine primaire : Application mobile iOS (Flutter)
+- Domaine primaire : Application mobile & web (React Native)
 - Niveau de complexité : **Haute** — ML médical réglementé, sécurité forte, UX temps réel, pipeline asynchrone
 - Composants architecturaux estimés : 6-8 feature modules distincts
 - Contexte : Greenfield, solo developer + Claude Code
 
 ### Contraintes Techniques & Dépendances
 
-| Contrainte                  | Détail                                    | Implication                                                 |
-| --------------------------- | ----------------------------------------- | ----------------------------------------------------------- |
-| **100% Offline**            | Zéro réseau MVP — aucune requête sortante | Pas de BaaS, pas d'APNs, tout local                         |
-| **iOS 16+ uniquement**      | Impeller stable, ML Kit performant        | Pas de support Android MVP                                  |
-| **Vidéo en mémoire**        | Jamais écrite sur disque non chiffré      | Memory management critique pendant l'analyse                |
-| **Modèles ML embarqués**    | ML Kit bundlé dans l'app (~40-60 MB)      | App bundle cible < 150 MB total                             |
-| **Distribution TestFlight** | MVP uniquement — pas App Store            | Pas de contrainte catégorie Medical/Productivity en Phase 1 |
-| **IAP RevenueCat**          | Freemium 10 analyses/mois → 39-49€/mois   | Gestion état abonnement local + vérification RevenueCat     |
+| Contrainte               | Détail                                                | Implication                                             |
+| ------------------------ | ----------------------------------------------------- | ------------------------------------------------------- |
+| **100% Offline**         | Zéro réseau MVP — aucune requête sortante             | Pas de BaaS, pas d'APNs, tout local                     |
+| **iOS + Android + Web**  | react-native-reanimated stable, MediaPipe performant  | Support multi-plateforme dès le MVP                     |
+| **Vidéo en mémoire**     | Jamais écrite sur disque non chiffré                  | Memory management critique pendant l'analyse            |
+| **Modèles ML embarqués** | MediaPipe bundlé dans l'app (~40-60 MB)               | App bundle cible < 150 MB total                         |
+| **Distribution MVP**     | Web (GitHub Pages) + TestFlight (iOS) + APK (Android) | Boucle de feedback rapide via web                       |
+| **IAP RevenueCat**       | Freemium 10 analyses/mois → 39-49€/mois               | Gestion état abonnement local + vérification RevenueCat |
 
 **Stack technique validée par la recherche :**
-Flutter 3.x + Impeller · Google ML Kit (pose detection) · Drift + SQLCipher (AES-256) · Riverpod 3.0 (AsyncNotifier) · RevenueCat (flutter_purchases) · local_auth (biométrie) · flutter_local_notifications · pdf package
+React Native 0.79.x + react-native-web · MediaPipe (pose detection) · react-native-sqlite-storage (native) + IndexedDB (web) · Zustand 5.x + Immer (state management) · RevenueCat (react-native-purchases) · react-native-biometrics (biométrie) · @notifee/react-native · pdf package
 
 ### Cross-Cutting Concerns Identifiés
 
 1. **Sécurité & confidentialité** — traverse tout : authentification biométrique, stockage chiffré, capture vidéo en mémoire, export PDF avec disclaimer
-2. **State machine du pipeline ML** — état global `idle → capturing → processing → results → exported` accessible depuis UI et background isolate
+2. **State machine du pipeline ML** — état global `idle → capturing → processing → results → exported` accessible depuis UI et background native thread / Web Worker
 3. **Performance dual-thread** — 58 FPS UI maintenu pendant que le pipeline ML tourne en background (deux contraintes en tension)
 4. **Conformité réglementaire EU MDR** — disclaimer non-modifiable sur chaque rapport, formulations UI contrôlées, horodatage traçable
-5. **Atomicité des données** — aucune analyse partielle persistée (transactions Drift), cohérence garantie même en cas de crash
+5. **Atomicité des données** — aucune analyse partielle persistée (transactions SQL), cohérence garantie même en cas de crash
 
 ## Évaluation du Starter Template
 
 ### Domaine Primaire
 
-Application mobile iOS (Flutter) — stack ML on-device spécialisée, architecture locale-first.
+Application mobile & web (React Native) — stack ML on-device spécialisée, architecture locale-first.
 
 ### Options Considérées
 
-| Option                                           | Inclus             | Manque                                     | Verdict        |
-| ------------------------------------------------ | ------------------ | ------------------------------------------ | -------------- |
-| `flutter create --platforms ios`                 | Minimal iOS clean  | Architecture, packages                     | ✅ Recommandé  |
-| Very Good CLI                                    | Flavors, tests, CI | BLoC au lieu de Riverpod, multi-plateforme | ⚠️ Trop opinié |
-| Community starters (Erengun, SimpleBoilerplates) | Riverpod + Freezed | Drift, maintenance incertaine              | ❌ Écarté      |
+| Option                            | Inclus                    | Manque                              | Verdict        |
+| --------------------------------- | ------------------------- | ----------------------------------- | -------------- |
+| `npx react-native init`           | Minimal iOS/Android clean | Architecture, packages, web support | ✅ Recommandé  |
+| Expo managed                      | Facile, OTA updates       | Pas d'accès natif complet, overhead | ⚠️ Trop limité |
+| Community starters (boilerplates) | Navigation + state setup  | Maintenance incertaine              | ❌ Écarté      |
 
-### Starter Sélectionné : `flutter create` minimal iOS
+### Starter Sélectionné : `npx react-native init` + react-native-web
 
-**Rationale :** La stack BodyOrthox est entièrement définie par la recherche technique préalable (Riverpod 3.0, Drift + SQLCipher, Google ML Kit, go_router). Un starter générique imposerait des décisions à remplacer plutôt qu'à utiliser. L'architecture Feature-First est scaffoldée manuellement.
+**Rationale :** La stack BodyOrthox est entièrement définie par la recherche technique préalable (Zustand + Immer, react-native-sqlite-storage, MediaPipe, @react-navigation/native-stack). Un starter générique imposerait des décisions à remplacer plutôt qu'à utiliser. L'architecture Feature-First est scaffoldée manuellement.
 
 **Commande d'initialisation :**
 
 ```bash
-flutter create \
-  --org com.bodyorthox \
-  --platforms ios \
-  --project-name bodyorthox \
-  bodyorthox
+npx react-native init bodyorthox --template react-native-template-typescript
+# Puis configuration manuelle de react-native-web + webpack
 ```
 
 **Décisions architecturales fournies par le starter :**
 
-**Langage & Runtime :** Dart 3.x, null safety activé, targets iOS 16+ via Podfile
+**Langage & Runtime :** TypeScript 5.x, strict mode activé, targets iOS + Android + Web
 
-**Structure de base :** `lib/main.dart` + dossiers iOS natifs — à restructurer immédiatement en Feature-First
+**Structure de base :** `src/App.tsx` + dossiers iOS/Android natifs — à restructurer immédiatement en Feature-First
 
-**Tooling de build :** Xcode toolchain, Impeller activé par défaut sur iOS 16+
+**Tooling de build :** Metro bundler (mobile) + webpack (web), react-native-reanimated activé
 
-**Testing :** `flutter_test` inclus par défaut, à étendre avec `mocktail` + `riverpod_test`
+**Testing :** `jest` + `@testing-library/react-native` inclus par défaut, à étendre avec `msw` pour les mocks
 
-**Flavors (ajout manuel prioritaire) :** Configuration `dev` / `prod` pour isoler RevenueCat sandbox vs production et ML Kit logging
+**Environnements (ajout manuel prioritaire) :** Configuration `dev` / `prod` via `app-config.ts` avec `__DEV__` flag pour isoler RevenueCat sandbox vs production et ML logging
 
 **Note :** L'initialisation du projet avec cette commande + la mise en place immédiate de la structure Feature-First constituent la première story d'implémentation.
 
@@ -124,103 +121,94 @@ flutter create \
 **Décisions importantes (forment l'architecture) :**
 
 - Modèles de domaine (immutabilité des données médicales)
-- CI/CD pour TestFlight
+- CI/CD GitHub Actions
 
 **Décisions différées (post-MVP) :**
 
 - Intégration DPI/HL7-FHIR
 - Migration cloud / PowerSync
-- Support Android
 
 ### Architecture des données
 
-**ORM & Chiffrement :**
+**Database & Chiffrement :**
 
-- Drift (version courante stable) + `sqlcipher_flutter_libs` pour SQLite chiffré AES-256
-- Clé dérivée via PRAGMA key, stockée dans le Keychain iOS (jamais en mémoire persistante)
-- `NativeDatabase.createInBackground` pour éviter le blocage UI thread
-- Transactions Drift obligatoires sur toutes les écritures d'analyse (NFR-R2 — atomicité)
+- react-native-sqlite-storage (mobile) + IndexedDB (web) via interface `IDatabase` abstraite
+- Clé dérivée via PRAGMA key, stockée dans le Keychain (react-native-keychain — jamais en mémoire persistante)
+- Initialisation platform-specific via `database.native.ts` / `database.web.ts` pour éviter le blocage UI thread
+- Transactions SQL obligatoires sur toutes les écritures d'analyse (NFR-R2 — atomicité)
 
 **Abstraction Repository — Interface dès le MVP :**
 
-```dart
-abstract class PatientRepository {
-  Stream<List<Patient>> watchAll();
-  Future<void> save(Patient patient);
-  Future<void> delete(PatientId id);
+```typescript
+interface PatientRepository {
+  watchAll(): Observable<Patient[]>;
+  save(patient: Patient): Promise<void>;
+  delete(id: PatientId): Promise<void>;
 }
-class DriftPatientRepository implements PatientRepository { ... }
+
+class SqlitePatientRepository implements PatientRepository { ... }
 ```
 
 Rationale : +20% code Day 1, migration PowerSync (cloud Phase 2) triviale sans refacto.
 
-**Modèles de domaine — Freezed :**
+**Modèles de domaine — Interfaces TypeScript + Factory Functions :**
 
-- Toutes les entités (Patient, Analysis, ArticularAngles, ConfidenceScore) sont des value objects Freezed
-- Immutabilité garantie pour les données médicales
-- `copyWith`, `==`, `fromJson/toJson` auto-générés via build_runner
+- Toutes les entités (Patient, Analysis, ArticularAngles, ConfidenceScore) sont des interfaces TypeScript immutables
+- Immutabilité garantie pour les données médicales via `Readonly<T>` et Immer
+- Factory functions `createPatient()`, `createAnalysis()` pour la construction
+- Pas de code generation — TypeScript natif
 
 ### Authentification & Sécurité
 
-| Décision            | Choix                                                  | Rationale                                      |
-| ------------------- | ------------------------------------------------------ | ---------------------------------------------- |
-| Authentification    | `local_auth` — Face ID / Touch ID                      | Biométrie iOS native, zéro auth propriétaire   |
-| Chiffrement données | AES-256 SQLCipher via sqlcipher_flutter_libs           | NFR-S1 — aucune donnée patient en clair        |
-| Clé de chiffrement  | Keychain iOS (`flutter_secure_storage`)                | NFR-S4 — jamais exposée en mémoire persistante |
-| Vidéo brute         | Isolate Flutter + stream frames                        | NFR-S5 — vidéo jamais écrite sur disque        |
-| Session             | Biométrie à chaque ouverture — pas de token persistant | Conformité RGPD + EU MDR                       |
+| Décision            | Choix                                                              | Rationale                                                 |
+| ------------------- | ------------------------------------------------------------------ | --------------------------------------------------------- |
+| Authentification    | `react-native-biometrics` — Face ID / Touch ID / fingerprint       | Biométrie native multi-plateforme, zéro auth propriétaire |
+| Chiffrement données | AES-256 via react-native-sqlite-storage (native) + IndexedDB (web) | NFR-S1 — aucune donnée patient en clair                   |
+| Clé de chiffrement  | Keychain / Keystore (`react-native-keychain`)                      | NFR-S4 — jamais exposée en mémoire persistante            |
+| Vidéo brute         | Native thread / Web Worker + stream frames                         | NFR-S5 — vidéo jamais écrite sur disque                   |
+| Session             | Biométrie à chaque ouverture — pas de token persistant             | Conformité RGPD + EU MDR                                  |
 
 **Stratégie vidéo en mémoire (critique NFR-S5) :**
 
-- Frames extraits via camera plugin → envoyés par `SendPort` vers un Flutter isolate dédié
-- Le pipeline ML (Google ML Kit) tourne entièrement dans l'isolate
-- À la fin de l'isolate : résultats envoyés au UI thread, mémoire libérée automatiquement
-- Aucune écriture disque à aucun moment — la vidéo n'existe que dans la RAM de l'isolate
+- Frames extraits via react-native-vision-camera → envoyés par postMessage vers un native thread / Web Worker dédié
+- Le pipeline ML (MediaPipe) tourne entièrement dans le thread dédié
+- À la fin du traitement : résultats envoyés au UI thread, mémoire libérée automatiquement
+- Aucune écriture disque à aucun moment — la vidéo n'existe que dans la RAM du thread dédié
 
 ### Communication & Gestion des erreurs
 
 **Pas d'API réseau (MVP 100% offline).**
 
-**Pattern erreurs — Sealed classes Dart 3 :**
+**Pattern erreurs — Discriminated unions TypeScript :**
 
-```dart
-sealed class AnalysisResult {
-  const AnalysisResult();
-}
-final class AnalysisSuccess extends AnalysisResult {
-  final ArticularAngles angles;
-  const AnalysisSuccess(this.angles);
-}
-final class AnalysisFailure extends AnalysisResult {
-  final AnalysisError error;
-  const AnalysisFailure(this.error);
-}
+```typescript
+type AnalysisResult =
+  | { readonly kind: "success"; readonly angles: ArticularAngles }
+  | { readonly kind: "failure"; readonly error: AnalysisError };
 
-sealed class AnalysisError {
-  const AnalysisError();
-}
-final class MLLowConfidence extends AnalysisError { ... }
-final class MLDetectionFailed extends AnalysisError { ... }
-final class VideoProcessingError extends AnalysisError { ... }
+type AnalysisError =
+  | { readonly kind: "ml-low-confidence"; readonly score: number }
+  | { readonly kind: "ml-detection-failed" }
+  | { readonly kind: "video-processing-error"; readonly cause: string };
 ```
 
-- Switch exhaustif obligatoire → tous les cas d'erreur couverts à la compilation
-- Pas de dépendance externe (fpdart écarté) — idiomatique Dart 3
-- AsyncValue Riverpod gère l'état loading/error/data au niveau UI
+- Switch exhaustif avec type narrowing → tous les cas d'erreur couverts à la compilation
+- Pas de dépendance externe — idiomatique TypeScript
+- Zustand store gère l'état loading/error/data au niveau UI
 
-### Architecture Frontend (Flutter)
+### Architecture Frontend (React Native)
 
-**State management — Riverpod 3.2.1 :**
+**State management — Zustand 5.x + Immer :**
 
-- `AsyncNotifier` pour tous les états asynchrones (pipeline ML, chargement patients)
-- `NotifierProvider` pour l'état synchrone (compteur freemium, session biométrique)
-- Scoping providers au niveau feature — pas de providers globaux sauf sécurité/auth
+- Zustand stores (`use{Feature}Store`) pour tous les états asynchrones (pipeline ML, chargement patients)
+- Stores séparés pour l'état synchrone (compteur freemium, session biométrique)
+- Scoping stores au niveau feature — pas de stores globaux sauf sécurité/auth
 
 **Structure Feature-First :**
 
 ```
-lib/
-  core/               # Cross-cutting (auth, storage, error types)
+src/
+  core/               # Cross-cutting (auth, database, config)
   features/
     patients/         # FR1-FR6
     capture/          # FR7-FR12 + pipeline ML FR13-FR19
@@ -228,50 +216,52 @@ lib/
     report/           # FR20-FR25 PDF generation
     paywall/          # FR31-FR35 RevenueCat
     onboarding/       # FR36-FR37
-  shared/             # Widgets partagés, design system
+  navigation/         # @react-navigation setup
+  shared/             # Composants partagés, design system, hooks
 ```
 
-**Routing — go_router 17.x :**
+**Routing — @react-navigation/native-stack 7.x :**
 
-- Routes déclaratives, navigation type-safe avec go_router_builder
+- Navigation déclarative, navigation type-safe avec TypeScript
 - Deep link vers une analyse spécifique (depuis notification locale)
 
-**Build_runner / Code generation :**
+**Vérification de types / Lint :**
 
-- Freezed (modèles) + Drift (schema) + riverpod_generator + go_router_builder
-- `dart run build_runner build --delete-conflicting-outputs` comme commande standard
+- `npm run type-check` (tsc --noEmit) + `npm run lint` (ESLint)
+- Pas de code generation — TypeScript natif, interfaces et types définis manuellement
+- Configuration dans `tsconfig.json` + `.eslintrc`
 
 ### Infrastructure & Déploiement
 
-**CI/CD — Manuel Xcode pour le MVP :**
+**CI/CD — GitHub Actions :**
 
-- Archive + upload via Transporter ou Organizer Xcode
-- Pas de setup CI/CD complexe pour la phase early-adopters (15-20 praticiens)
-- Décision différée : GitHub Actions + Fastlane à mettre en place en Phase 2
+- Tests automatisés, build Android APK, deploy web sur GitHub Pages
+- Workflow défini dans `.github/workflows/`
+- Pipeline : lint → type-check → test → build → deploy
 
-**Flavors — dev / prod (ajout manuel prioritaire) :**
+**Environnements — dev / prod (via app-config.ts) :**
 
-- `dev` : RevenueCat sandbox, logs ML, SQLite non-chiffré optionnel pour debug
-- `prod` : RevenueCat production, no logs, SQLCipher activé
+- `dev` : RevenueCat sandbox, logs ML, SQLite non-chiffré optionnel pour debug, `__DEV__` flag
+- `prod` : RevenueCat production, no logs, chiffrement activé
 
-**Distribution MVP :** TestFlight uniquement — pas de soumission App Store Phase 1
+**Distribution MVP :** Web (GitHub Pages) + TestFlight (iOS) + APK (Android)
 
 ### Analyse d'impact des décisions
 
 **Séquence d'implémentation imposée par les décisions :**
 
-1. `flutter create` → structure Feature-First → flavors dev/prod
-2. Core : SQLCipher + Keychain setup → `local_auth` biométrie
-3. Feature `patients` : Repository interface + DriftPatientRepository
-4. Feature `capture` : isolate ML + pipeline vidéo mémoire
-5. Feature `results` + `report` : sealed classes + PDF generation
+1. `npx react-native init` → structure Feature-First → config dev/prod via `app-config.ts`
+2. Core : react-native-sqlite-storage + react-native-keychain setup → `react-native-biometrics` biométrie
+3. Feature `patients` : Repository interface + SqlitePatientRepository
+4. Feature `capture` : native thread / Web Worker ML + pipeline vidéo mémoire
+5. Feature `results` + `report` : discriminated unions + PDF generation
 6. Feature `paywall` : RevenueCat integration
 
 **Dépendances croisées entre décisions :**
 
-- Sealed classes AnalysisResult → dépendance entre `capture`, `results`, `report`
-- Repository interface → Drift impl doit respecter le contrat dès le début
-- Isolate ML → le state machine `idle → capturing → processing → results → exported` est géré par un `AsyncNotifier` dans `capture`
+- Discriminated union AnalysisResult → dépendance entre `capture`, `results`, `report`
+- Repository interface → SQLite impl doit respecter le contrat dès le début
+- Native thread / Web Worker ML → le state machine `idle → capturing → processing → results → exported` est géré par un Zustand store (`useCaptureStore`) dans `capture`
 
 ## Patterns d'Implémentation & Règles de Cohérence
 
@@ -281,47 +271,47 @@ lib/
 
 ### Patterns de nommage
 
-**Fichiers Dart — snake_case systématique :**
+**Fichiers TypeScript — kebab-case systématique :**
 
 ```
-patient_repository.dart       ✅
-PatientRepository.dart        ❌
-patientRepository.dart        ❌
+patient-repository.ts       ✅
+PatientRepository.ts        ❌
+patientRepository.ts        ❌
 ```
 
-**Classes — PascalCase :**
+**Interfaces & Classes — PascalCase :**
 
-```dart
-class PatientRepository { }    ✅
-class patient_repository { }   ❌
+```typescript
+interface PatientRepository { }    ✅
+interface patient_repository { }   ❌
 ```
 
 **Variables & fonctions — camelCase :**
 
-```dart
-final patientId = ...;         ✅
-void watchAllPatients() { }    ✅
-final patient_id = ...;        ❌
+```typescript
+const patientId = ...;         ✅
+function watchAllPatients() { }    ✅
+const patient_id = ...;        ❌
 ```
 
-**Providers Riverpod — camelCase + suffixe `Provider` :**
+**Zustand stores — camelCase + préfixe `use` + suffixe `Store` :**
 
-```dart
-final patientsProvider = ...;        ✅
-final captureStateProvider = ...;    ✅
-final PatientProvider = ...;         ❌
-final patientList = ...;             ❌
+```typescript
+const usePatientsStore = ...;        ✅
+const useCaptureStore = ...;         ✅
+const PatientStore = ...;            ❌
+const patientList = ...;             ❌
 ```
 
-**Tables Drift — snake_case pluriel :**
+**Tables SQL — snake_case pluriel :**
 
-```dart
-class Patients extends Table { }         // nom Dart PascalCase
-static const String tableName = 'patients'; // snake_case pluriel en SQL
-// colonnes : patient_id, created_at, confidence_score
+```typescript
+// Nom de table SQL : 'patients' (snake_case pluriel)
+// Colonnes : patient_id, created_at, confidence_score
+const CREATE_PATIENTS_TABLE = `CREATE TABLE patients (...)`;
 ```
 
-**Feature folders — snake_case :**
+**Feature folders — kebab-case :**
 
 ```
 features/patients/    ✅
@@ -334,336 +324,351 @@ features/patient/     ❌ (pluriel obligatoire)
 **Structure feature obligatoire :**
 
 ```
-features/{feature_name}/
+features/{feature-name}/
   data/
-    {feature}_repository.dart          # Interface abstraite
-    drift_{feature}_repository.dart    # Implémentation Drift
-    {feature}_dao.dart                 # DAO Drift
+    {feature}-repository.ts          # Interface abstraite
+    sqlite-{feature}-repository.ts   # Implémentation SQLite
   domain/
-    {entity}.dart                      # Modèle Freezed
-    {feature}_error.dart               # Sealed errors
-  application/
-    {feature}_notifier.dart            # AsyncNotifier
-    {feature}_provider.dart            # Provider declarations
-  presentation/
-    {feature}_screen.dart
-    widgets/
-      {widget_name}.dart
+    {entity}.ts                      # Interface TypeScript + factory function
+    {feature}-error.ts               # Discriminated union errors
+  screens/
+    {feature}-screen.tsx             # Écran principal
+  components/
+    {component-name}.tsx             # Composants UI
+  store/
+    {feature}-store.ts               # Zustand store
 ```
 
 **Tests — co-location obligatoire :**
 
 ```
-features/patients/data/patient_repository.dart
-features/patients/data/patient_repository_test.dart   ← co-localisé
-features/patients/application/patients_notifier_test.dart
+features/patients/data/patient-repository.ts
+features/patients/data/patient-repository.test.ts   ← co-localisé
+features/patients/store/patients-store.test.ts
 ```
 
-Interdit : dossier `test/` séparé miroir de `lib/`.
+Interdit : dossier `__tests__/` séparé miroir de `src/`.
 
 ### Patterns de format
 
 **Dates — ISO 8601 string en base :**
 
-```dart
-// Stockage Drift : TextColumn
+```typescript
+// Stockage SQL : TEXT column
 // Valeur : '2026-03-05T14:30:00Z'
-// Dart : DateTime.parse(row.createdAt)
+// TypeScript : new Date(row.createdAt).toISOString()
+// Affichage : format(parseISO(row.createdAt), 'dd/MM/yyyy') via date-fns
 ```
 
 Interdit : Unix timestamp entier.
 
-**Angles articulaires — double en degrés, 1 décimale :**
+**Angles articulaires — number en degrés, 1 décimale :**
 
-```dart
-final kneeAngle = 42.3; // degrés
-// Affichage : '42.3°'
+```typescript
+const kneeAngle: number = 42.3; // degrés
+// Affichage : `${kneeAngle.toFixed(1)}°`
 ```
 
-**IDs — UUID v4, TextColumn Drift :**
+**IDs — UUID v4, TEXT column SQL :**
 
-```dart
-import 'package:uuid/uuid.dart';
-final id = const Uuid().v4(); // génération côté Dart
-// Drift : TextColumn get id => text()();
+```typescript
+import { v4 as uuidv4 } from "uuid";
+const id = uuidv4(); // génération côté TypeScript
+// SQL : TEXT column pour l'ID
 ```
 
 ### Patterns de communication
 
-**AsyncValue en UI — switch exhaustif Dart 3 (obligatoire) :**
+**État asynchrone en UI — pattern Zustand (obligatoire) :**
 
-```dart
-// ✅ CORRECT
-switch (state) {
-  case AsyncData(:final value) => ContentWidget(value),
-  case AsyncLoading()          => const LoadingSpinner(),
-  case AsyncError(:final error) => ErrorWidget(error),
+```typescript
+// ✅ CORRECT — Zustand store avec états explicites
+interface PatientsState {
+  readonly status: 'idle' | 'loading' | 'success' | 'error';
+  readonly patients: readonly Patient[];
+  readonly error: string | null;
+  fetchPatients: () => Promise<void>;
+}
+
+// Dans le composant :
+const { status, patients, error } = usePatientsStore();
+switch (status) {
+  case 'loading': return <LoadingSpinner />;
+  case 'error':   return <ErrorView error={error} />;
+  case 'success': return <PatientList patients={patients} />;
+  default:        return null;
 }
 
 // ❌ INTERDIT
-state.when(data: ..., loading: ..., error: ...);
-state.maybeWhen(...);
-if (state.isLoading) ...
+// if (isLoading) ... else if (error) ... (pas de type narrowing)
 ```
 
-**State machine pipeline ML — sealed class obligatoire :**
+**State machine pipeline ML — discriminated union obligatoire :**
 
-```dart
-sealed class CaptureState { const CaptureState(); }
-final class CaptureIdle     extends CaptureState { const CaptureIdle(); }
-final class CaptureRecording extends CaptureState { const CaptureRecording(); }
-final class CaptureProcessing extends CaptureState { const CaptureProcessing(); }
-final class CaptureCompleted extends CaptureState {
-  final AnalysisResult result;
-  const CaptureCompleted(this.result);
-}
-final class CaptureFailed extends CaptureState {
-  final AnalysisError error;
-  const CaptureFailed(this.error);
-}
+```typescript
+type CaptureState =
+  | { readonly kind: "idle" }
+  | { readonly kind: "recording" }
+  | { readonly kind: "processing" }
+  | { readonly kind: "completed"; readonly result: AnalysisResult }
+  | { readonly kind: "failed"; readonly error: AnalysisError };
 ```
 
-**Riverpod — règles de scoping :**
+**Zustand — règles de scoping :**
 
-- `AsyncNotifier<T>` pour tout état asynchrone — `StateNotifier` et `ChangeNotifier` interdits
-- Providers déclarés dans `{feature}_provider.dart` uniquement
-- Providers globaux : **uniquement** dans `core/` (auth, db connection)
-- Accès base de données : via Repository uniquement — accès DAO direct depuis un Notifier interdit
+- Zustand stores avec Immer pour tout état asynchrone — `useState` local et `useReducer` complexe interdits pour l'état feature
+- Stores déclarés dans `{feature}-store.ts` uniquement
+- Stores globaux : **uniquement** dans `core/` (auth, db connection)
+- Accès base de données : via Repository uniquement — accès SQL direct depuis un store interdit
 
 ### Patterns de processus
 
 **Biométrie — pattern core obligatoire :**
 
 ```
-core/auth/biometric_guard.dart    ← vérification centralisée
+core/auth/biometric-service.ts          ← interface
+core/auth/biometric-service.native.ts   ← implémentation native
+core/auth/biometric-service.web.ts      ← implémentation web
+core/auth/use-biometric-auth.ts         ← hook React
 ```
 
-- Vérification via `go_router` redirect — pas dans les features
-- Interdit : checks biométriques dans les widgets ou Notifiers individuels
+- Vérification via navigation guard dans le NavigationContainer — pas dans les features
+- Interdit : checks biométriques dans les composants ou stores individuels
 
 **Disclaimer EU MDR — constante unique :**
 
-```dart
-// core/legal/legal_constants.dart
-abstract class LegalConstants {
-  static const String mdrDisclaimer =
-    'BodyOrthox est un outil de documentation clinique. '
-    'Les données produites ne constituent pas un acte de '
-    'diagnostic médical et ne se substituent pas au jugement '
-    'clinique du praticien.';
-}
+```typescript
+// core/legal/legal-constants.ts
+export const LEGAL_CONSTANTS = {
+  mdrDisclaimer:
+    "BodyOrthox est un outil de documentation clinique. " +
+    "Les données produites ne constituent pas un acte de " +
+    "diagnostic médical et ne se substituent pas au jugement " +
+    "clinique du praticien.",
+} as const;
 ```
 
-Interdit : texte du disclaimer inline dans les widgets ou le PDF generator.
+Interdit : texte du disclaimer inline dans les composants ou le PDF generator.
 
-**Gestion erreurs ML — AnalysisError sealed :**
+**Gestion erreurs ML — AnalysisError discriminated union :**
 
-```dart
-sealed class AnalysisError { const AnalysisError(); }
-final class MLLowConfidence  extends AnalysisError { final double score; const MLLowConfidence(this.score); }
-final class MLDetectionFailed extends AnalysisError { const MLDetectionFailed(); }
-final class VideoProcessingError extends AnalysisError { final String cause; const VideoProcessingError(this.cause); }
+```typescript
+type AnalysisError =
+  | { readonly kind: "ml-low-confidence"; readonly score: number }
+  | { readonly kind: "ml-detection-failed" }
+  | { readonly kind: "video-processing-error"; readonly cause: string };
 ```
 
 ### Règles d'application — tous les agents DOIVENT
 
-1. Respecter la structure `data/domain/application/presentation` dans chaque feature
-2. Utiliser `switch` exhaustif sur `AsyncValue` et toutes les sealed classes
-3. Nommer les fichiers en snake_case, les classes en PascalCase
-4. Déclarer les providers dans `{feature}_provider.dart` uniquement
-5. Utiliser `LegalConstants.mdrDisclaimer` — jamais de texte inline
+1. Respecter la structure `data/domain/screens/components/store` dans chaque feature
+2. Utiliser `switch` exhaustif avec type narrowing sur les discriminated unions
+3. Nommer les fichiers en kebab-case, les interfaces/classes en PascalCase
+4. Déclarer les stores dans `{feature}-store.ts` uniquement
+5. Utiliser `LEGAL_CONSTANTS.mdrDisclaimer` — jamais de texte inline
 6. Co-localiser les tests avec les fichiers source
 7. Stocker les dates en ISO 8601 string, les IDs en UUID v4 string
-8. Accéder aux données uniquement via le Repository — jamais via le DAO directement
+8. Accéder aux données uniquement via le Repository — jamais via SQL direct depuis un store
 
 ### Anti-patterns explicites
 
-```dart
-// ❌ DAO direct depuis un Notifier
-class PatientsNotifier extends AsyncNotifier<List<Patient>> {
-  Future<void> load() async {
-    state = await ref.read(driftDbProvider).patientDao.findAll(); // INTERDIT
-  }
-}
+```typescript
+// ❌ SQL direct depuis un store
+const usePatientsStore = create<PatientsState>((set) => ({
+  fetchPatients: async () => {
+    const db = getDatabase();
+    const rows = await db.executeSql("SELECT * FROM patients"); // INTERDIT
+  },
+}));
 
 // ✅ Via Repository
-class PatientsNotifier extends AsyncNotifier<List<Patient>> {
-  Future<void> load() async {
-    state = AsyncData(await ref.read(patientRepositoryProvider).findAll());
-  }
-}
+const usePatientsStore = create<PatientsState>((set) => ({
+  fetchPatients: async () => {
+    const patients = await patientRepository.findAll();
+    set({ patients, status: "success" });
+  },
+}));
 ```
 
-```dart
+```typescript
 // ❌ Disclaimer inline
-Text('BodyOrthox est un outil de documentation...')  // INTERDIT
+<Text>BodyOrthox est un outil de documentation...</Text>  // INTERDIT
 
 // ✅ Constante centralisée
-Text(LegalConstants.mdrDisclaimer)
+<Text>{LEGAL_CONSTANTS.mdrDisclaimer}</Text>
 ```
 
 ## Structure du Projet & Frontières Architecturales
 
 ### Mapping des exigences → composants
 
-| FRs        | Feature                    | Répertoire                                |
-| ---------- | -------------------------- | ----------------------------------------- |
-| FR1-FR6    | Gestion patients           | `features/patients/`                      |
-| FR7-FR12   | Capture guidée             | `features/capture/presentation/`          |
-| FR13-FR19  | Pipeline ML + isolate      | `features/capture/data/` + `application/` |
-| FR15, FR18 | Résultats + replay         | `features/results/`                       |
-| FR20-FR25  | Rapport PDF                | `features/report/`                        |
-| FR26       | Biométrie                  | `core/auth/`                              |
-| FR27-FR30  | Chiffrement + offline      | `core/database/`                          |
-| FR31-FR35  | Freemium + IAP             | `features/paywall/`                       |
-| FR36-FR37  | Onboarding                 | `features/onboarding/`                    |
-| FR38-FR40  | Vue expert/simple + notifs | `features/results/` + `core/config/`      |
+| FRs        | Feature                     | Répertoire                           |
+| ---------- | --------------------------- | ------------------------------------ |
+| FR1-FR6    | Gestion patients            | `features/patients/`                 |
+| FR7-FR12   | Capture guidée              | `features/capture/screens/`          |
+| FR13-FR19  | Pipeline ML + native thread | `features/capture/data/` + `store/`  |
+| FR15, FR18 | Résultats + replay          | `features/results/`                  |
+| FR20-FR25  | Rapport PDF                 | `features/report/`                   |
+| FR26       | Biométrie                   | `core/auth/`                         |
+| FR27-FR30  | Chiffrement + offline       | `core/database/`                     |
+| FR31-FR35  | Freemium + IAP              | `features/paywall/`                  |
+| FR36-FR37  | Onboarding                  | `features/onboarding/`               |
+| FR38-FR40  | Vue expert/simple + notifs  | `features/results/` + `core/config/` |
 
 ### Arborescence complète du projet
 
 ```
-bodyorthox/
-├── pubspec.yaml
-├── analysis_options.yaml
+bodyorthox-rn/
+├── package.json
+├── tsconfig.json
+├── .eslintrc
 ├── .gitignore
+├── webpack.config.js
+├── index.js
 ├── ios/
-│   ├── Runner/
-│   │   ├── AppDelegate.swift
+│   ├── bodyorthox/
+│   │   ├── AppDelegate.mm
 │   │   └── Info.plist
-│   ├── Runner.xcodeproj/
+│   ├── bodyorthox.xcodeproj/
 │   └── Podfile
-├── lib/
-│   ├── main_dev.dart                      # Entry point flavor dev
-│   ├── main_prod.dart                     # Entry point flavor prod
-│   ├── app.dart                           # ProviderScope + MaterialApp + router
+├── android/
+│   ├── app/
+│   │   └── build.gradle
+│   └── settings.gradle
+├── web/
+│   └── index.html
+├── src/
+│   ├── App.tsx                              # NavigationContainer + stores init
 │   ├── core/
 │   │   ├── auth/
-│   │   │   ├── biometric_guard.dart       # go_router redirect (FR26)
-│   │   │   ├── biometric_service.dart
-│   │   │   └── biometric_service_test.dart
+│   │   │   ├── biometric-service.ts         # Interface (FR26)
+│   │   │   ├── biometric-service.native.ts  # Implémentation native
+│   │   │   ├── biometric-service.web.ts     # Implémentation web
+│   │   │   ├── use-biometric-auth.ts        # Hook React
+│   │   │   └── biometric-service.test.ts
 │   │   ├── database/
-│   │   │   ├── app_database.dart          # Drift DB + SQLCipher (FR27-FR30)
-│   │   │   ├── app_database.g.dart        # Generated
-│   │   │   └── database_provider.dart
+│   │   │   ├── schema.ts                    # Schema SQL (FR27-FR30)
+│   │   │   ├── database.native.ts           # react-native-sqlite-storage
+│   │   │   ├── database.web.ts              # IndexedDB
+│   │   │   ├── init.ts                      # Platform-specific initialization
+│   │   │   └── database.test.ts
 │   │   ├── legal/
-│   │   │   └── legal_constants.dart       # LegalConstants.mdrDisclaimer
-│   │   ├── router/
-│   │   │   ├── app_router.dart            # go_router + auth redirect
-│   │   │   └── app_router.g.dart          # Generated
+│   │   │   └── legal-constants.ts           # LEGAL_CONSTANTS.mdrDisclaimer
 │   │   └── config/
-│   │       ├── app_config.dart            # Flavor-aware config
-│   │       └── revenuecat_config.dart     # Sandbox vs prod (FR34)
+│   │       ├── app-config.ts                # Dev/prod config (__DEV__ flag)
+│   │       └── revenuecat-config.ts         # Sandbox vs prod (FR34)
 │   ├── features/
-│   │   ├── patients/                      # FR1-FR6
+│   │   ├── patients/                        # FR1-FR6
 │   │   │   ├── data/
-│   │   │   │   ├── patient_repository.dart
-│   │   │   │   ├── patient_repository_test.dart
-│   │   │   │   ├── drift_patient_repository.dart
-│   │   │   │   ├── drift_patient_repository_test.dart
-│   │   │   │   └── patient_dao.dart
+│   │   │   │   ├── patient-repository.ts
+│   │   │   │   ├── patient-repository.test.ts
+│   │   │   │   ├── sqlite-patient-repository.ts
+│   │   │   │   └── sqlite-patient-repository.test.ts
 │   │   │   ├── domain/
-│   │   │   │   ├── patient.dart           # Freezed
-│   │   │   │   └── patient.freezed.dart   # Generated
-│   │   │   ├── application/
-│   │   │   │   ├── patients_notifier.dart
-│   │   │   │   ├── patients_notifier_test.dart
-│   │   │   │   └── patients_provider.dart
-│   │   │   └── presentation/
-│   │   │       ├── patients_screen.dart
-│   │   │       ├── patient_detail_screen.dart
-│   │   │       └── widgets/
-│   │   │           ├── patient_list_tile.dart
-│   │   │           └── patient_history_tile.dart
-│   │   ├── capture/                       # FR7-FR19
+│   │   │   │   ├── patient.ts               # Interface + factory function
+│   │   │   │   └── patient.test.ts
+│   │   │   ├── screens/
+│   │   │   │   ├── patients-screen.tsx
+│   │   │   │   ├── create-patient-screen.tsx
+│   │   │   │   ├── patient-detail-screen.tsx
+│   │   │   │   └── patient-timeline-screen.tsx
+│   │   │   ├── components/
+│   │   │   │   ├── patient-list-tile.tsx
+│   │   │   │   └── patient-history-tile.tsx
+│   │   │   └── store/
+│   │   │       ├── patients-store.ts
+│   │   │       └── patients-store.test.ts
+│   │   ├── capture/                         # FR7-FR19
 │   │   │   ├── data/
-│   │   │   │   ├── ml_service.dart        # Google ML Kit wrapper
-│   │   │   │   ├── ml_service_test.dart
-│   │   │   │   ├── analysis_repository.dart
-│   │   │   │   ├── analysis_repository_test.dart
-│   │   │   │   ├── drift_analysis_repository.dart
-│   │   │   │   └── analysis_dao.dart
+│   │   │   │   ├── ml-service.ts            # MediaPipe wrapper
+│   │   │   │   ├── ml-service.test.ts
+│   │   │   │   ├── analysis-repository.ts
+│   │   │   │   ├── analysis-repository.test.ts
+│   │   │   │   └── sqlite-analysis-repository.ts
 │   │   │   ├── domain/
-│   │   │   │   ├── analysis.dart          # Freezed
-│   │   │   │   ├── articular_angles.dart  # Freezed
-│   │   │   │   ├── confidence_score.dart  # Freezed
-│   │   │   │   ├── capture_state.dart     # sealed state machine
-│   │   │   │   ├── analysis_result.dart   # sealed AnalysisResult
-│   │   │   │   └── analysis_error.dart    # sealed AnalysisError
-│   │   │   ├── application/
-│   │   │   │   ├── capture_notifier.dart  # AsyncNotifier<CaptureState>
-│   │   │   │   ├── capture_notifier_test.dart
-│   │   │   │   ├── ml_isolate_runner.dart # Isolate + SendPort (NFR-S5)
-│   │   │   │   ├── ml_isolate_runner_test.dart
-│   │   │   │   └── capture_provider.dart
-│   │   │   └── presentation/
-│   │   │       ├── capture_screen.dart
-│   │   │       └── widgets/
-│   │   │           ├── guided_camera_overlay.dart    # GuidedCameraOverlay
-│   │   │           ├── luminosity_indicator.dart     # FR9
-│   │   │           └── analysis_progress_banner.dart # AnalysisProgressBanner
-│   │   ├── results/                       # FR15, FR17, FR18, FR38
+│   │   │   │   ├── analysis.ts              # Interface + factory
+│   │   │   │   ├── articular-angles.ts      # Interface + factory
+│   │   │   │   ├── confidence-score.ts      # Interface + factory
+│   │   │   │   ├── capture-state.ts         # Discriminated union state machine
+│   │   │   │   ├── analysis-result.ts       # Discriminated union AnalysisResult
+│   │   │   │   └── analysis-error.ts        # Discriminated union AnalysisError
+│   │   │   ├── screens/
+│   │   │   │   ├── capture-screen.tsx
+│   │   │   │   └── ml-worker.ts             # Native thread / Web Worker (NFR-S5)
+│   │   │   ├── components/
+│   │   │   │   ├── guided-camera-overlay.tsx     # GuidedCameraOverlay
+│   │   │   │   ├── luminosity-indicator.tsx      # FR9
+│   │   │   │   └── analysis-progress-banner.tsx  # AnalysisProgressBanner
+│   │   │   └── store/
+│   │   │       ├── capture-store.ts
+│   │   │       └── capture-store.test.ts
+│   │   ├── results/                         # FR15, FR17, FR18, FR38
 │   │   │   ├── domain/
-│   │   │   │   └── reference_norms.dart   # Normes par âge/profil (FR15)
-│   │   │   ├── application/
-│   │   │   │   ├── results_notifier.dart
-│   │   │   │   ├── results_notifier_test.dart
-│   │   │   │   └── results_provider.dart
-│   │   │   └── presentation/
-│   │   │       ├── results_screen.dart
-│   │   │       └── widgets/
-│   │   │           ├── articular_angle_card.dart     # ArticularAngleCard
-│   │   │           ├── body_skeleton_overlay.dart    # BodySkeletonOverlay
-│   │   │           ├── replay_viewer.dart            # FR18
-│   │   │           ├── simple_view.dart              # FR38
-│   │   │           └── expert_view.dart              # FR38
-│   │   ├── report/                        # FR20-FR25
+│   │   │   │   └── reference-norms.ts       # Normes par âge/profil (FR15)
+│   │   │   ├── screens/
+│   │   │   │   └── results-screen.tsx
+│   │   │   ├── components/
+│   │   │   │   ├── articular-angle-card.tsx      # ArticularAngleCard
+│   │   │   │   ├── body-skeleton-overlay.tsx     # BodySkeletonOverlay
+│   │   │   │   ├── replay-viewer.tsx             # FR18
+│   │   │   │   ├── simple-view.tsx               # FR38
+│   │   │   │   └── expert-view.tsx               # FR38
+│   │   │   └── store/
+│   │   │       ├── results-store.ts
+│   │   │       └── results-store.test.ts
+│   │   ├── report/                          # FR20-FR25
 │   │   │   ├── data/
-│   │   │   │   ├── pdf_generator.dart
-│   │   │   │   └── pdf_generator_test.dart
-│   │   │   ├── application/
-│   │   │   │   ├── report_notifier.dart
-│   │   │   │   └── report_provider.dart
-│   │   │   └── presentation/
-│   │   │       └── widgets/
-│   │   │           └── export_button.dart # FR24 — share sheet iOS
-│   │   ├── paywall/                       # FR31-FR35
+│   │   │   │   ├── pdf-generator.ts
+│   │   │   │   └── pdf-generator.test.ts
+│   │   │   ├── screens/
+│   │   │   │   └── report-screen.tsx
+│   │   │   ├── components/
+│   │   │   │   └── export-button.tsx        # FR24 — share sheet
+│   │   │   └── store/
+│   │   │       └── report-store.ts
+│   │   ├── paywall/                         # FR31-FR35
 │   │   │   ├── data/
-│   │   │   │   ├── subscription_repository.dart     # RevenueCat
-│   │   │   │   └── subscription_repository_test.dart
+│   │   │   │   ├── subscription-repository.ts     # RevenueCat
+│   │   │   │   └── subscription-repository.test.ts
 │   │   │   ├── domain/
-│   │   │   │   ├── subscription_status.dart         # sealed
-│   │   │   │   └── quota.dart                       # Freezed (FR32)
-│   │   │   ├── application/
-│   │   │   │   ├── paywall_notifier.dart
-│   │   │   │   ├── paywall_notifier_test.dart
-│   │   │   │   └── paywall_provider.dart
-│   │   │   └── presentation/
-│   │   │       ├── paywall_sheet.dart               # ContextualPaywallSheet
-│   │   │       └── widgets/
-│   │   │           └── freemium_counter_badge.dart  # FreemiumCounterBadge
-│   │   └── onboarding/                    # FR36-FR37
-│   │       ├── application/
-│   │       │   ├── onboarding_notifier.dart
-│   │       │   └── onboarding_provider.dart
-│   │       └── presentation/
-│   │           ├── onboarding_screen.dart
-│   │           └── widgets/
-│   │               ├── onboarding_page_result.dart  # Résultat d'abord
-│   │               ├── onboarding_page_capture.dart
-│   │               └── onboarding_page_privacy.dart # Script RGPD (FR12)
+│   │   │   │   ├── subscription-status.ts         # Discriminated union
+│   │   │   │   └── quota.ts                       # Interface (FR32)
+│   │   │   ├── screens/
+│   │   │   │   └── paywall-sheet.tsx               # ContextualPaywallSheet
+│   │   │   ├── components/
+│   │   │   │   └── freemium-counter-badge.tsx      # FreemiumCounterBadge
+│   │   │   └── store/
+│   │   │       ├── paywall-store.ts
+│   │   │       └── paywall-store.test.ts
+│   │   └── onboarding/                      # FR36-FR37
+│   │       ├── screens/
+│   │       │   └── onboarding-screen.tsx
+│   │       ├── components/
+│   │       │   ├── onboarding-page-result.tsx  # Résultat d'abord
+│   │       │   ├── onboarding-page-capture.tsx
+│   │       │   └── onboarding-page-privacy.tsx # Script RGPD (FR12)
+│   │       └── store/
+│   │           └── onboarding-store.ts
+│   ├── navigation/
+│   │   └── app-navigator.tsx                # @react-navigation setup + auth guard
 │   └── shared/
-│       ├── widgets/
-│       │   ├── loading_spinner.dart
-│       │   ├── error_widget.dart
-│       │   └── biometric_lock_screen.dart
-│       ├── design_system/
-│       │   ├── app_colors.dart            # Palette: #1B6FBF, #34C759...
-│       │   ├── app_typography.dart        # SF Pro
-│       │   └── app_spacing.dart          # base 8pt, marges 16pt
+│       ├── components/
+│       │   ├── loading-spinner.tsx
+│       │   ├── error-view.tsx
+│       │   └── biometric-lock-screen.tsx
+│       ├── design-system/
+│       │   ├── app-colors.ts                # Palette: #1B6FBF, #34C759...
+│       │   ├── app-typography.ts            # SF Pro
+│       │   └── app-spacing.ts              # base 8pt, marges 16pt
+│       ├── hooks/
+│       │   └── use-platform.ts
 │       └── extensions/
-│           └── datetime_extensions.dart
-└── integration_test/
-    └── app_e2e_test.dart
+│           └── date-helpers.ts
+├── __tests__/
+│   └── app-e2e.test.ts
+└── .github/
+    └── workflows/
+        └── ci.yml                           # Tests + build + deploy
 ```
 
 ### Frontières architecturales
@@ -672,50 +677,59 @@ bodyorthox/
 
 ```
 CaptureScreen
-  → CaptureNotifier (AsyncNotifier<CaptureState>)
-  → MlIsolateRunner (Flutter isolate, SendPort)
-    → MlService (Google ML Kit — dans l'isolate)
-    → AnalysisResult (sealed) retourné via ReceivePort
-  → DriftAnalysisRepository (persistance chiffrée)
-  → ResultsScreen → ReportNotifier → PdfGenerator → share sheet iOS
+  → useCaptureStore (Zustand store<CaptureState>)
+  → ml-worker.ts (native thread / Web Worker, postMessage)
+    → MlService (MediaPipe — dans le thread dédié)
+    → AnalysisResult (discriminated union) retourné via postMessage
+  → SqliteAnalysisRepository (persistance chiffrée)
+  → ResultsScreen → useReportStore → PdfGenerator → share sheet
 ```
 
 **Frontières de données :**
 
 - `core/database/` : seule couche qui touche le disque chiffré
-- Vidéo brute : vit uniquement dans l'isolate `ml_isolate_runner.dart` — ne franchit jamais la frontière vers la base de données
-- Clé SQLCipher : dérivée du Keychain iOS, jamais transmise entre couches
+- Vidéo brute : vit uniquement dans le thread dédié `ml-worker.ts` — ne franchit jamais la frontière vers la base de données
+- Clé SQLite : dérivée du Keychain / Keystore (react-native-keychain), jamais transmise entre couches
 
 **Points d'intégration externe :**
 
-| Service               | Fichier wrapper                                  | Pattern                                         |
-| --------------------- | ------------------------------------------------ | ----------------------------------------------- |
-| Google ML Kit         | `capture/data/ml_service.dart`                   | Wrappé derrière `MlService` abstract            |
-| RevenueCat            | `paywall/data/subscription_repository.dart`      | Wrappé derrière `SubscriptionRepository`        |
-| iOS share sheet       | `report/presentation/widgets/export_button.dart` | `Share.shareFiles()` natif                      |
-| local_auth            | `core/auth/biometric_service.dart`               | Centralisé dans `core/`                         |
-| Notifications locales | `core/config/app_config.dart`                    | `flutter_local_notifications` configuré en core |
+| Service                 | Fichier wrapper                           | Pattern                                    |
+| ----------------------- | ----------------------------------------- | ------------------------------------------ |
+| MediaPipe               | `capture/data/ml-service.ts`              | Wrappé derrière `MlService` interface      |
+| RevenueCat              | `paywall/data/subscription-repository.ts` | Wrappé derrière `SubscriptionRepository`   |
+| Share sheet             | `report/components/export-button.tsx`     | Share natif multi-plateforme               |
+| react-native-biometrics | `core/auth/biometric-service.native.ts`   | Centralisé dans `core/`, platform-specific |
+| Notifications locales   | `core/config/app-config.ts`               | `@notifee/react-native` configuré en core  |
 
 ### Flux de développement
 
-**Commande build_runner (standard) :**
+**Vérification de types / Lint (standard) :**
 
 ```bash
-dart run build_runner build --delete-conflicting-outputs
+npm run type-check    # tsc --noEmit
+npm run lint          # ESLint
+npm test              # Jest + @testing-library/react-native
 ```
 
-**Lancement flavors :**
+**Lancement développement :**
 
 ```bash
-flutter run --flavor dev -t lib/main_dev.dart
-flutter run --flavor prod -t lib/main_prod.dart
+npm run web                     # webpack-dev-server sur localhost:8080
+npx react-native run-ios        # Simulateur iOS
+npx react-native run-android    # Émulateur Android
 ```
 
-**Build TestFlight :**
+**Build distribution :**
 
 ```bash
-flutter build ipa --flavor prod -t lib/main_prod.dart
-# Puis upload via Xcode Organizer ou Transporter
+# Web — GitHub Pages
+npm run build:web
+
+# iOS — TestFlight
+# Via Xcode : Product → Archive → Upload to App Store Connect
+
+# Android — APK
+cd android && ./gradlew assembleRelease
 ```
 
 ## Résultats de Validation Architecturale
@@ -723,84 +737,87 @@ flutter build ipa --flavor prod -t lib/main_prod.dart
 ### Validation de cohérence ✅
 
 **Compatibilité des décisions :**
-Toutes les technologies sélectionnées sont mutuellement compatibles. Un point de vigilance critique : `sqlcipher_flutter_libs` et `sqlite3_flutter_libs` sont incompatibles — le `pubspec.yaml` devra déclarer explicitement `sqlite3_flutter_libs` comme exclusion de dépendance transitive. Les packages Riverpod, Freezed, go_router, et Drift opèrent sans conflits sur Flutter 3.x + iOS 16+.
+Toutes les technologies sélectionnées sont mutuellement compatibles. Un point de vigilance critique : l'interface `IDatabase` abstraite doit être implémentée de manière cohérente entre `database.native.ts` (react-native-sqlite-storage) et `database.web.ts` (IndexedDB) pour garantir la portabilité. Les packages Zustand, @react-navigation, react-native-reanimated opèrent sans conflits sur React Native 0.79.x + react-native-web.
 
 **Cohérence des patterns :**
-Feature-First + AsyncNotifier + Repository forment un triangle cohérent : la feature expose un Repository en interface, l'implémentation Drift respecte ce contrat, le Notifier consomme uniquement le Repository. Le switch exhaustif sur `AsyncValue` et les sealed classes sont nativement supportés par Dart 3.x.
+Feature-First + Zustand store + Repository forment un triangle cohérent : la feature expose un Repository en interface, l'implémentation SQLite respecte ce contrat, le store consomme uniquement le Repository. Le switch exhaustif avec type narrowing sur les discriminated unions est nativement supporté par TypeScript 5.x.
 
 **Alignement de la structure :**
-Chaque feature respecte la structure `data/domain/application/presentation`. Les frontières sont claires : `core/` pour le cross-cutting, `shared/` pour les widgets génériques, `features/` pour la logique métier. Aucune dépendance circulaire identifiée.
+Chaque feature respecte la structure `data/domain/screens/components/store`. Les frontières sont claires : `core/` pour le cross-cutting, `shared/` pour les composants génériques, `features/` pour la logique métier. Aucune dépendance circulaire identifiée.
 
 ### Validation de couverture des exigences ✅
 
 **Couverture des exigences fonctionnelles — 40/40 :**
 
-| Catégorie                  | FRs       | Couverture                                                |
-| -------------------------- | --------- | --------------------------------------------------------- |
-| Gestion patients           | FR1-FR6   | `features/patients/` — complet                            |
-| Capture & guidage          | FR7-FR12  | `guided_camera_overlay.dart`, `luminosity_indicator.dart` |
-| Analyse ML on-device       | FR13-FR19 | `ml_service.dart` + `ml_isolate_runner.dart` + isolate    |
-| Rapport & export           | FR20-FR25 | `pdf_generator.dart` + `LegalConstants.mdrDisclaimer`     |
-| Sécurité & confidentialité | FR26-FR30 | `biometric_guard.dart` + `app_database.dart` + SQLCipher  |
-| Monétisation               | FR31-FR35 | `paywall/` + RevenueCat + `freemium_counter_badge.dart`   |
-| Onboarding & UX            | FR36-FR40 | `onboarding/` + `simple_view.dart` + `expert_view.dart`   |
+| Catégorie                  | FRs       | Couverture                                              |
+| -------------------------- | --------- | ------------------------------------------------------- |
+| Gestion patients           | FR1-FR6   | `features/patients/` — complet                          |
+| Capture & guidage          | FR7-FR12  | `guided-camera-overlay.tsx`, `luminosity-indicator.tsx` |
+| Analyse ML on-device       | FR13-FR19 | `ml-service.ts` + `ml-worker.ts` + native thread        |
+| Rapport & export           | FR20-FR25 | `pdf-generator.ts` + `LEGAL_CONSTANTS.mdrDisclaimer`    |
+| Sécurité & confidentialité | FR26-FR30 | `biometric-service.ts` + `database.native.ts` + SQLite  |
+| Monétisation               | FR31-FR35 | `paywall/` + RevenueCat + `freemium-counter-badge.tsx`  |
+| Onboarding & UX            | FR36-FR40 | `onboarding/` + `simple-view.tsx` + `expert-view.tsx`   |
 
 **Couverture des exigences non-fonctionnelles :**
 
-| NFR                           | Couverture                                        | Statut    |
-| ----------------------------- | ------------------------------------------------- | --------- |
-| NFR-P1 (<30s analyse)         | `ml_isolate_runner.dart` background               | ✅        |
-| NFR-P2 (≥58 FPS)              | Impeller activé iOS 16+ par défaut                | ✅        |
-| NFR-P3 (<3s cold start)       | ProviderScope lazy loading                        | ✅        |
-| NFR-P4 (<5s PDF)              | `pdf_generator.dart` local                        | ✅        |
-| NFR-P5 (<100ms overlay)       | `guided_camera_overlay.dart` temps réel           | ✅        |
-| NFR-P6 (<1s 500 patients)     | Drift + index `patients.name`                     | ✅ résolu |
-| NFR-S1 (AES-256)              | `sqlcipher_flutter_libs`                          | ✅        |
-| NFR-S2 (biométrie)            | `biometric_guard.dart` + `local_auth`             | ✅        |
-| NFR-S3 (isolation réseau)     | Architecture locale-first                         | ✅        |
-| NFR-S4 (clé Keychain)         | `flutter_secure_storage`                          | ✅ résolu |
-| NFR-S5 (vidéo RAM)            | Isolate Flutter — vidéo jamais sur disque         | ✅        |
-| NFR-S6 (RGPD by architecture) | Locale-first structurel                           | ✅        |
-| NFR-R1 (<0.1% crash)          | Transactions Drift + error handling isolate       | ✅        |
-| NFR-R2 (atomicité)            | Transactions Drift obligatoires                   | ✅        |
-| NFR-R3 (durabilité)           | SQLite persistant, survit aux crashes             | ✅        |
-| NFR-R4 (<5% échec ML)         | `confidence_score.dart` + fallback manuel         | ✅        |
-| NFR-R5 (cohérence)            | Transactions Drift — analyse complète ou absente  | ✅        |
-| NFR-C1 (500+ patients)        | Drift + index + pagination                        | ✅        |
-| NFR-C2 (5000+ analyses)       | Drift pagination                                  | ✅        |
-| NFR-C3 (<500MB base)          | Données texte/numériques — vidéo jamais persistée | ✅        |
-| NFR-C4 (<150MB bundle)        | ML Kit ~40-60MB, app ~90-150MB                    | ✅        |
+| NFR                           | Couverture                                           | Statut    |
+| ----------------------------- | ---------------------------------------------------- | --------- |
+| NFR-P1 (<30s analyse)         | `ml-worker.ts` background thread                     | ✅        |
+| NFR-P2 (≥58 FPS)              | react-native-reanimated activé                       | ✅        |
+| NFR-P3 (<3s cold start)       | Zustand stores lazy initialization                   | ✅        |
+| NFR-P4 (<5s PDF)              | `pdf-generator.ts` local                             | ✅        |
+| NFR-P5 (<100ms overlay)       | `guided-camera-overlay.tsx` temps réel               | ✅        |
+| NFR-P6 (<1s 500 patients)     | SQLite + index `patients(name)`                      | ✅ résolu |
+| NFR-S1 (AES-256)              | react-native-sqlite-storage (chiffré)                | ✅        |
+| NFR-S2 (biométrie)            | `biometric-service.ts` + `react-native-biometrics`   | ✅        |
+| NFR-S3 (isolation réseau)     | Architecture locale-first                            | ✅        |
+| NFR-S4 (clé Keychain)         | `react-native-keychain`                              | ✅ résolu |
+| NFR-S5 (vidéo RAM)            | Native thread / Web Worker — vidéo jamais sur disque | ✅        |
+| NFR-S6 (RGPD by architecture) | Locale-first structurel                              | ✅        |
+| NFR-R1 (<0.1% crash)          | Transactions SQL + error handling thread             | ✅        |
+| NFR-R2 (atomicité)            | Transactions SQL obligatoires                        | ✅        |
+| NFR-R3 (durabilité)           | SQLite persistant, survit aux crashes                | ✅        |
+| NFR-R4 (<5% échec ML)         | `confidence-score.ts` + fallback manuel              | ✅        |
+| NFR-R5 (cohérence)            | Transactions SQL — analyse complète ou absente       | ✅        |
+| NFR-C1 (500+ patients)        | SQLite + index + pagination                          | ✅        |
+| NFR-C2 (5000+ analyses)       | SQLite pagination                                    | ✅        |
+| NFR-C3 (<500MB base)          | Données texte/numériques — vidéo jamais persistée    | ✅        |
+| NFR-C4 (<150MB bundle)        | MediaPipe ~40-60MB, app ~90-150MB                    | ✅        |
 
 ### Analyse des écarts résolus
 
-**Gap critique #1 résolu — `flutter_secure_storage` :**
-Ajouté à la stack dans `core/database/database_provider.dart`. Responsabilité : stocker la clé SQLCipher dans le Keychain iOS. Le provider Drift lit la clé via `FlutterSecureStorage().read(key: 'db_key')` avant d'ouvrir la connexion SQLCipher.
+**Gap critique #1 résolu — `react-native-keychain` :**
+Ajouté à la stack dans `core/database/init.ts`. Responsabilité : stocker la clé SQLite dans le Keychain / Keystore. L'initialisation database lit la clé via `Keychain.getGenericPassword()` avant d'ouvrir la connexion SQLite chiffrée.
 
-**Gap critique #2 résolu — Index Drift :**
-Les index suivants doivent être définis dans `app_database.dart` :
+**Gap critique #2 résolu — Index SQL :**
+Les index suivants doivent être définis dans `schema.ts` :
 
-```dart
-@override
-List<DatabaseSchemaEntity> get allSchemaEntities => [
-  patients, analyses, articularAngles,
-  Index('idx_patients_name', 'patients (name)'),
-  Index('idx_analyses_patient', 'analyses (patient_id, created_at DESC)'),
+```typescript
+const INDEXES = [
+  "CREATE INDEX IF NOT EXISTS idx_patients_name ON patients (name)",
+  "CREATE INDEX IF NOT EXISTS idx_analyses_patient ON analyses (patient_id, created_at DESC)",
 ];
 ```
 
-**Gap important #3 résolu — Pattern migrations Drift :**
-Pour le MVP : `MigrationStrategy.recreateTablesOnSchemaChanges()` (données de développement acceptables à perdre). Pour la Phase 2 : migrations manuelles versionnées via `MigrationStrategy(from, to)`.
+**Gap important #3 résolu — Pattern migrations SQL :**
+Pour le MVP : DROP + CREATE tables (données de développement acceptables à perdre). Pour la Phase 2 : migrations manuelles versionnées via un schema version tracker.
 
 **Gap important #4 résolu — Layout adaptatif FR39 :**
-Helper centralisé dans `shared/extensions/layout_extensions.dart` :
+Hook centralisé dans `shared/hooks/use-platform.ts` :
 
-```dart
-extension LayoutExtensions on BuildContext {
-  bool get isTablet => MediaQuery.of(this).size.shortestSide >= 600;
+```typescript
+import { Platform, useWindowDimensions } from "react-native";
+
+export function usePlatform() {
+  const { width } = useWindowDimensions();
+  const isTablet = width >= 768;
+  const isWeb = Platform.OS === "web";
+  return { isTablet, isWeb, os: Platform.OS };
 }
 ```
 
-Breakpoint unique : `shortestSide >= 600` → layout iPad, sinon iPhone.
+Breakpoint unique : `width >= 768` → layout tablette/web, sinon mobile.
 
 ### Checklist de complétude architecturale
 
@@ -808,23 +825,23 @@ Breakpoint unique : `shortestSide >= 600` → layout iPad, sinon iPhone.
 
 - [x] Contexte projet analysé en profondeur (40 FRs, 21 NFRs)
 - [x] Complexité évaluée : Haute — ML médical réglementé
-- [x] Contraintes techniques identifiées (offline, iOS-only, vidéo en RAM)
+- [x] Contraintes techniques identifiées (offline, multi-plateforme, vidéo en RAM)
 - [x] Cross-cutting concerns mappés (sécurité, conformité, performance, atomicité)
 
 **✅ Décisions architecturales**
 
-- [x] Stack complète avec versions vérifiées (Riverpod 3.2.1, go_router 17.x)
-- [x] Pattern erreurs : sealed classes Dart 3 + switch exhaustif
-- [x] Stratégie vidéo mémoire : isolate Flutter + SendPort
+- [x] Stack complète avec versions vérifiées (Zustand 5.x, @react-navigation/native-stack 7.x)
+- [x] Pattern erreurs : discriminated unions TypeScript + switch exhaustif
+- [x] Stratégie vidéo mémoire : native thread / Web Worker + postMessage
 - [x] Repository interface dès le MVP (préparation Phase 2)
-- [x] CI/CD différé : Xcode manuel MVP → GitHub Actions Phase 2
-- [x] flutter_secure_storage pour Keychain iOS
+- [x] CI/CD : GitHub Actions (tests, build, deploy)
+- [x] react-native-keychain pour Keychain / Keystore
 
 **✅ Patterns d'implémentation**
 
 - [x] 7 zones de conflit identifiées et adressées
-- [x] Conventions de nommage : snake_case fichiers, PascalCase classes, camelCase variables
-- [x] Structure feature obligatoire : data/domain/application/presentation
+- [x] Conventions de nommage : kebab-case fichiers, PascalCase interfaces, camelCase variables
+- [x] Structure feature obligatoire : data/domain/screens/components/store
 - [x] Co-location des tests établie
 - [x] Anti-patterns explicites documentés avec exemples
 
@@ -844,16 +861,16 @@ Breakpoint unique : `shortestSide >= 600` → layout iPad, sinon iPhone.
 **Points forts de l'architecture :**
 
 - RGPD by architecture — conformité structurelle, pas procédurale
-- Pipeline ML isolé dans un isolate → UI thread jamais bloqué, vidéo jamais sur disque
-- Repository interface + sealed classes → code de production testable et évolutif
+- Pipeline ML isolé dans un native thread / Web Worker → UI thread jamais bloqué, vidéo jamais sur disque
+- Repository interface + discriminated unions → code de production testable et évolutif
 - Règles de cohérence explicites → agents IA ne peuvent pas diverger sur les points critiques
 - Séquence d'implémentation claire imposée par les dépendances
+- Multi-plateforme dès le MVP (Web + iOS + Android)
 
 **Axes d'évolution post-MVP :**
 
 - Migration PowerSync (cloud sync) rendue triviale par l'interface Repository
 - Swap modèle ML (RTMPose) possible sans refonte de l'architecture
-- Android supporté par Flutter sans refonte architecturale
 
 ### Guide de transfert pour implémentation
 
@@ -867,11 +884,10 @@ Breakpoint unique : `shortestSide >= 600` → layout iPad, sinon iPhone.
 **Première priorité d'implémentation :**
 
 ```bash
-flutter create \
-  --org com.bodyorthox \
-  --platforms ios \
-  --project-name bodyorthox \
-  bodyorthox
+npx react-native init bodyorthox --template react-native-template-typescript
+# Puis : configuration webpack + react-native-web
+# Puis : restructuration immédiate en Feature-First src/
+# Puis : configuration dev/prod via app-config.ts
 ```
 
-Puis : restructuration immédiate en Feature-First + configuration flavors dev/prod.
+Puis : restructuration immédiate en Feature-First + configuration dev/prod via `app-config.ts`.
