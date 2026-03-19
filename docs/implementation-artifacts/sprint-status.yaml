@@ -56,25 +56,25 @@ development_status:
   # Story 3.0 ajoutée (Capture Photo HKA)
   # Stories 3.3 et 3.4 réécrites pour HKA
   # Story 3.5 réimplémentée proprement (pattern correction manuelle HKA)
-  epic-3: in-progress
+  epic-3: done
   3-0-capture-photo-hka: done
   3-3-pipeline-ml-hka-photo: done
-  3-4-affichage-resultats-angle-hka: in-progress
-  3-5-correction-manuelle-points-hka: backlog
+  3-4-affichage-resultats-angle-hka: done
+  3-5-correction-manuelle-points-hka: done
   epic-3-retrospective: optional
 
   # ─── Epic 4 : Rapport PDF & Export (adapté HKA) ──────────────────────────────
-  epic-4: backlog
-  4-1-generation-du-rapport-pdf-structure: backlog
-  4-2-export-du-rapport-via-share-sheet-ios: backlog
+  epic-4: done
+  4-1-generation-du-rapport-pdf-structure: done
+  4-2-export-du-rapport-via-share-sheet-ios: done
   epic-4-retrospective: optional
 
   # ─── Epic 2 : Gestion des Patients (repositionné après Epic 4) ───────────────
-  epic-2: backlog
-  2-1-creer-un-profil-patient: backlog
-  2-2-consulter-la-liste-des-patients-et-selectionner-pour-analyse: backlog
-  2-3-historique-des-analyses-dun-patient: backlog
-  2-4-timeline-de-progression-clinique-et-suppression-patient: backlog
+  epic-2: done
+  2-1-creer-un-profil-patient: done
+  2-2-consulter-la-liste-des-patients-et-selectionner-pour-analyse: done
+  2-3-historique-des-analyses-dun-patient: done
+  2-4-timeline-de-progression-clinique-et-suppression-patient: done
   epic-2-retrospective: optional
 
   # ─── Epic 5 : Monétisation Freemium (module-aware) ───────────────────────────

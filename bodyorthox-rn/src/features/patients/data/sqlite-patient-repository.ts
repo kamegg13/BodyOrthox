@@ -1,6 +1,6 @@
-import { IDatabase } from '../../../core/database/database';
-import { Patient, CreatePatientInput, createPatient } from '../domain/patient';
-import { IPatientRepository } from './patient-repository';
+import { IDatabase } from "../../../core/database/database";
+import { Patient, CreatePatientInput, createPatient } from "../domain/patient";
+import { IPatientRepository } from "./patient-repository";
 
 interface PatientRow {
   id: string;
@@ -11,7 +11,7 @@ interface PatientRow {
 }
 
 function rowToPatient(row: Record<string, unknown>): Patient {
-  const r = row as PatientRow;
+  const r = row as unknown as PatientRow;
   return {
     id: r.id,
     name: r.name,
@@ -45,7 +45,7 @@ export class SqlitePatientRepository implements IPatientRepository {
   async getById(id: string): Promise<Patient | null> {
     const result = await this.db.execute(
       `SELECT * FROM patients WHERE id = ?`,
-      [id]
+      [id],
     );
     if (result.rows.length === 0) return null;
     return rowToPatient(result.rows[0]);
@@ -60,16 +60,20 @@ export class SqlitePatientRepository implements IPatientRepository {
         patient.id,
         patient.name,
         patient.dateOfBirth,
-        patient.morphologicalProfile ? JSON.stringify(patient.morphologicalProfile) : null,
+        patient.morphologicalProfile
+          ? JSON.stringify(patient.morphologicalProfile)
+          : null,
         patient.createdAt,
-      ]
+      ],
     );
     return patient;
   }
 
   async update(
     id: string,
-    partial: Partial<Pick<Patient, 'name' | 'dateOfBirth' | 'morphologicalProfile'>>
+    partial: Partial<
+      Pick<Patient, "name" | "dateOfBirth" | "morphologicalProfile">
+    >,
   ): Promise<Patient> {
     const existing = await this.getById(id);
     if (!existing) throw new Error(`Patient ${id} introuvable.`);
@@ -78,9 +82,10 @@ export class SqlitePatientRepository implements IPatientRepository {
       ...existing,
       name: partial.name ?? existing.name,
       dateOfBirth: partial.dateOfBirth ?? existing.dateOfBirth,
-      morphologicalProfile: partial.morphologicalProfile !== undefined
-        ? partial.morphologicalProfile
-        : existing.morphologicalProfile,
+      morphologicalProfile:
+        partial.morphologicalProfile !== undefined
+          ? partial.morphologicalProfile
+          : existing.morphologicalProfile,
     };
 
     await this.db.execute(
@@ -88,9 +93,11 @@ export class SqlitePatientRepository implements IPatientRepository {
       [
         updated.name,
         updated.dateOfBirth,
-        updated.morphologicalProfile ? JSON.stringify(updated.morphologicalProfile) : null,
+        updated.morphologicalProfile
+          ? JSON.stringify(updated.morphologicalProfile)
+          : null,
         id,
-      ]
+      ],
     );
 
     return updated;

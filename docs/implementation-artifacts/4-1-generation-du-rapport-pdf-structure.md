@@ -1,443 +1,220 @@
-# Story 4.1 : Génération du Rapport PDF Structuré
+# Story 4.1: Generation du Rapport PDF Structure
 
 Status: ready-for-dev
 
-<!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
-
 ## Story
 
-As a practitioner,
+As a practitioner (Dr. Marc),
 I want a structured PDF report generated automatically from analysis results,
-So that I have a professional, legally compliant document ready to share without any manual formatting.
+so that I have a professional, legally compliant document ready to share without any manual formatting.
 
 ## Acceptance Criteria
 
-1. **[AC1 — Délai de génération]** Étant donné une analyse validée (avec ou sans correction manuelle), quand je déclenche la génération du rapport, alors le PDF est généré en < 5 secondes (NFR-P4).
+**AC1 — Declenchement de la generation du rapport**
+**Given** une analyse est validee (avec ou sans correction manuelle)
+**When** j'appuie sur le bouton "Generer le rapport" depuis `ResultsScreen` ou `ReplayScreen`
+**Then** la generation du PDF demarre localement (aucune requete reseau)
+**And** un indicateur de progression est affiche pendant la generation
 
-2. **[AC2 — Nommage automatique]** Le fichier est nommé automatiquement selon la convention `NomPatient_AnalyseMarche_YYYY-MM-DD.pdf` (FR21), le nom étant dérivé du nom du patient et de la date ISO 8601 de l'analyse.
+**AC2 — Performance de generation < 5 secondes**
+**Given** la generation du PDF est en cours
+**When** le PDF est assemble a partir des donnees d'analyse
+**Then** le PDF est pret en < 5 secondes (NFR-P4)
+**And** l'utilisateur est notifie que le rapport est pret
 
-3. **[AC3 — Disclaimer légal permanent]** Chaque page du PDF contient le texte `LegalConstants.mdrDisclaimer` tel que défini dans `core/legal/legal_constants.dart` — non modifiable, en bas de page, style caption 10pt (FR22). Ce disclaimer n'est JAMAIS écrit inline dans `pdf_generator.dart`.
+**AC3 — Nommage automatique du fichier PDF**
+**Given** le PDF est genere pour un patient nomme "Jean Dupont" le 2026-03-19
+**When** le fichier PDF est cree
+**Then** le nom du fichier est `JeanDupont_AnalyseMarche_2026-03-19.pdf` (FR21)
+**And** les espaces dans le nom du patient sont supprimes ou remplaces
 
-4. **[AC4 — Deux niveaux de lecture]** Le rapport présente deux sections distinctes (FR23) :
-   - **Vue simplifiée** : angles articulaires (genou, hanche, cheville) avec indicateurs visuels (dans norme / hors norme), accessible au patient.
-   - **Vue détaillée** : données brutes, score de confiance ML par articulation, et si correction manuelle effectuée, le disclaimer `"Données [articulation] : estimées — vérification manuelle effectuée."`.
+**AC4 — Disclaimer legal EU MDR sur chaque page**
+**Given** le PDF est genere
+**When** chaque page est rendue
+**Then** le disclaimer `LEGAL_CONSTANTS.mdrDisclaimer` est affiche en pied de page (FR22)
+**And** le disclaimer est non modifiable et identique sur toutes les pages
+**And** le texte utilise la constante centralisee de `core/legal/legal-constants.ts`
 
-5. **[AC5 — Métadonnées de session]** Le rapport inclut en page d'en-tête : date de l'analyse (ISO 8601), nom complet du patient, modèle d'appareil iOS utilisé, niveau de confiance ML global (FR25).
+**AC5 — Rapport a deux niveaux de lecture**
+**Given** le PDF est genere avec les donnees d'analyse
+**When** le rapport est ouvert
+**Then** une section "Vue praticien" affiche les angles articulaires avec indicateurs visuels (dans/hors norme) (FR23)
+**And** une section "Vue detaillee" affiche les donnees brutes : score de confiance ML (%), ID analyse, statut correction manuelle
 
-6. **[AC6 — Génération 100% locale]** Aucune requête réseau n'est émise pendant la génération du PDF — vérifiable en mode avion (FR28, FR29, NFR-S3).
+**AC6 — Metadonnees de session incluses**
+**Given** le PDF est genere
+**When** la section metadonnees est rendue
+**Then** elle contient : date de l'analyse, nom du patient, appareil utilise (Platform.OS + modele si disponible), niveau de confiance ML (FR25)
+**And** si une correction manuelle a ete appliquee, le disclaimer "Donnees [articulation] : estimees — verification manuelle effectuee." est inclus
 
-7. **[AC7 — Package `pdf`]** La génération utilise exclusivement le package `pdf` de pub.dev (pas de dépendance externe au runtime). Le PDF produit est conforme PDF 1.4+.
-
-8. **[AC8 — Test unitaire du générateur]** `pdf_generator_test.dart` co-localisé avec `pdf_generator.dart` valide : présence du disclaimer sur chaque page, convention de nommage, présence des deux niveaux de vue, métadonnées.
+**AC7 — Generation 100% locale**
+**Given** la generation du PDF est en cours
+**When** le PDF est assemble
+**Then** aucune requete reseau n'est emise pendant la generation
+**And** le PDF est stocke temporairement dans le filesystem local
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1 — Créer `LegalConstants` dans `core/legal/`** (AC: #3)
-  - [ ] 1.1 Créer `lib/core/legal/legal_constants.dart` avec la constante `mdrDisclaimer` exacte issue de l'architecture
-  - [ ] 1.2 Vérifier qu'aucun texte du disclaimer n'existe déjà inline dans d'autres fichiers (anti-pattern)
+- [ ] Tache 1 — Ecrire les tests unitaires du `PdfGenerator` (AC: 2, 3, 4, 5, 6)
+  - [ ] T1.1 — Test `generateReportFileName(patientName, date)` → retourne `NomPatient_AnalyseMarche_YYYY-MM-DD.pdf`
+  - [ ] T1.2 — Test `buildReportData(analysis, patient)` → retourne la structure de donnees du rapport avec les 2 niveaux
+  - [ ] T1.3 — Test disclaimer present dans les donnees du rapport
+  - [ ] T1.4 — Test metadonnees incluses (date, patient, confiance ML)
+  - [ ] T1.5 — Test disclaimer correction manuelle quand `manualCorrectionApplied: true`
 
-- [ ] **Task 2 — Implémenter `pdf_generator.dart` dans `features/report/data/`** (AC: #1, #2, #3, #4, #5, #6, #7)
-  - [ ] 2.1 Créer `lib/features/report/data/pdf_generator.dart` avec la classe `PdfGenerator`
-  - [ ] 2.2 Implémenter la méthode `Future<Uint8List> generate(AnalysisSession session)` (retourne les bytes PDF)
-  - [ ] 2.3 Implémenter la page d'en-tête : nom patient, date, appareil iOS, niveau confiance ML global
-  - [ ] 2.4 Implémenter la section **vue simplifiée** : 3 `ArticularAngleSection` (genou, hanche, cheville) avec indicateur visuel vert/orange/rouge
-  - [ ] 2.5 Implémenter la section **vue détaillée** : valeurs brutes, scores de confiance par articulation, disclaimers de correction manuelle si applicable
-  - [ ] 2.6 Implémenter le footer de chaque page avec `LegalConstants.mdrDisclaimer` (12pt, gris, centré)
-  - [ ] 2.7 Implémenter le nommage : `NomPatient_AnalyseMarche_YYYY-MM-DD.pdf` via `PdfGenerator.buildFileName(Patient patient, DateTime date)`
+- [ ] Tache 2 — Implementer le `PdfGenerator` (AC: 1, 2, 3, 4, 5, 6, 7)
+  - [ ] T2.1 — Creer `src/features/report/data/pdf-generator.ts` avec `generateReport(analysis, patient): Promise<string>` (retourne le path du fichier)
+  - [ ] T2.2 — Implementer `generateReportFileName()` avec la convention de nommage FR21
+  - [ ] T2.3 — Implementer `buildReportData()` avec vue praticien et vue detaillee
+  - [ ] T2.4 — Integrer `LEGAL_CONSTANTS.mdrDisclaimer` depuis `core/legal/legal-constants.ts`
+  - [ ] T2.5 — Choisir et integrer une lib PDF React Native (ex: `react-native-html-to-pdf` ou `@react-pdf/renderer`)
 
-- [ ] **Task 3 — Créer le modèle de domaine `AnalysisSession`** (AC: #4, #5)
-  - [ ] 3.1 Vérifier si `AnalysisSession` ou équivalent existe déjà dans `features/capture/domain/` (éviter de réinventer)
-  - [ ] 3.2 Si absent, créer un Freezed DTO `ReportData` dans `features/report/domain/report_data.dart` regroupant `Patient`, `ArticularAngles`, `ConfidenceScore`, `DateTime`, `String deviceModel`
-  - [ ] 3.3 Lancer `dart run build_runner build --delete-conflicting-outputs` pour générer `.freezed.dart`
+- [ ] Tache 3 — Creer le `ReportScreen` (AC: 1, 2)
+  - [ ] T3.1 — Creer `src/features/report/screens/report-screen.tsx`
+  - [ ] T3.2 — Afficher un etat loading pendant la generation
+  - [ ] T3.3 — Afficher un apercu ou confirmation quand le PDF est pret
+  - [ ] T3.4 — Ajouter la route `Report: { analysisId, patientId }` dans `navigation/types.ts`
 
-- [ ] **Task 4 — Implémenter `ReportNotifier` dans `features/report/application/`** (AC: #1, #6)
-  - [ ] 4.1 Créer `lib/features/report/application/report_notifier.dart` — `AsyncNotifier<ReportGenerationState>`
-  - [ ] 4.2 Implémenter `generate()` : appel `PdfGenerator.generate()`, mesure du temps < 5s, retour des bytes
-  - [ ] 4.3 Créer `lib/features/report/application/report_provider.dart` avec `reportNotifierProvider`
-  - [ ] 4.4 Sealed class `ReportGenerationState` : `idle | generating | generated(Uint8List bytes, String fileName) | error(String message)`
+- [ ] Tache 4 — Creer le `report-store.ts` Zustand (AC: 1, 2)
+  - [ ] T4.1 — Creer `src/features/report/store/report-store.ts` avec etats `idle | generating | ready | error`
+  - [ ] T4.2 — Action `generateReport(analysisId, patientId)` qui orchestre la generation
 
-- [ ] **Task 5 — Écrire les tests unitaires `pdf_generator_test.dart`** (AC: #8)
-  - [ ] 5.1 Créer `lib/features/report/data/pdf_generator_test.dart` (co-localisé)
-  - [ ] 5.2 Test : le PDF généré contient le texte `LegalConstants.mdrDisclaimer` sur chaque page
-  - [ ] 5.3 Test : le nom de fichier respecte la convention `NomPatient_AnalyseMarche_YYYY-MM-DD.pdf`
-  - [ ] 5.4 Test : la vue simplifiée contient les 3 articulations avec leurs indicateurs
-  - [ ] 5.5 Test : la vue détaillée contient les scores de confiance
-  - [ ] 5.6 Test : les métadonnées (date, patient, appareil) sont présentes dans le document
-  - [ ] 5.7 Test de performance : génération en < 5 secondes sur mock data complet
-  - [ ] 5.8 Test : aucune requête réseau n'est émise (vérifiable via `FakeHttpClient` ou mock)
+- [ ] Tache 5 — Creer `core/legal/legal-constants.ts` (AC: 4)
+  - [ ] T5.1 — Creer le fichier avec `LEGAL_CONSTANTS.mdrDisclaimer`
+  - [ ] T5.2 — Ecrire un test unitaire verifiant le contenu du disclaimer
+
+- [ ] Tache 6 — Ecrire les tests d'integration (AC: 1, 7)
+  - [ ] T6.1 — Test ReportScreen declenche la generation et affiche loading → ready
+  - [ ] T6.2 — Test aucun appel reseau pendant la generation (mock fetch)
+
+- [ ] Tache 7 — Valider avec `npx jest` et `npx tsc --noEmit` (AC: 1-7)
+  - [ ] T7.1 — `npx jest --testPathPattern report --verbose` → tous les tests passent
+  - [ ] T7.2 — `npx tsc --noEmit` → 0 erreurs TypeScript
+
+- [ ] Tache 8 — Mettre a jour sprint-status.yaml
+  - [ ] T8.1 — `4-1-generation-du-rapport-pdf-structure: done` si tous les tests passent
 
 ## Dev Notes
 
-### Contexte Architectural
+### Etat actuel du code React Native
 
-La story 4.1 implémente la couche **data** (`pdf_generator.dart`) et **application** (`report_notifier.dart`) de la feature `report/`. Elle ne couvre PAS l'export (share sheet iOS) — c'est la story 4.2. Cette story termine quand le PDF est généré en mémoire (bytes `Uint8List`) et le nom de fichier calculé.
+**Le feature `report/` n'existe pas encore dans le codebase.** Tout est a creer.
 
-**Fichiers à créer (nouveaux) :**
+**Fichiers existants (dependances) :**
 
-```
-lib/
-  core/
-    legal/
-      legal_constants.dart          ← NOUVEAU — constante mdrDisclaimer
-  features/
-    report/
-      data/
-        pdf_generator.dart          ← NOUVEAU — logique de génération PDF
-        pdf_generator_test.dart     ← NOUVEAU — tests co-localisés
-      domain/
-        report_data.dart            ← NOUVEAU — DTO Freezed (si AnalysisSession absent)
-        report_data.freezed.dart    ← GÉNÉRÉ par build_runner
-        report_generation_state.dart ← NOUVEAU — sealed class états
-      application/
-        report_notifier.dart        ← NOUVEAU — AsyncNotifier
-        report_provider.dart        ← NOUVEAU — provider declarations
-```
+| Fichier | Statut | Notes |
+| --- | --- | --- |
+| `src/features/capture/domain/analysis.ts` | Implemente | Interface `Analysis`, `ArticularAngles`, `confidenceLabel()` |
+| `src/features/patients/domain/patient.ts` | Implemente | Interface `Patient`, `patientAge()` |
+| `src/features/results/domain/reference-norms.ts` | Implemente | `assessAngle()`, normes de reference |
+| `src/core/legal/` | N'existe pas | A creer : `legal-constants.ts` avec `LEGAL_CONSTANTS.mdrDisclaimer` |
+| `src/features/report/` | N'existe pas | Tout a creer |
+| `src/navigation/types.ts` | Implemente | Manque route `Report` |
 
-**Fichiers à NE PAS toucher dans cette story :**
+### Ce qui doit etre construit
 
-- `features/report/presentation/` — l'écran de rapport n'est pas dans le scope de 4.1
-- `features/capture/` — ne pas modifier les modèles ML existants, seulement les consommer
-- `core/auth/`, `core/database/` — fondation établie en Epic 1, ne pas modifier
+1. **`core/legal/legal-constants.ts`** — Constante `LEGAL_CONSTANTS.mdrDisclaimer`
+2. **`features/report/data/pdf-generator.ts`** — Generation PDF locale
+3. **`features/report/store/report-store.ts`** — Zustand store avec etats generation
+4. **`features/report/screens/report-screen.tsx`** — Ecran de rapport
+5. **Route `Report` dans `navigation/types.ts`**
+6. **Choix d'une lib PDF** — Options : `react-native-html-to-pdf` (natif), ou generation HTML + impression native
 
-### Règle critique — `LegalConstants.mdrDisclaimer`
+### Choix de la lib PDF — Recommandation
 
-Le texte légal EU MDR **doit impérativement** être lu depuis `LegalConstants.mdrDisclaimer` dans `core/legal/legal_constants.dart`. Ne **jamais** écrire le texte inline dans `pdf_generator.dart` ou dans les tests.
+Pour le MVP React Native CLI :
+- **`react-native-html-to-pdf`** : genere un PDF depuis du HTML, fonctionne nativement sur iOS/Android. Ne fonctionne pas sur web.
+- **Alternative web** : generer du HTML et utiliser `window.print()` ou une lib comme `jspdf`.
+- Pattern recommande : interface `IPdfGenerator` avec implementations platform-specific (`pdf-generator.native.ts` / `pdf-generator.web.ts`).
 
-Implémentation exacte attendue :
+### Stack technique React Native
 
-```dart
-// lib/core/legal/legal_constants.dart
-abstract class LegalConstants {
-  static const String mdrDisclaimer =
-    'BodyOrthox est un outil de documentation clinique. '
-    'Les données produites ne constituent pas un acte de '
-    'diagnostic médical et ne se substituent pas au jugement '
-    'clinique du praticien.';
-}
-```
+- **State** : Zustand (immer middleware)
+- **Navigation** : React Navigation (`@react-navigation/native-stack`)
+- **DB** : SQLite via `react-native-sqlite-storage` (natif)
+- **Tests** : Jest + React Native Testing Library (`@testing-library/react-native`)
+- **Types** : TypeScript strict
 
-[Source: docs/planning-artifacts/architecture.md — Patterns de processus → Disclaimer EU MDR]
+### Design system — palette
 
-### Package `pdf` — API et patterns attendus
-
-Le package `pdf` (pub.dev : `pdf: ^3.x`) utilise une API builder. Voici le pattern attendu :
-
-```dart
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
-
-Future<Uint8List> generate(ReportData data) async {
-  final doc = pw.Document(
-    title: buildFileName(data.patient, data.analysisDate),
-    author: 'BodyOrthox',
-    creator: 'BodyOrthox — outil de documentation clinique',
-  );
-
-  doc.addPage(
-    pw.MultiPage(
-      pageFormat: PdfPageFormat.a4,
-      footer: (context) => _buildFooter(context),
-      build: (context) => [
-        _buildHeader(data),
-        _buildSimplifiedView(data),
-        _buildDetailedView(data),
-      ],
-    ),
-  );
-
-  return doc.save();
-}
-
-pw.Widget _buildFooter(pw.Context context) {
-  return pw.Container(
-    alignment: pw.Alignment.centerLeft,
-    padding: const pw.EdgeInsets.only(top: 4),
-    decoration: const pw.BoxDecoration(
-      border: pw.Border(top: pw.BorderSide(color: PdfColors.grey300)),
-    ),
-    child: pw.Text(
-      LegalConstants.mdrDisclaimer,
-      style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
-    ),
-  );
-}
+```typescript
+Colors.primary: '#4a90d9'
+Colors.success: '#27ae60'
+Colors.warning: '#f39c12'
+Colors.error: '#e74c3c'
+Colors.background: '#0f0f1a'
+Colors.backgroundCard: '#1a1a2e'
+Colors.textPrimary: '#ffffff'
 ```
 
-**Points de vigilance `pdf` package :**
+### Disclaimer EU MDR — texte exact
 
-- `pw.Document` ≠ `pdf.Document` — toujours importer avec alias `pw`
-- `PdfPageFormat.a4` est le format standard médical
-- `MultiPage` gère automatiquement la pagination et appelle `footer` sur CHAQUE page — c'est le bon choix pour AC3
-- Le footer est appelé sur chaque page par `MultiPage` — ne pas ajouter le disclaimer manuellement dans `build`
-- `doc.save()` retourne `Future<Uint8List>` — async requis
-- Pas de dépendance à `printing` package pour cette story (c'est pour l'impression physique)
-
-### Convention de nommage du fichier PDF
-
-```dart
-static String buildFileName(Patient patient, DateTime analysisDate) {
-  // Format : NomPatient_AnalyseMarche_YYYY-MM-DD.pdf
-  // Règle : sanitize le nom (espaces → '', caractères spéciaux → supprimés)
-  final sanitized = '${patient.lastName}${patient.firstName}'
-      .replaceAll(RegExp(r'[^\w]'), '')
-      .replaceAll(' ', '');
-  final date = analysisDate.toIso8601String().substring(0, 10); // YYYY-MM-DD
-  return '${sanitized}_AnalyseMarche_$date.pdf';
-}
+```typescript
+// core/legal/legal-constants.ts
+export const LEGAL_CONSTANTS = {
+  mdrDisclaimer:
+    "BodyOrthox est un outil de documentation clinique. " +
+    "Les donnees produites ne constituent pas un acte de " +
+    "diagnostic medical et ne se substituent pas au jugement " +
+    "clinique du praticien.",
+} as const;
 ```
 
-Exemples :
+### Anti-patterns a eviter
 
-- `DupontJean_AnalyseMarche_2026-03-05.pdf`
-- `MartinPaul_AnalyseMarche_2026-03-05.pdf`
-
-[Source: docs/planning-artifacts/epics.md — FR21, docs/planning-artifacts/ux-design-specification.md — Journey 3 Marie la Secrétaire]
-
-### Deux niveaux de lecture — Structure PDF
-
-**Vue simplifiée (page 1-2 — lisible par le patient)**
-
-```
-┌─────────────────────────────────┐
-│  BODYORTHOX                     │ ← Logo/nom app, date, nom patient
-│  Analyse de Marche              │
-│  Jean Dupont — 2026-03-05       │
-├─────────────────────────────────┤
-│  RÉSUMÉ CLINIQUE                │ ← Section titre
-│                                 │
-│  Genou droit    42.3°  ✓ Norme  │ ← vert si dans norme
-│  Hanche droite  89.1°  ⚠ Limite │ ← orange si limite
-│  Cheville droite 23.7° ✗ Hors   │ ← rouge si hors norme
-│                                 │
-│  Norme de référence : 67 ans    │
-└─────────────────────────────────┘
-```
-
-**Vue détaillée (page suivante — données brutes)**
-
-```
-┌─────────────────────────────────┐
-│  DONNÉES TECHNIQUES             │
-│                                 │
-│  Genou   — 42.3° — Conf. 92%    │
-│  Hanche  — 89.1° — Conf. 71%    │  ← "Confiance modérée"
-│  Cheville — 23.7° — Conf. 45%   │  ← "Correction manuelle effectuée"
-│                                 │
-│  Appareil : iPhone 14 Pro       │
-│  Modèle ML : Google ML Kit v2   │
-│  Confiance globale : 69%        │
-└─────────────────────────────────┘
-```
-
-Si correction manuelle appliquée sur une articulation, ajouter sous la ligne :
-`"Données Cheville : estimées — vérification manuelle effectuée."`
-
-[Source: docs/planning-artifacts/epics.md — FR22, FR23, FR25, Story 3.5 AC]
-
-### Métadonnées de session requises (FR25)
-
-Le `ReportData` (ou `AnalysisSession`) doit contenir :
-
-```dart
-@freezed
-class ReportData with _$ReportData {
-  const factory ReportData({
-    required Patient patient,
-    required ArticularAngles angles,
-    required ConfidenceScore globalConfidence,
-    required Map<String, double> confidencePerJoint, // genou, hanche, cheville
-    required Map<String, bool> manualCorrectionApplied, // par articulation
-    required DateTime analysisDate,
-    required String deviceModel, // ex: "iPhone 14 Pro"
-    String? mlKitVersion, // optionnel
-  }) = _ReportData;
-}
-```
-
-Pour obtenir `deviceModel` : utiliser le package `device_info_plus` (déjà inclus dans la stack si présent, sinon ajouter). Appel : `IosDeviceInfo.utsname.machine` ou `IosDeviceInfo.model`.
-
-**Vérification :** Si `device_info_plus` n'est pas dans `pubspec.yaml`, l'ajouter. Ne pas utiliser `Platform.operatingSystemVersion` seul (trop verbose).
-
-### Architecture Feature — Structure obligatoire
-
-Respecter STRICTEMENT la structure `data/domain/application/presentation` :
-
-```
-features/report/
-  data/
-    pdf_generator.dart          ← implémentation génération
-    pdf_generator_test.dart     ← tests co-localisés (obligatoire)
-  domain/
-    report_data.dart            ← Freezed DTO
-    report_generation_state.dart ← sealed states
-  application/
-    report_notifier.dart        ← AsyncNotifier<ReportGenerationState>
-    report_provider.dart        ← providers
-  presentation/                 ← NE PAS TOUCHER en story 4.1
-    widgets/
-      export_button.dart        ← implémenté en story 4.2
-```
-
-[Source: docs/planning-artifacts/architecture.md — Structure feature obligatoire]
-
-### State Machine `ReportGenerationState`
-
-```dart
-// lib/features/report/domain/report_generation_state.dart
-sealed class ReportGenerationState {
-  const ReportGenerationState();
-}
-
-final class ReportIdle extends ReportGenerationState {
-  const ReportIdle();
-}
-
-final class ReportGenerating extends ReportGenerationState {
-  const ReportGenerating();
-}
-
-final class ReportGenerated extends ReportGenerationState {
-  final Uint8List bytes;
-  final String fileName;
-  const ReportGenerated({required this.bytes, required this.fileName});
-}
-
-final class ReportError extends ReportGenerationState {
-  final String message;
-  const ReportError(this.message);
-}
-```
-
-### Pattern `AsyncNotifier` obligatoire
-
-```dart
-// lib/features/report/application/report_notifier.dart
-class ReportNotifier extends AsyncNotifier<ReportGenerationState> {
-  @override
-  Future<ReportGenerationState> build() async => const ReportIdle();
-
-  Future<void> generate(ReportData data) async {
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
-      final generator = PdfGenerator();
-      final bytes = await generator.generate(data);
-      final fileName = PdfGenerator.buildFileName(data.patient, data.analysisDate);
-      return ReportGenerated(bytes: bytes, fileName: fileName);
-    });
-  }
-}
-```
-
-Interdit : `StateNotifier`, `ChangeNotifier`, `.when()` au lieu de `switch` exhaustif.
-
-[Source: docs/planning-artifacts/architecture.md — Patterns de communication → AsyncValue en UI]
-
-### Performance NFR-P4 : < 5 secondes
-
-La génération PDF tourne sur le thread principal (Dart) — il n'est PAS nécessaire de la passer en isolate pour cette story car :
-
-1. Le package `pdf` est CPU-bound mais léger pour des données texte/numériques
-2. Les graphiques sont simples (pas d'images bitmap volumineuses)
-3. L'objectif < 5s est atteignable sur thread principal pour ce volume de données
-
-Si des benchmarks en test montrent > 3s, envisager `compute()` de Flutter (isolate léger) — mais ne pas l'anticiper prématurément.
-
-**Test de performance à inclure dans les tests :**
-
-```dart
-test('génère en moins de 5 secondes', () async {
-  final stopwatch = Stopwatch()..start();
-  await generator.generate(mockReportData);
-  stopwatch.stop();
-  expect(stopwatch.elapsedMilliseconds, lessThan(5000));
-});
-```
-
-### Interaction avec Epic 3 — Dépendances
-
-Cette story **consomme** les modèles définis dans Epic 3 :
-
-- `ArticularAngles` (`features/capture/domain/articular_angles.dart`) — ne pas re-créer
-- `ConfidenceScore` (`features/capture/domain/confidence_score.dart`) — ne pas re-créer
-- `Analysis` (`features/capture/domain/analysis.dart`) — peut servir de base pour `ReportData`
-
-**Avant d'écrire `ReportData`**, vérifier l'état de `features/capture/domain/` pour éviter la duplication. Si les modèles Freezed nécessaires existent déjà, `ReportData` doit les composer (pas dupliquer).
-
-### Vérification `pubspec.yaml`
-
-Packages requis pour cette story :
-
-```yaml
-dependencies:
-  pdf: ^3.11.0 # Génération PDF — OBLIGATOIRE
-  device_info_plus: ^10.x # Modèle appareil iOS pour métadonnées — VÉRIFIER si présent
-  # Déjà présents (Epic 1) :
-  # flutter_riverpod, riverpod_annotation, freezed_annotation, uuid
-```
-
-Lancer `dart run build_runner build --delete-conflicting-outputs` après ajout de `device_info_plus` si nouveau.
-
-### Design System — Couleurs dans le PDF
-
-Les couleurs du design system doivent être reproduites dans le PDF :
-
-```dart
-// Indicateurs dans la vue simplifiée
-static const PdfColor _normalColor = PdfColor.fromInt(0xFF34C759);  // Success #34C759
-static const PdfColor _warningColor = PdfColor.fromInt(0xFFFF9500); // Warning #FF9500
-static const PdfColor _errorColor = PdfColor.fromInt(0xFFFF3B30);   // Error #FF3B30
-static const PdfColor _primaryColor = PdfColor.fromInt(0xFF1B6FBF); // Primary #1B6FBF
-static const PdfColor _textColor = PdfColor.fromInt(0xFF1C1C1E);    // Text #1C1C1E
-```
-
-[Source: docs/planning-artifacts/ux-design-specification.md — Color System]
-
-### Ranges normatives de référence
-
-Les plages normatives sont définies dans `features/results/domain/reference_norms.dart` (Epic 3). Le `PdfGenerator` doit les consommer pour afficher "dans norme / hors norme" dans la vue simplifiée.
-
-Logique d'indicateur :
-
-- Valeur dans `[normMin, normMax]` → vert (`#34C759`) + "✓ Dans la norme"
-- Valeur dans `[normMax, normMax * 1.1]` ou `[normMin * 0.9, normMin]` → orange (`#FF9500`) + "⚠ Limite"
-- Valeur hors plage → rouge (`#FF3B30`) + "✗ Hors de la norme"
+- **NE PAS** hardcoder le texte du disclaimer dans le PDF generator — utiliser `LEGAL_CONSTANTS.mdrDisclaimer`
+- **NE PAS** faire de requetes reseau pour la generation PDF — tout est local
+- **NE PAS** stocker le PDF en base SQLite — le stocker dans le filesystem temporaire
+- **NE PAS** acceder a SQLite directement depuis le screen — toujours via le Repository puis le Store
+- **NE PAS** utiliser MobX — le codebase RN utilise Zustand
 
 ### Project Structure Notes
 
-**Alignement avec la structure unifiée :**
+```
+bodyorthox-rn/src/features/report/     <- A CREER
+  data/
+    pdf-generator.ts                   <- A CREER (AC2-7)
+    pdf-generator.test.ts              <- A CREER
+  screens/
+    report-screen.tsx                  <- A CREER (AC1)
+  components/
+    export-button.tsx                  <- A CREER (Story 4.2)
+  store/
+    report-store.ts                    <- A CREER
+    report-store.test.ts               <- A CREER
 
-| Fichier créé           | Chemin                             | Justification                                                          |
-| ---------------------- | ---------------------------------- | ---------------------------------------------------------------------- |
-| `legal_constants.dart` | `lib/core/legal/`                  | Cross-cutting concern — partagé avec d'autres features potentiellement |
-| `pdf_generator.dart`   | `lib/features/report/data/`        | Implémentation technique de la feature report                          |
-| `report_data.dart`     | `lib/features/report/domain/`      | DTO domaine de la feature                                              |
-| `report_notifier.dart` | `lib/features/report/application/` | State management feature-scoped                                        |
-| `report_provider.dart` | `lib/features/report/application/` | Déclarations providers feature-scoped                                  |
+bodyorthox-rn/src/core/legal/          <- A CREER
+  legal-constants.ts                   <- A CREER (AC4)
+```
 
-**Conflits potentiels à surveiller :**
+### Commandes de verification
 
-- Si `features/capture/domain/analysis.dart` contient déjà un modèle riche incluant angles + confiance + date → utiliser directement, ne pas créer `ReportData` redondant
-- Le dossier `lib/core/legal/` n'existe probablement pas encore (Epic 1 ne l'a pas créé si non référencé) — le créer
+```bash
+cd bodyorthox-rn
+
+# TypeScript check
+npx tsc --noEmit
+
+# Tests report
+npx jest --testPathPattern report --verbose
+
+# Tous les tests
+npx jest --verbose
+```
 
 ### References
 
-- [Source: docs/planning-artifacts/epics.md — Epic 4, Story 4.1 — FR20, FR21, FR22, FR23, FR24, FR25]
-- [Source: docs/planning-artifacts/architecture.md — Patterns de processus → Disclaimer EU MDR — `LegalConstants.mdrDisclaimer`]
-- [Source: docs/planning-artifacts/architecture.md — Structure feature obligatoire `data/domain/application/presentation`]
-- [Source: docs/planning-artifacts/architecture.md — NFR-P4 : Génération rapport PDF < 5 secondes]
-- [Source: docs/planning-artifacts/architecture.md — Frontières architecturales → `features/report/`]
-- [Source: docs/planning-artifacts/architecture.md — Arborescence complète — `pdf_generator.dart`, `export_button.dart`, `LegalConstants`]
-- [Source: docs/planning-artifacts/architecture.md — Patterns communication → AsyncValue switch exhaustif obligatoire]
-- [Source: docs/planning-artifacts/ux-design-specification.md — Journey 3 Marie la Secrétaire → nommage PDF exact]
-- [Source: docs/planning-artifacts/ux-design-specification.md — Color System → palettes #34C759, #FF9500, #FF3B30, #1B6FBF]
-- [Source: docs/planning-artifacts/ux-design-specification.md — Typography → Caption 12pt pour disclaimer]
-- [Source: docs/planning-artifacts/ux-design-specification.md — Phase 2 résultats et export → composants pertinents]
+- [Source: docs/planning-artifacts/epics.md#Story-4.1] — "Generation du Rapport PDF Structure"
+- [Source: docs/planning-artifacts/architecture.md#Rapport-PDF] — `features/report/`, `LEGAL_CONSTANTS.mdrDisclaimer`
+- [Source: bodyorthox-rn/src/features/capture/domain/analysis.ts] — Interface Analysis
+- [Source: bodyorthox-rn/src/features/patients/domain/patient.ts] — Interface Patient
+- [Source: bodyorthox-rn/src/features/results/domain/reference-norms.ts] — Normes de reference
 
 ## Dev Agent Record
 
 ### Agent Model Used
 
-claude-sonnet-4-6
+claude-opus-4-6
 
 ### Debug Log References
 
