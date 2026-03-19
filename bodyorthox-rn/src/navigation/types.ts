@@ -3,6 +3,7 @@ import { Patient } from "../features/patients/domain/patient";
 
 export type RootStackParamList = {
   Lock: undefined;
+  Onboarding: undefined;
   Patients: undefined;
   CreatePatient: undefined;
   PatientDetail: { patientId: string };

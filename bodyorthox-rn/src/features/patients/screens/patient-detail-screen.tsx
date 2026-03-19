@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import {
   Alert,
   FlatList,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -26,6 +27,7 @@ import {
   formatDisplayDate,
   formatDisplayDateTime,
 } from "../../../shared/utils/date-utils";
+import { usePlatform } from "../../../shared/hooks/use-platform";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, "PatientDetail">;
@@ -34,6 +36,7 @@ export function PatientDetailScreen() {
   const navigation = useNavigation<Nav>();
   const { params } = useRoute<Route>();
   const { patientId } = params;
+  const { isTablet } = usePlatform();
   const { deletePatient, patients, error: storeError } = usePatientsStore();
   const [patient, setPatient] = useState<Patient | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -106,7 +109,7 @@ export function PatientDetailScreen() {
   const age = patientAge(patient);
   const profile = patient.morphologicalProfile;
 
-  const renderHeader = () => (
+  const infoSection = (
     <>
       <View style={styles.profileHeader}>
         <View style={styles.avatar}>
@@ -161,6 +164,8 @@ export function PatientDetailScreen() {
         <TouchableOpacity
           style={styles.primaryAction}
           onPress={() => navigation.navigate("Capture", { patientId })}
+          accessibilityRole="button"
+          accessibilityLabel="Lancer une nouvelle analyse"
           testID="start-capture"
         >
           <Text style={styles.primaryActionText}>Nouvelle analyse</Text>
@@ -168,6 +173,8 @@ export function PatientDetailScreen() {
         <TouchableOpacity
           style={styles.secondaryAction}
           onPress={() => navigation.navigate("Timeline", { patientId })}
+          accessibilityRole="button"
+          accessibilityLabel="Voir la progression clinique"
           testID="timeline-button"
         >
           <Text style={styles.secondaryActionText}>Progression clinique</Text>
@@ -175,6 +182,8 @@ export function PatientDetailScreen() {
         <TouchableOpacity
           style={styles.dangerAction}
           onPress={handleDelete}
+          accessibilityRole="button"
+          accessibilityLabel="Supprimer le patient"
           testID="delete-button"
         >
           <Text style={styles.dangerActionText}>Supprimer le patient</Text>
@@ -186,6 +195,73 @@ export function PatientDetailScreen() {
           <Text style={styles.errorText}>{storeError}</Text>
         </View>
       )}
+    </>
+  );
+
+  const historySection = (
+    <>
+      <Text style={[Typography.label, styles.sectionTitle]}>
+        Historique des analyses
+      </Text>
+
+      {analysesLoading && (
+        <LoadingSpinner message="Chargement des analyses..." />
+      )}
+
+      {!analysesLoading && analyses.length === 0 && (
+        <View style={styles.emptyState} testID="empty-analyses">
+          <Text style={styles.emptyText}>Aucune analyse</Text>
+          <TouchableOpacity
+            style={styles.startAnalysisButton}
+            onPress={() => navigation.navigate("Capture", { patientId })}
+            accessibilityRole="button"
+            accessibilityLabel="Démarrer une analyse"
+            testID="start-analysis-button"
+          >
+            <Text style={styles.startAnalysisText}>Démarrer une analyse</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {!analysesLoading &&
+        analyses.map((item) => (
+          <React.Fragment key={item.id}>
+            <PatientHistoryTile
+              analysis={item}
+              onPress={handleAnalysisPress}
+              testID={`analysis-tile-${item.id}`}
+            />
+            <View style={styles.separator} />
+          </React.Fragment>
+        ))}
+    </>
+  );
+
+  // Tablet: side-by-side layout (info left, history right)
+  if (isTablet) {
+    return (
+      <View style={styles.tabletContainer} testID="patient-detail-screen">
+        <ScrollView
+          style={styles.tabletLeftPane}
+          contentContainerStyle={styles.tabletLeftContent}
+        >
+          {infoSection}
+        </ScrollView>
+        <View style={styles.tabletDivider} />
+        <ScrollView
+          style={styles.tabletRightPane}
+          contentContainerStyle={styles.tabletRightContent}
+        >
+          {historySection}
+        </ScrollView>
+      </View>
+    );
+  }
+
+  // Phone: single-column FlatList with header
+  const renderHeader = () => (
+    <>
+      {infoSection}
 
       <Text style={[Typography.label, styles.sectionTitle]}>
         Historique des analyses
@@ -201,6 +277,8 @@ export function PatientDetailScreen() {
           <TouchableOpacity
             style={styles.startAnalysisButton}
             onPress={() => navigation.navigate("Capture", { patientId })}
+            accessibilityRole="button"
+            accessibilityLabel="Démarrer une analyse"
             testID="start-analysis-button"
           >
             <Text style={styles.startAnalysisText}>Démarrer une analyse</Text>
@@ -256,6 +334,34 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
     paddingBottom: Spacing.xxxl,
   },
+  // Tablet layout
+  tabletContainer: {
+    flex: 1,
+    flexDirection: "row",
+    backgroundColor: Colors.background,
+  },
+  tabletLeftPane: {
+    flex: 1,
+    maxWidth: 400,
+  },
+  tabletLeftContent: {
+    padding: Spacing.lg,
+    gap: Spacing.md,
+    paddingBottom: Spacing.xxxl,
+  },
+  tabletDivider: {
+    width: 1,
+    backgroundColor: Colors.border,
+  },
+  tabletRightPane: {
+    flex: 1,
+  },
+  tabletRightContent: {
+    padding: Spacing.lg,
+    gap: Spacing.md,
+    paddingBottom: Spacing.xxxl,
+  },
+  // Shared styles
   profileHeader: {
     alignItems: "center",
     gap: Spacing.sm,
@@ -301,6 +407,8 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.lg,
     alignItems: "center",
+    minHeight: 44,
+    justifyContent: "center",
   },
   primaryActionText: { color: "#fff", fontWeight: "700", fontSize: 16 },
   secondaryAction: {
@@ -310,13 +418,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
     borderColor: Colors.border,
+    minHeight: 44,
+    justifyContent: "center",
   },
   secondaryActionText: {
     color: Colors.textPrimary,
     fontWeight: "600",
     fontSize: 15,
   },
-  dangerAction: { paddingVertical: Spacing.md, alignItems: "center" },
+  dangerAction: {
+    paddingVertical: Spacing.md,
+    alignItems: "center",
+    minHeight: 44,
+    justifyContent: "center",
+  },
   dangerActionText: { color: Colors.error, fontSize: 15 },
   sectionTitle: { marginTop: Spacing.md },
   separator: { height: Spacing.sm },
@@ -331,6 +446,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.md,
+    minHeight: 44,
+    justifyContent: "center",
   },
   startAnalysisText: { color: "#fff", fontWeight: "600", fontSize: 14 },
   errorBanner: {

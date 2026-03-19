@@ -10,6 +10,7 @@ import {
   calculateConfidenceScore,
   PoseLandmarks,
 } from "../data/angle-calculator";
+import { INotificationService } from "../../../core/notifications/notification-types";
 
 interface CaptureState {
   phase: CapturePhase;
@@ -21,6 +22,7 @@ interface CaptureState {
 
 interface CaptureActions {
   setRepository(repo: IAnalysisRepository): void;
+  setNotificationService(service: INotificationService): void;
   requestPermission(): void;
   permissionGranted(): void;
   permissionDenied(message: string): void;
@@ -28,6 +30,7 @@ interface CaptureActions {
   addFrame(): void;
   processFrames(landmarks: PoseLandmarks): void;
   saveAnalysis(patientId: string): Promise<Analysis | null>;
+  sendAnalysisReadyNotification(patientName: string): Promise<void>;
   setLuminosity(value: number): void;
   setCorrectPosition(correct: boolean): void;
   reset(): void;
@@ -36,6 +39,7 @@ interface CaptureActions {
 }
 
 let _repository: IAnalysisRepository | null = null;
+let _notificationService: INotificationService | null = null;
 let _pendingAngles: {
   kneeAngle: number;
   hipAngle: number;
@@ -53,6 +57,10 @@ export const useCaptureStore = create<CaptureState & CaptureActions>()(
 
     setRepository(repo: IAnalysisRepository) {
       _repository = repo;
+    },
+
+    setNotificationService(service: INotificationService) {
+      _notificationService = service;
     },
 
     requestPermission() {
@@ -122,6 +130,17 @@ export const useCaptureStore = create<CaptureState & CaptureActions>()(
       } catch {
         return null;
       }
+    },
+
+    async sendAnalysisReadyNotification(patientName: string): Promise<void> {
+      if (!_notificationService) return;
+
+      const phase = _get().phase;
+      if (phase.type !== "success") return;
+
+      // Request permission contextually (the service handles deduplication)
+      await _notificationService.requestPermission();
+      await _notificationService.sendAnalysisReady(patientName, phase.angles);
     },
 
     setLuminosity(value: number) {

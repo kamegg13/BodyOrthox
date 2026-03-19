@@ -75,7 +75,7 @@
       "./jest.setup.ts"
     ],
     "transformIgnorePatterns": [
-      "node_modules/(?!(react-native|@react-native|@react-navigation|react-native-vision-camera|react-native-biometrics|react-native-sqlite-storage|react-native-keychain|react-native-reanimated|react-native-gesture-handler|react-native-screens|react-native-safe-area-context|react-native-svg|zustand|immer|uuid|date-fns)/)"
+      "node_modules/(?!(react-native|@react-native|@react-navigation|@notifee|react-native-vision-camera|react-native-biometrics|react-native-sqlite-storage|react-native-keychain|react-native-reanimated|react-native-gesture-handler|react-native-screens|react-native-safe-area-context|react-native-svg|zustand|immer|uuid|date-fns)/)"
     ],
     "moduleNameMapper": {
       "^@/(.*)$": "<rootDir>/src/$1",

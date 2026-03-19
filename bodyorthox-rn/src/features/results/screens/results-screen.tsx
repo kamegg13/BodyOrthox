@@ -21,6 +21,7 @@ import { Typography } from "../../../shared/design-system/typography";
 import { formatDisplayDateTime } from "../../../shared/utils/date-utils";
 import { getDatabase } from "../../../core/database/init";
 import { SqliteAnalysisRepository } from "../../capture/data/sqlite-analysis-repository";
+import { usePlatform } from "../../../shared/hooks/use-platform";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, "Results">;
@@ -36,6 +37,7 @@ export function ResultsScreen() {
   const navigation = useNavigation<Nav>();
   const { params } = useRoute<Route>();
   const { analysisId, patientId } = params;
+  const { isTablet } = usePlatform();
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -88,7 +90,7 @@ export function ResultsScreen() {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, isTablet && styles.contentTablet]}
       testID="results-screen"
     >
       <View style={styles.headerRow}>
@@ -151,7 +153,7 @@ export function ResultsScreen() {
         ))}
       </View>
 
-      <View style={styles.cards}>
+      <View style={[styles.cards, isTablet && styles.cardsTablet]}>
         <ArticularAngleCard assessment={kneeAssessment} testID="knee-card" />
         <ArticularAngleCard assessment={hipAssessment} testID="hip-card" />
         <ArticularAngleCard assessment={ankleAssessment} testID="ankle-card" />
@@ -211,13 +213,24 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
     paddingBottom: Spacing.xxxl,
   },
+  contentTablet: {
+    paddingHorizontal: Spacing.xxl,
+    maxWidth: 900,
+    alignSelf: "center",
+    width: "100%",
+  },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.md,
     marginBottom: Spacing.sm,
   },
-  backText: { color: Colors.primary, fontSize: 16 },
+  backText: {
+    color: Colors.primary,
+    fontSize: 16,
+    minHeight: 44,
+    lineHeight: 44,
+  },
   headerTitle: { color: Colors.textPrimary },
   metaCard: {
     backgroundColor: Colors.backgroundCard,
@@ -253,6 +266,10 @@ const styles = StyleSheet.create({
   modeText: { color: Colors.textSecondary, fontWeight: "500", fontSize: 14 },
   modeTextActive: { color: Colors.textOnPrimary },
   cards: { gap: Spacing.md },
+  cardsTablet: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
   expertSection: {
     backgroundColor: Colors.backgroundCard,
     borderRadius: BorderRadius.lg,
@@ -278,8 +295,10 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.lg,
     alignItems: "center",
+    justifyContent: "center",
     borderWidth: 1,
     borderColor: Colors.border,
+    minHeight: 44,
   },
   actionButtonText: {
     color: Colors.textPrimary,

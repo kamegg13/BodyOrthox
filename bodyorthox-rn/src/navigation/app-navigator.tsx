@@ -1,18 +1,20 @@
-import React from 'react';
-import { Platform } from 'react-native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import type { RootStackParamList } from './types';
-import { Colors } from '../shared/design-system/colors';
+import React, { useEffect } from "react";
+import { Platform } from "react-native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "./types";
+import { Colors } from "../shared/design-system/colors";
+import { useOnboardingStore } from "../features/onboarding/store/onboarding-store";
 
 // Screens
-import { BiometricLockScreen } from '../shared/components/biometric-lock-screen-screen';
-import { PatientsScreen } from '../features/patients/screens/patients-screen';
-import { CreatePatientScreen } from '../features/patients/screens/create-patient-screen';
-import { PatientDetailScreen } from '../features/patients/screens/patient-detail-screen';
-import { CaptureScreen } from '../features/capture/screens/capture-screen';
-import { ResultsScreen } from '../features/results/screens/results-screen';
-import { ReplayScreen } from '../features/results/screens/replay-screen';
-import { PatientTimelineScreen } from '../features/patients/screens/patient-timeline-screen';
+import { BiometricLockScreen } from "../shared/components/biometric-lock-screen-screen";
+import { OnboardingScreen } from "../features/onboarding/screens/onboarding-screen";
+import { PatientsScreen } from "../features/patients/screens/patients-screen";
+import { CreatePatientScreen } from "../features/patients/screens/create-patient-screen";
+import { PatientDetailScreen } from "../features/patients/screens/patient-detail-screen";
+import { CaptureScreen } from "../features/capture/screens/capture-screen";
+import { ResultsScreen } from "../features/results/screens/results-screen";
+import { ReplayScreen } from "../features/results/screens/replay-screen";
+import { PatientTimelineScreen } from "../features/patients/screens/patient-timeline-screen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -24,6 +26,27 @@ const screenOptions = {
 } as const;
 
 export function AppNavigator() {
+  const checkOnboarding = useOnboardingStore((s) => s.checkOnboarding);
+  const isOnboardingCompleted = useOnboardingStore((s) => s.isCompleted);
+  const isLoading = useOnboardingStore((s) => s.isLoading);
+
+  useEffect(() => {
+    checkOnboarding();
+  }, [checkOnboarding]);
+
+  // While checking onboarding status, show Lock screen as default
+  if (isLoading) {
+    return (
+      <Stack.Navigator screenOptions={screenOptions} initialRouteName="Lock">
+        <Stack.Screen
+          name="Lock"
+          component={BiometricLockScreen}
+          options={{ headerShown: false }}
+        />
+      </Stack.Navigator>
+    );
+  }
+
   return (
     <Stack.Navigator screenOptions={screenOptions} initialRouteName="Lock">
       <Stack.Screen
@@ -31,6 +54,13 @@ export function AppNavigator() {
         component={BiometricLockScreen}
         options={{ headerShown: false }}
       />
+      {!isOnboardingCompleted && (
+        <Stack.Screen
+          name="Onboarding"
+          component={OnboardingScreen}
+          options={{ headerShown: false }}
+        />
+      )}
       <Stack.Screen
         name="Patients"
         component={PatientsScreen}
@@ -39,19 +69,19 @@ export function AppNavigator() {
       <Stack.Screen
         name="CreatePatient"
         component={CreatePatientScreen}
-        options={{ title: 'Nouveau patient' }}
+        options={{ title: "Nouveau patient" }}
       />
       <Stack.Screen
         name="PatientDetail"
         component={PatientDetailScreen}
-        options={{ title: 'Patient' }}
+        options={{ title: "Patient" }}
       />
       <Stack.Screen
         name="Capture"
         component={CaptureScreen}
         options={{
           headerShown: false,
-          orientation: Platform.OS !== 'web' ? 'portrait' : undefined,
+          orientation: Platform.OS !== "web" ? "portrait" : undefined,
         }}
       />
       <Stack.Screen
@@ -62,12 +92,12 @@ export function AppNavigator() {
       <Stack.Screen
         name="Replay"
         component={ReplayScreen}
-        options={{ title: 'Relecture experte' }}
+        options={{ title: "Relecture experte" }}
       />
       <Stack.Screen
         name="Timeline"
         component={PatientTimelineScreen}
-        options={{ title: 'Progression clinique' }}
+        options={{ title: "Progression clinique" }}
       />
     </Stack.Navigator>
   );
