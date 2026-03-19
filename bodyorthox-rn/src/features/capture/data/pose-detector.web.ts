@@ -19,8 +19,9 @@ import {
 
 const WASM_CDN =
   "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.32/wasm";
+// Note: Google Storage models use "latest" versioning (not npm semver)
 const MODEL_URL =
-  "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/0.10.32/pose_landmarker_lite.task";
+  "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/latest/pose_landmarker_lite.task";
 
 /** MediaPipe landmark indices relevant for orthopaedic analysis */
 const RELEVANT_INDICES = [11, 12, 23, 24, 25, 26, 27, 28, 29, 30] as const;
