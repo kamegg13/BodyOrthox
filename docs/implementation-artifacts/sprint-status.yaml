@@ -56,11 +56,12 @@ development_status:
   # Story 3.0 ajoutée (Capture Photo HKA)
   # Stories 3.3 et 3.4 réécrites pour HKA
   # Story 3.5 réimplémentée proprement (pattern correction manuelle HKA)
-  epic-3: done
+  epic-3: in-progress
   3-0-capture-photo-hka: done
   3-3-pipeline-ml-hka-photo: done
   3-4-affichage-resultats-angle-hka: done
   3-5-correction-manuelle-points-hka: done
+  3-3b-integration-mediapipe-pose-detection: ready-for-dev
   epic-3-retrospective: optional
 
   # ─── Epic 4 : Rapport PDF & Export (adapté HKA) ──────────────────────────────

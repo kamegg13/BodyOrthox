@@ -19,6 +19,8 @@ import { Colors } from "../../../shared/design-system/colors";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
 import { WebCamera, WebCameraRef } from "../components/web-camera";
 import { PhotoUpload } from "../components/photo-upload";
+import { getPoseDetector } from "../data/pose-detector";
+import type { IPoseDetector } from "../data/pose-detector";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, "Capture">;
@@ -34,7 +36,14 @@ if (Platform.OS !== "web") {
   }
 }
 
-const SIMULATED_LANDMARKS = {
+/** Low confidence threshold — warn the user below this */
+const LOW_CONFIDENCE_THRESHOLD = 0.6;
+
+/**
+ * Simulated landmarks for native (iOS/Android) — kept until
+ * react-native-vision-camera frame processor integration.
+ */
+const NATIVE_SIMULATED_LANDMARKS = {
   11: { x: 0.4, y: 0.2, visibility: 0.95 },
   12: { x: 0.6, y: 0.2, visibility: 0.95 },
   23: { x: 0.42, y: 0.5, visibility: 0.9 },
@@ -72,8 +81,28 @@ export function CaptureScreen() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const webCameraRef = useRef<WebCameraRef>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const poseDetectorRef = useRef<IPoseDetector | null>(null);
+  const [mlLoading, setMlLoading] = useState(false);
+  const [detectionError, setDetectionError] = useState<string | null>(null);
+  const [lowConfidenceWarning, setLowConfidenceWarning] = useState<{
+    message: string;
+    onContinue: () => void;
+  } | null>(null);
 
   useEffect(() => {
+    // Lazy-load pose detector on web
+    if (Platform.OS === "web") {
+      const detector = getPoseDetector();
+      poseDetectorRef.current = detector;
+      setMlLoading(true);
+      detector
+        .initialize()
+        .catch(() => {
+          // Non-blocking — detection will fail later with a clear message
+        })
+        .finally(() => setMlLoading(false));
+    }
+
     requestPermission();
     if (Platform.OS === "web") {
       // Permission is handled by the WebCamera component via getUserMedia
@@ -86,10 +115,10 @@ export function CaptureScreen() {
           if (status === "granted") permissionGranted();
           else
             permissionDenied(
-              "Acces camera refuse. Activez-le dans les reglages.",
+              "Accès caméra refusé. Activez-le dans les réglages.",
             );
         } catch {
-          permissionDenied("Impossible d'acceder a la camera.");
+          permissionDenied("Impossible d'accéder à la caméra.");
         }
       })();
     }
@@ -125,21 +154,51 @@ export function CaptureScreen() {
 
   const handleAnalyze = useCallback(async () => {
     if (!previewUrl) return;
-    startRecording();
+    setDetectionError(null);
+    setLowConfidenceWarning(null);
 
-    // Simulate frame capture
-    for (let i = 0; i < 30; i++) {
-      await new Promise((r) => setTimeout(r, 30));
-      addFrame();
+    const detector = poseDetectorRef.current;
+    if (!detector || !detector.isReady()) {
+      setError("Le modèle ML n'est pas encore chargé. Veuillez patienter.");
+      return;
     }
 
-    // Simulate ML analysis (replace with real ML Kit later)
-    processFrames(SIMULATED_LANDMARKS);
-  }, [previewUrl, startRecording, addFrame, processFrames]);
+    startRecording();
+
+    try {
+      const result = await detector.detect(previewUrl);
+
+      if (result.confidenceScore < LOW_CONFIDENCE_THRESHOLD) {
+        // Set phase back to 'ready' so UI shows warning instead of spinner
+        permissionGranted();
+        setLowConfidenceWarning({
+          message:
+            "Confiance faible \u2014 la photo pourrait ne pas être optimale. Vous pouvez réessayer ou continuer.",
+          onContinue: () => {
+            setLowConfidenceWarning(null);
+            processFrames(result.landmarks);
+          },
+        });
+        return;
+      }
+
+      processFrames(result.landmarks);
+    } catch (error) {
+      // Set phase back to 'ready' so UI shows error instead of spinner
+      permissionGranted();
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Erreur lors de l'analyse de la photo.";
+      setDetectionError(message);
+    }
+  }, [previewUrl, startRecording, processFrames, setError]);
 
   const handleRetake = useCallback(() => {
     setPreviewUrl(null);
     setCapturedImageUrl(null);
+    setDetectionError(null);
+    setLowConfidenceWarning(null);
   }, [setCapturedImageUrl]);
 
   const handleStartCapture = useCallback(async () => {
@@ -153,8 +212,8 @@ export function CaptureScreen() {
     startRecording();
     timerRef.current = setTimeout(() => {}, 100);
 
-    // Simulate ML analysis (replace with real ML Kit / Vision Camera frame processor)
-    processFrames(SIMULATED_LANDMARKS);
+    // Simulate ML analysis on native (replace with real Vision Camera frame processor)
+    processFrames(NATIVE_SIMULATED_LANDMARKS);
   }, [phase, startRecording, processFrames, handleTakeWebPhoto]);
 
   const handleSave = useCallback(async () => {
@@ -192,7 +251,7 @@ export function CaptureScreen() {
 
   if (phase.type === "idle" || phase.type === "requesting_permission") {
     return (
-      <LoadingSpinner fullScreen message="Initialisation de la camera..." />
+      <LoadingSpinner fullScreen message="Initialisation de la caméra..." />
     );
   }
 
@@ -210,7 +269,7 @@ export function CaptureScreen() {
             testID="captured-image-thumbnail"
           />
         )}
-        <Text style={styles.successTitle}>Analyse complete</Text>
+        <Text style={styles.successTitle}>Analyse complète</Text>
         <Text style={styles.successScore}>
           Confiance : {Math.round(phase.confidenceScore * 100)}%
         </Text>
@@ -253,6 +312,40 @@ export function CaptureScreen() {
         <View style={styles.controls}>
           {phase.type === "recording" ? (
             <LoadingSpinner message="Analyse en cours..." />
+          ) : detectionError ? (
+            <View style={styles.errorContainer} testID="detection-error">
+              <Text style={styles.errorText}>{detectionError}</Text>
+              <TouchableOpacity
+                style={styles.retakeButton}
+                onPress={handleRetake}
+                testID="retake-after-error-button"
+              >
+                <Text style={styles.analyzeButtonText}>Recommencer</Text>
+              </TouchableOpacity>
+            </View>
+          ) : lowConfidenceWarning ? (
+            <View
+              style={styles.warningContainer}
+              testID="low-confidence-warning"
+            >
+              <Text style={styles.warningText}>
+                {lowConfidenceWarning.message}
+              </Text>
+              <TouchableOpacity
+                style={styles.analyzeButton}
+                onPress={lowConfidenceWarning.onContinue}
+                testID="continue-anyway-button"
+              >
+                <Text style={styles.analyzeButtonText}>Continuer</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.retakeButton}
+                onPress={handleRetake}
+                testID="retake-low-confidence-button"
+              >
+                <Text style={styles.retakeButtonText}>Recommencer</Text>
+              </TouchableOpacity>
+            </View>
           ) : (
             <>
               <TouchableOpacity
@@ -260,8 +353,11 @@ export function CaptureScreen() {
                 onPress={handleAnalyze}
                 testID="analyze-button"
                 accessibilityRole="button"
+                disabled={mlLoading}
               >
-                <Text style={styles.analyzeButtonText}>Analyser</Text>
+                <Text style={styles.analyzeButtonText}>
+                  {mlLoading ? "Chargement du modèle ML..." : "Analyser"}
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.retakeButton}
@@ -419,5 +515,33 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     fontSize: 15,
     fontWeight: "600",
+  },
+  errorContainer: {
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.7)",
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    marginHorizontal: Spacing.lg,
+  },
+  errorText: {
+    color: Colors.error,
+    fontSize: 16,
+    textAlign: "center",
+    marginBottom: Spacing.md,
+    fontWeight: "600",
+  },
+  warningContainer: {
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.7)",
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    marginHorizontal: Spacing.lg,
+  },
+  warningText: {
+    color: "#FFA726",
+    fontSize: 15,
+    textAlign: "center",
+    marginBottom: Spacing.md,
+    fontWeight: "500",
   },
 });
