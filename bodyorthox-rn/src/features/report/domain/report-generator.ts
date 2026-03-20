@@ -7,6 +7,17 @@ import {
 } from "../../results/domain/reference-norms";
 import { LEGAL_CONSTANTS } from "../../../core/legal/legal-constants";
 
+// ─── HTML escaping (XSS prevention) ──────────────────────────
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 // ─── Types ────────────────────────────────────────────────────
 
 export interface AngleReportEntry {
@@ -132,10 +143,10 @@ function angleRowHtml(entry: AngleReportEntry): string {
     : `Hors norme (${entry.deviationLevel})`;
   return `
     <tr>
-      <td>${entry.label}</td>
-      <td>${entry.value}${entry.unit}</td>
-      <td>${entry.normalMin}${entry.unit} – ${entry.normalMax}${entry.unit}</td>
-      <td style="color: ${statusColor}; font-weight: 600;">${statusLabel}</td>
+      <td>${escapeHtml(entry.label)}</td>
+      <td>${escapeHtml(String(entry.value))}${escapeHtml(entry.unit)}</td>
+      <td>${escapeHtml(String(entry.normalMin))}${escapeHtml(entry.unit)} – ${escapeHtml(String(entry.normalMax))}${escapeHtml(entry.unit)}</td>
+      <td style="color: ${statusColor}; font-weight: 600;">${escapeHtml(statusLabel)}</td>
     </tr>`;
 }
 
@@ -143,7 +154,7 @@ export function generateReportHtml(data: ReportData): string {
   const angleRows = data.practitionerView.angles.map(angleRowHtml).join("\n");
 
   const correctionNote = data.detailedView.manualCorrectionDisclaimer
-    ? `<p class="correction-note">${data.detailedView.manualCorrectionDisclaimer}</p>`
+    ? `<p class="correction-note">${escapeHtml(data.detailedView.manualCorrectionDisclaimer)}</p>`
     : "";
 
   return `<!DOCTYPE html>
@@ -151,7 +162,7 @@ export function generateReportHtml(data: ReportData): string {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Rapport BodyOrthox — ${data.metadata.patientName}</title>
+  <title>Rapport BodyOrthox — ${escapeHtml(data.metadata.patientName)}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #222; background: #fff; padding: 24px; }
@@ -180,10 +191,10 @@ export function generateReportHtml(data: ReportData): string {
   <div class="section">
     <h2>Informations patient</h2>
     <div class="meta-grid">
-      <div class="meta-item"><span class="label">Patient :</span> ${data.metadata.patientName}</div>
-      <div class="meta-item"><span class="label">Date :</span> ${data.metadata.analysisDate.slice(0, 10)}</div>
-      <div class="meta-item"><span class="label">Appareil :</span> ${data.metadata.device}</div>
-      <div class="meta-item"><span class="label">Confiance :</span> ${data.metadata.confidenceLevel}</div>
+      <div class="meta-item"><span class="label">Patient :</span> ${escapeHtml(data.metadata.patientName)}</div>
+      <div class="meta-item"><span class="label">Date :</span> ${escapeHtml(data.metadata.analysisDate.slice(0, 10))}</div>
+      <div class="meta-item"><span class="label">Appareil :</span> ${escapeHtml(data.metadata.device)}</div>
+      <div class="meta-item"><span class="label">Confiance :</span> ${escapeHtml(data.metadata.confidenceLevel)}</div>
     </div>
   </div>
 
