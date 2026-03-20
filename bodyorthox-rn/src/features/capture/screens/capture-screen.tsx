@@ -210,9 +210,8 @@ export function CaptureScreen() {
     }
 
     startRecording();
-    timerRef.current = setTimeout(() => {}, 100);
 
-    // Simulate ML analysis on native (replace with real Vision Camera frame processor)
+    // WARN: Simulated ML on native — real frame processor not yet integrated
     processFrames(NATIVE_SIMULATED_LANDMARKS);
   }, [phase, startRecording, processFrames, handleTakeWebPhoto]);
 
@@ -268,6 +267,18 @@ export function CaptureScreen() {
             resizeMode="contain"
             testID="captured-image-thumbnail"
           />
+        )}
+        {Platform.OS !== "web" && (
+          <View
+            style={styles.simulationWarning}
+            testID="simulation-warning"
+            accessibilityRole="alert"
+          >
+            <Text style={styles.simulationWarningText}>
+              ⚠️ Données de démonstration — l'analyse ML native n'est pas encore
+              intégrée. Les valeurs affichées ne reflètent pas la réalité.
+            </Text>
+          </View>
         )}
         <Text style={styles.successTitle}>Analyse complète</Text>
         <Text style={styles.successScore}>
@@ -430,6 +441,21 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: Spacing.xl,
     gap: Spacing.md,
+  },
+  simulationWarning: {
+    backgroundColor: `${Colors.warning}33`,
+    borderWidth: 1,
+    borderColor: Colors.warning,
+    borderRadius: 8,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    width: "100%",
+  },
+  simulationWarningText: {
+    color: Colors.warning,
+    fontSize: 13,
+    textAlign: "center",
+    lineHeight: 18,
   },
   successTitle: { color: Colors.success, fontSize: 24, fontWeight: "700" },
   successScore: { color: Colors.textSecondary, fontSize: 16 },
