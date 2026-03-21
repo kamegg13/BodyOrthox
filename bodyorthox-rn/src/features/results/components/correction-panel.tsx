@@ -78,6 +78,8 @@ export function CorrectionPanel({
               style={styles.correctionButton}
               onPress={onSaveCorrection}
               testID="save-correction-button"
+              accessibilityRole="button"
+              accessibilityLabel="Enregistrer la correction"
             >
               <Text style={styles.correctionButtonText}>Enregistrer</Text>
             </TouchableOpacity>

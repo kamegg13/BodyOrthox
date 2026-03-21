@@ -42,7 +42,6 @@ export function useCaptureLogic(patientId: string) {
     permissionGranted,
     permissionDenied,
     startRecording,
-    addFrame,
     saveAnalysis,
     reset,
     setError,

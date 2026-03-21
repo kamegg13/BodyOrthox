@@ -38,6 +38,8 @@ interface CaptureActions {
   setCapturedImageUrl(url: string | null): void;
 }
 
+// Module-level (non-reactive) — these don't trigger re-renders and are
+// intentionally outside the Zustand store to avoid serialization issues.
 let _repository: IAnalysisRepository | null = null;
 let _notificationService: INotificationService | null = null;
 let _pendingAngles: {

@@ -165,6 +165,8 @@ export function CreatePatientScreen() {
           onPress={handleSubmit}
           disabled={isSubmitting}
           testID="submit-button"
+          accessibilityRole="button"
+          accessibilityLabel="Créer le patient"
         >
           <Text style={styles.submitText}>
             {isSubmitting ? "Enregistrement..." : "Créer le patient"}

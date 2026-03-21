@@ -17,6 +17,7 @@ import { Patient, patientAge } from "../domain/patient";
 import { Analysis } from "../../capture/domain/analysis";
 import { useAnalysisRepository } from "../../../shared/hooks/use-analysis-repository";
 import { PatientHistoryTile } from "../components/patient-history-tile";
+import { HistorySection } from "../components/history-section";
 import { LoadingSpinner } from "../../../shared/components/loading-spinner";
 import { ErrorWidget } from "../../../shared/components/error-widget";
 import { Colors } from "../../../shared/design-system/colors";
@@ -30,6 +31,8 @@ import { usePlatform } from "../../../shared/hooks/use-platform";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, "PatientDetail">;
+
+const ItemSeparatorComponent = () => <View style={styles.separator} />;
 
 export function PatientDetailScreen() {
   const navigation = useNavigation<Nav>();
@@ -101,6 +104,10 @@ export function PatientDetailScreen() {
     [navigation, patientId],
   );
 
+  const handleStartCapture = useCallback(() => {
+    navigation.navigate("Capture", { patientId });
+  }, [navigation, patientId]);
+
   if (isLoading) return <LoadingSpinner fullScreen />;
   if (!patient) return <ErrorWidget message="Patient introuvable." />;
 
@@ -161,7 +168,7 @@ export function PatientDetailScreen() {
       <View style={styles.actions}>
         <TouchableOpacity
           style={styles.primaryAction}
-          onPress={() => navigation.navigate("Capture", { patientId })}
+          onPress={handleStartCapture}
           accessibilityRole="button"
           accessibilityLabel="Lancer une nouvelle analyse"
           testID="start-capture"
@@ -196,45 +203,6 @@ export function PatientDetailScreen() {
     </>
   );
 
-  const historySection = (
-    <>
-      <Text style={[Typography.label, styles.sectionTitle]}>
-        Historique des analyses
-      </Text>
-
-      {analysesLoading && (
-        <LoadingSpinner message="Chargement des analyses..." />
-      )}
-
-      {!analysesLoading && analyses.length === 0 && (
-        <View style={styles.emptyState} testID="empty-analyses">
-          <Text style={styles.emptyText}>Aucune analyse</Text>
-          <TouchableOpacity
-            style={styles.startAnalysisButton}
-            onPress={() => navigation.navigate("Capture", { patientId })}
-            accessibilityRole="button"
-            accessibilityLabel="Démarrer une analyse"
-            testID="start-analysis-button"
-          >
-            <Text style={styles.startAnalysisText}>Démarrer une analyse</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {!analysesLoading &&
-        analyses.map((item) => (
-          <React.Fragment key={item.id}>
-            <PatientHistoryTile
-              analysis={item}
-              onPress={handleAnalysisPress}
-              testID={`analysis-tile-${item.id}`}
-            />
-            <View style={styles.separator} />
-          </React.Fragment>
-        ))}
-    </>
-  );
-
   // Tablet: side-by-side layout (info left, history right)
   if (isTablet) {
     return (
@@ -250,7 +218,12 @@ export function PatientDetailScreen() {
           style={styles.tabletRightPane}
           contentContainerStyle={styles.tabletRightContent}
         >
-          {historySection}
+          <HistorySection
+            analysesLoading={analysesLoading}
+            analyses={analyses}
+            onAnalysisPress={handleAnalysisPress}
+            onStartCapture={handleStartCapture}
+          />
         </ScrollView>
       </View>
     );
@@ -260,29 +233,13 @@ export function PatientDetailScreen() {
   const renderHeader = () => (
     <>
       {infoSection}
-
-      <Text style={[Typography.label, styles.sectionTitle]}>
-        Historique des analyses
-      </Text>
-
-      {analysesLoading && (
-        <LoadingSpinner message="Chargement des analyses..." />
-      )}
-
-      {!analysesLoading && analyses.length === 0 && (
-        <View style={styles.emptyState} testID="empty-analyses">
-          <Text style={styles.emptyText}>Aucune analyse</Text>
-          <TouchableOpacity
-            style={styles.startAnalysisButton}
-            onPress={() => navigation.navigate("Capture", { patientId })}
-            accessibilityRole="button"
-            accessibilityLabel="Démarrer une analyse"
-            testID="start-analysis-button"
-          >
-            <Text style={styles.startAnalysisText}>Démarrer une analyse</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      <HistorySection
+        analysesLoading={analysesLoading}
+        analyses={analyses}
+        onAnalysisPress={handleAnalysisPress}
+        onStartCapture={handleStartCapture}
+        renderTiles={false}
+      />
     </>
   );
 
@@ -301,7 +258,7 @@ export function PatientDetailScreen() {
           testID={`analysis-tile-${item.id}`}
         />
       )}
-      ItemSeparatorComponent={() => <View style={styles.separator} />}
+      ItemSeparatorComponent={ItemSeparatorComponent}
     />
   );
 }
@@ -431,23 +388,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   dangerActionText: { color: Colors.error, fontSize: 15 },
-  sectionTitle: { marginTop: Spacing.md },
   separator: { height: Spacing.sm },
-  emptyState: {
-    alignItems: "center",
-    gap: Spacing.sm,
-    paddingVertical: Spacing.lg,
-  },
-  emptyText: { color: Colors.textSecondary, fontSize: 15 },
-  startAnalysisButton: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.md,
-    minHeight: 44,
-    justifyContent: "center",
-  },
-  startAnalysisText: { color: Colors.white, fontWeight: "600", fontSize: 14 },
   errorBanner: {
     backgroundColor: Colors.error,
     borderRadius: BorderRadius.md,

@@ -44,6 +44,8 @@ export function JointPointDisplay({
             ]}
             onPress={() => onJointSelect(key)}
             testID={`joint-${key}`}
+            accessibilityRole="button"
+            accessibilityLabel={`Sélectionner ${label}`}
           >
             <Text
               style={[

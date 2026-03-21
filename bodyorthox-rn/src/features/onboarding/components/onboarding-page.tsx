@@ -2,11 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, useWindowDimensions } from "react-native";
 import { Colors } from "../../../shared/design-system/colors";
 import { Spacing } from "../../../shared/design-system/spacing";
-import {
-  Typography,
-  FontSize,
-  FontWeight,
-} from "../../../shared/design-system/typography";
+import { FontSize, FontWeight } from "../../../shared/design-system/typography";
 
 export interface OnboardingPageProps {
   icon: string;

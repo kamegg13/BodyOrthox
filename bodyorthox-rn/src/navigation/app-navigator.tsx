@@ -6,7 +6,7 @@ import { Colors } from "../shared/design-system/colors";
 import { useOnboardingStore } from "../features/onboarding/store/onboarding-store";
 
 // Screens
-import { BiometricLockScreen } from "../shared/components/biometric-lock-screen-screen";
+import { BiometricLockScreen } from "../shared/components/lock-screen";
 import { OnboardingScreen } from "../features/onboarding/screens/onboarding-screen";
 import { PatientsScreen } from "../features/patients/screens/patients-screen";
 import { CreatePatientScreen } from "../features/patients/screens/create-patient-screen";

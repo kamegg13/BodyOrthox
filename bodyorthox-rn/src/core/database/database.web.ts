@@ -3,7 +3,6 @@
  * For browser testing: uses an in-memory SQLite compiled to WASM (sql.js).
  * Data is persisted to localStorage between sessions.
  */
-import { ALL_MIGRATIONS } from "./schema";
 import { IDatabase, QueryResult } from "./database";
 
 // Minimal in-memory store for web (no sql.js bundled for simplicity)

@@ -115,6 +115,7 @@ export function OnboardingScreen() {
         style={styles.skipButton}
         onPress={handleSkip}
         testID="onboarding-skip"
+        accessibilityRole="button"
         accessibilityLabel="Passer l'introduction"
         hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
       >
@@ -164,6 +165,7 @@ export function OnboardingScreen() {
           style={styles.actionButton}
           onPress={isLastPage ? handleComplete : handleNext}
           testID={isLastPage ? "onboarding-complete" : "onboarding-next"}
+          accessibilityRole="button"
           accessibilityLabel={isLastPage ? "Commencer" : "Suivant"}
         >
           <Text style={styles.actionButtonText}>

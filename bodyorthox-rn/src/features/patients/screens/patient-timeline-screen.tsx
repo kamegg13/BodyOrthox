@@ -60,6 +60,8 @@ export function PatientTimelineScreen() {
             style={styles.captureButton}
             onPress={() => navigation.navigate("Capture", { patientId })}
             testID="start-analysis-button"
+            accessibilityRole="button"
+            accessibilityLabel="Démarrer une analyse"
           >
             <Text style={styles.captureButtonText}>Démarrer une analyse</Text>
           </TouchableOpacity>
@@ -79,6 +81,8 @@ export function PatientTimelineScreen() {
                 })
               }
               testID={`timeline-item-${analysis.id}`}
+              accessibilityRole="button"
+              accessibilityLabel={`Voir l'analyse du ${formatDisplayDateTime(new Date(analysis.createdAt))}`}
             >
               <View style={styles.timelineIndicator}>
                 <View style={styles.timelineDot} />

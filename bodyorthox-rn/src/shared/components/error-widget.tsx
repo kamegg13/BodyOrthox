@@ -1,8 +1,8 @@
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Colors } from '../design-system/colors';
-import { Typography } from '../design-system/typography';
-import { Spacing, BorderRadius } from '../design-system/spacing';
+import React from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Colors } from "../design-system/colors";
+import { Typography } from "../design-system/typography";
+import { Spacing, BorderRadius } from "../design-system/spacing";
 
 interface ErrorWidgetProps {
   message: string;
@@ -10,14 +10,23 @@ interface ErrorWidgetProps {
   title?: string;
 }
 
-export function ErrorWidget({ message, onRetry, title = 'Une erreur est survenue' }: ErrorWidgetProps) {
+export function ErrorWidget({
+  message,
+  onRetry,
+  title = "Une erreur est survenue",
+}: ErrorWidgetProps) {
   return (
     <View style={styles.container}>
       <Text style={styles.icon}>⚠️</Text>
       <Text style={[Typography.h3, styles.title]}>{title}</Text>
       <Text style={[Typography.body, styles.message]}>{message}</Text>
       {onRetry && (
-        <TouchableOpacity style={styles.retryButton} onPress={onRetry} accessibilityRole="button">
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={onRetry}
+          accessibilityRole="button"
+          accessibilityLabel="Réessayer"
+        >
           <Text style={styles.retryText}>Réessayer</Text>
         </TouchableOpacity>
       )}
@@ -28,8 +37,8 @@ export function ErrorWidget({ message, onRetry, title = 'Une erreur est survenue
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     padding: Spacing.xl,
     backgroundColor: Colors.background,
     gap: Spacing.md,
@@ -38,11 +47,11 @@ const styles = StyleSheet.create({
     fontSize: 48,
   },
   title: {
-    textAlign: 'center',
+    textAlign: "center",
     color: Colors.textPrimary,
   },
   message: {
-    textAlign: 'center',
+    textAlign: "center",
     color: Colors.textSecondary,
   },
   retryButton: {
@@ -54,7 +63,7 @@ const styles = StyleSheet.create({
   },
   retryText: {
     color: Colors.textOnPrimary,
-    fontWeight: '600',
+    fontWeight: "600",
     fontSize: 15,
   },
 });
