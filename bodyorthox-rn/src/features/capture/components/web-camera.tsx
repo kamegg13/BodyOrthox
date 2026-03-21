@@ -128,7 +128,7 @@ export const WebCamera = forwardRef<WebCameraRef, WebCameraProps>(
 
 const styles = StyleSheet.create({
   errorContainer: {
-    backgroundColor: "#111",
+    backgroundColor: Colors.darkGrey,
     alignItems: "center",
     justifyContent: "center",
     padding: Spacing.xl,

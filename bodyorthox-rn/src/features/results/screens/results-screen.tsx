@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useCallback, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -10,7 +10,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RouteProp } from "@react-navigation/native";
 import type { RootStackParamList } from "../../../navigation/types";
-import { Analysis, confidenceLabel } from "../../capture/domain/analysis";
+import { confidenceLabel } from "../../capture/domain/analysis";
 import { ArticularAngleCard } from "../components/articular-angle-card";
 import { assessAngle, REFERENCE_NORMS } from "../domain/reference-norms";
 import { LoadingSpinner } from "../../../shared/components/loading-spinner";
@@ -19,8 +19,8 @@ import { Colors } from "../../../shared/design-system/colors";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
 import { Typography } from "../../../shared/design-system/typography";
 import { formatDisplayDateTime } from "../../../shared/utils/date-utils";
-import { getDatabase } from "../../../core/database/init";
-import { SqliteAnalysisRepository } from "../../capture/data/sqlite-analysis-repository";
+import { useAnalysisRepository } from "../../../shared/hooks/use-analysis-repository";
+import { useAsyncData } from "../../../shared/hooks/use-async-data";
 import { usePlatform } from "../../../shared/hooks/use-platform";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -38,35 +38,15 @@ export function ResultsScreen() {
   const { params } = useRoute<Route>();
   const { analysisId, patientId } = params;
   const { isTablet } = usePlatform();
-  const [analysis, setAnalysis] = useState<Analysis | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("simple");
-  const [fetchKey, setFetchKey] = useState(0);
 
-  const repo = useMemo(() => {
-    const db = getDatabase();
-    return new SqliteAnalysisRepository(db);
-  }, []);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const result = await repo.getById(analysisId);
-        setAnalysis(result);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Erreur de chargement");
-      } finally {
-        setIsLoading(false);
-      }
-    })();
-  }, [analysisId, repo, fetchKey]);
-
-  const handleRetry = useCallback(() => {
-    setFetchKey((prev) => prev + 1);
-  }, []);
+  const repo = useAnalysisRepository();
+  const {
+    data: analysis,
+    isLoading,
+    error,
+    refetch: handleRetry,
+  } = useAsyncData(() => repo.getById(analysisId), [analysisId, repo]);
 
   const handleBack = useCallback(() => {
     navigation.navigate("PatientDetail", { patientId });

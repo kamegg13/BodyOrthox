@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -10,9 +10,8 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RouteProp } from "@react-navigation/native";
 import type { RootStackParamList } from "../../../navigation/types";
-import { Analysis } from "../../capture/domain/analysis";
-import { SqliteAnalysisRepository } from "../../capture/data/sqlite-analysis-repository";
-import { getDatabase } from "../../../core/database/init";
+import { useAnalysisRepository } from "../../../shared/hooks/use-analysis-repository";
+import { useAsyncData } from "../../../shared/hooks/use-async-data";
 import { ProgressionChart } from "../components/progression-chart";
 import { LoadingSpinner } from "../../../shared/components/loading-spinner";
 import { Colors } from "../../../shared/design-system/colors";
@@ -27,33 +26,12 @@ export function PatientTimelineScreen() {
   const navigation = useNavigation<Nav>();
   const { params } = useRoute<Route>();
   const { patientId } = params;
-  const [analyses, setAnalyses] = useState<Analysis[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function loadAnalyses() {
-      setIsLoading(true);
-      try {
-        const db = getDatabase();
-        const repo = new SqliteAnalysisRepository(db);
-        const result = await repo.getForPatient(patientId);
-        if (!cancelled) {
-          setAnalyses(result);
-        }
-      } catch {
-        // Error loading - leave empty
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
-    }
-    loadAnalyses();
-    return () => {
-      cancelled = true;
-    };
-  }, [patientId]);
+  const repo = useAnalysisRepository();
+  const { data, isLoading } = useAsyncData(
+    () => repo.getForPatient(patientId),
+    [patientId, repo],
+  );
+  const analyses = data ?? [];
 
   if (isLoading) return <LoadingSpinner fullScreen />;
 
@@ -149,7 +127,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     marginTop: Spacing.md,
   },
-  captureButtonText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  captureButtonText: { color: Colors.white, fontWeight: "700", fontSize: 15 },
   timelineItem: { flexDirection: "row", gap: Spacing.md },
   timelineIndicator: { alignItems: "center", width: 20 },
   timelineDot: {

@@ -5,6 +5,7 @@ import {
   assessAngle,
   REFERENCE_NORMS,
 } from "../../results/domain/reference-norms";
+import { Colors } from "../../../shared/design-system/colors";
 import { LEGAL_CONSTANTS } from "../../../core/legal/legal-constants";
 
 // ─── HTML escaping (XSS prevention) ──────────────────────────
@@ -137,7 +138,7 @@ export function buildReportData(
 // ─── HTML generation ─────────────────────────────────────────
 
 function angleRowHtml(entry: AngleReportEntry): string {
-  const statusColor = entry.isWithinNorm ? "#27ae60" : "#e74c3c";
+  const statusColor = entry.isWithinNorm ? Colors.success : Colors.error;
   const statusLabel = entry.isWithinNorm
     ? "Dans la norme"
     : `Hors norme (${entry.deviationLevel})`;

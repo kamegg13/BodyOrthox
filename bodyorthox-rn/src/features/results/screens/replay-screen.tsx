@@ -3,7 +3,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -24,8 +23,9 @@ import { Colors } from "../../../shared/design-system/colors";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
 import { Typography } from "../../../shared/design-system/typography";
 import { formatDisplayDateTime } from "../../../shared/utils/date-utils";
-import { getDatabase } from "../../../core/database/init";
-import { SqliteAnalysisRepository } from "../../capture/data/sqlite-analysis-repository";
+import { useAnalysisRepository } from "../../../shared/hooks/use-analysis-repository";
+import { JointPointDisplay } from "../components/joint-point-display";
+import { CorrectionPanel } from "../components/correction-panel";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, "Replay">;
@@ -46,11 +46,11 @@ export function ReplayScreen() {
   );
   const [disclaimerText, setDisclaimerText] = useState<string | null>(null);
 
+  const repo = useAnalysisRepository();
+
   useEffect(() => {
     (async () => {
       try {
-        const db = getDatabase();
-        const repo = new SqliteAnalysisRepository(db);
         const result = await repo.getById(analysisId);
         setAnalysis(result);
       } catch (err) {
@@ -59,7 +59,7 @@ export function ReplayScreen() {
         setIsLoading(false);
       }
     })();
-  }, [analysisId]);
+  }, [analysisId, repo]);
 
   const handleBack = useCallback(() => {
     navigation.navigate("Results", { analysisId, patientId });
@@ -76,6 +76,11 @@ export function ReplayScreen() {
       }
       return next;
     });
+  }, []);
+
+  const handleCorrectionInputChange = useCallback((text: string) => {
+    setCorrectionInput(text);
+    setCorrectionError(null);
   }, []);
 
   const handleSaveCorrection = useCallback(async () => {
@@ -96,8 +101,6 @@ export function ReplayScreen() {
         parsed,
       );
 
-      const db = getDatabase();
-      const repo = new SqliteAnalysisRepository(db);
       await repo.update(analysisId, {
         angles: corrected.angles,
         manualCorrectionApplied: corrected.manualCorrectionApplied,
@@ -113,7 +116,7 @@ export function ReplayScreen() {
         err instanceof Error ? err.message : "Erreur lors de la correction",
       );
     }
-  }, [analysis, selectedJoint, correctionInput, analysisId]);
+  }, [analysis, selectedJoint, correctionInput, analysisId, repo]);
 
   if (isLoading)
     return (
@@ -145,7 +148,12 @@ export function ReplayScreen() {
       testID="replay-screen"
     >
       <View style={styles.headerRow}>
-        <TouchableOpacity onPress={handleBack} testID="back-button">
+        <TouchableOpacity
+          onPress={handleBack}
+          testID="back-button"
+          accessibilityRole="button"
+          accessibilityLabel="Retour aux résultats"
+        >
           <Text style={styles.backText}>← Retour</Text>
         </TouchableOpacity>
         <Text style={[Typography.h3, styles.headerTitle]}>
@@ -167,107 +175,28 @@ export function ReplayScreen() {
         </View>
       </View>
 
-      <View style={styles.section}>
-        <Text style={[Typography.h3, styles.sectionTitle]}>
-          Sélection articulaire
-        </Text>
-        <Text style={styles.sectionHint}>
-          Appuyez sur une articulation pour l'analyser en détail.
-        </Text>
-        <View style={styles.jointButtons}>
-          {joints.map(({ key, label, angle }) => (
-            <TouchableOpacity
-              key={key}
-              style={[
-                styles.jointButton,
-                selectedJoint === key && styles.jointButtonActive,
-                lowConfidence && styles.jointButtonLowConfidence,
-              ]}
-              onPress={() => handleJointSelect(key)}
-              testID={`joint-${key}`}
-            >
-              <Text
-                style={[
-                  styles.jointLabel,
-                  selectedJoint === key && styles.jointLabelActive,
-                ]}
-              >
-                {label}
-              </Text>
-              <Text
-                style={[
-                  styles.jointAngle,
-                  selectedJoint === key && styles.jointAngleActive,
-                ]}
-              >
-                {angle.toFixed(1)}°
-              </Text>
-              {lowConfidence && (
-                <Text style={styles.lowConfidenceLabel}>Confiance faible</Text>
-              )}
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
+      <JointPointDisplay
+        joints={joints}
+        selectedJoint={selectedJoint}
+        lowConfidence={lowConfidence}
+        onJointSelect={handleJointSelect}
+      />
 
       {selectedJoint && (
-        <View style={styles.detailCard} testID="joint-detail">
-          <Text style={[Typography.h3, styles.detailTitle]}>
-            {joints.find((j) => j.key === selectedJoint)?.label}
-          </Text>
-          <DetailRow
-            label="Angle mesuré"
-            value={`${joints.find((j) => j.key === selectedJoint)?.angle.toFixed(1)}°`}
-          />
-          <DetailRow
-            label="Score de confiance"
-            value={`${(analysis.confidenceScore * 100).toFixed(1)}%`}
-          />
-          {analysis.manualCorrectionApplied &&
-            analysis.manualCorrectionJoint === selectedJoint && (
-              <DetailRow label="Correction manuelle" value="Oui" />
-            )}
-
-          {lowConfidence && (
-            <View style={styles.correctionSection}>
-              <Text style={styles.correctionTitle}>Correction manuelle</Text>
-              <View style={styles.correctionRow}>
-                <TextInput
-                  style={styles.correctionInput}
-                  value={correctionInput}
-                  onChangeText={(text) => {
-                    setCorrectionInput(text);
-                    setCorrectionError(null);
-                  }}
-                  placeholder="Nouvel angle (°)"
-                  placeholderTextColor={Colors.textDisabled}
-                  keyboardType="decimal-pad"
-                  testID="correction-input"
-                />
-                <TouchableOpacity
-                  style={styles.correctionButton}
-                  onPress={handleSaveCorrection}
-                  testID="save-correction-button"
-                >
-                  <Text style={styles.correctionButtonText}>Enregistrer</Text>
-                </TouchableOpacity>
-              </View>
-              {correctionError && (
-                <Text style={styles.correctionErrorText}>
-                  {correctionError}
-                </Text>
-              )}
-              {correctionSuccess && (
-                <Text style={styles.correctionSuccessText}>
-                  {correctionSuccess}
-                </Text>
-              )}
-              {disclaimerText && (
-                <Text style={styles.disclaimerText}>{disclaimerText}</Text>
-              )}
-            </View>
-          )}
-        </View>
+        <CorrectionPanel
+          selectedJoint={selectedJoint}
+          joints={joints}
+          confidenceScore={analysis.confidenceScore}
+          manualCorrectionApplied={analysis.manualCorrectionApplied}
+          manualCorrectionJoint={analysis.manualCorrectionJoint}
+          lowConfidence={lowConfidence}
+          correctionInput={correctionInput}
+          correctionError={correctionError}
+          correctionSuccess={correctionSuccess}
+          disclaimerText={disclaimerText}
+          onCorrectionInputChange={handleCorrectionInputChange}
+          onSaveCorrection={handleSaveCorrection}
+        />
       )}
 
       <View style={styles.section}>
@@ -299,19 +228,12 @@ export function ReplayScreen() {
           navigation.navigate("Results", { analysisId, patientId })
         }
         testID="results-button"
+        accessibilityRole="button"
+        accessibilityLabel="Voir les résultats"
       >
         <Text style={styles.actionButtonText}>Voir les résultats</Text>
       </TouchableOpacity>
     </ScrollView>
-  );
-}
-
-function DetailRow({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.detailRow}>
-      <Text style={styles.detailLabel}>{label}</Text>
-      <Text style={styles.detailValue}>{value}</Text>
-    </View>
   );
 }
 
@@ -366,102 +288,6 @@ const styles = StyleSheet.create({
   confidenceText: { fontSize: 13, fontWeight: "600" },
   section: { gap: Spacing.sm },
   sectionTitle: { color: Colors.textPrimary },
-  sectionHint: { color: Colors.textSecondary, fontSize: 13 },
-  jointButtons: { flexDirection: "row", gap: Spacing.sm },
-  jointButton: {
-    flex: 1,
-    backgroundColor: Colors.backgroundCard,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  jointButtonActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
-  jointButtonLowConfidence: {
-    borderColor: Colors.confidenceLow,
-    borderWidth: 2,
-  },
-  jointLabel: { color: Colors.textSecondary, fontSize: 13, fontWeight: "500" },
-  jointLabelActive: { color: Colors.textOnPrimary },
-  jointAngle: {
-    color: Colors.textPrimary,
-    fontSize: 20,
-    fontWeight: "700",
-    marginTop: 4,
-  },
-  jointAngleActive: { color: Colors.textOnPrimary },
-  lowConfidenceLabel: {
-    color: Colors.confidenceLow,
-    fontSize: 11,
-    marginTop: 4,
-  },
-  detailCard: {
-    backgroundColor: Colors.backgroundCard,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
-    gap: Spacing.sm,
-    borderWidth: 1,
-    borderColor: Colors.primary,
-  },
-  detailTitle: { color: Colors.textPrimary, marginBottom: Spacing.xs },
-  detailRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: Spacing.xs,
-  },
-  detailLabel: { color: Colors.textSecondary, fontSize: 13 },
-  detailValue: { color: Colors.textPrimary, fontSize: 13, fontWeight: "500" },
-  correctionSection: {
-    marginTop: Spacing.sm,
-    gap: Spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    paddingTop: Spacing.sm,
-  },
-  correctionTitle: {
-    color: Colors.textPrimary,
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  correctionRow: {
-    flexDirection: "row",
-    gap: Spacing.sm,
-    alignItems: "center",
-  },
-  correctionInput: {
-    flex: 1,
-    backgroundColor: Colors.surface,
-    color: Colors.textPrimary,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    fontSize: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  correctionButton: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.md,
-  },
-  correctionButtonText: {
-    color: Colors.textOnPrimary,
-    fontWeight: "600",
-    fontSize: 13,
-  },
-  correctionErrorText: { color: Colors.error, fontSize: 12 },
-  correctionSuccessText: {
-    color: Colors.success,
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  disclaimerText: { color: Colors.warning, fontSize: 12, fontStyle: "italic" },
   rawDataCard: {
     backgroundColor: Colors.backgroundCard,
     borderRadius: BorderRadius.lg,

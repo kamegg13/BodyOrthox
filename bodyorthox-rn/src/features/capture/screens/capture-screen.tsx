@@ -1,28 +1,24 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React from "react";
 import {
-  Alert,
-  Image,
   Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { useNavigation, useRoute } from "@react-navigation/native";
-import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useRoute } from "@react-navigation/native";
 import type { RouteProp } from "@react-navigation/native";
 import type { RootStackParamList } from "../../../navigation/types";
-import { useCaptureStore } from "../store/capture-store";
+import { useCaptureLogic } from "../hooks/use-capture-logic";
+import { CapturePreview } from "../components/capture-preview";
+import { CaptureSuccess } from "../components/capture-success";
 import { GuidedCameraOverlay } from "../components/guided-camera-overlay";
 import { LoadingSpinner } from "../../../shared/components/loading-spinner";
 import { Colors } from "../../../shared/design-system/colors";
-import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
-import { WebCamera, WebCameraRef } from "../components/web-camera";
+import { Spacing } from "../../../shared/design-system/spacing";
+import { WebCamera } from "../components/web-camera";
 import { PhotoUpload } from "../components/photo-upload";
-import { getPoseDetector } from "../data/pose-detector";
-import type { IPoseDetector } from "../data/pose-detector";
 
-type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, "Capture">;
 
 // Dynamic camera import – avoids crashes on web
@@ -36,27 +32,7 @@ if (Platform.OS !== "web") {
   }
 }
 
-/** Low confidence threshold — warn the user below this */
-const LOW_CONFIDENCE_THRESHOLD = 0.6;
-
-/**
- * Simulated landmarks for native (iOS/Android) — kept until
- * react-native-vision-camera frame processor integration.
- */
-const NATIVE_SIMULATED_LANDMARKS = {
-  11: { x: 0.4, y: 0.2, visibility: 0.95 },
-  12: { x: 0.6, y: 0.2, visibility: 0.95 },
-  23: { x: 0.42, y: 0.5, visibility: 0.9 },
-  24: { x: 0.58, y: 0.5, visibility: 0.9 },
-  25: { x: 0.42, y: 0.72, visibility: 0.88 },
-  26: { x: 0.58, y: 0.72, visibility: 0.88 },
-  27: { x: 0.42, y: 0.92, visibility: 0.85 },
-  28: { x: 0.58, y: 0.92, visibility: 0.85 },
-  30: { x: 0.6, y: 0.96, visibility: 0.8 },
-};
-
 export function CaptureScreen() {
-  const navigation = useNavigation<Nav>();
   const { params } = useRoute<Route>();
   const { patientId } = params;
 
@@ -66,179 +42,19 @@ export function CaptureScreen() {
     luminosity,
     isCorrectPosition,
     capturedImageUrl,
-    requestPermission,
-    permissionGranted,
-    permissionDenied,
-    startRecording,
-    addFrame,
-    saveAnalysis,
-    reset,
-    setError,
-    processFrames,
-    setCapturedImageUrl,
-  } = useCaptureStore();
-
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const webCameraRef = useRef<WebCameraRef>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const poseDetectorRef = useRef<IPoseDetector | null>(null);
-  const [mlLoading, setMlLoading] = useState(false);
-  const [detectionError, setDetectionError] = useState<string | null>(null);
-  const [lowConfidenceWarning, setLowConfidenceWarning] = useState<{
-    message: string;
-    onContinue: () => void;
-  } | null>(null);
-
-  useEffect(() => {
-    // Lazy-load pose detector on web
-    if (Platform.OS === "web") {
-      const detector = getPoseDetector();
-      poseDetectorRef.current = detector;
-      setMlLoading(true);
-      detector
-        .initialize()
-        .catch(() => {
-          // Non-blocking — detection will fail later with a clear message
-        })
-        .finally(() => setMlLoading(false));
-    }
-
-    requestPermission();
-    if (Platform.OS === "web") {
-      // Permission is handled by the WebCamera component via getUserMedia
-      permissionGranted();
-    } else {
-      (async () => {
-        try {
-          const { Camera } = require("react-native-vision-camera");
-          const status = await Camera.requestCameraPermission();
-          if (status === "granted") permissionGranted();
-          else
-            permissionDenied(
-              "Accès caméra refusé. Activez-le dans les réglages.",
-            );
-        } catch {
-          permissionDenied("Impossible d'accéder à la caméra.");
-        }
-      })();
-    }
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-      reset();
-    };
-  }, []);
-
-  const handleWebCameraPermissionDenied = useCallback(
-    (message: string) => {
-      permissionDenied(message);
-    },
-    [permissionDenied],
-  );
-
-  const handleTakeWebPhoto = useCallback(() => {
-    if (phase.type !== "ready") return;
-    const dataUrl = webCameraRef.current?.takePhoto();
-    if (dataUrl) {
-      setPreviewUrl(dataUrl);
-      setCapturedImageUrl(dataUrl);
-    }
-  }, [phase, setCapturedImageUrl]);
-
-  const handlePhotoUploaded = useCallback(
-    (dataUrl: string) => {
-      setPreviewUrl(dataUrl);
-      setCapturedImageUrl(dataUrl);
-    },
-    [setCapturedImageUrl],
-  );
-
-  const handleAnalyze = useCallback(async () => {
-    if (!previewUrl) return;
-    setDetectionError(null);
-    setLowConfidenceWarning(null);
-
-    const detector = poseDetectorRef.current;
-    if (!detector || !detector.isReady()) {
-      setError("Le modèle ML n'est pas encore chargé. Veuillez patienter.");
-      return;
-    }
-
-    startRecording();
-
-    try {
-      const result = await detector.detect(previewUrl);
-
-      if (result.confidenceScore < LOW_CONFIDENCE_THRESHOLD) {
-        // Set phase back to 'ready' so UI shows warning instead of spinner
-        permissionGranted();
-        setLowConfidenceWarning({
-          message:
-            "Confiance faible \u2014 la photo pourrait ne pas être optimale. Vous pouvez réessayer ou continuer.",
-          onContinue: () => {
-            setLowConfidenceWarning(null);
-            processFrames(result.landmarks);
-          },
-        });
-        return;
-      }
-
-      processFrames(result.landmarks);
-    } catch (error) {
-      // Set phase back to 'ready' so UI shows error instead of spinner
-      permissionGranted();
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Erreur lors de l'analyse de la photo.";
-      setDetectionError(message);
-    }
-  }, [previewUrl, startRecording, processFrames, setError]);
-
-  const handleRetake = useCallback(() => {
-    setPreviewUrl(null);
-    setCapturedImageUrl(null);
-    setDetectionError(null);
-    setLowConfidenceWarning(null);
-  }, [setCapturedImageUrl]);
-
-  const handleStartCapture = useCallback(async () => {
-    if (phase.type !== "ready") return;
-
-    if (Platform.OS === "web") {
-      handleTakeWebPhoto();
-      return;
-    }
-
-    startRecording();
-
-    // WARN: Simulated ML on native — real frame processor not yet integrated
-    processFrames(NATIVE_SIMULATED_LANDMARKS);
-  }, [phase, startRecording, processFrames, handleTakeWebPhoto]);
-
-  const handleSave = useCallback(async () => {
-    if (phase.type !== "success") return;
-    const analysis = await saveAnalysis(patientId);
-    if (analysis) {
-      navigation.replace("Results", { analysisId: analysis.id, patientId });
-    } else {
-      setError("Impossible de sauvegarder l'analyse.");
-    }
-  }, [phase, patientId, saveAnalysis, navigation, setError]);
-
-  const handleDiscard = useCallback(() => {
-    Alert.alert("Annuler", "Voulez-vous vraiment annuler cette analyse ?", [
-      { text: "Non", style: "cancel" },
-      {
-        text: "Oui",
-        style: "destructive",
-        onPress: () => {
-          reset();
-          setPreviewUrl(null);
-          navigation.goBack();
-        },
-      },
-    ]);
-  }, [reset, navigation]);
+    previewUrl,
+    mlLoading,
+    detectionError,
+    lowConfidenceWarning,
+    webCameraRef,
+    handleWebCameraPermissionDenied,
+    handlePhotoUploaded,
+    handleAnalyze,
+    handleRetake,
+    handleStartCapture,
+    handleSave,
+    handleDiscard,
+  } = useCaptureLogic(patientId);
 
   if (phase.type === "permission_denied") {
     return (
@@ -256,131 +72,28 @@ export function CaptureScreen() {
 
   if (phase.type === "success") {
     return (
-      <View
-        style={[styles.container, styles.successContainer]}
-        testID="capture-success"
-      >
-        {capturedImageUrl && (
-          <Image
-            source={{ uri: capturedImageUrl }}
-            style={styles.previewThumbnail}
-            resizeMode="contain"
-            testID="captured-image-thumbnail"
-          />
-        )}
-        {Platform.OS !== "web" && (
-          <View
-            style={styles.simulationWarning}
-            testID="simulation-warning"
-            accessibilityRole="alert"
-          >
-            <Text style={styles.simulationWarningText}>
-              ⚠️ Données de démonstration — l'analyse ML native n'est pas encore
-              intégrée. Les valeurs affichées ne reflètent pas la réalité.
-            </Text>
-          </View>
-        )}
-        <Text style={styles.successTitle}>Analyse complète</Text>
-        <Text style={styles.successScore}>
-          Confiance : {Math.round(phase.confidenceScore * 100)}%
-        </Text>
-        <Text style={styles.angleLabel}>
-          Genou : {phase.angles.kneeAngle.toFixed(1)}
-        </Text>
-        <Text style={styles.angleLabel}>
-          Hanche : {phase.angles.hipAngle.toFixed(1)}
-        </Text>
-        <Text style={styles.angleLabel}>
-          Cheville : {phase.angles.ankleAngle.toFixed(1)}
-        </Text>
-        <TouchableOpacity
-          style={styles.saveButton}
-          onPress={handleSave}
-          testID="save-analysis-button"
-        >
-          <Text style={styles.saveButtonText}>Sauvegarder l'analyse</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.discardButton} onPress={handleDiscard}>
-          <Text style={styles.discardButtonText}>Recommencer</Text>
-        </TouchableOpacity>
-      </View>
+      <CaptureSuccess
+        capturedImageUrl={capturedImageUrl}
+        confidenceScore={phase.confidenceScore}
+        angles={phase.angles}
+        onSave={handleSave}
+        onDiscard={handleDiscard}
+      />
     );
   }
 
   // Preview state: photo taken or uploaded, waiting for analysis
   if (previewUrl && Platform.OS === "web") {
     return (
-      <View style={styles.container} testID="capture-preview">
-        <Image
-          source={{ uri: previewUrl }}
-          style={StyleSheet.absoluteFill}
-          resizeMode="contain"
-          testID="preview-image"
-        />
-        <View style={styles.previewOverlay}>
-          <Text style={styles.previewTitle}>Photo prise</Text>
-        </View>
-        <View style={styles.controls}>
-          {phase.type === "recording" ? (
-            <LoadingSpinner message="Analyse en cours..." />
-          ) : detectionError ? (
-            <View style={styles.errorContainer} testID="detection-error">
-              <Text style={styles.errorText}>{detectionError}</Text>
-              <TouchableOpacity
-                style={styles.retakeButton}
-                onPress={handleRetake}
-                testID="retake-after-error-button"
-              >
-                <Text style={styles.analyzeButtonText}>Recommencer</Text>
-              </TouchableOpacity>
-            </View>
-          ) : lowConfidenceWarning ? (
-            <View
-              style={styles.warningContainer}
-              testID="low-confidence-warning"
-            >
-              <Text style={styles.warningText}>
-                {lowConfidenceWarning.message}
-              </Text>
-              <TouchableOpacity
-                style={styles.analyzeButton}
-                onPress={lowConfidenceWarning.onContinue}
-                testID="continue-anyway-button"
-              >
-                <Text style={styles.analyzeButtonText}>Continuer</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.retakeButton}
-                onPress={handleRetake}
-                testID="retake-low-confidence-button"
-              >
-                <Text style={styles.retakeButtonText}>Recommencer</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <>
-              <TouchableOpacity
-                style={styles.analyzeButton}
-                onPress={handleAnalyze}
-                testID="analyze-button"
-                accessibilityRole="button"
-                disabled={mlLoading}
-              >
-                <Text style={styles.analyzeButtonText}>
-                  {mlLoading ? "Chargement du modèle ML..." : "Analyser"}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.retakeButton}
-                onPress={handleRetake}
-                testID="retake-button"
-              >
-                <Text style={styles.retakeButtonText}>Recommencer</Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
-      </View>
+      <CapturePreview
+        previewUrl={previewUrl}
+        isRecording={phase.type === "recording"}
+        mlLoading={mlLoading}
+        detectionError={detectionError}
+        lowConfidenceWarning={lowConfidenceWarning}
+        onAnalyze={handleAnalyze}
+        onRetake={handleRetake}
+      />
     );
   }
 
@@ -417,6 +130,7 @@ export function CaptureScreen() {
                 onPress={handleStartCapture}
                 testID="start-capture-button"
                 accessibilityRole="button"
+                accessibilityLabel="Prendre une photo"
               >
                 <View style={styles.captureButtonInner} />
               </TouchableOpacity>
@@ -434,44 +148,7 @@ export function CaptureScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#000" },
-  successContainer: {
-    backgroundColor: Colors.background,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: Spacing.xl,
-    gap: Spacing.md,
-  },
-  simulationWarning: {
-    backgroundColor: `${Colors.warning}33`,
-    borderWidth: 1,
-    borderColor: Colors.warning,
-    borderRadius: 8,
-    padding: Spacing.md,
-    marginBottom: Spacing.md,
-    width: "100%",
-  },
-  simulationWarningText: {
-    color: Colors.warning,
-    fontSize: 13,
-    textAlign: "center",
-    lineHeight: 18,
-  },
-  successTitle: { color: Colors.success, fontSize: 24, fontWeight: "700" },
-  successScore: { color: Colors.textSecondary, fontSize: 16 },
-  angleLabel: { color: Colors.textPrimary, fontSize: 18, fontWeight: "500" },
-  saveButton: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    marginTop: Spacing.lg,
-    width: "100%",
-    alignItems: "center",
-  },
-  saveButtonText: { color: "#fff", fontWeight: "700", fontSize: 16 },
-  discardButton: { paddingVertical: Spacing.md },
-  discardButtonText: { color: Colors.textSecondary, fontSize: 15 },
+  container: { flex: 1, backgroundColor: Colors.black },
   permissionText: {
     color: Colors.error,
     textAlign: "center",
@@ -490,7 +167,7 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     borderWidth: 4,
-    borderColor: "#fff",
+    borderColor: Colors.white,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -498,76 +175,12 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
   },
   webPlaceholder: {
-    backgroundColor: "#111",
+    backgroundColor: Colors.darkGrey,
     alignItems: "center",
     justifyContent: "center",
   },
   webText: { color: Colors.textSecondary, fontSize: 18 },
-  previewThumbnail: {
-    width: 200,
-    height: 200,
-    borderRadius: 12,
-    marginBottom: Spacing.md,
-  },
-  previewOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    paddingTop: Spacing.xl + 20,
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.4)",
-  },
-  previewTitle: {
-    color: "#fff",
-    fontSize: 20,
-    fontWeight: "700",
-    paddingVertical: Spacing.md,
-  },
-  analyzeButton: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    minWidth: 200,
-    alignItems: "center",
-  },
-  analyzeButtonText: { color: "#fff", fontWeight: "700", fontSize: 18 },
-  retakeButton: { marginTop: Spacing.md, paddingVertical: Spacing.sm },
-  retakeButtonText: {
-    color: Colors.textSecondary,
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  errorContainer: {
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.7)",
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.lg,
-    marginHorizontal: Spacing.lg,
-  },
-  errorText: {
-    color: Colors.error,
-    fontSize: 16,
-    textAlign: "center",
-    marginBottom: Spacing.md,
-    fontWeight: "600",
-  },
-  warningContainer: {
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.7)",
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.lg,
-    marginHorizontal: Spacing.lg,
-  },
-  warningText: {
-    color: "#FFA726",
-    fontSize: 15,
-    textAlign: "center",
-    marginBottom: Spacing.md,
-    fontWeight: "500",
-  },
 });

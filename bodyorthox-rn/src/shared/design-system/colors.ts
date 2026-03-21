@@ -36,6 +36,12 @@ export const Colors = {
   border: "#333355",
   borderFocus: "#4a90d9",
 
+  // Neutral
+  white: "#ffffff",
+  black: "#000000",
+  darkGrey: "#111111",
+  warningAmber: "#FFA726",
+
   // Overlay
   overlay: "rgba(0,0,0,0.6)",
   overlayLight: "rgba(0,0,0,0.3)",

@@ -60,6 +60,7 @@ export function PhotoUpload({ onPhotoSelected }: PhotoUploadProps) {
       onPress={handlePress}
       testID="photo-upload-button"
       accessibilityRole="button"
+      accessibilityLabel="Importer une photo depuis l'appareil"
     >
       <Text style={styles.buttonText}>Importer une photo</Text>
     </TouchableOpacity>

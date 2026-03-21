@@ -15,8 +15,7 @@ import type { RootStackParamList } from "../../../navigation/types";
 import { usePatientsStore } from "../store/patients-store";
 import { Patient, patientAge } from "../domain/patient";
 import { Analysis } from "../../capture/domain/analysis";
-import { SqliteAnalysisRepository } from "../../capture/data/sqlite-analysis-repository";
-import { getDatabase } from "../../../core/database/init";
+import { useAnalysisRepository } from "../../../shared/hooks/use-analysis-repository";
 import { PatientHistoryTile } from "../components/patient-history-tile";
 import { LoadingSpinner } from "../../../shared/components/loading-spinner";
 import { ErrorWidget } from "../../../shared/components/error-widget";
@@ -42,6 +41,7 @@ export function PatientDetailScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [analysesLoading, setAnalysesLoading] = useState(true);
+  const repo = useAnalysisRepository();
 
   useEffect(() => {
     const found = patients.find((p) => p.id === patientId) ?? null;
@@ -54,8 +54,6 @@ export function PatientDetailScreen() {
     async function loadAnalyses() {
       setAnalysesLoading(true);
       try {
-        const db = getDatabase();
-        const repo = new SqliteAnalysisRepository(db);
         const result = await repo.getForPatient(patientId);
         if (!cancelled) {
           setAnalyses(result);
@@ -72,7 +70,7 @@ export function PatientDetailScreen() {
     return () => {
       cancelled = true;
     };
-  }, [patientId]);
+  }, [patientId, repo]);
 
   const handleDelete = useCallback(() => {
     Alert.alert(
@@ -375,7 +373,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  avatarText: { color: "#fff", fontSize: 28, fontWeight: "700" },
+  avatarText: { color: Colors.white, fontSize: 28, fontWeight: "700" },
   name: { color: Colors.textPrimary },
   meta: { color: Colors.textSecondary, fontSize: 15 },
   card: {
@@ -410,7 +408,7 @@ const styles = StyleSheet.create({
     minHeight: 44,
     justifyContent: "center",
   },
-  primaryActionText: { color: "#fff", fontWeight: "700", fontSize: 16 },
+  primaryActionText: { color: Colors.white, fontWeight: "700", fontSize: 16 },
   secondaryAction: {
     backgroundColor: Colors.backgroundCard,
     paddingVertical: Spacing.md,
@@ -449,12 +447,12 @@ const styles = StyleSheet.create({
     minHeight: 44,
     justifyContent: "center",
   },
-  startAnalysisText: { color: "#fff", fontWeight: "600", fontSize: 14 },
+  startAnalysisText: { color: Colors.white, fontWeight: "600", fontSize: 14 },
   errorBanner: {
     backgroundColor: Colors.error,
     borderRadius: BorderRadius.md,
     padding: Spacing.sm,
     alignItems: "center",
   },
-  errorText: { color: "#fff", fontSize: 13, fontWeight: "500" },
+  errorText: { color: Colors.white, fontSize: 13, fontWeight: "500" },
 });

@@ -124,7 +124,7 @@ describe("ResultsScreen", () => {
       renderScreen();
 
       await waitFor(() => {
-        expect(screen.getByText("Erreur de chargement")).toBeTruthy();
+        expect(screen.getByText("Erreur inconnue")).toBeTruthy();
       });
     });
 
