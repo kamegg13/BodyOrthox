@@ -16,7 +16,7 @@ import type { RootStackParamList } from "../../../navigation/types";
 import { OnboardingPage } from "../components/onboarding-page";
 import { useOnboardingStore } from "../store/onboarding-store";
 import { Colors } from "../../../shared/design-system/colors";
-import { Spacing } from "../../../shared/design-system/spacing";
+import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
 import { FontSize, FontWeight } from "../../../shared/design-system/typography";
 
 type NavigationProp = NativeStackNavigationProp<
@@ -24,31 +24,110 @@ type NavigationProp = NativeStackNavigationProp<
   "Onboarding"
 >;
 
-const PAGES = [
+/* ------------------------------------------------------------------ */
+/* Illustration components (built with Views/Text, no external assets) */
+/* ------------------------------------------------------------------ */
+
+/** Page 1: Phone mockup with body silhouette + HKA angle */
+function HkaPhoneIllustration() {
+  return (
+    <View style={illustrationStyles.phoneFrame}>
+      {/* Phone notch */}
+      <View style={illustrationStyles.phoneNotch} />
+      {/* Phone screen */}
+      <View style={illustrationStyles.phoneScreen}>
+        {/* Body silhouette */}
+        <View style={illustrationStyles.silhouette}>
+          {/* Head */}
+          <View style={illustrationStyles.head} />
+          {/* Torso line */}
+          <View style={illustrationStyles.torsoLine} />
+          {/* Hip joint */}
+          <View style={illustrationStyles.jointDot} />
+          {/* Thigh line */}
+          <View style={illustrationStyles.thighLine} />
+          {/* Knee joint */}
+          <View
+            style={[
+              illustrationStyles.jointDot,
+              { backgroundColor: Colors.primary },
+            ]}
+          />
+          {/* Shin line */}
+          <View style={illustrationStyles.shinLine} />
+          {/* Ankle joint */}
+          <View style={illustrationStyles.jointDot} />
+        </View>
+        {/* HKA angle label */}
+        <View style={illustrationStyles.angleLabel}>
+          <Text style={illustrationStyles.angleDegree}>174{"\u00B0"}</Text>
+          <Text style={illustrationStyles.angleType}>Genu varum</Text>
+        </View>
+        {/* Dashed HKA axis line */}
+        <View style={illustrationStyles.axisLine} />
+      </View>
+    </View>
+  );
+}
+
+/** Page 3: PDF document mockup */
+function PdfExportIllustration() {
+  return (
+    <View style={illustrationStyles.pdfContainer}>
+      {/* PDF document shape */}
+      <View style={illustrationStyles.pdfDoc}>
+        {/* PDF header bar */}
+        <View style={illustrationStyles.pdfHeader}>
+          <View style={illustrationStyles.pdfIcon}>
+            <Text style={illustrationStyles.pdfIconText}>PDF</Text>
+          </View>
+        </View>
+        {/* Filename */}
+        <Text style={illustrationStyles.pdfFilename} numberOfLines={1}>
+          DupontJean_AnalyseHKA_2026-03-08.pdf
+        </Text>
+        {/* Content lines */}
+        <View style={illustrationStyles.pdfLine} />
+        <View style={[illustrationStyles.pdfLine, { width: "70%" }]} />
+        <View style={[illustrationStyles.pdfLine, { width: "85%" }]} />
+        <View style={[illustrationStyles.pdfLine, { width: "60%" }]} />
+      </View>
+      {/* Share icons */}
+      <View style={illustrationStyles.shareRow}>
+        <View style={illustrationStyles.shareIcon}>
+          <Text style={illustrationStyles.shareIconText}>{"\uD83D\uDD12"}</Text>
+        </View>
+        <View style={illustrationStyles.shareIcon}>
+          <Text style={illustrationStyles.shareIconText}>{"\uD83D\uDCE4"}</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Page definitions                                                    */
+/* ------------------------------------------------------------------ */
+
+const PAGE_1_FEATURES = [
   {
-    icon: "\u{1F4CA}",
-    title: "Vos resultats en 30 secondes",
-    description:
-      "Angles articulaires mesures automatiquement par l'IA.\nGenou 175.2° · Hanche 168.4° · Cheville 92.1°\nSans materiel supplementaire.",
-    testID: "onboarding-page-result",
+    icon: "\uD83D\uDCF7",
+    title: "Photo debout en 1 tap",
+    description: "Appareil photo iOS natif, aucun guidage requis",
   },
   {
-    icon: "\u{1F4F7}",
-    title: "Filmez la marche du patient",
-    description:
-      "Positionnez le patient de profil et filmez 12 secondes.\nBodyOrthox utilise la camera uniquement pour filmer la marche. La video n'est jamais stockee ni transmise.",
-    testID: "onboarding-page-capture",
+    icon: "\uD83D\uDCD0",
+    title: "Angle HKA automatique",
+    description: "ML Kit d\u00e9tecte hanche, genou et cheville",
   },
   {
-    icon: "\u{1F512}",
-    title: "Vos donnees restent sur cet appareil",
-    description:
-      "Toutes les analyses sont effectuees localement.\nAucune video, aucune donnee patient n'est transmise sur un serveur. Jamais.\nConforme RGPD par conception.",
-    testID: "onboarding-page-privacy",
+    icon: "\uD83D\uDCC4",
+    title: "Rapport PDF nomm\u00e9",
+    description: "DupontJean_AnalyseHKA_2026-03-08.pdf",
   },
 ] as const;
 
-const TOTAL_PAGES = PAGES.length;
+const TOTAL_PAGES = 3;
 
 export function OnboardingScreen() {
   const navigation = useNavigation<NavigationProp>();
@@ -85,18 +164,16 @@ export function OnboardingScreen() {
 
   const handleComplete = useCallback(async () => {
     await completeOnboarding();
-    navigation.replace("Patients");
+    navigation.replace("MainTabs", { screen: "AnalysesTab" });
   }, [completeOnboarding, navigation]);
 
   const handleSkip = useCallback(async () => {
     await completeOnboarding();
-    navigation.replace("Patients");
+    navigation.replace("MainTabs", { screen: "AnalysesTab" });
   }, [completeOnboarding, navigation]);
 
   const requestCameraPermission = useCallback(() => {
     if (Platform.OS !== "web") {
-      // On native, react-native-vision-camera handles permission
-      // This is called contextually when page 2 is reached
       try {
         const { Camera } = require("react-native-vision-camera");
         Camera.requestCameraPermission?.();
@@ -107,6 +184,12 @@ export function OnboardingScreen() {
   }, []);
 
   const isLastPage = currentPage === TOTAL_PAGES - 1;
+
+  const buttonLabel = (() => {
+    if (currentPage === 0) return "Commencer";
+    if (isLastPage) return "Terminer";
+    return "Suivant";
+  })();
 
   return (
     <View style={styles.container} testID="onboarding-screen">
@@ -133,22 +216,38 @@ export function OnboardingScreen() {
         testID="onboarding-scroll"
         style={styles.scrollView}
       >
-        {PAGES.map((page, index) => (
-          <OnboardingPage
-            key={index}
-            icon={page.icon}
-            title={page.title}
-            description={page.description}
-            testID={page.testID}
-          />
-        ))}
+        {/* Page 1: Analyse HKA (mockup 10) */}
+        <OnboardingPage
+          title="Analysez les angles articulaires en 30 secondes"
+          subtitle="Une photo. Un r\u00e9sultat clinique. Un rapport PDF."
+          illustration={<HkaPhoneIllustration />}
+          features={PAGE_1_FEATURES}
+          testID="onboarding-page-result"
+        />
+
+        {/* Page 2: Capture (kept simpler) */}
+        <OnboardingPage
+          title="Filmez la marche du patient"
+          subtitle="Positionnez le patient de profil et filmez 12 secondes."
+          description="BodyOrthox utilise la camera uniquement pour filmer la marche. La video n'est jamais stockee ni transmise."
+          icon={"\uD83D\uDCF7"}
+          testID="onboarding-page-capture"
+        />
+
+        {/* Page 3: Export s\u00e9curis\u00e9 (mockup 11) */}
+        <OnboardingPage
+          title="Exportation s\u00e9curis\u00e9e"
+          description="G\u00e9n\u00e9rez des rapports PDF d\u00e9taill\u00e9s de votre analyse HKA et partagez-les en toute s\u00e9curit\u00e9 avec vos confr\u00e8res ou vos patients."
+          illustration={<PdfExportIllustration />}
+          testID="onboarding-page-privacy"
+        />
       </ScrollView>
 
       {/* Bottom controls */}
       <View style={styles.bottomControls}>
         {/* Dot indicators */}
         <View style={styles.dotsContainer} testID="onboarding-dots">
-          {PAGES.map((_, index) => (
+          {Array.from({ length: TOTAL_PAGES }).map((_, index) => (
             <View
               key={index}
               style={[
@@ -166,17 +265,172 @@ export function OnboardingScreen() {
           onPress={isLastPage ? handleComplete : handleNext}
           testID={isLastPage ? "onboarding-complete" : "onboarding-next"}
           accessibilityRole="button"
-          accessibilityLabel={isLastPage ? "Commencer" : "Suivant"}
+          accessibilityLabel={buttonLabel}
         >
-          <Text style={styles.actionButtonText}>
-            {isLastPage ? "Commencer" : "Suivant"}
-          </Text>
+          <Text style={styles.actionButtonText}>{buttonLabel}</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 }
 
+/* ------------------------------------------------------------------ */
+/* Illustration styles                                                 */
+/* ------------------------------------------------------------------ */
+const illustrationStyles = StyleSheet.create({
+  // Phone mockup
+  phoneFrame: {
+    width: 180,
+    height: 300,
+    borderRadius: 24,
+    borderWidth: 3,
+    borderColor: Colors.primary,
+    backgroundColor: Colors.backgroundCard,
+    overflow: "hidden",
+    alignItems: "center",
+  },
+  phoneNotch: {
+    width: 60,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.border,
+    marginTop: 8,
+  },
+  phoneScreen: {
+    flex: 1,
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing.md,
+  },
+  silhouette: {
+    alignItems: "center",
+    gap: 0,
+  },
+  head: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: Colors.textSecondary,
+    marginBottom: 4,
+  },
+  torsoLine: {
+    width: 2,
+    height: 40,
+    backgroundColor: Colors.textSecondary,
+  },
+  jointDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: Colors.textSecondary,
+  },
+  thighLine: {
+    width: 2,
+    height: 36,
+    backgroundColor: Colors.textSecondary,
+  },
+  shinLine: {
+    width: 2,
+    height: 36,
+    backgroundColor: Colors.textSecondary,
+  },
+  angleLabel: {
+    position: "absolute",
+    right: 16,
+    top: "45%",
+    backgroundColor: Colors.warning,
+    borderRadius: BorderRadius.sm,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  angleDegree: {
+    fontSize: 12,
+    fontWeight: FontWeight.bold,
+    color: Colors.white,
+    textAlign: "center",
+  },
+  angleType: {
+    fontSize: 8,
+    color: Colors.white,
+    textAlign: "center",
+  },
+  axisLine: {
+    position: "absolute",
+    left: "50%",
+    top: 30,
+    bottom: 20,
+    width: 1,
+    backgroundColor: Colors.primary,
+    opacity: 0.4,
+  },
+
+  // PDF mockup
+  pdfContainer: {
+    alignItems: "center",
+    gap: Spacing.md,
+  },
+  pdfDoc: {
+    width: 200,
+    height: 240,
+    backgroundColor: Colors.backgroundCard,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: Spacing.md,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  pdfHeader: {
+    flexDirection: "row",
+    marginBottom: Spacing.sm,
+  },
+  pdfIcon: {
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.sm,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  pdfIconText: {
+    color: Colors.white,
+    fontSize: 10,
+    fontWeight: FontWeight.bold,
+  },
+  pdfFilename: {
+    fontSize: 9,
+    color: Colors.textSecondary,
+    marginBottom: Spacing.md,
+  },
+  pdfLine: {
+    width: "100%",
+    height: 6,
+    backgroundColor: Colors.surface,
+    borderRadius: 3,
+    marginBottom: Spacing.sm,
+  },
+  shareRow: {
+    flexDirection: "row",
+    gap: Spacing.md,
+  },
+  shareIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.primaryLight,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  shareIconText: {
+    fontSize: 18,
+  },
+});
+
+/* ------------------------------------------------------------------ */
+/* Screen styles                                                       */
+/* ------------------------------------------------------------------ */
 const styles = StyleSheet.create({
   container: {
     flex: 1,

@@ -133,7 +133,7 @@ describe("PatientsScreen", () => {
     it("renders the screen title", () => {
       renderScreen();
 
-      expect(screen.getByText("Patients")).toBeTruthy();
+      expect(screen.getByText("BodyOrthox")).toBeTruthy();
     });
   });
 

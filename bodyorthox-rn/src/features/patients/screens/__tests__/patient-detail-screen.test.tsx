@@ -257,7 +257,9 @@ describe("PatientDetailScreen", () => {
 
       await waitFor(() => {
         expect(mockDeletePatient).toHaveBeenCalledWith("p1");
-        expect(mockNavigate).toHaveBeenCalledWith("Patients");
+        expect(mockNavigate).toHaveBeenCalledWith("MainTabs", {
+          screen: "AnalysesTab",
+        });
       });
 
       alertSpy.mockRestore();
@@ -285,7 +287,7 @@ describe("PatientDetailScreen", () => {
       fireEvent.press(getByTestId("delete-button"));
 
       expect(mockDeletePatient).not.toHaveBeenCalled();
-      expect(mockNavigate).not.toHaveBeenCalledWith("Patients");
+      expect(mockNavigate).not.toHaveBeenCalledWith("MainTabs");
 
       alertSpy.mockRestore();
     });

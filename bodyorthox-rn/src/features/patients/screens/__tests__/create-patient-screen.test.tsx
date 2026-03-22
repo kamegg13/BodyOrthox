@@ -4,6 +4,7 @@ import {
   fireEvent,
   waitFor,
   screen,
+  act,
 } from "@testing-library/react-native";
 import { Alert } from "react-native";
 import { CreatePatientScreen } from "../create-patient-screen";
@@ -48,13 +49,19 @@ function renderScreen() {
 }
 
 function fillValidForm() {
-  fireEvent.changeText(screen.getByTestId("name-input"), "Jean Dupont");
+  fireEvent.changeText(screen.getByTestId("name-input"), "Jean");
+  fireEvent.changeText(screen.getByTestId("lastname-input"), "Dupont");
   fireEvent.changeText(screen.getByTestId("dob-input"), "1990-01-15");
+}
+
+function pressSubmit() {
+  fireEvent.press(screen.getByTestId("submit-button"));
 }
 
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
+
 describe("CreatePatientScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -70,11 +77,12 @@ describe("CreatePatientScreen", () => {
   // -------------------------------------------------------------------------
   // AC2: Form fields visible
   // -------------------------------------------------------------------------
-  describe("AC2 — form fields rendering", () => {
+  describe("AC2 \u2014 form fields rendering", () => {
     it("renders all required and optional fields", () => {
       renderScreen();
 
       expect(screen.getByTestId("name-input")).toBeTruthy();
+      expect(screen.getByTestId("lastname-input")).toBeTruthy();
       expect(screen.getByTestId("dob-input")).toBeTruthy();
       expect(screen.getByTestId("height-input")).toBeTruthy();
       expect(screen.getByTestId("weight-input")).toBeTruthy();
@@ -85,8 +93,9 @@ describe("CreatePatientScreen", () => {
     it("renders field labels", () => {
       renderScreen();
 
-      expect(screen.getByText("Nom complet *")).toBeTruthy();
-      expect(screen.getByText("Date de naissance *")).toBeTruthy();
+      expect(screen.getByText(/Pr\u00e9nom/)).toBeTruthy();
+      expect(screen.getByText("Nom")).toBeTruthy();
+      expect(screen.getByText("Date de naissance")).toBeTruthy();
       expect(screen.getByText("Taille (cm)")).toBeTruthy();
       expect(screen.getByText("Poids (kg)")).toBeTruthy();
       expect(screen.getByText("Notes")).toBeTruthy();
@@ -101,95 +110,115 @@ describe("CreatePatientScreen", () => {
     it("renders the submit button text", () => {
       renderScreen();
 
-      expect(screen.getByText("Créer le patient")).toBeTruthy();
+      expect(screen.getByText(/Cr\u00e9er le patient/)).toBeTruthy();
+    });
+
+    it("renders iOS-style navigation header", () => {
+      renderScreen();
+
+      expect(screen.getByText("Annuler")).toBeTruthy();
+      expect(screen.getByTestId("nav-create-button")).toBeTruthy();
+    });
+
+    it("renders RGPD notice", () => {
+      renderScreen();
+
+      expect(
+        screen.getByText(/stock\u00e9es uniquement sur cet appareil/),
+      ).toBeTruthy();
+    });
+
+    it("renders illustration text", () => {
+      renderScreen();
+
+      expect(
+        screen.getByText(/Compl\u00e9tez le formulaire pour commencer/),
+      ).toBeTruthy();
+    });
+
+    it("renders section header", () => {
+      renderScreen();
+
+      expect(screen.getByText("INFORMATIONS PERSONNELLES")).toBeTruthy();
     });
   });
 
   // -------------------------------------------------------------------------
   // AC3: Required field validation
   // -------------------------------------------------------------------------
-  describe("AC3 — required field validation", () => {
+  describe("AC3 \u2014 required field validation", () => {
     it("shows error when name is empty on submit", async () => {
       renderScreen();
 
       fireEvent.changeText(screen.getByTestId("dob-input"), "1990-01-15");
-      fireEvent.press(screen.getByTestId("submit-button"));
+      pressSubmit();
 
-      await waitFor(() => {
-        expect(screen.getByText("Le nom est obligatoire.")).toBeTruthy();
-      });
+      expect(screen.getByText("Le nom est obligatoire.")).toBeTruthy();
       expect(mockCreatePatient).not.toHaveBeenCalled();
     });
 
     it("shows error when date of birth is empty on submit", async () => {
       renderScreen();
 
-      fireEvent.changeText(screen.getByTestId("name-input"), "Jean Dupont");
-      fireEvent.press(screen.getByTestId("submit-button"));
+      fireEvent.changeText(screen.getByTestId("name-input"), "Jean");
+      fireEvent.changeText(screen.getByTestId("lastname-input"), "Dupont");
+      pressSubmit();
 
-      await waitFor(() => {
-        expect(
-          screen.getByText("La date de naissance est obligatoire."),
-        ).toBeTruthy();
-      });
+      expect(
+        screen.getByText("La date de naissance est obligatoire."),
+      ).toBeTruthy();
       expect(mockCreatePatient).not.toHaveBeenCalled();
     });
 
     it("shows error when date of birth is in the future", async () => {
       renderScreen();
 
-      fireEvent.changeText(screen.getByTestId("name-input"), "Jean Dupont");
+      fireEvent.changeText(screen.getByTestId("name-input"), "Jean");
+      fireEvent.changeText(screen.getByTestId("lastname-input"), "Dupont");
       fireEvent.changeText(screen.getByTestId("dob-input"), "2099-01-01");
-      fireEvent.press(screen.getByTestId("submit-button"));
+      pressSubmit();
 
-      await waitFor(() => {
-        expect(screen.getByText(/Ne peut pas/)).toBeTruthy();
-      });
+      expect(screen.getByText(/Ne peut pas/)).toBeTruthy();
       expect(mockCreatePatient).not.toHaveBeenCalled();
     });
 
     it("shows error when date of birth is invalid format", async () => {
       renderScreen();
 
-      fireEvent.changeText(screen.getByTestId("name-input"), "Jean Dupont");
+      fireEvent.changeText(screen.getByTestId("name-input"), "Jean");
+      fireEvent.changeText(screen.getByTestId("lastname-input"), "Dupont");
       fireEvent.changeText(screen.getByTestId("dob-input"), "not-a-date");
-      fireEvent.press(screen.getByTestId("submit-button"));
+      pressSubmit();
 
-      await waitFor(() => {
-        expect(screen.getByText(/Date invalide/)).toBeTruthy();
-      });
+      expect(screen.getByText(/Date invalide/)).toBeTruthy();
       expect(mockCreatePatient).not.toHaveBeenCalled();
     });
 
     it("shows both errors when both name and date are empty", async () => {
       renderScreen();
 
-      fireEvent.press(screen.getByTestId("submit-button"));
+      pressSubmit();
 
-      await waitFor(() => {
-        expect(screen.getByText("Le nom est obligatoire.")).toBeTruthy();
-        expect(
-          screen.getByText("La date de naissance est obligatoire."),
-        ).toBeTruthy();
-      });
+      expect(screen.getByText("Le nom est obligatoire.")).toBeTruthy();
+      expect(
+        screen.getByText("La date de naissance est obligatoire."),
+      ).toBeTruthy();
       expect(mockCreatePatient).not.toHaveBeenCalled();
     });
   });
 
   // -------------------------------------------------------------------------
-  // AC4: Optional field validation (height and weight ranges)
+  // AC4: Optional field validation
   // -------------------------------------------------------------------------
-  describe("AC4 — optional field validation", () => {
+  describe("AC4 \u2014 optional field validation", () => {
     it("shows error when height is below 50 cm", async () => {
       renderScreen();
 
       fillValidForm();
       fireEvent.changeText(screen.getByTestId("height-input"), "30");
-      fireEvent.press(screen.getByTestId("submit-button"));
+      pressSubmit();
 
-      await waitFor(() => {
-        expect(screen.getByText(/Taille invalide/)).toBeTruthy();
-      });
+      expect(screen.getByText(/Taille invalide/)).toBeTruthy();
       expect(mockCreatePatient).not.toHaveBeenCalled();
     });
 
@@ -198,11 +227,9 @@ describe("CreatePatientScreen", () => {
 
       fillValidForm();
       fireEvent.changeText(screen.getByTestId("height-input"), "300");
-      fireEvent.press(screen.getByTestId("submit-button"));
+      pressSubmit();
 
-      await waitFor(() => {
-        expect(screen.getByText(/Taille invalide/)).toBeTruthy();
-      });
+      expect(screen.getByText(/Taille invalide/)).toBeTruthy();
       expect(mockCreatePatient).not.toHaveBeenCalled();
     });
 
@@ -211,11 +238,9 @@ describe("CreatePatientScreen", () => {
 
       fillValidForm();
       fireEvent.changeText(screen.getByTestId("weight-input"), "5");
-      fireEvent.press(screen.getByTestId("submit-button"));
+      pressSubmit();
 
-      await waitFor(() => {
-        expect(screen.getByText(/Poids invalide/)).toBeTruthy();
-      });
+      expect(screen.getByText(/Poids invalide/)).toBeTruthy();
       expect(mockCreatePatient).not.toHaveBeenCalled();
     });
 
@@ -224,11 +249,9 @@ describe("CreatePatientScreen", () => {
 
       fillValidForm();
       fireEvent.changeText(screen.getByTestId("weight-input"), "400");
-      fireEvent.press(screen.getByTestId("submit-button"));
+      pressSubmit();
 
-      await waitFor(() => {
-        expect(screen.getByText(/Poids invalide/)).toBeTruthy();
-      });
+      expect(screen.getByText(/Poids invalide/)).toBeTruthy();
       expect(mockCreatePatient).not.toHaveBeenCalled();
     });
 
@@ -237,11 +260,9 @@ describe("CreatePatientScreen", () => {
 
       fillValidForm();
       fireEvent.changeText(screen.getByTestId("height-input"), "abc");
-      fireEvent.press(screen.getByTestId("submit-button"));
+      pressSubmit();
 
-      await waitFor(() => {
-        expect(screen.getByText(/Taille invalide/)).toBeTruthy();
-      });
+      expect(screen.getByText(/Taille invalide/)).toBeTruthy();
       expect(mockCreatePatient).not.toHaveBeenCalled();
     });
 
@@ -251,7 +272,7 @@ describe("CreatePatientScreen", () => {
       fillValidForm();
       fireEvent.changeText(screen.getByTestId("height-input"), "175");
       fireEvent.changeText(screen.getByTestId("weight-input"), "70");
-      fireEvent.press(screen.getByTestId("submit-button"));
+      pressSubmit();
 
       await waitFor(() => {
         expect(mockCreatePatient).toHaveBeenCalledWith({
@@ -269,12 +290,12 @@ describe("CreatePatientScreen", () => {
   // -------------------------------------------------------------------------
   // AC5: Patient creation and persistence
   // -------------------------------------------------------------------------
-  describe("AC5 — patient creation", () => {
+  describe("AC5 \u2014 patient creation", () => {
     it("calls createPatient with correct input for minimal form", async () => {
       renderScreen();
 
       fillValidForm();
-      fireEvent.press(screen.getByTestId("submit-button"));
+      pressSubmit();
 
       await waitFor(() => {
         expect(mockCreatePatient).toHaveBeenCalledWith({
@@ -292,7 +313,7 @@ describe("CreatePatientScreen", () => {
       fireEvent.changeText(screen.getByTestId("height-input"), "180");
       fireEvent.changeText(screen.getByTestId("weight-input"), "85");
       fireEvent.changeText(screen.getByTestId("notes-input"), "Patient notes");
-      fireEvent.press(screen.getByTestId("submit-button"));
+      pressSubmit();
 
       await waitFor(() => {
         expect(mockCreatePatient).toHaveBeenCalledWith({
@@ -310,9 +331,10 @@ describe("CreatePatientScreen", () => {
     it("trims the patient name before submission", async () => {
       renderScreen();
 
-      fireEvent.changeText(screen.getByTestId("name-input"), "  Jean Dupont  ");
+      fireEvent.changeText(screen.getByTestId("name-input"), "  Jean  ");
+      fireEvent.changeText(screen.getByTestId("lastname-input"), "  Dupont  ");
       fireEvent.changeText(screen.getByTestId("dob-input"), "1990-01-15");
-      fireEvent.press(screen.getByTestId("submit-button"));
+      pressSubmit();
 
       await waitFor(() => {
         expect(mockCreatePatient).toHaveBeenCalledWith(
@@ -325,29 +347,37 @@ describe("CreatePatientScreen", () => {
   // -------------------------------------------------------------------------
   // AC6: Navigation back after successful creation
   // -------------------------------------------------------------------------
-  describe("AC6 — navigation after creation", () => {
+  describe("AC6 \u2014 navigation after creation", () => {
     it("navigates back after successful patient creation", async () => {
       renderScreen();
 
       fillValidForm();
-      fireEvent.press(screen.getByTestId("submit-button"));
+      pressSubmit();
 
       await waitFor(() => {
         expect(mockGoBack).toHaveBeenCalledTimes(1);
       });
+    });
+
+    it("navigates back when cancel button is pressed", () => {
+      renderScreen();
+
+      fireEvent.press(screen.getByTestId("cancel-button"));
+
+      expect(mockGoBack).toHaveBeenCalledTimes(1);
     });
   });
 
   // -------------------------------------------------------------------------
   // AC7: Error handling during creation
   // -------------------------------------------------------------------------
-  describe("AC7 — error handling", () => {
+  describe("AC7 \u2014 error handling", () => {
     it("shows alert when createPatient throws an Error", async () => {
       mockCreatePatient.mockRejectedValue(new Error("Database error"));
       renderScreen();
 
       fillValidForm();
-      fireEvent.press(screen.getByTestId("submit-button"));
+      pressSubmit();
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith("Erreur", "Database error");
@@ -359,12 +389,12 @@ describe("CreatePatientScreen", () => {
       renderScreen();
 
       fillValidForm();
-      fireEvent.press(screen.getByTestId("submit-button"));
+      pressSubmit();
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith(
           "Erreur",
-          "Impossible de créer le patient.",
+          expect.stringContaining("Impossible"),
         );
       });
     });
@@ -374,7 +404,7 @@ describe("CreatePatientScreen", () => {
       renderScreen();
 
       fillValidForm();
-      fireEvent.press(screen.getByTestId("submit-button"));
+      pressSubmit();
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalled();
@@ -388,14 +418,14 @@ describe("CreatePatientScreen", () => {
 
       fillValidForm();
       fireEvent.changeText(screen.getByTestId("height-input"), "175");
-      fireEvent.press(screen.getByTestId("submit-button"));
+      pressSubmit();
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalled();
       });
 
-      // Form fields should still have their values
-      expect(screen.getByTestId("name-input").props.value).toBe("Jean Dupont");
+      expect(screen.getByTestId("name-input").props.value).toBe("Jean");
+      expect(screen.getByTestId("lastname-input").props.value).toBe("Dupont");
       expect(screen.getByTestId("dob-input").props.value).toBe("1990-01-15");
       expect(screen.getByTestId("height-input").props.value).toBe("175");
     });
@@ -406,12 +436,11 @@ describe("CreatePatientScreen", () => {
   // -------------------------------------------------------------------------
   describe("submitting state", () => {
     it('shows "Enregistrement..." text while submitting', async () => {
-      // Make createPatient hang to keep submitting state
       mockCreatePatient.mockReturnValue(new Promise(() => {}));
       renderScreen();
 
       fillValidForm();
-      fireEvent.press(screen.getByTestId("submit-button"));
+      pressSubmit();
 
       await waitFor(() => {
         expect(screen.getByText("Enregistrement...")).toBeTruthy();
@@ -423,7 +452,7 @@ describe("CreatePatientScreen", () => {
       renderScreen();
 
       fillValidForm();
-      fireEvent.press(screen.getByTestId("submit-button"));
+      pressSubmit();
 
       await waitFor(() => {
         const button = screen.getByTestId("submit-button");

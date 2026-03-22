@@ -76,25 +76,23 @@ export function PatientsScreen() {
 
   return (
     <View style={styles.container} testID="patients-screen">
-      {/* Header: BodyOrthox + profile icon */}
+      {/* Header: BodyOrthox + profile avatar */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Patients</Text>
-        <TouchableOpacity
-          style={styles.profileButton}
-          accessibilityRole="button"
-          accessibilityLabel="Profil"
-        >
-          <Text style={styles.profileIcon}>{"\uD83D\uDC64"}</Text>
-        </TouchableOpacity>
+        <Text style={styles.headerTitle}>BodyOrthox</Text>
+        <View style={styles.profileAvatar}>
+          <Text style={styles.profileAvatarText}>K</Text>
+        </View>
       </View>
 
-      {/* Freemium counter bar */}
+      {/* Freemium counter bar — light blue background with progress */}
       <View style={styles.freemiumBar}>
-        <Text style={styles.freemiumText}>10 analyses restantes ce mois</Text>
+        <View style={styles.freemiumContent}>
+          <Text style={styles.freemiumText}>10 analyses restantes ce mois</Text>
+          <Text style={styles.freemiumCount}>10/10</Text>
+        </View>
         <View style={styles.freemiumProgressTrack}>
           <View style={[styles.freemiumProgressFill, { width: "100%" }]} />
         </View>
-        <Text style={styles.freemiumCount}>10/10</Text>
       </View>
 
       {/* Big blue CTA button */}
@@ -132,7 +130,7 @@ export function PatientsScreen() {
 
       {/* Section header: PATIENTS RECENTS */}
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>PATIENTS RÉCENTS</Text>
+        <Text style={styles.sectionTitle}>PATIENTS R{"\u00C9"}CENTS</Text>
         <TouchableOpacity accessibilityRole="button">
           <Text style={styles.sectionLink}>Tout voir</Text>
         </TouchableOpacity>
@@ -147,7 +145,7 @@ export function PatientsScreen() {
           <Text style={[Typography.h3, styles.emptyTitle]}>Aucun patient</Text>
           <Text style={[Typography.body, styles.emptySubtitle]}>
             {searchQuery
-              ? "Aucun patient ne correspond à votre recherche."
+              ? "Aucun patient ne correspond \u00E0 votre recherche."
               : "Ajoutez votre premier patient pour commencer."}
           </Text>
         </View>
@@ -166,8 +164,37 @@ export function PatientsScreen() {
           contentContainerStyle={[styles.list, isTablet && styles.listTablet]}
           showsVerticalScrollIndicator={false}
           testID="patients-list"
+          ListFooterComponent={<ClinicalResourcesSection />}
         />
       )}
+    </View>
+  );
+}
+
+function ClinicalResourcesSection() {
+  return (
+    <View style={styles.resourcesSection} testID="clinical-resources-section">
+      <Text style={styles.resourcesSectionTitle}>RESSOURCES CLINIQUES</Text>
+      <View style={styles.resourcesRow}>
+        <TouchableOpacity
+          style={styles.resourceCard}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          testID="resource-protocoles"
+        >
+          <Text style={styles.resourceIcon}>{"\uD83D\uDCCB"}</Text>
+          <Text style={styles.resourceTitle}>Protocoles</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.resourceCard}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          testID="resource-rapports"
+        >
+          <Text style={styles.resourceIcon}>{"\uD83D\uDCC4"}</Text>
+          <Text style={styles.resourceTitle}>Rapports PDF</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -190,40 +217,45 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.bold,
     color: Colors.textPrimary,
   },
-  profileButton: {
+  profileAvatar: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.primary,
     alignItems: "center",
     justifyContent: "center",
   },
-  profileIcon: {
-    fontSize: 20,
+  profileAvatarText: {
+    color: Colors.textOnPrimary,
+    fontWeight: FontWeight.bold,
+    fontSize: 16,
   },
   freemiumBar: {
-    flexDirection: "row",
-    alignItems: "center",
     marginHorizontal: Spacing.lg,
     marginBottom: Spacing.md,
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    backgroundColor: Colors.backgroundCard,
+    paddingVertical: Spacing.sm + 2,
+    backgroundColor: Colors.primaryLight,
     borderRadius: BorderRadius.lg,
-    gap: Spacing.sm,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    gap: Spacing.xs,
+  },
+  freemiumContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   freemiumText: {
     fontSize: FontSize.sm,
-    color: Colors.textSecondary,
+    color: Colors.textPrimary,
     flex: 1,
   },
+  freemiumCount: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semiBold,
+    color: Colors.primary,
+  },
   freemiumProgressTrack: {
-    width: 60,
+    width: "100%",
     height: 4,
     borderRadius: 2,
     backgroundColor: Colors.border,
@@ -233,11 +265,6 @@ const styles = StyleSheet.create({
     height: 4,
     borderRadius: 2,
     backgroundColor: Colors.primary,
-  },
-  freemiumCount: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.primary,
   },
   ctaButton: {
     flexDirection: "row",
@@ -332,5 +359,42 @@ const styles = StyleSheet.create({
   emptySubtitle: {
     color: Colors.textSecondary,
     textAlign: "center",
+  },
+  resourcesSection: {
+    marginTop: Spacing.lg,
+    paddingBottom: Spacing.lg,
+  },
+  resourcesSectionTitle: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.semiBold,
+    color: Colors.textSecondary,
+    letterSpacing: 0.8,
+    marginBottom: Spacing.sm,
+  },
+  resourcesRow: {
+    flexDirection: "row",
+    gap: Spacing.md,
+  },
+  resourceCard: {
+    flex: 1,
+    backgroundColor: Colors.backgroundCard,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    alignItems: "center",
+    gap: Spacing.xs,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  resourceIcon: {
+    fontSize: 28,
+  },
+  resourceTitle: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.medium,
+    color: Colors.textPrimary,
   },
 });

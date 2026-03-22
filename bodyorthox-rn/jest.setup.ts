@@ -85,5 +85,13 @@ jest.mock("uuid", () => ({
   v4: jest.fn(() => "test-uuid-1234"),
 }));
 
+// Mock @react-navigation/bottom-tabs
+jest.mock("@react-navigation/bottom-tabs", () => ({
+  createBottomTabNavigator: () => ({
+    Navigator: ({ children }: { children: React.ReactNode }) => children,
+    Screen: () => null,
+  }),
+}));
+
 // Silence console.warn in tests
 global.console.warn = jest.fn();

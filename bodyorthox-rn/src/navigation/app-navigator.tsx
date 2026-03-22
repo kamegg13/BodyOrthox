@@ -1,7 +1,8 @@
 import React, { useEffect } from "react";
-import { Platform } from "react-native";
+import { Platform, Text, StyleSheet } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import type { RootStackParamList } from "./types";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import type { RootStackParamList, BottomTabParamList } from "./types";
 import { Colors } from "../shared/design-system/colors";
 import { useOnboardingStore } from "../features/onboarding/store/onboarding-store";
 
@@ -15,8 +16,10 @@ import { CaptureScreen } from "../features/capture/screens/capture-screen";
 import { ResultsScreen } from "../features/results/screens/results-screen";
 import { ReplayScreen } from "../features/results/screens/replay-screen";
 import { PatientTimelineScreen } from "../features/patients/screens/patient-timeline-screen";
+import { AccountScreen } from "../features/account/screens/account-screen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+const Tab = createBottomTabNavigator<BottomTabParamList>();
 
 const screenOptions = {
   headerStyle: { backgroundColor: Colors.backgroundCard },
@@ -24,6 +27,76 @@ const screenOptions = {
   headerTitleStyle: { color: Colors.textPrimary },
   contentStyle: { backgroundColor: Colors.background },
 } as const;
+
+function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
+  return (
+    <Text
+      style={[
+        tabStyles.icon,
+        { color: focused ? Colors.primary : Colors.textSecondary },
+      ]}
+    >
+      {emoji}
+    </Text>
+  );
+}
+
+const tabStyles = StyleSheet.create({
+  icon: {
+    fontSize: 22,
+  },
+});
+
+function MainTabs() {
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: Colors.primary,
+        tabBarInactiveTintColor: Colors.textSecondary,
+        tabBarStyle: {
+          backgroundColor: Colors.backgroundCard,
+          borderTopColor: Colors.border,
+        },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: "600",
+        },
+      }}
+    >
+      <Tab.Screen
+        name="AnalysesTab"
+        component={PatientsScreen}
+        options={{
+          tabBarLabel: "Analyses",
+          tabBarIcon: ({ focused }) => (
+            <TabIcon emoji={"\uD83D\uDCCA"} focused={focused} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="PatientsTab"
+        component={PatientsScreen}
+        options={{
+          tabBarLabel: "Patients",
+          tabBarIcon: ({ focused }) => (
+            <TabIcon emoji={"\uD83D\uDC65"} focused={focused} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="CompteTab"
+        component={AccountScreen}
+        options={{
+          tabBarLabel: "Compte",
+          tabBarIcon: ({ focused }) => (
+            <TabIcon emoji={"\uD83D\uDC64"} focused={focused} />
+          ),
+        }}
+      />
+    </Tab.Navigator>
+  );
+}
 
 export function AppNavigator() {
   const checkOnboarding = useOnboardingStore((s) => s.checkOnboarding);
@@ -61,6 +134,11 @@ export function AppNavigator() {
           options={{ headerShown: false }}
         />
       )}
+      <Stack.Screen
+        name="MainTabs"
+        component={MainTabs}
+        options={{ headerShown: false }}
+      />
       <Stack.Screen
         name="Patients"
         component={PatientsScreen}

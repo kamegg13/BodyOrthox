@@ -18,7 +18,7 @@ export function BiometricLockScreen_Screen() {
       if (!isOnboardingCompleted) {
         navigation.replace("Onboarding");
       } else {
-        navigation.replace("Patients");
+        navigation.replace("MainTabs", { screen: "AnalysesTab" });
       }
     }
   }, [isUnlocked, isOnboardingCompleted, navigation]);

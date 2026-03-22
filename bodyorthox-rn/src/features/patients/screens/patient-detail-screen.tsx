@@ -87,7 +87,7 @@ export function PatientDetailScreen() {
           onPress: async () => {
             try {
               await deletePatient(patientId);
-              navigation.navigate("Patients");
+              navigation.navigate("MainTabs", { screen: "AnalysesTab" });
             } catch {
               // Error handled by store
             }
@@ -162,7 +162,6 @@ export function PatientDetailScreen() {
           label="Créé le"
           value={formatDisplayDateTime(new Date(patient.createdAt))}
         />
-        <InfoRow label="ID" value={patient.id} mono />
       </View>
 
       <View style={styles.actions}>

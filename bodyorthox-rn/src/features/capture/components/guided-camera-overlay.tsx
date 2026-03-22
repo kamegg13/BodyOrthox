@@ -20,6 +20,14 @@ export function GuidedCameraOverlay({
 }: GuidedCameraOverlayProps) {
   return (
     <View style={styles.overlay} testID="guided-camera-overlay">
+      {/* RGPD banner at the TOP */}
+      <View style={styles.rgpdBanner} testID="rgpd-banner">
+        <Text style={styles.rgpdText}>
+          {"\uD83D\uDD12"} Donn{"\u00e9"}es enregistr{"\u00e9"}es uniquement sur
+          votre appareil
+        </Text>
+      </View>
+
       {/* Top status bar */}
       <View style={styles.topBar}>
         <LuminosityIndicator value={luminosity} />
@@ -38,30 +46,40 @@ export function GuidedCameraOverlay({
             styles.silhouetteBorder,
             !isCorrectPosition && styles.silhouetteBorderWarn,
           ]}
-        />
+        >
+          <Text style={styles.silhouetteIcon}>{"\u267F"}</Text>
+          <Text style={styles.silhouetteMainText}>
+            Placez le patient debout,{"\n"}face {"\u00e0"} vous
+          </Text>
+          <Text style={styles.silhouetteSubText}>
+            Corps entier visible dans le cadre
+          </Text>
+        </View>
 
         {!isCorrectPosition && (
           <View style={styles.positionHint}>
             <Text style={styles.positionHintText}>
-              Placez le patient entier dans le cadre
+              Placez le patient debout, face {"\u00e0"} vous
+            </Text>
+            <Text style={styles.positionHintSubText}>
+              Corps entier visible dans le cadre
             </Text>
           </View>
         )}
       </View>
 
-      {/* Bottom GDPR */}
+      {/* Bottom status (processing / error only) */}
       <View style={styles.bottomBar}>
-        <Text style={styles.gdprText}>
-          BodyOrthox utilise votre caméra uniquement pendant l'analyse.{"\n"}
-          La vidéo reste sur votre appareil.
-        </Text>
-
         {phase.type === "processing" && (
-          <Text style={styles.processingText}>⚙️ Analyse en cours...</Text>
+          <Text style={styles.processingText}>
+            {"\u2699\uFE0F"} Analyse en cours...
+          </Text>
         )}
 
         {phase.type === "error" && (
-          <Text style={styles.errorText}>⚠️ {phase.message}</Text>
+          <Text style={styles.errorText}>
+            {"\u26A0\uFE0F"} {phase.message}
+          </Text>
         )}
       </View>
     </View>
@@ -73,12 +91,23 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     justifyContent: "space-between",
   },
+  rgpdBanner: {
+    backgroundColor: "rgba(0,0,0,0.6)",
+    paddingVertical: Spacing.xs + 2,
+    paddingHorizontal: Spacing.md,
+    alignItems: "center",
+  },
+  rgpdText: {
+    color: "rgba(255,255,255,0.85)",
+    fontSize: 12,
+    textAlign: "center",
+    fontWeight: "500",
+  },
   topBar: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     padding: Spacing.md,
-    paddingTop: Spacing.xl,
   },
   recordingIndicator: {
     flexDirection: "row",
@@ -112,6 +141,25 @@ const styles = StyleSheet.create({
     borderColor: Colors.success,
     borderRadius: 40,
     opacity: 0.8,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "rgba(200,200,200,0.15)",
+  },
+  silhouetteIcon: {
+    fontSize: 40,
+    color: Colors.textSecondary,
+  },
+  silhouetteMainText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.textPrimary,
+    textAlign: "center",
+  },
+  silhouetteSubText: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    textAlign: "center",
   },
   silhouetteBorderWarn: {
     borderColor: Colors.warning,
@@ -131,16 +179,16 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textAlign: "center",
   },
+  positionHintSubText: {
+    color: "rgba(0,0,0,0.6)",
+    fontSize: 11,
+    fontWeight: "400",
+    textAlign: "center",
+    marginTop: 2,
+  },
   bottomBar: {
     padding: Spacing.md,
     gap: Spacing.xs,
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  gdprText: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 11,
-    textAlign: "center",
-    lineHeight: 16,
   },
   processingText: {
     color: Colors.primary,

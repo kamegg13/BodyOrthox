@@ -16,7 +16,7 @@ import type { RootStackParamList } from "../../../navigation/types";
 import { usePatientsStore } from "../store/patients-store";
 import { Colors } from "../../../shared/design-system/colors";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
-import { Typography } from "../../../shared/design-system/typography";
+import { FontSize, FontWeight } from "../../../shared/design-system/typography";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -24,7 +24,8 @@ export function CreatePatientScreen() {
   const navigation = useNavigation<Nav>();
   const { createPatient } = usePatientsStore();
 
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [heightCm, setHeightCm] = useState("");
   const [weightKg, setWeightKg] = useState("");
@@ -32,9 +33,11 @@ export function CreatePatientScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
+
   const validate = useCallback((): boolean => {
     const e: Record<string, string> = {};
-    if (!name.trim()) e.name = "Le nom est obligatoire.";
+    if (!fullName) e.name = "Le nom est obligatoire.";
     if (!dateOfBirth) {
       e.dateOfBirth = "La date de naissance est obligatoire.";
     } else {
@@ -49,24 +52,24 @@ export function CreatePatientScreen() {
         Number(heightCm) < 50 ||
         Number(heightCm) > 250)
     )
-      e.heightCm = "Taille invalide (50–250 cm).";
+      e.heightCm = "Taille invalide (50\u2013250 cm).";
     if (
       weightKg &&
       (isNaN(Number(weightKg)) ||
         Number(weightKg) < 10 ||
         Number(weightKg) > 300)
     )
-      e.weightKg = "Poids invalide (10–300 kg).";
+      e.weightKg = "Poids invalide (10\u2013300 kg).";
     setErrors(e);
     return Object.keys(e).length === 0;
-  }, [name, dateOfBirth, heightCm, weightKg]);
+  }, [fullName, dateOfBirth, heightCm, weightKg]);
 
   const handleSubmit = useCallback(async () => {
     if (!validate()) return;
     setIsSubmitting(true);
     try {
       await createPatient({
-        name: name.trim(),
+        name: fullName,
         dateOfBirth,
         morphologicalProfile: {
           ...(heightCm ? { heightCm: Number(heightCm) } : {}),
@@ -80,7 +83,7 @@ export function CreatePatientScreen() {
         "Erreur",
         error instanceof Error
           ? error.message
-          : "Impossible de créer le patient.",
+          : "Impossible de cr\u00e9er le patient.",
       );
     } finally {
       setIsSubmitting(false);
@@ -88,7 +91,7 @@ export function CreatePatientScreen() {
   }, [
     validate,
     createPatient,
-    name,
+    fullName,
     dateOfBirth,
     heightCm,
     weightKg,
@@ -96,80 +99,182 @@ export function CreatePatientScreen() {
     navigation,
   ]);
 
+  const handleCancel = useCallback(() => {
+    navigation.goBack();
+  }, [navigation]);
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
+      {/* iOS-style navigation header */}
+      <View style={styles.navHeader}>
+        <Pressable
+          onPress={handleCancel}
+          accessibilityRole="button"
+          accessibilityLabel="Annuler"
+          testID="cancel-button"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Text style={styles.navCancel}>Annuler</Text>
+        </Pressable>
+        <Text style={styles.navTitle}>Nouveau patient</Text>
+        <Pressable
+          onPress={handleSubmit}
+          disabled={isSubmitting}
+          accessibilityRole="button"
+          accessibilityLabel="Cr\u00E9er"
+          testID="nav-create-button"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Text
+            style={[styles.navCreate, isSubmitting && styles.navCreateDisabled]}
+          >
+            {"Cr\u00e9er"}
+          </Text>
+        </Pressable>
+      </View>
+
       <ScrollView
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         testID="create-patient-scroll"
       >
-        <Text style={[Typography.h2, styles.title]}>Nouveau patient</Text>
-        <Field
-          label="Nom complet *"
-          value={name}
-          onChange={setName}
-          placeholder="Jean Dupont"
-          error={errors.name}
-          autoCapitalize="words"
-          testID="name-input"
-        />
-        <Field
-          label="Date de naissance *"
-          value={dateOfBirth}
-          onChange={setDateOfBirth}
-          placeholder="1990-01-15"
-          error={errors.dateOfBirth}
-          keyboardType="numbers-and-punctuation"
-          testID="dob-input"
-        />
-        <Text style={[Typography.label, styles.sectionLabel]}>
-          Profil morphologique (optionnel)
+        {/* Section: INFORMATIONS PERSONNELLES */}
+        <Text style={styles.sectionLabel}>INFORMATIONS PERSONNELLES</Text>
+
+        {/* iOS grouped form card */}
+        <View style={styles.formCard}>
+          <View style={styles.formRow}>
+            <Text style={styles.formLabel}>{"Pr\u00e9nom"}</Text>
+            <TextInput
+              style={styles.formInput}
+              value={firstName}
+              onChangeText={setFirstName}
+              placeholder="Entrer le pr\u00e9nom"
+              placeholderTextColor={Colors.textDisabled}
+              autoCapitalize="words"
+              testID="name-input"
+            />
+          </View>
+          <View style={styles.formSeparator} />
+          <View style={styles.formRow}>
+            <Text style={styles.formLabel}>Nom</Text>
+            <TextInput
+              style={styles.formInput}
+              value={lastName}
+              onChangeText={setLastName}
+              placeholder="Entrer le nom"
+              placeholderTextColor={Colors.textDisabled}
+              autoCapitalize="words"
+              testID="lastname-input"
+            />
+          </View>
+          <View style={styles.formSeparator} />
+          <View style={styles.formRow}>
+            <Text style={styles.formLabel}>Date de naissance</Text>
+            <View style={styles.dateInputWrapper}>
+              <TextInput
+                style={styles.formInput}
+                value={dateOfBirth}
+                onChangeText={setDateOfBirth}
+                placeholder="JJ/MM/AAAA"
+                placeholderTextColor={Colors.textDisabled}
+                keyboardType="numbers-and-punctuation"
+                testID="dob-input"
+              />
+              <Text style={styles.calendarIcon}>{"\uD83D\uDCC5"}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Validation errors */}
+        {errors.name && <Text style={styles.errText}>{errors.name}</Text>}
+        {errors.dateOfBirth && (
+          <Text style={styles.errText}>{errors.dateOfBirth}</Text>
+        )}
+
+        {/* RGPD notice */}
+        <Text style={styles.rgpdNotice}>
+          {"Ces informations sont stock\u00e9es uniquement sur cet appareil."}
         </Text>
-        <View style={styles.row}>
-          <View style={styles.half}>
-            <Field
-              label="Taille (cm)"
+
+        {/* Profil morphologique (optional, collapsible) */}
+        <Text style={styles.sectionLabel}>
+          PROFIL MORPHOLOGIQUE (OPTIONNEL)
+        </Text>
+        <View style={styles.formCard}>
+          <View style={styles.formRow}>
+            <Text style={styles.formLabel}>Taille (cm)</Text>
+            <TextInput
+              style={styles.formInput}
               value={heightCm}
-              onChange={setHeightCm}
+              onChangeText={setHeightCm}
               placeholder="175"
-              error={errors.heightCm}
+              placeholderTextColor={Colors.textDisabled}
               keyboardType="numeric"
               testID="height-input"
             />
           </View>
-          <View style={styles.half}>
-            <Field
-              label="Poids (kg)"
+          <View style={styles.formSeparator} />
+          <View style={styles.formRow}>
+            <Text style={styles.formLabel}>Poids (kg)</Text>
+            <TextInput
+              style={styles.formInput}
               value={weightKg}
-              onChange={setWeightKg}
+              onChangeText={setWeightKg}
               placeholder="70"
-              error={errors.weightKg}
+              placeholderTextColor={Colors.textDisabled}
               keyboardType="numeric"
               testID="weight-input"
             />
           </View>
+          <View style={styles.formSeparator} />
+          <View style={styles.formRow}>
+            <Text style={styles.formLabel}>Notes</Text>
+            <TextInput
+              style={styles.formInput}
+              value={notes}
+              onChangeText={setNotes}
+              placeholder={"Informations compl\u00e9mentaires..."}
+              placeholderTextColor={Colors.textDisabled}
+              testID="notes-input"
+            />
+          </View>
         </View>
-        <Field
-          label="Notes"
-          value={notes}
-          onChange={setNotes}
-          placeholder="Informations complémentaires..."
-          multiline
-          testID="notes-input"
-        />
+
+        {errors.heightCm && (
+          <Text style={styles.errText}>{errors.heightCm}</Text>
+        )}
+        {errors.weightKg && (
+          <Text style={styles.errText}>{errors.weightKg}</Text>
+        )}
+
+        {/* Avatar illustration placeholder */}
+        <View style={styles.illustrationContainer}>
+          <View style={styles.avatarCircle}>
+            <Text style={styles.avatarIcon}>{"\uD83D\uDC65"}</Text>
+            <View style={styles.avatarBadge}>
+              <Text style={styles.avatarBadgeText}>+</Text>
+            </View>
+          </View>
+          <Text style={styles.illustrationText}>
+            {"Compl\u00e9tez le formulaire pour commencer le suivi BodyOrthox"}
+          </Text>
+        </View>
+
+        {/* Blue CTA button */}
         <Pressable
           style={[styles.submit, isSubmitting && styles.submitDisabled]}
           onPress={handleSubmit}
           disabled={isSubmitting}
           testID="submit-button"
           accessibilityRole="button"
-          accessibilityLabel="Créer le patient"
+          accessibilityLabel="Cr\u00e9er le patient"
         >
           <Text style={styles.submitText}>
-            {isSubmitting ? "Enregistrement..." : "Créer le patient"}
+            {isSubmitting ? "Enregistrement..." : "Cr\u00E9er le patient"}
           </Text>
         </Pressable>
       </ScrollView>
@@ -177,73 +282,146 @@ export function CreatePatientScreen() {
   );
 }
 
-function Field({
-  label,
-  value,
-  onChange,
-  placeholder,
-  error,
-  multiline,
-  keyboardType,
-  autoCapitalize,
-  testID,
-}: {
-  label: string;
-  value: string;
-  onChange: (t: string) => void;
-  placeholder?: string;
-  error?: string;
-  multiline?: boolean;
-  keyboardType?: TextInput["props"]["keyboardType"];
-  autoCapitalize?: TextInput["props"]["autoCapitalize"];
-  testID?: string;
-}) {
-  return (
-    <View style={styles.field}>
-      <Text style={styles.fieldLabel}>{label}</Text>
-      <TextInput
-        style={[
-          styles.input,
-          multiline && styles.inputMulti,
-          error ? styles.inputErr : undefined,
-        ]}
-        value={value}
-        onChangeText={onChange}
-        placeholder={placeholder}
-        placeholderTextColor={Colors.textDisabled}
-        multiline={multiline}
-        numberOfLines={multiline ? 3 : 1}
-        keyboardType={keyboardType}
-        autoCapitalize={autoCapitalize ?? "none"}
-        testID={testID}
-      />
-      {error && <Text style={styles.errText}>{error}</Text>}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  content: { padding: Spacing.lg, gap: Spacing.sm },
-  title: { color: Colors.textPrimary, marginBottom: Spacing.sm },
-  sectionLabel: { marginTop: Spacing.md, marginBottom: Spacing.xs },
-  row: { flexDirection: "row", gap: Spacing.md },
-  half: { flex: 1 },
-  field: { gap: Spacing.xs },
-  fieldLabel: { color: Colors.textSecondary, fontSize: 13, fontWeight: "500" },
-  input: {
-    backgroundColor: Colors.backgroundCard,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm + 2,
-    color: Colors.textPrimary,
-    fontSize: 15,
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
   },
-  inputMulti: { height: 88, textAlignVertical: "top" },
-  inputErr: { borderColor: Colors.error },
-  errText: { color: Colors.error, fontSize: 12 },
+  navHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.xxl,
+    paddingBottom: Spacing.sm,
+    backgroundColor: Colors.background,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.border,
+  },
+  navCancel: {
+    fontSize: FontSize.lg,
+    color: Colors.textSecondary,
+    fontWeight: FontWeight.regular,
+  },
+  navTitle: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.semiBold,
+    color: Colors.textPrimary,
+  },
+  navCreate: {
+    fontSize: FontSize.lg,
+    color: Colors.primary,
+    fontWeight: FontWeight.semiBold,
+  },
+  navCreateDisabled: {
+    opacity: 0.4,
+  },
+  content: {
+    padding: Spacing.lg,
+    paddingBottom: Spacing.xxl,
+  },
+  sectionLabel: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.medium,
+    color: Colors.textSecondary,
+    letterSpacing: 0.5,
+    marginTop: Spacing.md,
+    marginBottom: Spacing.sm,
+    marginLeft: Spacing.md,
+  },
+  formCard: {
+    backgroundColor: Colors.backgroundCard,
+    borderRadius: BorderRadius.lg,
+    overflow: "hidden",
+  },
+  formRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.md,
+    minHeight: 44,
+  },
+  formLabel: {
+    fontSize: FontSize.md,
+    color: Colors.textPrimary,
+    fontWeight: FontWeight.regular,
+    width: 130,
+    flexShrink: 0,
+  },
+  formInput: {
+    flex: 1,
+    fontSize: FontSize.md,
+    color: Colors.textPrimary,
+    paddingVertical: Spacing.sm,
+  },
+  formSeparator: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: Colors.border,
+    marginLeft: Spacing.md,
+  },
+  dateInputWrapper: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  calendarIcon: {
+    fontSize: 18,
+    marginLeft: Spacing.xs,
+    color: Colors.textSecondary,
+  },
+  errText: {
+    color: Colors.error,
+    fontSize: FontSize.xs,
+    marginTop: Spacing.xs,
+    marginLeft: Spacing.md,
+  },
+  rgpdNotice: {
+    fontSize: FontSize.xs,
+    color: Colors.textSecondary,
+    marginTop: Spacing.sm,
+    marginLeft: Spacing.md,
+    lineHeight: 16,
+  },
+  illustrationContainer: {
+    alignItems: "center",
+    marginTop: Spacing.xl,
+    marginBottom: Spacing.md,
+    gap: Spacing.sm,
+  },
+  avatarCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: Colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarIcon: {
+    fontSize: 32,
+    color: Colors.textSecondary,
+  },
+  avatarBadge: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: Colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarBadgeText: {
+    color: Colors.white,
+    fontSize: 14,
+    fontWeight: FontWeight.bold,
+  },
+  illustrationText: {
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+    textAlign: "center",
+    lineHeight: 18,
+    maxWidth: 260,
+  },
   submit: {
     backgroundColor: Colors.primary,
     paddingVertical: Spacing.md,
@@ -251,6 +429,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: Spacing.lg,
   },
-  submitDisabled: { opacity: 0.6 },
-  submitText: { color: Colors.textOnPrimary, fontWeight: "600", fontSize: 16 },
+  submitDisabled: {
+    opacity: 0.6,
+  },
+  submitText: {
+    color: Colors.textOnPrimary,
+    fontWeight: FontWeight.semiBold,
+    fontSize: FontSize.lg,
+  },
 });

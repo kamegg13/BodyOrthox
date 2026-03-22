@@ -15,7 +15,8 @@ import { CaptureSuccess } from "../components/capture-success";
 import { GuidedCameraOverlay } from "../components/guided-camera-overlay";
 import { LoadingSpinner } from "../../../shared/components/loading-spinner";
 import { Colors } from "../../../shared/design-system/colors";
-import { Spacing } from "../../../shared/design-system/spacing";
+import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
+import { FontSize, FontWeight } from "../../../shared/design-system/typography";
 import { WebCamera } from "../components/web-camera";
 import { PhotoUpload } from "../components/photo-upload";
 
@@ -131,9 +132,14 @@ export function CaptureScreen() {
                 testID="start-capture-button"
                 accessibilityRole="button"
                 accessibilityLabel="Prendre une photo"
+                activeOpacity={0.8}
               >
-                <View style={styles.captureButtonInner} />
+                <Text style={styles.captureButtonIcon}>{"\uD83D\uDCF7"}</Text>
+                <Text style={styles.captureButtonText}>Prendre une photo</Text>
               </TouchableOpacity>
+              <Text style={styles.captureHint}>
+                L'analyse HKA d{"\u00E9"}marre automatiquement
+              </Text>
               {Platform.OS === "web" && (
                 <PhotoUpload onPhotoSelected={handlePhotoUploaded} />
               )}
@@ -161,21 +167,31 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     alignItems: "center",
+    paddingHorizontal: Spacing.lg,
+    gap: Spacing.sm,
   },
   captureButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    borderWidth: 4,
-    borderColor: Colors.white,
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.button,
+    height: 56,
+    width: "100%",
+    gap: Spacing.sm,
   },
-  captureButtonInner: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: Colors.white,
+  captureButtonIcon: {
+    fontSize: 20,
+  },
+  captureButtonText: {
+    color: Colors.textOnPrimary,
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.semiBold,
+  },
+  captureHint: {
+    color: Colors.textSecondary,
+    fontSize: FontSize.sm,
+    textAlign: "center",
   },
   webPlaceholder: {
     backgroundColor: Colors.darkGrey,

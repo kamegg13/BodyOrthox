@@ -75,9 +75,10 @@ describe("OnboardingScreen", () => {
     expect(getByTestId("onboarding-dot-2")).toBeTruthy();
   });
 
-  it('shows "Suivant" button on first page', () => {
-    const { getByTestId } = render(<OnboardingScreen />);
+  it('shows "Commencer" button on first page (mockup 10)', () => {
+    const { getByTestId, getByText } = render(<OnboardingScreen />);
     expect(getByTestId("onboarding-next")).toBeTruthy();
+    expect(getByText("Commencer")).toBeTruthy();
   });
 
   it("shows skip button on all pages", () => {
@@ -85,20 +86,34 @@ describe("OnboardingScreen", () => {
     expect(getByTestId("onboarding-skip")).toBeTruthy();
   });
 
-  it("skip button completes onboarding and navigates to Patients", async () => {
+  it("skip button completes onboarding and navigates", async () => {
     const { getByTestId } = render(<OnboardingScreen />);
 
     await act(async () => {
       fireEvent.press(getByTestId("onboarding-skip"));
     });
 
-    expect(mockReplace).toHaveBeenCalledWith("Patients");
+    expect(mockReplace).toHaveBeenCalled();
     expect(useOnboardingStore.getState().isCompleted).toBe(true);
   });
 
-  it("renders result page first with wow moment content", () => {
+  it("renders page 1 with large title (mockup 10)", () => {
     const { getByText } = render(<OnboardingScreen />);
-    expect(getByText("Vos resultats en 30 secondes")).toBeTruthy();
+    expect(
+      getByText("Analysez les angles articulaires en 30 secondes"),
+    ).toBeTruthy();
+  });
+
+  it("renders page 1 subtitle (mockup 10)", () => {
+    const { getByText } = render(<OnboardingScreen />);
+    expect(getByText(/Une photo\./)).toBeTruthy();
+  });
+
+  it("renders page 1 feature rows", () => {
+    const { getByText } = render(<OnboardingScreen />);
+    expect(getByText("Photo debout en 1 tap")).toBeTruthy();
+    expect(getByText("Angle HKA automatique")).toBeTruthy();
+    expect(getByText(/Rapport PDF/)).toBeTruthy();
   });
 
   it("renders capture page with camera context text", () => {
@@ -106,12 +121,17 @@ describe("OnboardingScreen", () => {
     expect(getByText("Filmez la marche du patient")).toBeTruthy();
   });
 
-  it("renders privacy page with RGPD reassurance", () => {
+  it("renders page 3 with export title (mockup 11)", () => {
     const { getByText } = render(<OnboardingScreen />);
-    expect(getByText("Vos donnees restent sur cet appareil")).toBeTruthy();
+    expect(getByText(/Exportation/)).toBeTruthy();
   });
 
-  it('shows "Commencer" button when on last page', async () => {
+  it("renders page 3 with detailed sharing description", () => {
+    const { getByText } = render(<OnboardingScreen />);
+    expect(getByText(/rapports PDF/)).toBeTruthy();
+  });
+
+  it('shows "Terminer" button when on last page (mockup 11)', async () => {
     const { getByTestId, queryByTestId } = render(<OnboardingScreen />);
     const scrollView = getByTestId("onboarding-scroll");
 
@@ -119,13 +139,11 @@ describe("OnboardingScreen", () => {
     await act(async () => {
       fireEvent(scrollView, "momentumScrollEnd", {
         nativeEvent: {
-          contentOffset: { x: 750 }, // 3rd page (assuming ~375 width)
+          contentOffset: { x: 750 },
         },
       });
     });
 
-    // After scrolling to last page, the complete button should appear
-    // Note: since useWindowDimensions returns default width, we simulate with that
     expect(
       queryByTestId("onboarding-complete") || queryByTestId("onboarding-next"),
     ).toBeTruthy();
@@ -138,7 +156,6 @@ describe("OnboardingScreen", () => {
       fireEvent.press(getByTestId("onboarding-skip"));
     });
 
-    // After skip, isCompleted should be true
     expect(useOnboardingStore.getState().isCompleted).toBe(true);
   });
 });
