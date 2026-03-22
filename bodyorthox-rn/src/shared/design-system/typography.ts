@@ -1,21 +1,21 @@
-import { StyleSheet, TextStyle } from 'react-native';
-import { Colors } from './colors';
+import { StyleSheet, TextStyle } from "react-native";
+import { Colors } from "./colors";
 
 export const FontSize = {
   xs: 11,
   sm: 13,
   md: 15,
   lg: 17,
-  xl: 20,
+  xl: 22,
   xxl: 24,
-  xxxl: 32,
+  xxxl: 34,
 } as const;
 
 export const FontWeight = {
-  regular: '400' as TextStyle['fontWeight'],
-  medium: '500' as TextStyle['fontWeight'],
-  semiBold: '600' as TextStyle['fontWeight'],
-  bold: '700' as TextStyle['fontWeight'],
+  regular: "400" as TextStyle["fontWeight"],
+  medium: "500" as TextStyle["fontWeight"],
+  semiBold: "600" as TextStyle["fontWeight"],
+  bold: "700" as TextStyle["fontWeight"],
 } as const;
 
 export const Typography = StyleSheet.create({
@@ -23,7 +23,7 @@ export const Typography = StyleSheet.create({
     fontSize: FontSize.xxxl,
     fontWeight: FontWeight.bold,
     color: Colors.textPrimary,
-    lineHeight: 40,
+    lineHeight: 42,
   },
   h2: {
     fontSize: FontSize.xxl,
@@ -35,7 +35,7 @@ export const Typography = StyleSheet.create({
     fontSize: FontSize.xl,
     fontWeight: FontWeight.semiBold,
     color: Colors.textPrimary,
-    lineHeight: 28,
+    lineHeight: 30,
   },
   bodyLarge: {
     fontSize: FontSize.lg,
@@ -67,6 +67,6 @@ export const Typography = StyleSheet.create({
     color: Colors.textSecondary,
     lineHeight: 18,
     letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
 });

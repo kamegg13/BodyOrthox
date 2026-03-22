@@ -249,9 +249,9 @@ describe("ResultsScreen", () => {
         expect(screen.getByTestId("results-screen")).toBeTruthy();
       });
 
-      // 0.92 → "Élevée" and "92%"
+      // 0.92 → "Élevée" and "92%" (may appear in both confidence badge and HKA card)
       expect(screen.getByText(/Confiance Élevée/)).toBeTruthy();
-      expect(screen.getByText(/92%/)).toBeTruthy();
+      expect(screen.getAllByText(/92%/).length).toBeGreaterThanOrEqual(1);
     });
 
     it("displays confidence badge with medium confidence label", async () => {
@@ -263,7 +263,7 @@ describe("ResultsScreen", () => {
       });
 
       expect(screen.getByText(/Confiance Moyenne/)).toBeTruthy();
-      expect(screen.getByText(/72%/)).toBeTruthy();
+      expect(screen.getAllByText(/72%/).length).toBeGreaterThanOrEqual(1);
     });
 
     it("displays confidence badge with low confidence label", async () => {
@@ -275,7 +275,7 @@ describe("ResultsScreen", () => {
       });
 
       expect(screen.getByText(/Confiance Faible/)).toBeTruthy();
-      expect(screen.getByText(/45%/)).toBeTruthy();
+      expect(screen.getAllByText(/45%/).length).toBeGreaterThanOrEqual(1);
     });
 
     it('does NOT show "Données cliniques" section in simple mode', async () => {

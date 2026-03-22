@@ -1,56 +1,56 @@
 /**
  * BodyOrthox Design System – Color Palette
- * Optimised for clinical / medical contexts (accessibility AA).
+ * Clinical White theme – iOS-native aesthetic (accessibility AA).
  */
 export const Colors = {
-  // Brand
-  primary: "#4a90d9",
-  primaryDark: "#2c6fad",
-  primaryLight: "#7ab3e8",
+  // Brand — from mockups
+  primary: "#1B6FBF", // Blue médical (CTAs, liens, accents)
+  primaryDark: "#155a9c",
+  primaryLight: "#E8F1FB", // Background cards résultat
 
-  // Semantic
-  success: "#27ae60",
-  warning: "#f39c12",
-  error: "#e74c3c",
+  // Semantic — iOS system colors
+  success: "#34C759", // Vert iOS (normal, dans la norme)
+  warning: "#FF9500", // Orange iOS (à surveiller)
+  error: "#FF3B30", // Rouge iOS (hors norme)
   warningModerate: "#e67e22",
-  info: "#3498db",
+  info: "#007AFF", // Bleu iOS
 
-  // Confidence score gradient
-  confidenceHigh: "#27ae60", // >= 0.85
-  confidenceMedium: "#f39c12", // >= 0.60
-  confidenceLow: "#e74c3c", // < 0.60
+  // Confidence
+  confidenceHigh: "#34C759",
+  confidenceMedium: "#FF9500",
+  confidenceLow: "#FF3B30",
 
-  // Background
-  background: "#0f0f1a",
-  backgroundCard: "#1a1a2e",
-  backgroundElevated: "#22223b",
-  surface: "#2d2d44",
+  // Background — Clinical White
+  background: "#F2F2F7", // iOS systemGroupedBackground
+  backgroundCard: "#FFFFFF", // White cards
+  backgroundElevated: "#FFFFFF",
+  surface: "#F2F2F7",
 
-  // Text
-  textPrimary: "#ffffff",
-  textSecondary: "#b0b0c8",
-  textDisabled: "#606080",
-  textOnPrimary: "#ffffff",
+  // Text — dark on light
+  textPrimary: "#1C1C1E", // iOS label
+  textSecondary: "#8E8E93", // iOS secondaryLabel
+  textDisabled: "#C7C7CC",
+  textOnPrimary: "#FFFFFF", // White text on blue buttons
 
   // Border
-  border: "#333355",
-  borderFocus: "#4a90d9",
+  border: "#E5E5EA", // iOS separator
+  borderFocus: "#1B6FBF",
 
   // Neutral
-  white: "#ffffff",
+  white: "#FFFFFF",
   black: "#000000",
   darkGrey: "#111111",
-  warningAmber: "#FFA726",
+  warningAmber: "#FF9500",
 
   // Overlay
-  overlay: "rgba(0,0,0,0.6)",
-  overlayLight: "rgba(0,0,0,0.3)",
+  overlay: "rgba(0,0,0,0.4)",
+  overlayLight: "rgba(0,0,0,0.2)",
 
-  // Chart colours (clinical)
-  chartKnee: "#4a90d9",
-  chartHip: "#e74c3c",
-  chartAnkle: "#27ae60",
-  chartReference: "rgba(255,255,255,0.3)",
+  // Chart
+  chartKnee: "#1B6FBF",
+  chartHip: "#FF3B30",
+  chartAnkle: "#34C759",
+  chartReference: "rgba(0,0,0,0.1)",
 } as const;
 
 export type ColorKey = keyof typeof Colors;

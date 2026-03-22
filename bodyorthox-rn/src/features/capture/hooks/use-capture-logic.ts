@@ -144,7 +144,7 @@ export function useCaptureLogic(patientId: string) {
         permissionGranted();
         setLowConfidenceWarning({
           message:
-            "Confiance faible \u2014 la photo pourrait ne pas être optimale. Vous pouvez réessayer ou continuer.",
+            "Confiance faible — la photo pourrait ne pas être optimale. Vous pouvez réessayer ou continuer.",
           onContinue: () => {
             setLowConfidenceWarning(null);
             processFrames(result.landmarks);

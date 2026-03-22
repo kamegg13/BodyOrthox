@@ -15,7 +15,7 @@ class NativePoseDetector implements IPoseDetector {
 
   async detect(_imageDataUrl: string): Promise<PoseDetectionResult> {
     throw new Error(
-      "MediaPipe non disponible sur mobile \u2014 utiliser react-native-vision-camera",
+      "MediaPipe non disponible sur mobile — utiliser react-native-vision-camera",
     );
   }
 

@@ -29,7 +29,7 @@ const PAGES = [
     icon: "\u{1F4CA}",
     title: "Vos resultats en 30 secondes",
     description:
-      "Angles articulaires mesures automatiquement par l'IA.\nGenou 175.2\u00B0 \u00B7 Hanche 168.4\u00B0 \u00B7 Cheville 92.1\u00B0\nSans materiel supplementaire.",
+      "Angles articulaires mesures automatiquement par l'IA.\nGenou 175.2° · Hanche 168.4° · Cheville 92.1°\nSans materiel supplementaire.",
     testID: "onboarding-page-result",
   },
   {
