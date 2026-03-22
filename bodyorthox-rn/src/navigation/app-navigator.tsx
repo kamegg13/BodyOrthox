@@ -10,6 +10,7 @@ import { useOnboardingStore } from "../features/onboarding/store/onboarding-stor
 import { BiometricLockScreen } from "../shared/components/lock-screen";
 import { OnboardingScreen } from "../features/onboarding/screens/onboarding-screen";
 import { PatientsScreen } from "../features/patients/screens/patients-screen";
+import { PatientsListScreen } from "../features/patients/screens/patients-list-screen";
 import { CreatePatientScreen } from "../features/patients/screens/create-patient-screen";
 import { PatientDetailScreen } from "../features/patients/screens/patient-detail-screen";
 import { CaptureScreen } from "../features/capture/screens/capture-screen";
@@ -17,6 +18,8 @@ import { ResultsScreen } from "../features/results/screens/results-screen";
 import { ReplayScreen } from "../features/results/screens/replay-screen";
 import { PatientTimelineScreen } from "../features/patients/screens/patient-timeline-screen";
 import { AccountScreen } from "../features/account/screens/account-screen";
+import { ProtocolsScreen } from "../features/resources/screens/protocols-screen";
+import { ReportsScreen } from "../features/resources/screens/reports-screen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<BottomTabParamList>();
@@ -76,7 +79,7 @@ function MainTabs() {
       />
       <Tab.Screen
         name="PatientsTab"
-        component={PatientsScreen}
+        component={PatientsListScreen}
         options={{
           tabBarLabel: "Patients",
           tabBarIcon: ({ focused }) => (
@@ -176,6 +179,16 @@ export function AppNavigator() {
         name="Timeline"
         component={PatientTimelineScreen}
         options={{ title: "Progression clinique" }}
+      />
+      <Stack.Screen
+        name="Protocols"
+        component={ProtocolsScreen}
+        options={{ title: "Protocoles" }}
+      />
+      <Stack.Screen
+        name="Reports"
+        component={ReportsScreen}
+        options={{ title: "Rapports PDF" }}
       />
     </Stack.Navigator>
   );

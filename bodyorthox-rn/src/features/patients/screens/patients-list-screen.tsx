@@ -27,7 +27,7 @@ import { usePlatform } from "../../../shared/hooks/use-platform";
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 const DEBOUNCE_MS = 200;
 
-export function PatientsScreen() {
+export function PatientsListScreen() {
   const navigation = useNavigation<Nav>();
   const { isTablet } = usePlatform();
   const {
@@ -75,38 +75,21 @@ export function PatientsScreen() {
   const numColumns = isTablet ? 2 : 1;
 
   return (
-    <View style={styles.container} testID="patients-screen">
-      {/* Header: BodyOrthox + profile avatar */}
+    <View style={styles.container} testID="patients-list-screen">
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>BodyOrthox</Text>
-        <View style={styles.profileAvatar}>
-          <Text style={styles.profileAvatarText}>K</Text>
-        </View>
+        <Text style={styles.headerTitle}>Patients</Text>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => navigation.navigate("CreatePatient")}
+          accessibilityRole="button"
+          accessibilityLabel="Ajouter un patient"
+          testID="add-patient-fab"
+          activeOpacity={0.8}
+        >
+          <Text style={styles.addButtonText}>+</Text>
+        </TouchableOpacity>
       </View>
-
-      {/* Freemium counter bar — light blue background with progress */}
-      <View style={styles.freemiumBar}>
-        <View style={styles.freemiumContent}>
-          <Text style={styles.freemiumText}>10 analyses restantes ce mois</Text>
-          <Text style={styles.freemiumCount}>10/10</Text>
-        </View>
-        <View style={styles.freemiumProgressTrack}>
-          <View style={[styles.freemiumProgressFill, { width: "100%" }]} />
-        </View>
-      </View>
-
-      {/* Big blue CTA button */}
-      <TouchableOpacity
-        style={styles.ctaButton}
-        onPress={() => navigation.navigate("CreatePatient")}
-        accessibilityRole="button"
-        accessibilityLabel="Ajouter un patient"
-        testID="add-patient-button"
-        activeOpacity={0.8}
-      >
-        <Text style={styles.ctaIcon}>+</Text>
-        <Text style={styles.ctaText}>Nouvelle analyse</Text>
-      </TouchableOpacity>
 
       {/* Search */}
       <View
@@ -126,14 +109,6 @@ export function PatientsScreen() {
           accessibilityLabel="Rechercher un patient"
           testID="search-input"
         />
-      </View>
-
-      {/* Section header: PATIENTS RECENTS */}
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>PATIENTS R{"\u00C9"}CENTS</Text>
-        <TouchableOpacity accessibilityRole="button">
-          <Text style={styles.sectionLink}>Tout voir</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Patient list */}
@@ -164,41 +139,8 @@ export function PatientsScreen() {
           contentContainerStyle={[styles.list, isTablet && styles.listTablet]}
           showsVerticalScrollIndicator={false}
           testID="patients-list"
-          ListFooterComponent={<ClinicalResourcesSection />}
         />
       )}
-    </View>
-  );
-}
-
-function ClinicalResourcesSection() {
-  const navigation = useNavigation<Nav>();
-
-  return (
-    <View style={styles.resourcesSection} testID="clinical-resources-section">
-      <Text style={styles.resourcesSectionTitle}>RESSOURCES CLINIQUES</Text>
-      <View style={styles.resourcesRow}>
-        <TouchableOpacity
-          style={styles.resourceCard}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          testID="resource-protocoles"
-          onPress={() => navigation.navigate("Protocols")}
-        >
-          <Text style={styles.resourceIcon}>{"\uD83D\uDCCB"}</Text>
-          <Text style={styles.resourceTitle}>Protocoles</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.resourceCard}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          testID="resource-rapports"
-          onPress={() => navigation.navigate("Reports")}
-        >
-          <Text style={styles.resourceIcon}>{"\uD83D\uDCC4"}</Text>
-          <Text style={styles.resourceTitle}>Rapports PDF</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }
@@ -221,7 +163,7 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.bold,
     color: Colors.textPrimary,
   },
-  profileAvatar: {
+  addButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -229,72 +171,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  profileAvatarText: {
+  addButtonText: {
     color: Colors.textOnPrimary,
     fontWeight: FontWeight.bold,
-    fontSize: 16,
-  },
-  freemiumBar: {
-    marginHorizontal: Spacing.lg,
-    marginBottom: Spacing.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm + 2,
-    backgroundColor: Colors.primaryLight,
-    borderRadius: BorderRadius.lg,
-    gap: Spacing.xs,
-  },
-  freemiumContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  freemiumText: {
-    fontSize: FontSize.sm,
-    color: Colors.textPrimary,
-    flex: 1,
-  },
-  freemiumCount: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.primary,
-  },
-  freemiumProgressTrack: {
-    width: "100%",
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: Colors.border,
-    overflow: "hidden",
-  },
-  freemiumProgressFill: {
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: Colors.primary,
-  },
-  ctaButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginHorizontal: Spacing.lg,
-    marginBottom: Spacing.md,
-    paddingVertical: Spacing.md,
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.lg,
-    gap: Spacing.sm,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  ctaIcon: {
     fontSize: 22,
-    fontWeight: FontWeight.bold,
-    color: Colors.textOnPrimary,
-  },
-  ctaText: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.textOnPrimary,
+    lineHeight: 24,
   },
   searchContainer: {
     paddingHorizontal: Spacing.lg,
@@ -313,24 +194,6 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     fontSize: FontSize.md,
     minHeight: 44,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.sm,
-  },
-  sectionTitle: {
-    fontSize: FontSize.xs,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.textSecondary,
-    letterSpacing: 0.8,
-  },
-  sectionLink: {
-    fontSize: FontSize.sm,
-    color: Colors.primary,
-    fontWeight: FontWeight.medium,
   },
   list: {
     paddingHorizontal: Spacing.lg,
@@ -363,42 +226,5 @@ const styles = StyleSheet.create({
   emptySubtitle: {
     color: Colors.textSecondary,
     textAlign: "center",
-  },
-  resourcesSection: {
-    marginTop: Spacing.lg,
-    paddingBottom: Spacing.lg,
-  },
-  resourcesSectionTitle: {
-    fontSize: FontSize.xs,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.textSecondary,
-    letterSpacing: 0.8,
-    marginBottom: Spacing.sm,
-  },
-  resourcesRow: {
-    flexDirection: "row",
-    gap: Spacing.md,
-  },
-  resourceCard: {
-    flex: 1,
-    backgroundColor: Colors.backgroundCard,
-    borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.md,
-    alignItems: "center",
-    gap: Spacing.xs,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  resourceIcon: {
-    fontSize: 28,
-  },
-  resourceTitle: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.medium,
-    color: Colors.textPrimary,
   },
 });

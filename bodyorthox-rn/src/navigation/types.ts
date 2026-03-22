@@ -20,4 +20,6 @@ export type RootStackParamList = {
   Replay: { analysisId: string; patientId: string };
   Timeline: { patientId: string };
   Report: { analysis: Analysis; patient: Patient };
+  Protocols: undefined;
+  Reports: undefined;
 };
