@@ -361,7 +361,8 @@ export async function autoRotateIfNeeded(
 
   const tiltDeg = calculateShoulderTilt(quickResult.landmarks[0]);
 
-  if (Math.abs(tiltDeg) < MIN_TILT_DEGREES) {
+  // Skip if tilt is too small (< threshold) or too large (> 30° = likely misdetection)
+  if (Math.abs(tiltDeg) < MIN_TILT_DEGREES || Math.abs(tiltDeg) > 30) {
     return { image, rotated: false, angle: tiltDeg };
   }
 
