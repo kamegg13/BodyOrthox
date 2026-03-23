@@ -129,8 +129,12 @@ function getDotRadius(index: number): number {
 interface SkeletonOverlayProps {
   readonly landmarks: PoseLandmarks;
   readonly allLandmarks?: PoseLandmarks;
-  readonly imageWidth: number;
-  readonly imageHeight: number;
+  readonly containerWidth: number;
+  readonly containerHeight: number;
+  readonly displayedWidth: number;
+  readonly displayedHeight: number;
+  readonly offsetX: number;
+  readonly offsetY: number;
   readonly angles?: {
     readonly kneeAngle: number;
     readonly hipAngle: number;
@@ -147,8 +151,12 @@ interface SkeletonOverlayProps {
 export function SkeletonOverlay({
   landmarks,
   allLandmarks,
-  imageWidth,
-  imageHeight,
+  containerWidth,
+  containerHeight,
+  displayedWidth,
+  displayedHeight,
+  offsetX,
+  offsetY,
   angles,
 }: SkeletonOverlayProps) {
   // Use full 33-point landmarks when available, otherwise fall back to the 10-point subset
@@ -156,14 +164,17 @@ export function SkeletonOverlay({
 
   const landmarkEntries = Object.entries(displayLandmarks).map(([key, lm]) => ({
     index: Number(key),
-    x: lm.x * imageWidth,
-    y: lm.y * imageHeight,
+    x: offsetX + lm.x * displayedWidth,
+    y: offsetY + lm.y * displayedHeight,
     visibility: lm.visibility ?? 0,
   }));
 
   return (
     <View
-      style={[styles.container, { width: imageWidth, height: imageHeight }]}
+      style={[
+        styles.container,
+        { width: containerWidth, height: containerHeight },
+      ]}
       pointerEvents="none"
       testID="skeleton-overlay"
     >
@@ -177,10 +188,10 @@ export function SkeletonOverlay({
         const minVis = Math.min(fromLm.visibility ?? 0, toLm.visibility ?? 0);
         if (minVis < 0.3) return null;
 
-        const x1 = fromLm.x * imageWidth;
-        const y1 = fromLm.y * imageHeight;
-        const x2 = toLm.x * imageWidth;
-        const y2 = toLm.y * imageHeight;
+        const x1 = offsetX + fromLm.x * displayedWidth;
+        const y1 = offsetY + fromLm.y * displayedHeight;
+        const x2 = offsetX + toLm.x * displayedWidth;
+        const y2 = offsetY + toLm.y * displayedHeight;
         const length = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
         const angle = Math.atan2(y2 - y1, x2 - x1);
         const region = getConnectionRegion(from, to);
@@ -235,30 +246,42 @@ export function SkeletonOverlay({
       {/* Angle values at key joints */}
       {angles && (
         <>
-          <AngleLabel
-            landmarks={landmarks}
-            jointIndex={24}
-            fallbackIndex={23}
-            label={`${angles.hipAngle.toFixed(1)}\u00B0`}
-            imageWidth={imageWidth}
-            imageHeight={imageHeight}
-          />
-          <AngleLabel
-            landmarks={landmarks}
-            jointIndex={26}
-            fallbackIndex={25}
-            label={`${angles.kneeAngle.toFixed(1)}\u00B0`}
-            imageWidth={imageWidth}
-            imageHeight={imageHeight}
-          />
-          <AngleLabel
-            landmarks={landmarks}
-            jointIndex={28}
-            fallbackIndex={27}
-            label={`${angles.ankleAngle.toFixed(1)}\u00B0`}
-            imageWidth={imageWidth}
-            imageHeight={imageHeight}
-          />
+          {angles.hipAngle > 0 && (
+            <AngleLabel
+              landmarks={landmarks}
+              jointIndex={24}
+              fallbackIndex={23}
+              label={`${angles.hipAngle.toFixed(1)}\u00B0`}
+              displayedWidth={displayedWidth}
+              displayedHeight={displayedHeight}
+              offsetX={offsetX}
+              offsetY={offsetY}
+            />
+          )}
+          {angles.kneeAngle > 0 && (
+            <AngleLabel
+              landmarks={landmarks}
+              jointIndex={26}
+              fallbackIndex={25}
+              label={`${angles.kneeAngle.toFixed(1)}\u00B0`}
+              displayedWidth={displayedWidth}
+              displayedHeight={displayedHeight}
+              offsetX={offsetX}
+              offsetY={offsetY}
+            />
+          )}
+          {angles.ankleAngle > 0 && (
+            <AngleLabel
+              landmarks={landmarks}
+              jointIndex={28}
+              fallbackIndex={27}
+              label={`${angles.ankleAngle.toFixed(1)}\u00B0`}
+              displayedWidth={displayedWidth}
+              displayedHeight={displayedHeight}
+              offsetX={offsetX}
+              offsetY={offsetY}
+            />
+          )}
         </>
       )}
     </View>
@@ -270,21 +293,25 @@ function AngleLabel({
   jointIndex,
   fallbackIndex,
   label,
-  imageWidth,
-  imageHeight,
+  displayedWidth,
+  displayedHeight,
+  offsetX,
+  offsetY,
 }: {
   readonly landmarks: PoseLandmarks;
   readonly jointIndex: number;
   readonly fallbackIndex: number;
   readonly label: string;
-  readonly imageWidth: number;
-  readonly imageHeight: number;
+  readonly displayedWidth: number;
+  readonly displayedHeight: number;
+  readonly offsetX: number;
+  readonly offsetY: number;
 }) {
   const lm = landmarks[jointIndex] ?? landmarks[fallbackIndex];
   if (!lm) return null;
 
-  const x = lm.x * imageWidth;
-  const y = lm.y * imageHeight;
+  const x = offsetX + lm.x * displayedWidth;
+  const y = offsetY + lm.y * displayedHeight;
 
   return (
     <View style={[styles.angleLabelContainer, { left: x + 14, top: y - 10 }]}>

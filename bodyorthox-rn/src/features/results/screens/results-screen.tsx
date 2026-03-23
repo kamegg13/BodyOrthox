@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Image,
   LayoutChangeEvent,
@@ -29,6 +29,12 @@ import { formatDisplayDateTime } from "../../../shared/utils/date-utils";
 import { useAnalysisRepository } from "../../../shared/hooks/use-analysis-repository";
 import { useAsyncData } from "../../../shared/hooks/use-async-data";
 import { usePlatform } from "../../../shared/hooks/use-platform";
+import {
+  getNaturalImageSize,
+  calculateContainLayout,
+  type NaturalDimensions,
+  type DisplayedImageLayout,
+} from "../../../shared/utils/image-dimensions";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, "Results">;
@@ -46,15 +52,40 @@ export function ResultsScreen() {
   const { analysisId, patientId, capturedImageUrl, allLandmarks } = params;
   const { isTablet } = usePlatform();
   const [viewMode, setViewMode] = useState<ViewMode>("simple");
-  const [photoLayout, setPhotoLayout] = useState<{
+  const [photoContainerLayout, setPhotoContainerLayout] = useState<{
     width: number;
     height: number;
   } | null>(null);
+  const [photoNaturalSize, setPhotoNaturalSize] =
+    useState<NaturalDimensions | null>(null);
 
   const handlePhotoLayout = useCallback((e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
-    setPhotoLayout({ width, height });
+    setPhotoContainerLayout({ width, height });
   }, []);
+
+  useEffect(() => {
+    if (!capturedImageUrl) return;
+    getNaturalImageSize(capturedImageUrl)
+      .then(setPhotoNaturalSize)
+      .catch(() => setPhotoNaturalSize(null));
+  }, [capturedImageUrl]);
+
+  const photoDisplayLayout: DisplayedImageLayout | null = photoContainerLayout
+    ? photoNaturalSize
+      ? calculateContainLayout(
+          photoContainerLayout.width,
+          photoContainerLayout.height,
+          photoNaturalSize.width,
+          photoNaturalSize.height,
+        )
+      : {
+          displayedWidth: photoContainerLayout.width,
+          displayedHeight: photoContainerLayout.height,
+          offsetX: 0,
+          offsetY: 0,
+        }
+    : null;
 
   const repo = useAnalysisRepository();
   const {
@@ -120,12 +151,16 @@ export function ResultsScreen() {
             onLayout={handlePhotoLayout}
             testID="results-photo"
           />
-          {allLandmarks && photoLayout && (
+          {allLandmarks && photoContainerLayout && photoDisplayLayout && (
             <SkeletonOverlay
               landmarks={allLandmarks as PoseLandmarks}
               allLandmarks={allLandmarks as PoseLandmarks}
-              imageWidth={photoLayout.width}
-              imageHeight={photoLayout.height}
+              containerWidth={photoContainerLayout.width}
+              containerHeight={photoContainerLayout.height}
+              displayedWidth={photoDisplayLayout.displayedWidth}
+              displayedHeight={photoDisplayLayout.displayedHeight}
+              offsetX={photoDisplayLayout.offsetX}
+              offsetY={photoDisplayLayout.offsetY}
             />
           )}
         </View>

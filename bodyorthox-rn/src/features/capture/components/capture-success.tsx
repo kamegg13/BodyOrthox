@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Image,
   LayoutChangeEvent,
@@ -13,6 +13,12 @@ import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
 import { SkeletonOverlay } from "./skeleton-overlay";
 import type { PoseLandmarks, BilateralAngles } from "../data/angle-calculator";
 import { hkaLabel } from "../data/angle-calculator";
+import {
+  getNaturalImageSize,
+  calculateContainLayout,
+  type NaturalDimensions,
+  type DisplayedImageLayout,
+} from "../../../shared/utils/image-dimensions";
 
 interface CaptureSuccessProps {
   capturedImageUrl: string | null;
@@ -39,15 +45,44 @@ export function CaptureSuccess({
   onSave,
   onDiscard,
 }: CaptureSuccessProps) {
-  const [imageLayout, setImageLayout] = useState<{
+  const [containerLayout, setContainerLayout] = useState<{
     width: number;
     height: number;
   } | null>(null);
+  const [naturalSize, setNaturalSize] = useState<NaturalDimensions | null>(
+    null,
+  );
 
   const handleImageLayout = useCallback((e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
-    setImageLayout({ width, height });
+    setContainerLayout({ width, height });
   }, []);
+
+  useEffect(() => {
+    if (!capturedImageUrl) return;
+    getNaturalImageSize(capturedImageUrl)
+      .then(setNaturalSize)
+      .catch(() => {
+        // Fallback: natural size unknown, will use container dimensions
+        setNaturalSize(null);
+      });
+  }, [capturedImageUrl]);
+
+  const imageLayout: DisplayedImageLayout | null = containerLayout
+    ? naturalSize
+      ? calculateContainLayout(
+          containerLayout.width,
+          containerLayout.height,
+          naturalSize.width,
+          naturalSize.height,
+        )
+      : {
+          displayedWidth: containerLayout.width,
+          displayedHeight: containerLayout.height,
+          offsetX: 0,
+          offsetY: 0,
+        }
+    : null;
 
   return (
     <View
@@ -63,12 +98,16 @@ export function CaptureSuccess({
             testID="captured-image-thumbnail"
             onLayout={handleImageLayout}
           />
-          {landmarks && imageLayout && (
+          {landmarks && containerLayout && imageLayout && (
             <SkeletonOverlay
               landmarks={landmarks}
               allLandmarks={allLandmarks ?? undefined}
-              imageWidth={imageLayout.width}
-              imageHeight={imageLayout.height}
+              containerWidth={containerLayout.width}
+              containerHeight={containerLayout.height}
+              displayedWidth={imageLayout.displayedWidth}
+              displayedHeight={imageLayout.displayedHeight}
+              offsetX={imageLayout.offsetX}
+              offsetY={imageLayout.offsetY}
               angles={angles}
             />
           )}
@@ -127,13 +166,14 @@ export function CaptureSuccess({
 
       {/* Legacy single-leg angles */}
       <Text style={styles.angleLabel}>
-        Genou : {angles.kneeAngle.toFixed(1)}°
+        Genou : {angles.kneeAngle > 0 ? `${angles.kneeAngle.toFixed(1)}°` : "—"}
       </Text>
       <Text style={styles.angleLabel}>
-        Hanche : {angles.hipAngle.toFixed(1)}°
+        Hanche : {angles.hipAngle > 0 ? `${angles.hipAngle.toFixed(1)}°` : "—"}
       </Text>
       <Text style={styles.angleLabel}>
-        Cheville : {angles.ankleAngle.toFixed(1)}°
+        Cheville :{" "}
+        {angles.ankleAngle > 0 ? `${angles.ankleAngle.toFixed(1)}°` : "—"}
       </Text>
       <TouchableOpacity
         style={styles.saveButton}
