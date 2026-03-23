@@ -340,6 +340,25 @@ function jointLabel(joint: string | null): string {
   return JOINT_LABELS[joint] ?? joint;
 }
 
+/** Clinical norms for the bilateral table */
+const BILATERAL_NORMS: Record<
+  string,
+  { min: number; max: number; label: string }
+> = {
+  HKA: { min: 175, max: 180, label: "175–180°" },
+  Genou: { min: 170, max: 180, label: "170–180°" },
+  Hanche: { min: 170, max: 180, label: "170–180°" },
+  Cheville: { min: 170, max: 180, label: "170–180°" },
+};
+
+function getAngleStatusColor(value: number, min: number, max: number): string {
+  if (value === 0) return Colors.textDisabled;
+  if (value >= min && value <= max) return Colors.success;
+  const deviation = value < min ? min - value : value - max;
+  if (deviation <= 5) return Colors.warning;
+  return Colors.error;
+}
+
 function BilateralAngleRow({
   label,
   value,
@@ -349,17 +368,25 @@ function BilateralAngleRow({
   readonly value: number;
   readonly classification?: string;
 }) {
+  const norm = BILATERAL_NORMS[label];
+  const color = norm
+    ? getAngleStatusColor(value, norm.min, norm.max)
+    : Colors.textPrimary;
+
   return (
     <View style={styles.bilateralAngleRow}>
       <Text style={styles.bilateralAngleLabel}>{label}</Text>
       <View style={styles.bilateralAngleValueGroup}>
-        <Text style={styles.bilateralAngleValue}>
+        <Text style={[styles.bilateralAngleValue, { color }]}>
           {formatAngleDisplay(value)}
         </Text>
         {classification && (
-          <Text style={styles.bilateralClassification}>{classification}</Text>
+          <Text style={[styles.bilateralClassification, { color }]}>
+            {classification}
+          </Text>
         )}
       </View>
+      {norm && <Text style={styles.bilateralNormText}>({norm.label})</Text>}
     </View>
   );
 }
@@ -553,6 +580,11 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: Colors.textSecondary,
     fontStyle: "italic",
+  },
+  bilateralNormText: {
+    fontSize: 10,
+    color: Colors.textDisabled,
+    marginTop: 2,
   },
 
   // Expert section
