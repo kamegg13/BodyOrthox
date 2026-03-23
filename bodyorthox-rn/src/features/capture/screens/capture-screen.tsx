@@ -127,7 +127,7 @@ export function CaptureScreen() {
         isCorrectPosition={isCorrectPosition}
       />
       {(phase.type === "ready" || phase.type === "recording") && (
-        <View style={styles.controls}>
+        <View style={styles.controls} testID="capture-controls">
           {phase.type === "ready" ? (
             <>
               <TouchableOpacity
