@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useCallback } from "react";
 import {
   FlatList,
+  Image,
   StyleSheet,
   Text,
   TextInput,
@@ -76,9 +77,16 @@ export function PatientsScreen() {
 
   return (
     <View style={styles.container} testID="patients-screen">
-      {/* Header: BodyOrthox + profile avatar */}
+      {/* Header: Logo + title + profile avatar */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>BodyOrthox</Text>
+        <View style={styles.headerLeft}>
+          <Image
+            source={require("../../../assets/logo-antidote-sport.png")}
+            style={styles.headerLogo}
+            resizeMode="contain"
+          />
+          <Text style={styles.headerTitle}>Antidote Sport</Text>
+        </View>
         <View style={styles.profileAvatar}>
           <Text style={styles.profileAvatarText}>K</Text>
         </View>
@@ -215,6 +223,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.lg,
     paddingBottom: Spacing.sm,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  headerLogo: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
   headerTitle: {
     fontSize: FontSize.xxl,
