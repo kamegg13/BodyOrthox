@@ -7,8 +7,8 @@ import {
   classifyHKA,
   hkaLabel,
   isLandmarkReliable,
+  isFootLandmarkUsable,
   angleBetweenThreePoints,
-  angleBetweenThreePoints3D,
   PoseLandmarks,
 } from "../angle-calculator";
 
@@ -68,57 +68,20 @@ describe("angleBetweenThreePoints", () => {
   });
 });
 
-describe("angleBetweenThreePoints3D", () => {
-  it("returns 180 for collinear points in 3D", () => {
-    const a = { x: 0, y: 0, z: 0 };
-    const b = { x: 0.5, y: 0, z: 0 };
-    const c = { x: 1, y: 0, z: 0 };
-    expect(angleBetweenThreePoints3D(a, b, c)).toBeCloseTo(180, 0);
+describe("isFootLandmarkUsable", () => {
+  it("returns true for foot landmark with visibility >= 0.2", () => {
+    expect(isFootLandmarkUsable({ x: 0, y: 0, visibility: 0.2 })).toBe(true);
+    expect(isFootLandmarkUsable({ x: 0, y: 0, visibility: 0.5 })).toBe(true);
+    expect(isFootLandmarkUsable({ x: 0, y: 0, visibility: 0.9 })).toBe(true);
   });
 
-  it("returns 90 for perpendicular points in 3D", () => {
-    const a = { x: 0, y: 0, z: 0 };
-    const b = { x: 0, y: 1, z: 0 };
-    const c = { x: 1, y: 1, z: 0 };
-    expect(angleBetweenThreePoints3D(a, b, c)).toBeCloseTo(90, 0);
+  it("returns false for foot landmark with visibility < 0.2", () => {
+    expect(isFootLandmarkUsable({ x: 0, y: 0, visibility: 0.1 })).toBe(false);
+    expect(isFootLandmarkUsable({ x: 0, y: 0, visibility: 0 })).toBe(false);
   });
 
-  it("returns 90 for perpendicular points using z dimension", () => {
-    const a = { x: 0, y: 0, z: 1 };
-    const b = { x: 0, y: 0, z: 0 };
-    const c = { x: 1, y: 0, z: 0 };
-    expect(angleBetweenThreePoints3D(a, b, c)).toBeCloseTo(90, 0);
-  });
-
-  it("falls back to 2D when all z are 0", () => {
-    const a = { x: 0, y: 0, z: 0 };
-    const b = { x: 0.5, y: 0, z: 0 };
-    const c = { x: 1, y: 0, z: 0 };
-    expect(angleBetweenThreePoints3D(a, b, c)).toBeCloseTo(
-      angleBetweenThreePoints(a, b, c),
-      5,
-    );
-  });
-
-  it("falls back to 2D when z is undefined", () => {
-    const a = { x: 0, y: 0 };
-    const b = { x: 0.5, y: 0 };
-    const c = { x: 1, y: 0 };
-    expect(angleBetweenThreePoints3D(a, b, c)).toBeCloseTo(180, 0);
-  });
-
-  it("returns 0 when vectors have zero length", () => {
-    const a = { x: 1, y: 1, z: 1 };
-    expect(angleBetweenThreePoints3D(a, a, a)).toBe(0);
-  });
-
-  it("considers z depth for angled limbs", () => {
-    // Points forming a 3D angle where z makes a difference
-    const a = { x: 0, y: 1, z: 0 };
-    const b = { x: 0, y: 0, z: 0 };
-    const c = { x: 0, y: 0, z: 1 };
-    // ba = (0,1,0), bc = (0,0,1) → 90 degrees
-    expect(angleBetweenThreePoints3D(a, b, c)).toBeCloseTo(90, 0);
+  it("returns false for undefined landmark", () => {
+    expect(isFootLandmarkUsable(undefined)).toBe(false);
   });
 });
 
@@ -213,12 +176,22 @@ describe("calculateAnkleAngle", () => {
       26: { x: 0.58, y: 0.72, visibility: 0.88 },
       27: { x: 0.42, y: 0.92, visibility: 0.85 },
       28: { x: 0.58, y: 0.92, visibility: 0.85 },
-      29: { x: 0.4, y: 0.96, visibility: 0.1 }, // low visibility heel
-      30: { x: 0.6, y: 0.96, visibility: 0.1 }, // low visibility heel
+      29: { x: 0.4, y: 0.96, visibility: 0.1 }, // below foot threshold
+      30: { x: 0.6, y: 0.96, visibility: 0.1 }, // below foot threshold
       31: { x: 0.43, y: 0.97, visibility: 0.8 }, // foot_index (toes)
       32: { x: 0.59, y: 0.97, visibility: 0.8 }, // foot_index (toes)
     };
     const angle = calculateAnkleAngle(withFootIndex);
+    expect(angle).toBeGreaterThan(0);
+  });
+
+  it("uses heel with visibility >= 0.2 (lower foot threshold)", () => {
+    const lowVisHeel: PoseLandmarks = {
+      26: { x: 0.58, y: 0.72, visibility: 0.88 },
+      28: { x: 0.58, y: 0.92, visibility: 0.85 },
+      30: { x: 0.6, y: 0.96, visibility: 0.25 }, // between 0.2 and 0.5
+    };
+    const angle = calculateAnkleAngle(lowVisHeel);
     expect(angle).toBeGreaterThan(0);
   });
 });

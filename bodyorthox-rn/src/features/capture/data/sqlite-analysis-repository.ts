@@ -5,6 +5,7 @@ import {
   createAnalysis,
 } from "../domain/analysis";
 import { IAnalysisRepository } from "./analysis-repository";
+import type { PoseLandmarks } from "./angle-calculator";
 
 interface AnalysisRow {
   id: string;
@@ -16,6 +17,19 @@ interface AnalysisRow {
   ml_corrected: number;
   manual_correction_joint: string | null;
   created_at: string;
+  landmarks_json?: string | null;
+  captured_image_url?: string | null;
+}
+
+function parseLandmarksJson(
+  json: string | null | undefined,
+): PoseLandmarks | undefined {
+  if (!json) return undefined;
+  try {
+    return JSON.parse(json) as PoseLandmarks;
+  } catch {
+    return undefined;
+  }
 }
 
 function rowToAnalysis(row: Record<string, unknown>): Analysis {
@@ -33,6 +47,8 @@ function rowToAnalysis(row: Record<string, unknown>): Analysis {
     manualCorrectionApplied: r.ml_corrected === 1,
     manualCorrectionJoint:
       (r.manual_correction_joint as Analysis["manualCorrectionJoint"]) ?? null,
+    allLandmarks: parseLandmarksJson(r.landmarks_json),
+    capturedImageUrl: r.captured_image_url ?? undefined,
   };
 }
 
@@ -58,11 +74,15 @@ export class SqliteAnalysisRepository implements IAnalysisRepository {
 
   async create(input: CreateAnalysisInput): Promise<Analysis> {
     const analysis = createAnalysis(input);
+    const landmarksJson = analysis.allLandmarks
+      ? JSON.stringify(analysis.allLandmarks)
+      : null;
     await this.db.execute(
       `INSERT INTO analyses
          (id, patient_id, knee_angle, hip_angle, ankle_angle,
-          confidence_score, ml_corrected, manual_correction_joint, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          confidence_score, ml_corrected, manual_correction_joint, created_at,
+          landmarks_json, captured_image_url)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         analysis.id,
         analysis.patientId,
@@ -73,6 +93,8 @@ export class SqliteAnalysisRepository implements IAnalysisRepository {
         analysis.manualCorrectionApplied ? 1 : 0,
         analysis.manualCorrectionJoint,
         analysis.createdAt,
+        landmarksJson,
+        analysis.capturedImageUrl ?? null,
       ],
     );
     return analysis;

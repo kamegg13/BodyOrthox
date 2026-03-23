@@ -132,11 +132,14 @@ export const useCaptureStore = create<CaptureState & CaptureActions>()(
     async saveAnalysis(patientId: string): Promise<Analysis | null> {
       if (!_repository || !_pendingAngles) return null;
       try {
+        const state = _get();
         const input: CreateAnalysisInput = {
           patientId,
           angles: _pendingAngles,
           bilateralAngles: _pendingBilateralAngles ?? undefined,
           confidenceScore: _pendingConfidence,
+          capturedImageUrl: state.capturedImageUrl ?? undefined,
+          allLandmarks: state.allDetectedLandmarks ?? undefined,
         };
         const analysis = await _repository.create(input);
         _pendingAngles = null;

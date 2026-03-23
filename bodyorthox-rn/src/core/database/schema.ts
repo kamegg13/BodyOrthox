@@ -27,6 +27,14 @@ export const CREATE_ANALYSES_TABLE = `
   );
 `;
 
+export const ADD_LANDMARKS_JSON_COLUMN = `
+  ALTER TABLE analyses ADD COLUMN landmarks_json TEXT;
+`;
+
+export const ADD_CAPTURED_IMAGE_URL_COLUMN = `
+  ALTER TABLE analyses ADD COLUMN captured_image_url TEXT;
+`;
+
 export const CREATE_IDX_PATIENTS_NAME = `
   CREATE INDEX IF NOT EXISTS idx_patients_name ON patients(name);
 `;
@@ -41,4 +49,6 @@ export const ALL_MIGRATIONS = [
   CREATE_ANALYSES_TABLE,
   CREATE_IDX_PATIENTS_NAME,
   CREATE_IDX_ANALYSES_PATIENT,
+  ADD_LANDMARKS_JSON_COLUMN,
+  ADD_CAPTURED_IMAGE_URL_COLUMN,
 ];

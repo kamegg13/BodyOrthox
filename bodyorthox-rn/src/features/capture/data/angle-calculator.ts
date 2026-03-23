@@ -24,6 +24,9 @@ export interface PoseLandmarks {
 /** Minimum visibility below which a landmark is considered unreliable */
 const MIN_LANDMARK_CONFIDENCE = 0.5;
 
+/** Lower threshold for foot landmarks (heel, foot_index) — feet are often partially visible */
+const MIN_FOOT_CONFIDENCE = 0.2;
+
 /**
  * Check whether a landmark exists and has sufficient visibility confidence.
  */
@@ -31,6 +34,15 @@ export function isLandmarkReliable(
   landmark: Landmark | undefined,
 ): landmark is Landmark {
   return !!landmark && (landmark.visibility ?? 0) >= MIN_LANDMARK_CONFIDENCE;
+}
+
+/**
+ * Check whether a foot landmark is usable (lower threshold since feet are harder to detect).
+ */
+export function isFootLandmarkUsable(
+  landmark: Landmark | undefined,
+): landmark is Landmark {
+  return !!landmark && (landmark.visibility ?? 0) >= MIN_FOOT_CONFIDENCE;
 }
 
 export function angleBetweenThreePoints(
@@ -44,49 +56,6 @@ export function angleBetweenThreePoints(
   const dot = ba.x * bc.x + ba.y * bc.y;
   const magBa = Math.sqrt(ba.x ** 2 + ba.y ** 2);
   const magBc = Math.sqrt(bc.x ** 2 + bc.y ** 2);
-
-  if (magBa === 0 || magBc === 0) return 0;
-
-  const cosAngle = dot / (magBa * magBc);
-  const clampedCos = Math.max(-1, Math.min(1, cosAngle));
-  return (Math.acos(clampedCos) * 180) / Math.PI;
-}
-
-/**
- * Check whether a landmark has meaningful Z depth information.
- * Z is considered available when it is defined and non-zero.
- */
-function hasZDepth(lm: Landmark): boolean {
-  return lm.z !== undefined && lm.z !== 0;
-}
-
-/**
- * Calculate the angle between three points using 3D coordinates.
- * Falls back to 2D when Z is unavailable on any of the three points.
- */
-export function angleBetweenThreePoints3D(
-  a: Landmark,
-  b: Landmark,
-  c: Landmark,
-): number {
-  if (!hasZDepth(a) && !hasZDepth(b) && !hasZDepth(c)) {
-    return angleBetweenThreePoints(a, b, c);
-  }
-
-  const ba = {
-    x: a.x - b.x,
-    y: a.y - b.y,
-    z: (a.z ?? 0) - (b.z ?? 0),
-  };
-  const bc = {
-    x: c.x - b.x,
-    y: c.y - b.y,
-    z: (c.z ?? 0) - (b.z ?? 0),
-  };
-
-  const dot = ba.x * bc.x + ba.y * bc.y + ba.z * bc.z;
-  const magBa = Math.sqrt(ba.x ** 2 + ba.y ** 2 + ba.z ** 2);
-  const magBc = Math.sqrt(bc.x ** 2 + bc.y ** 2 + bc.z ** 2);
 
   if (magBa === 0 || magBc === 0) return 0;
 
@@ -114,7 +83,7 @@ export function calculateKneeAngle(landmarks: PoseLandmarks): number {
       : undefined;
 
   if (!hip || !knee || !ankle) return 0;
-  return angleBetweenThreePoints3D(hip, knee, ankle);
+  return angleBetweenThreePoints(hip, knee, ankle);
 }
 
 export function calculateHipAngle(landmarks: PoseLandmarks): number {
@@ -136,7 +105,7 @@ export function calculateHipAngle(landmarks: PoseLandmarks): number {
       : undefined;
 
   if (!shoulder || !hip || !knee) return 0;
-  return angleBetweenThreePoints3D(shoulder, hip, knee);
+  return angleBetweenThreePoints(shoulder, hip, knee);
 }
 
 export function calculateAnkleAngle(landmarks: PoseLandmarks): number {
@@ -151,22 +120,22 @@ export function calculateAnkleAngle(landmarks: PoseLandmarks): number {
     : isLandmarkReliable(landmarks[27])
       ? landmarks[27]
       : undefined;
-  // Try heel first, fall back to foot_index (toes) if heel is unreliable
-  let foot = isLandmarkReliable(landmarks[30])
+  // Try heel first, fall back to foot_index (toes) — use lower threshold for feet
+  let foot = isFootLandmarkUsable(landmarks[30])
     ? landmarks[30]
-    : isLandmarkReliable(landmarks[29])
+    : isFootLandmarkUsable(landmarks[29])
       ? landmarks[29]
       : undefined;
   if (!foot) {
-    foot = isLandmarkReliable(landmarks[32])
+    foot = isFootLandmarkUsable(landmarks[32])
       ? landmarks[32]
-      : isLandmarkReliable(landmarks[31])
+      : isFootLandmarkUsable(landmarks[31])
         ? landmarks[31]
         : undefined;
   }
 
   if (!knee || !ankle || !foot) return 0;
-  return angleBetweenThreePoints3D(knee, ankle, foot);
+  return angleBetweenThreePoints(knee, ankle, foot);
 }
 
 export function calculateConfidenceScore(landmarks: PoseLandmarks): number {
@@ -240,24 +209,24 @@ export function calculateBilateralAngles(
   const leftHip = landmarks[23];
   const leftKnee = landmarks[25];
   const leftAnkle = landmarks[27];
-  // Try heel first, fall back to foot_index (toes) if heel is unreliable
-  const leftFoot = isLandmarkReliable(landmarks[29])
+  // Try heel first, fall back to foot_index (toes) — use lower threshold for feet
+  const leftFoot = isFootLandmarkUsable(landmarks[29])
     ? landmarks[29]
-    : isLandmarkReliable(landmarks[31])
+    : isFootLandmarkUsable(landmarks[31])
       ? landmarks[31]
-      : landmarks[29]; // keep original for safeAngle to reject
+      : undefined;
 
   // Right side: 12=right_shoulder, 24=right_hip, 26=right_knee, 28=right_ankle, 30=right_heel, 32=right_foot_index
   const rightShoulder = landmarks[12];
   const rightHip = landmarks[24];
   const rightKnee = landmarks[26];
   const rightAnkle = landmarks[28];
-  // Try heel first, fall back to foot_index (toes) if heel is unreliable
-  const rightFoot = isLandmarkReliable(landmarks[30])
+  // Try heel first, fall back to foot_index (toes) — use lower threshold for feet
+  const rightFoot = isFootLandmarkUsable(landmarks[30])
     ? landmarks[30]
-    : isLandmarkReliable(landmarks[32])
+    : isFootLandmarkUsable(landmarks[32])
       ? landmarks[32]
-      : landmarks[30]; // keep original for safeAngle to reject
+      : undefined;
 
   const safeAngle = (
     a: Landmark | undefined,
@@ -270,19 +239,34 @@ export function calculateBilateralAngles(
       !isLandmarkReliable(c)
     )
       return 0;
-    return angleBetweenThreePoints3D(a, b, c);
+    return angleBetweenThreePoints(a, b, c);
+  };
+
+  /** Like safeAngle but uses the lower foot threshold for the third landmark */
+  const safeAnkleAngle = (
+    a: Landmark | undefined,
+    b: Landmark | undefined,
+    foot: Landmark | undefined,
+  ): number => {
+    if (
+      !isLandmarkReliable(a) ||
+      !isLandmarkReliable(b) ||
+      !isFootLandmarkUsable(foot)
+    )
+      return 0;
+    return angleBetweenThreePoints(a, b, foot);
   };
 
   return {
     left: {
       kneeAngle: safeAngle(leftHip, leftKnee, leftAnkle),
       hipAngle: safeAngle(leftShoulder, leftHip, leftKnee),
-      ankleAngle: safeAngle(leftKnee, leftAnkle, leftFoot),
+      ankleAngle: safeAnkleAngle(leftKnee, leftAnkle, leftFoot),
     },
     right: {
       kneeAngle: safeAngle(rightHip, rightKnee, rightAnkle),
       hipAngle: safeAngle(rightShoulder, rightHip, rightKnee),
-      ankleAngle: safeAngle(rightKnee, rightAnkle, rightFoot),
+      ankleAngle: safeAnkleAngle(rightKnee, rightAnkle, rightFoot),
     },
     leftHKA: safeAngle(leftHip, leftKnee, leftAnkle),
     rightHKA: safeAngle(rightHip, rightKnee, rightAnkle),

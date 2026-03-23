@@ -64,12 +64,24 @@ export function ResultsScreen() {
     setPhotoContainerLayout({ width, height });
   }, []);
 
+  const repo = useAnalysisRepository();
+  const {
+    data: analysis,
+    isLoading,
+    error,
+    refetch: handleRetry,
+  } = useAsyncData(() => repo.getById(analysisId), [analysisId, repo]);
+
+  // Prefer nav params, fall back to stored data from DB
+  const effectiveImageUrl = capturedImageUrl ?? analysis?.capturedImageUrl;
+  const effectiveLandmarks = allLandmarks ?? analysis?.allLandmarks;
+
   useEffect(() => {
-    if (!capturedImageUrl) return;
-    getNaturalImageSize(capturedImageUrl)
+    if (!effectiveImageUrl) return;
+    getNaturalImageSize(effectiveImageUrl)
       .then(setPhotoNaturalSize)
       .catch(() => setPhotoNaturalSize(null));
-  }, [capturedImageUrl]);
+  }, [effectiveImageUrl]);
 
   const photoDisplayLayout: DisplayedImageLayout | null = photoContainerLayout
     ? photoNaturalSize
@@ -87,14 +99,6 @@ export function ResultsScreen() {
         }
     : null;
 
-  const repo = useAnalysisRepository();
-  const {
-    data: analysis,
-    isLoading,
-    error,
-    refetch: handleRetry,
-  } = useAsyncData(() => repo.getById(analysisId), [analysisId, repo]);
-
   const handleBack = useCallback(() => {
     navigation.navigate("PatientDetail", { patientId });
   }, [navigation, patientId]);
@@ -107,8 +111,8 @@ export function ResultsScreen() {
   // Use stored bilateral angles or compute from landmarks
   const bilateral =
     analysis.bilateralAngles ??
-    (allLandmarks
-      ? calculateBilateralAngles(allLandmarks as PoseLandmarks)
+    (effectiveLandmarks
+      ? calculateBilateralAngles(effectiveLandmarks as PoseLandmarks)
       : null);
 
   // Compute HKA from bilateral if available, else fallback
@@ -147,19 +151,19 @@ export function ResultsScreen() {
       <Text style={styles.headerTitle}>Résultats</Text>
 
       {/* Captured photo with skeleton overlay — main visual */}
-      {capturedImageUrl && (
+      {effectiveImageUrl && (
         <View style={styles.photoContainer}>
           <Image
-            source={{ uri: capturedImageUrl }}
+            source={{ uri: effectiveImageUrl }}
             style={styles.photoImage}
             resizeMode="contain"
             onLayout={handlePhotoLayout}
             testID="results-photo"
           />
-          {allLandmarks && photoContainerLayout && photoDisplayLayout && (
+          {effectiveLandmarks && photoContainerLayout && photoDisplayLayout && (
             <SkeletonOverlay
-              landmarks={allLandmarks as PoseLandmarks}
-              allLandmarks={allLandmarks as PoseLandmarks}
+              landmarks={effectiveLandmarks as PoseLandmarks}
+              allLandmarks={effectiveLandmarks as PoseLandmarks}
               containerWidth={photoContainerLayout.width}
               containerHeight={photoContainerLayout.height}
               displayedWidth={photoDisplayLayout.displayedWidth}

@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import type { BilateralAngles } from "../data/angle-calculator";
+import type { BilateralAngles, PoseLandmarks } from "../data/angle-calculator";
 
 export interface ArticularAngles {
   readonly kneeAngle: number; // degrees, 1 decimal
@@ -16,6 +16,8 @@ export interface Analysis {
   readonly confidenceScore: number; // [0.0, 1.0]
   readonly manualCorrectionApplied: boolean;
   readonly manualCorrectionJoint: "knee" | "hip" | "ankle" | null;
+  readonly capturedImageUrl?: string; // base64 data URL, optional
+  readonly allLandmarks?: PoseLandmarks; // all 33 landmarks, optional
 }
 
 export interface CreateAnalysisInput {
@@ -25,6 +27,8 @@ export interface CreateAnalysisInput {
   confidenceScore: number;
   manualCorrectionApplied?: boolean;
   manualCorrectionJoint?: "knee" | "hip" | "ankle" | null;
+  capturedImageUrl?: string;
+  allLandmarks?: PoseLandmarks;
 }
 
 export function createAnalysis(input: CreateAnalysisInput): Analysis {
@@ -45,6 +49,8 @@ export function createAnalysis(input: CreateAnalysisInput): Analysis {
     confidenceScore: input.confidenceScore,
     manualCorrectionApplied: input.manualCorrectionApplied ?? false,
     manualCorrectionJoint: input.manualCorrectionJoint ?? null,
+    capturedImageUrl: input.capturedImageUrl,
+    allLandmarks: input.allLandmarks,
   };
 }
 
