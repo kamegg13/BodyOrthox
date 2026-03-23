@@ -5,6 +5,16 @@
  */
 import { IDatabase, QueryResult } from "./database";
 
+const DEBUG_DB =
+  typeof process !== "undefined" ? process.env.NODE_ENV !== "test" : true;
+
+function dbLog(...args: unknown[]): void {
+  if (DEBUG_DB) {
+    // eslint-disable-next-line no-console
+    console.log("[WebDB]", ...args);
+  }
+}
+
 // Minimal in-memory store for web (no sql.js bundled for simplicity)
 class WebDatabase implements IDatabase {
   private tables: Map<string, Record<string, unknown>[]> = new Map();
@@ -63,30 +73,53 @@ class WebDatabase implements IDatabase {
     const tableName = tableMatch[1].toLowerCase();
     const rows = this.tables.get(tableName) ?? [];
 
-    // Simplified WHERE handling — check patient_id BEFORE id (id regex would match patient_id)
+    dbLog("SELECT", tableName, "totalRows:", rows.length, "params:", params);
+
+    // Parse WHERE clause — supports multiple AND conditions
     const whereMatch = sql.match(/WHERE\s+(.+?)(?:\s+ORDER|\s+LIMIT|$)/i);
     if (whereMatch) {
       const condition = whereMatch[1].trim();
-      const patientIdMatch = condition.match(/patient_id\s*=\s*\?/i);
-      const idMatch = condition.match(/\bid\s*=\s*\?/i);
-      const nameMatch = condition.match(/name\s+LIKE\s+\?/i);
-
+      // Split on AND to support compound conditions
+      const clauses = condition.split(/\s+AND\s+/i);
       let filtered = [...rows];
       let paramIndex = 0;
 
-      if (patientIdMatch) {
-        filtered = filtered.filter(
-          (r) => r["patient_id"] === params[paramIndex++],
-        );
-      } else if (idMatch) {
-        filtered = filtered.filter((r) => r["id"] === params[paramIndex++]);
-      } else if (nameMatch) {
-        const pattern = String(params[paramIndex++]).replace(/%/g, "");
-        filtered = filtered.filter((r) =>
-          String(r["name"]).toLowerCase().includes(pattern.toLowerCase()),
-        );
+      for (const clause of clauses) {
+        const trimmedClause = clause.trim();
+
+        // Match column_name = ? (use full word boundary to avoid partial matches)
+        const eqMatch = trimmedClause.match(/^(\w+)\s*=\s*\?$/i);
+        if (eqMatch) {
+          const col = eqMatch[1];
+          const val = params[paramIndex++];
+          filtered = filtered.filter((r) => r[col] === val);
+          continue;
+        }
+
+        // Match column_name LIKE ?
+        const likeMatch = trimmedClause.match(/^(\w+)\s+LIKE\s+\?$/i);
+        if (likeMatch) {
+          const col = likeMatch[1];
+          const pattern = String(params[paramIndex++]).replace(/%/g, "");
+          filtered = filtered.filter((r) =>
+            String(r[col]).toLowerCase().includes(pattern.toLowerCase()),
+          );
+          continue;
+        }
+
+        // Unrecognized clause — skip param placeholder if present
+        if (trimmedClause.includes("?")) {
+          paramIndex++;
+        }
       }
 
+      dbLog(
+        "SELECT WHERE result:",
+        filtered.length,
+        "rows (from",
+        rows.length,
+        ")",
+      );
       return { rows: filtered, rowsAffected: 0 };
     }
 
@@ -114,6 +147,8 @@ class WebDatabase implements IDatabase {
     }
     this.tables.get(tableName)!.push(row);
     this.persist();
+
+    dbLog("INSERT", tableName, "columns:", columns, "id:", row["id"]);
 
     return { rows: [], rowsAffected: 1 };
   }

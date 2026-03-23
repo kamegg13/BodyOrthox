@@ -8,23 +8,29 @@ const localStorageMock = (() => {
   let store: Record<string, string> = {};
   return {
     getItem: (key: string) => store[key] ?? null,
-    setItem: (key: string, value: string) => { store[key] = value; },
-    removeItem: (key: string) => { delete store[key]; },
-    clear: () => { store = {}; },
+    setItem: (key: string, value: string) => {
+      store[key] = value;
+    },
+    removeItem: (key: string) => {
+      delete store[key];
+    },
+    clear: () => {
+      store = {};
+    },
   };
 })();
 
-Object.defineProperty(global, 'localStorage', { value: localStorageMock });
+Object.defineProperty(global, "localStorage", { value: localStorageMock });
 
-import { createDatabase } from '../database.web';
-import { ALL_MIGRATIONS } from '../schema';
+import { createDatabase } from "../database.web";
+import { ALL_MIGRATIONS } from "../schema";
 
-describe('WebDatabase', () => {
+describe("WebDatabase", () => {
   let db: ReturnType<typeof createDatabase>;
 
   beforeEach(async () => {
     localStorageMock.clear();
-    db = createDatabase('test.db');
+    db = createDatabase("test.db");
     await db.initialize();
   });
 
@@ -32,103 +38,199 @@ describe('WebDatabase', () => {
     await db.close();
   });
 
-  describe('initialize', () => {
-    it('initializes without error', async () => {
-      const freshDb = createDatabase('fresh.db');
+  describe("initialize", () => {
+    it("initializes without error", async () => {
+      const freshDb = createDatabase("fresh.db");
       await expect(freshDb.initialize()).resolves.not.toThrow();
     });
   });
 
-  describe('execute', () => {
-    it('handles CREATE TABLE statements', async () => {
-      const result = await db.execute('CREATE TABLE IF NOT EXISTS test (id TEXT)');
+  describe("execute", () => {
+    it("handles CREATE TABLE statements", async () => {
+      const result = await db.execute(
+        "CREATE TABLE IF NOT EXISTS test (id TEXT)",
+      );
       expect(result.rows).toHaveLength(0);
     });
 
-    it('handles PRAGMA statements', async () => {
-      const result = await db.execute('PRAGMA journal_mode = WAL');
+    it("handles PRAGMA statements", async () => {
+      const result = await db.execute("PRAGMA journal_mode = WAL");
       expect(result).toBeDefined();
     });
 
-    it('inserts rows', async () => {
+    it("inserts rows", async () => {
       await db.execute(
-        'INSERT INTO patients (id, name, date_of_birth, morphological_profile, created_at) VALUES (?, ?, ?, ?, ?)',
-        ['p1', 'Jean', '1990-01-01', null, '2024-01-01T00:00:00Z']
+        "INSERT INTO patients (id, name, date_of_birth, morphological_profile, created_at) VALUES (?, ?, ?, ?, ?)",
+        ["p1", "Jean", "1990-01-01", null, "2024-01-01T00:00:00Z"],
       );
 
-      const result = await db.execute('SELECT * FROM patients');
+      const result = await db.execute("SELECT * FROM patients");
       expect(result.rows).toHaveLength(1);
-      expect(result.rows[0]['id']).toBe('p1');
-      expect(result.rows[0]['name']).toBe('Jean');
+      expect(result.rows[0]["id"]).toBe("p1");
+      expect(result.rows[0]["name"]).toBe("Jean");
     });
 
-    it('selects rows with id filter', async () => {
+    it("selects rows with id filter", async () => {
       await db.execute(
-        'INSERT INTO patients (id, name, date_of_birth, morphological_profile, created_at) VALUES (?, ?, ?, ?, ?)',
-        ['p1', 'Jean', '1990-01-01', null, '2024-01-01T00:00:00Z']
+        "INSERT INTO patients (id, name, date_of_birth, morphological_profile, created_at) VALUES (?, ?, ?, ?, ?)",
+        ["p1", "Jean", "1990-01-01", null, "2024-01-01T00:00:00Z"],
       );
       await db.execute(
-        'INSERT INTO patients (id, name, date_of_birth, morphological_profile, created_at) VALUES (?, ?, ?, ?, ?)',
-        ['p2', 'Marie', '1985-06-15', null, '2024-01-01T00:00:00Z']
+        "INSERT INTO patients (id, name, date_of_birth, morphological_profile, created_at) VALUES (?, ?, ?, ?, ?)",
+        ["p2", "Marie", "1985-06-15", null, "2024-01-01T00:00:00Z"],
       );
 
-      const result = await db.execute('SELECT * FROM patients WHERE id = ?', ['p1']);
+      const result = await db.execute("SELECT * FROM patients WHERE id = ?", [
+        "p1",
+      ]);
       expect(result.rows).toHaveLength(1);
-      expect(result.rows[0]['name']).toBe('Jean');
+      expect(result.rows[0]["name"]).toBe("Jean");
     });
 
-    it('selects rows with LIKE name filter', async () => {
+    it("selects rows with LIKE name filter", async () => {
       await db.execute(
-        'INSERT INTO patients (id, name, date_of_birth, morphological_profile, created_at) VALUES (?, ?, ?, ?, ?)',
-        ['p1', 'Jean Dupont', '1990-01-01', null, '2024-01-01T00:00:00Z']
+        "INSERT INTO patients (id, name, date_of_birth, morphological_profile, created_at) VALUES (?, ?, ?, ?, ?)",
+        ["p1", "Jean Dupont", "1990-01-01", null, "2024-01-01T00:00:00Z"],
       );
       await db.execute(
-        'INSERT INTO patients (id, name, date_of_birth, morphological_profile, created_at) VALUES (?, ?, ?, ?, ?)',
-        ['p2', 'Marie Martin', '1985-06-15', null, '2024-01-01T00:00:00Z']
+        "INSERT INTO patients (id, name, date_of_birth, morphological_profile, created_at) VALUES (?, ?, ?, ?, ?)",
+        ["p2", "Marie Martin", "1985-06-15", null, "2024-01-01T00:00:00Z"],
       );
 
       const result = await db.execute(
-        'SELECT * FROM patients WHERE name LIKE ?',
-        ['%jean%']
+        "SELECT * FROM patients WHERE name LIKE ?",
+        ["%jean%"],
       );
       expect(result.rows).toHaveLength(1);
     });
 
-    it('updates rows', async () => {
+    it("updates rows", async () => {
       await db.execute(
-        'INSERT INTO patients (id, name, date_of_birth, morphological_profile, created_at) VALUES (?, ?, ?, ?, ?)',
-        ['p1', 'Jean', '1990-01-01', null, '2024-01-01T00:00:00Z']
+        "INSERT INTO patients (id, name, date_of_birth, morphological_profile, created_at) VALUES (?, ?, ?, ?, ?)",
+        ["p1", "Jean", "1990-01-01", null, "2024-01-01T00:00:00Z"],
       );
 
-      await db.execute(
-        'UPDATE patients SET name = ? WHERE id = ?',
-        ['Jean Updated', 'p1']
-      );
+      await db.execute("UPDATE patients SET name = ? WHERE id = ?", [
+        "Jean Updated",
+        "p1",
+      ]);
 
-      const result = await db.execute('SELECT * FROM patients WHERE id = ?', ['p1']);
-      expect(result.rows[0]['name']).toBe('Jean Updated');
+      const result = await db.execute("SELECT * FROM patients WHERE id = ?", [
+        "p1",
+      ]);
+      expect(result.rows[0]["name"]).toBe("Jean Updated");
     });
 
-    it('deletes rows', async () => {
+    it("deletes rows", async () => {
       await db.execute(
-        'INSERT INTO patients (id, name, date_of_birth, morphological_profile, created_at) VALUES (?, ?, ?, ?, ?)',
-        ['p1', 'Jean', '1990-01-01', null, '2024-01-01T00:00:00Z']
+        "INSERT INTO patients (id, name, date_of_birth, morphological_profile, created_at) VALUES (?, ?, ?, ?, ?)",
+        ["p1", "Jean", "1990-01-01", null, "2024-01-01T00:00:00Z"],
       );
 
-      await db.execute('DELETE FROM patients WHERE id = ?', ['p1']);
+      await db.execute("DELETE FROM patients WHERE id = ?", ["p1"]);
 
-      const result = await db.execute('SELECT * FROM patients');
+      const result = await db.execute("SELECT * FROM patients");
       expect(result.rows).toHaveLength(0);
     });
 
-    it('persists data to localStorage on close', async () => {
+    it("inserts and selects analysis by id (multi-line SQL)", async () => {
+      const analysisId = "test-uuid-123";
       await db.execute(
-        'INSERT INTO patients (id, name, date_of_birth, morphological_profile, created_at) VALUES (?, ?, ?, ?, ?)',
-        ['p1', 'Jean', '1990-01-01', null, '2024-01-01T00:00:00Z']
+        `INSERT INTO analyses
+         (id, patient_id, knee_angle, hip_angle, ankle_angle,
+          confidence_score, ml_corrected, manual_correction_joint, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          analysisId,
+          "patient-1",
+          170.5,
+          175.2,
+          90.3,
+          0.85,
+          0,
+          null,
+          "2024-01-01T00:00:00Z",
+        ],
+      );
+
+      const result = await db.execute("SELECT * FROM analyses WHERE id = ?", [
+        analysisId,
+      ]);
+      expect(result.rows).toHaveLength(1);
+      expect(result.rows[0]["id"]).toBe(analysisId);
+      expect(result.rows[0]["knee_angle"]).toBe(170.5);
+    });
+
+    it("selects analysis by patient_id", async () => {
+      await db.execute(
+        `INSERT INTO analyses
+         (id, patient_id, knee_angle, hip_angle, ankle_angle,
+          confidence_score, ml_corrected, manual_correction_joint, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          "a1",
+          "patient-1",
+          170.5,
+          175.2,
+          90.3,
+          0.85,
+          0,
+          null,
+          "2024-01-01T00:00:00Z",
+        ],
+      );
+      await db.execute(
+        `INSERT INTO analyses
+         (id, patient_id, knee_angle, hip_angle, ankle_angle,
+          confidence_score, ml_corrected, manual_correction_joint, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          "a2",
+          "patient-2",
+          168.0,
+          174.0,
+          89.0,
+          0.9,
+          0,
+          null,
+          "2024-01-02T00:00:00Z",
+        ],
+      );
+
+      const result = await db.execute(
+        "SELECT * FROM analyses WHERE patient_id = ? ORDER BY created_at DESC",
+        ["patient-1"],
+      );
+      expect(result.rows).toHaveLength(1);
+      expect(result.rows[0]["id"]).toBe("a1");
+    });
+
+    it("selects with compound AND conditions", async () => {
+      await db.execute(
+        "INSERT INTO patients (id, name, date_of_birth, morphological_profile, created_at) VALUES (?, ?, ?, ?, ?)",
+        ["p1", "Jean", "1990-01-01", "normal", "2024-01-01T00:00:00Z"],
+      );
+      await db.execute(
+        "INSERT INTO patients (id, name, date_of_birth, morphological_profile, created_at) VALUES (?, ?, ?, ?, ?)",
+        ["p2", "Jean", "1985-06-15", "autre", "2024-01-02T00:00:00Z"],
+      );
+
+      const result = await db.execute(
+        "SELECT * FROM patients WHERE name = ? AND morphological_profile = ?",
+        ["Jean", "normal"],
+      );
+      expect(result.rows).toHaveLength(1);
+      expect(result.rows[0]["id"]).toBe("p1");
+    });
+
+    it("persists data to localStorage on close", async () => {
+      await db.execute(
+        "INSERT INTO patients (id, name, date_of_birth, morphological_profile, created_at) VALUES (?, ?, ?, ?, ?)",
+        ["p1", "Jean", "1990-01-01", null, "2024-01-01T00:00:00Z"],
       );
       await db.close();
 
-      expect(localStorageMock.getItem('bodyorthox_db')).not.toBeNull();
+      expect(localStorageMock.getItem("bodyorthox_db")).not.toBeNull();
     });
   });
 });

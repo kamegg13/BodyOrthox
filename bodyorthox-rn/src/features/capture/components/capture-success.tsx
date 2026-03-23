@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useCallback, useState } from "react";
 import {
   Image,
+  LayoutChangeEvent,
   Platform,
   StyleSheet,
   Text,
@@ -9,6 +10,8 @@ import {
 } from "react-native";
 import { Colors } from "../../../shared/design-system/colors";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
+import { SkeletonOverlay } from "./skeleton-overlay";
+import type { PoseLandmarks } from "../data/angle-calculator";
 
 interface CaptureSuccessProps {
   capturedImageUrl: string | null;
@@ -18,6 +21,7 @@ interface CaptureSuccessProps {
     hipAngle: number;
     ankleAngle: number;
   };
+  landmarks: PoseLandmarks | null;
   onSave: () => void;
   onDiscard: () => void;
 }
@@ -26,21 +30,43 @@ export function CaptureSuccess({
   capturedImageUrl,
   confidenceScore,
   angles,
+  landmarks,
   onSave,
   onDiscard,
 }: CaptureSuccessProps) {
+  const [imageLayout, setImageLayout] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
+
+  const handleImageLayout = useCallback((e: LayoutChangeEvent) => {
+    const { width, height } = e.nativeEvent.layout;
+    setImageLayout({ width, height });
+  }, []);
+
   return (
     <View
       style={[styles.container, styles.successContainer]}
       testID="capture-success"
     >
       {capturedImageUrl && (
-        <Image
-          source={{ uri: capturedImageUrl }}
-          style={styles.previewThumbnail}
-          resizeMode="contain"
-          testID="captured-image-thumbnail"
-        />
+        <View style={styles.imageContainer}>
+          <Image
+            source={{ uri: capturedImageUrl }}
+            style={styles.previewImage}
+            resizeMode="contain"
+            testID="captured-image-thumbnail"
+            onLayout={handleImageLayout}
+          />
+          {landmarks && imageLayout && (
+            <SkeletonOverlay
+              landmarks={landmarks}
+              imageWidth={imageLayout.width}
+              imageHeight={imageLayout.height}
+              angles={angles}
+            />
+          )}
+        </View>
       )}
       {Platform.OS !== "web" && (
         <View
@@ -59,13 +85,13 @@ export function CaptureSuccess({
         Confiance : {Math.round(confidenceScore * 100)}%
       </Text>
       <Text style={styles.angleLabel}>
-        Genou : {angles.kneeAngle.toFixed(1)}
+        Genou : {angles.kneeAngle.toFixed(1)}°
       </Text>
       <Text style={styles.angleLabel}>
-        Hanche : {angles.hipAngle.toFixed(1)}
+        Hanche : {angles.hipAngle.toFixed(1)}°
       </Text>
       <Text style={styles.angleLabel}>
-        Cheville : {angles.ankleAngle.toFixed(1)}
+        Cheville : {angles.ankleAngle.toFixed(1)}°
       </Text>
       <TouchableOpacity
         style={styles.saveButton}
@@ -97,6 +123,18 @@ const styles = StyleSheet.create({
     padding: Spacing.xl,
     gap: Spacing.md,
   },
+  imageContainer: {
+    width: "100%",
+    maxWidth: 400,
+    aspectRatio: 3 / 4,
+    marginBottom: Spacing.md,
+    position: "relative",
+  },
+  previewImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 12,
+  },
   simulationWarning: {
     backgroundColor: `${Colors.warning}33`,
     borderWidth: 1,
@@ -127,10 +165,4 @@ const styles = StyleSheet.create({
   saveButtonText: { color: Colors.white, fontWeight: "700", fontSize: 16 },
   discardButton: { paddingVertical: Spacing.md },
   discardButtonText: { color: Colors.textSecondary, fontSize: 15 },
-  previewThumbnail: {
-    width: 200,
-    height: 200,
-    borderRadius: 12,
-    marginBottom: Spacing.md,
-  },
 });

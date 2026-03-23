@@ -18,6 +18,7 @@ interface CaptureState {
   luminosity: number; // 0-255
   isCorrectPosition: boolean;
   capturedImageUrl: string | null;
+  detectedLandmarks: PoseLandmarks | null;
 }
 
 interface CaptureActions {
@@ -56,6 +57,7 @@ export const useCaptureStore = create<CaptureState & CaptureActions>()(
     luminosity: 128,
     isCorrectPosition: false,
     capturedImageUrl: null,
+    detectedLandmarks: null,
 
     setRepository(repo: IAnalysisRepository) {
       _repository = repo;
@@ -109,6 +111,7 @@ export const useCaptureStore = create<CaptureState & CaptureActions>()(
       _pendingConfidence = confidenceScore;
 
       set((state) => {
+        state.detectedLandmarks = landmarks;
         state.phase = {
           type: "success",
           angles: { kneeAngle, hipAngle, ankleAngle },
@@ -166,6 +169,7 @@ export const useCaptureStore = create<CaptureState & CaptureActions>()(
         state.luminosity = 128;
         state.isCorrectPosition = false;
         state.capturedImageUrl = null;
+        state.detectedLandmarks = null;
       });
     },
 

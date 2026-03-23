@@ -43,6 +43,7 @@ export function CaptureScreen() {
     luminosity,
     isCorrectPosition,
     capturedImageUrl,
+    detectedLandmarks,
     previewUrl,
     mlLoading,
     detectionError,
@@ -77,6 +78,7 @@ export function CaptureScreen() {
         capturedImageUrl={capturedImageUrl}
         confidenceScore={phase.confidenceScore}
         angles={phase.angles}
+        landmarks={detectedLandmarks}
         onSave={handleSave}
         onDiscard={handleDiscard}
       />
