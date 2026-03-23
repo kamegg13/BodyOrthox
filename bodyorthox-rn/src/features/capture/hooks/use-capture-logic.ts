@@ -7,6 +7,7 @@ import { useCaptureStore } from "../store/capture-store";
 import { WebCameraRef } from "../components/web-camera";
 import { getPoseDetector } from "../data/pose-detector";
 import type { IPoseDetector } from "../data/pose-detector";
+import type { PoseLandmarks } from "../data/angle-calculator";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -188,22 +189,25 @@ export function useCaptureLogic(patientId: string) {
     processFrames(NATIVE_SIMULATED_LANDMARKS);
   }, [phase, startRecording, processFrames, handleTakeWebPhoto]);
 
-  const handleSave = useCallback(async () => {
-    if (phase.type !== "success") return;
-    const analysis = await saveAnalysis(patientId);
-    if (analysis) {
-      const { capturedImageUrl: imgUrl, allDetectedLandmarks: allLm } =
-        useCaptureStore.getState();
-      navigation.replace("Results", {
-        analysisId: analysis.id,
-        patientId,
-        capturedImageUrl: imgUrl ?? undefined,
-        allLandmarks: allLm ?? undefined,
-      });
-    } else {
-      setError("Impossible de sauvegarder l'analyse.");
-    }
-  }, [phase, patientId, saveAnalysis, navigation, setError]);
+  const handleSave = useCallback(
+    async (correctedLandmarks?: PoseLandmarks) => {
+      if (phase.type !== "success") return;
+      const analysis = await saveAnalysis(patientId, correctedLandmarks);
+      if (analysis) {
+        const { capturedImageUrl: imgUrl, allDetectedLandmarks: allLm } =
+          useCaptureStore.getState();
+        navigation.replace("Results", {
+          analysisId: analysis.id,
+          patientId,
+          capturedImageUrl: imgUrl ?? undefined,
+          allLandmarks: correctedLandmarks ?? allLm ?? undefined,
+        });
+      } else {
+        setError("Impossible de sauvegarder l'analyse.");
+      }
+    },
+    [phase, patientId, saveAnalysis, navigation, setError],
+  );
 
   const handleDiscard = useCallback(() => {
     Alert.alert("Annuler", "Voulez-vous vraiment annuler cette analyse ?", [

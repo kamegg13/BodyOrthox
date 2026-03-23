@@ -1,5 +1,5 @@
-import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import React, { useCallback } from "react";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import { Colors } from "../../../shared/design-system/colors";
 import type { PoseLandmarks, BilateralAngles } from "../data/angle-calculator";
 
@@ -90,6 +90,20 @@ const HAND_CONNECTIONS = new Set([
   "16-22",
 ]);
 
+/** Draggable joint indices — only those used for angle calculation */
+const DRAGGABLE_INDICES = new Set([
+  23,
+  24, // hips
+  25,
+  26, // knees
+  27,
+  28, // ankles
+  29,
+  30, // heels
+  31,
+  32, // foot_index
+]);
+
 function getConnectionRegion(from: number, to: number): BodyRegion {
   const key = `${from}-${to}`;
   if (HAND_CONNECTIONS.has(key)) return "hand";
@@ -119,8 +133,9 @@ function getDotColor(index: number): string {
   return "rgba(255, 255, 255, 0.95)";
 }
 
-/** Dot radius based on landmark category */
-function getDotRadius(index: number): number {
+/** Dot radius based on landmark category and interactive mode */
+function getDotRadius(index: number, interactive: boolean): number {
+  if (interactive && DRAGGABLE_INDICES.has(index)) return 10;
   if (FACE_INDICES.has(index)) return 3;
   if (HAND_INDICES.has(index)) return 4;
   return 4;
@@ -141,6 +156,12 @@ interface SkeletonOverlayProps {
     readonly ankleAngle: number;
   };
   readonly bilateralAngles?: BilateralAngles;
+  readonly interactive?: boolean;
+  readonly onLandmarkMoved?: (
+    index: number,
+    normalizedX: number,
+    normalizedY: number,
+  ) => void;
 }
 
 /**
@@ -148,6 +169,9 @@ interface SkeletonOverlayProps {
  * on top of a captured photo. When `allLandmarks` (33 points) is provided,
  * draws the complete MediaPipe skeleton. Falls back to the 10-point subset
  * from `landmarks` when `allLandmarks` is not available.
+ *
+ * When `interactive` is true, key joints (hips, knees, ankles, feet) become
+ * draggable on web via mouse events, calling `onLandmarkMoved` on each move.
  */
 export function SkeletonOverlay({
   landmarks,
@@ -160,6 +184,8 @@ export function SkeletonOverlay({
   offsetY,
   angles,
   bilateralAngles,
+  interactive = false,
+  onLandmarkMoved,
 }: SkeletonOverlayProps) {
   // Use full 33-point landmarks when available, otherwise fall back to the 10-point subset
   const displayLandmarks = allLandmarks ?? landmarks;
@@ -177,7 +203,7 @@ export function SkeletonOverlay({
         styles.container,
         { width: containerWidth, height: containerHeight },
       ]}
-      pointerEvents="none"
+      pointerEvents={interactive ? "box-none" : "none"}
       testID="skeleton-overlay"
     >
       {/* Lines connecting joints */}
@@ -220,27 +246,24 @@ export function SkeletonOverlay({
         // Skip low-visibility landmarks
         if (visibility < 0.3) return null;
 
-        const radius = getDotRadius(index);
+        const radius = getDotRadius(index, interactive);
         const color = getDotColor(index);
+        const isDraggable = interactive && DRAGGABLE_INDICES.has(index);
 
         return (
-          <View
+          <DraggableJointDot
             key={`dot-${index}`}
-            style={[
-              styles.dot,
-              {
-                width: radius * 2,
-                height: radius * 2,
-                borderRadius: radius,
-                left: x - radius,
-                top: y - radius,
-                backgroundColor: color,
-                shadowColor: color,
-                shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: 0.8,
-                shadowRadius: 3,
-              },
-            ]}
+            index={index}
+            x={x}
+            y={y}
+            radius={radius}
+            color={color}
+            isDraggable={isDraggable}
+            displayedWidth={displayedWidth}
+            displayedHeight={displayedHeight}
+            offsetX={offsetX}
+            offsetY={offsetY}
+            onLandmarkMoved={onLandmarkMoved}
           />
         );
       })}
@@ -375,6 +398,169 @@ export function SkeletonOverlay({
     </View>
   );
 }
+
+// --- DraggableJointDot ---
+
+interface DraggableJointDotProps {
+  readonly index: number;
+  readonly x: number;
+  readonly y: number;
+  readonly radius: number;
+  readonly color: string;
+  readonly isDraggable: boolean;
+  readonly displayedWidth: number;
+  readonly displayedHeight: number;
+  readonly offsetX: number;
+  readonly offsetY: number;
+  readonly onLandmarkMoved?: (
+    index: number,
+    normalizedX: number,
+    normalizedY: number,
+  ) => void;
+}
+
+function DraggableJointDot({
+  index,
+  x,
+  y,
+  radius,
+  color,
+  isDraggable,
+  displayedWidth,
+  displayedHeight,
+  offsetX,
+  offsetY,
+  onLandmarkMoved,
+}: DraggableJointDotProps) {
+  const attachDragListeners = useCallback(
+    (node: View | null) => {
+      // Only attach drag on web platform for draggable dots
+      if (Platform.OS !== "web" || !isDraggable || !node || !onLandmarkMoved)
+        return;
+
+      // Access the underlying DOM element via react-native-web
+      const domElement = node as unknown as HTMLElement;
+      if (!domElement.addEventListener) return;
+
+      // Minimum touch area: 20px radius for grab
+      const touchAreaSize = Math.max(radius * 2, 20);
+      domElement.style.width = `${touchAreaSize}px`;
+      domElement.style.height = `${touchAreaSize}px`;
+      domElement.style.borderRadius = `${touchAreaSize / 2}px`;
+      domElement.style.marginLeft = `${-(touchAreaSize - radius * 2) / 2}px`;
+      domElement.style.marginTop = `${-(touchAreaSize - radius * 2) / 2}px`;
+      domElement.style.cursor = "grab";
+
+      const handleMouseDown = (e: MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Current pixel position of the landmark center
+        let currentPixelX = x;
+        let currentPixelY = y;
+
+        const startMouseX = e.clientX;
+        const startMouseY = e.clientY;
+
+        domElement.style.cursor = "grabbing";
+
+        const handleMouseMove = (moveE: MouseEvent) => {
+          moveE.preventDefault();
+          const dx = moveE.clientX - startMouseX;
+          const dy = moveE.clientY - startMouseY;
+
+          const newPixelX = currentPixelX + dx;
+          const newPixelY = currentPixelY + dy;
+
+          // Convert pixel position back to normalized [0,1] coordinates
+          const newNormX = (newPixelX - offsetX) / displayedWidth;
+          const newNormY = (newPixelY - offsetY) / displayedHeight;
+
+          // Clamp to valid range
+          const clampedX = Math.max(0, Math.min(1, newNormX));
+          const clampedY = Math.max(0, Math.min(1, newNormY));
+
+          onLandmarkMoved(index, clampedX, clampedY);
+        };
+
+        const handleMouseUp = () => {
+          domElement.style.cursor = "grab";
+          document.removeEventListener("mousemove", handleMouseMove);
+          document.removeEventListener("mouseup", handleMouseUp);
+        };
+
+        document.addEventListener("mousemove", handleMouseMove);
+        document.addEventListener("mouseup", handleMouseUp);
+      };
+
+      // Clean up previous listener to avoid duplicates
+      domElement.removeEventListener("mousedown", handleMouseDown);
+      domElement.addEventListener("mousedown", handleMouseDown);
+
+      // Store for cleanup
+      (domElement as unknown as Record<string, unknown>).__cleanupDrag = () => {
+        domElement.removeEventListener("mousedown", handleMouseDown);
+      };
+    },
+    [
+      isDraggable,
+      x,
+      y,
+      radius,
+      displayedWidth,
+      displayedHeight,
+      offsetX,
+      offsetY,
+      onLandmarkMoved,
+      index,
+    ],
+  );
+
+  const dotStyle = isDraggable
+    ? [
+        styles.dot,
+        {
+          width: radius * 2,
+          height: radius * 2,
+          borderRadius: radius,
+          left: x - radius,
+          top: y - radius,
+          backgroundColor: Colors.primary,
+          shadowColor: Colors.primary,
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: 0.9,
+          shadowRadius: 6,
+          borderWidth: 2,
+          borderColor: Colors.white,
+          zIndex: 10,
+        },
+      ]
+    : [
+        styles.dot,
+        {
+          width: radius * 2,
+          height: radius * 2,
+          borderRadius: radius,
+          left: x - radius,
+          top: y - radius,
+          backgroundColor: color,
+          shadowColor: color,
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: 0.8,
+          shadowRadius: 3,
+        },
+      ];
+
+  return (
+    <View
+      ref={attachDragListeners}
+      style={dotStyle}
+      testID={isDraggable ? `draggable-dot-${index}` : `dot-${index}`}
+    />
+  );
+}
+
+// --- AngleLabel ---
 
 function AngleLabel({
   landmarks,

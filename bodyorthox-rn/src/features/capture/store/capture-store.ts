@@ -33,7 +33,10 @@ interface CaptureActions {
   startRecording(): void;
   addFrame(): void;
   processFrames(landmarks: PoseLandmarks, allLandmarks?: PoseLandmarks): void;
-  saveAnalysis(patientId: string): Promise<Analysis | null>;
+  saveAnalysis(
+    patientId: string,
+    correctedLandmarks?: PoseLandmarks,
+  ): Promise<Analysis | null>;
   sendAnalysisReadyNotification(patientName: string): Promise<void>;
   setLuminosity(value: number): void;
   setCorrectPosition(correct: boolean): void;
@@ -129,17 +132,37 @@ export const useCaptureStore = create<CaptureState & CaptureActions>()(
       });
     },
 
-    async saveAnalysis(patientId: string): Promise<Analysis | null> {
+    async saveAnalysis(
+      patientId: string,
+      correctedLandmarks?: PoseLandmarks,
+    ): Promise<Analysis | null> {
       if (!_repository || !_pendingAngles) return null;
       try {
         const state = _get();
+        const hasCorrectedLandmarks = !!correctedLandmarks;
+
+        // If corrected landmarks are provided, recalculate angles from them
+        const angles = hasCorrectedLandmarks
+          ? {
+              kneeAngle: calculateKneeAngle(correctedLandmarks),
+              hipAngle: calculateHipAngle(correctedLandmarks),
+              ankleAngle: calculateAnkleAngle(correctedLandmarks),
+            }
+          : _pendingAngles;
+
+        const bilateralAngles = hasCorrectedLandmarks
+          ? calculateBilateralAngles(correctedLandmarks)
+          : (_pendingBilateralAngles ?? undefined);
+
         const input: CreateAnalysisInput = {
           patientId,
-          angles: _pendingAngles,
-          bilateralAngles: _pendingBilateralAngles ?? undefined,
+          angles,
+          bilateralAngles,
           confidenceScore: _pendingConfidence,
           capturedImageUrl: state.capturedImageUrl ?? undefined,
-          allLandmarks: state.allDetectedLandmarks ?? undefined,
+          allLandmarks:
+            correctedLandmarks ?? state.allDetectedLandmarks ?? undefined,
+          manualCorrectionApplied: hasCorrectedLandmarks,
         };
         const analysis = await _repository.create(input);
         _pendingAngles = null;

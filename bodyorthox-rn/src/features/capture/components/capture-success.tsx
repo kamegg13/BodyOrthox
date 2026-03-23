@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Image,
   LayoutChangeEvent,
@@ -12,7 +12,13 @@ import { Colors } from "../../../shared/design-system/colors";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
 import { SkeletonOverlay } from "./skeleton-overlay";
 import type { PoseLandmarks, BilateralAngles } from "../data/angle-calculator";
-import { hkaLabel } from "../data/angle-calculator";
+import {
+  hkaLabel,
+  calculateBilateralAngles,
+  calculateKneeAngle,
+  calculateHipAngle,
+  calculateAnkleAngle,
+} from "../data/angle-calculator";
 import {
   getNaturalImageSize,
   calculateContainLayout,
@@ -31,8 +37,29 @@ interface CaptureSuccessProps {
   bilateralAngles: BilateralAngles;
   landmarks: PoseLandmarks | null;
   allLandmarks?: PoseLandmarks | null;
-  onSave: () => void;
+  onSave: (correctedLandmarks?: PoseLandmarks) => void;
   onDiscard: () => void;
+}
+
+/**
+ * Build a new PoseLandmarks object with one landmark replaced at the given index.
+ * Returns a new object — never mutates the input.
+ */
+function updateLandmarkAt(
+  base: PoseLandmarks,
+  index: number,
+  normalizedX: number,
+  normalizedY: number,
+): PoseLandmarks {
+  const existing = base[index];
+  return {
+    ...base,
+    [index]: {
+      ...existing,
+      x: normalizedX,
+      y: normalizedY,
+    },
+  };
 }
 
 export function CaptureSuccess({
@@ -52,6 +79,9 @@ export function CaptureSuccess({
   const [naturalSize, setNaturalSize] = useState<NaturalDimensions | null>(
     null,
   );
+  const [isCorrecting, setIsCorrecting] = useState(false);
+  const [correctedLandmarks, setCorrectedLandmarks] =
+    useState<PoseLandmarks | null>(null);
 
   const handleImageLayout = useCallback((e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
@@ -63,7 +93,6 @@ export function CaptureSuccess({
     getNaturalImageSize(capturedImageUrl)
       .then(setNaturalSize)
       .catch(() => {
-        // Fallback: natural size unknown, will use container dimensions
         setNaturalSize(null);
       });
   }, [capturedImageUrl]);
@@ -84,6 +113,53 @@ export function CaptureSuccess({
         }
     : null;
 
+  // The landmarks to display and use for angle calculation
+  const displayAllLandmarks = correctedLandmarks ?? allLandmarks ?? null;
+  const displayLandmarks = correctedLandmarks ?? landmarks;
+
+  // Recalculate angles from corrected landmarks
+  const currentAngles = useMemo(() => {
+    if (!correctedLandmarks) return angles;
+    return {
+      kneeAngle: calculateKneeAngle(correctedLandmarks),
+      hipAngle: calculateHipAngle(correctedLandmarks),
+      ankleAngle: calculateAnkleAngle(correctedLandmarks),
+    };
+  }, [correctedLandmarks, angles]);
+
+  const currentBilateral = useMemo(() => {
+    if (!correctedLandmarks) return bilateralAngles;
+    return calculateBilateralAngles(correctedLandmarks);
+  }, [correctedLandmarks, bilateralAngles]);
+
+  const handleLandmarkMoved = useCallback(
+    (index: number, normX: number, normY: number) => {
+      setCorrectedLandmarks((prev) => {
+        const base = prev ?? allLandmarks ?? landmarks ?? {};
+        return updateLandmarkAt(base, index, normX, normY);
+      });
+    },
+    [allLandmarks, landmarks],
+  );
+
+  const handleStartCorrection = useCallback(() => {
+    setIsCorrecting(true);
+  }, []);
+
+  const handleValidateCorrection = useCallback(() => {
+    setIsCorrecting(false);
+    // correctedLandmarks remain — they'll be used for display and save
+  }, []);
+
+  const handleCancelCorrection = useCallback(() => {
+    setIsCorrecting(false);
+    setCorrectedLandmarks(null);
+  }, []);
+
+  const handleSave = useCallback(() => {
+    onSave(correctedLandmarks ?? undefined);
+  }, [onSave, correctedLandmarks]);
+
   return (
     <View
       style={[styles.container, styles.successContainer]}
@@ -98,18 +174,29 @@ export function CaptureSuccess({
             testID="captured-image-thumbnail"
             onLayout={handleImageLayout}
           />
-          {landmarks && containerLayout && imageLayout && (
+          {displayLandmarks && containerLayout && imageLayout && (
             <SkeletonOverlay
-              landmarks={landmarks}
-              allLandmarks={allLandmarks ?? undefined}
+              landmarks={displayLandmarks}
+              allLandmarks={displayAllLandmarks ?? undefined}
               containerWidth={containerLayout.width}
               containerHeight={containerLayout.height}
               displayedWidth={imageLayout.displayedWidth}
               displayedHeight={imageLayout.displayedHeight}
               offsetX={imageLayout.offsetX}
               offsetY={imageLayout.offsetY}
-              angles={angles}
+              angles={currentAngles}
+              bilateralAngles={currentBilateral}
+              interactive={isCorrecting}
+              onLandmarkMoved={handleLandmarkMoved}
             />
+          )}
+          {/* Edit mode overlay */}
+          {isCorrecting && (
+            <View style={styles.correctionOverlay} pointerEvents="none">
+              <Text style={styles.correctionHelpText}>
+                Glissez les points articulaires pour corriger leur position
+              </Text>
+            </View>
           )}
         </View>
       )}
@@ -120,27 +207,39 @@ export function CaptureSuccess({
           accessibilityRole="alert"
         >
           <Text style={styles.simulationWarningText}>
-            ⚠️ Données de démonstration — l'analyse ML native n'est pas encore
-            intégrée. Les valeurs affichées ne reflètent pas la réalité.
+            {"\u26A0\uFE0F"} Donn{"\u00E9"}es de d{"\u00E9"}monstration — l{"'"}
+            analyse ML native n{"'"}est pas encore int{"\u00E9"}gr{"\u00E9"}
+            e. Les valeurs affich{"\u00E9"}es ne refl{"\u00E8"}tent pas la r
+            {"\u00E9"}alit{"\u00E9"}.
           </Text>
         </View>
       )}
-      <Text style={styles.successTitle}>Analyse complète</Text>
+      <Text style={styles.successTitle}>Analyse compl{"\u00E8"}te</Text>
       <Text style={styles.successScore}>
         Confiance : {Math.round(confidenceScore * 100)}%
       </Text>
+
+      {/* Correction indicator */}
+      {correctedLandmarks && !isCorrecting && (
+        <View style={styles.correctionBadge} testID="correction-applied-badge">
+          <Text style={styles.correctionBadgeText}>
+            Correction manuelle appliqu{"\u00E9"}e
+          </Text>
+        </View>
+      )}
 
       {/* Bilateral HKA analysis */}
       <View style={styles.bilateralSection} testID="bilateral-section">
         <View style={styles.legColumn}>
           <Text style={styles.legTitle}>Jambe gauche</Text>
-          {bilateralAngles.leftHKA > 0 ? (
+          {currentBilateral.leftHKA > 0 ? (
             <>
               <Text style={styles.hkaAngle} testID="left-hka">
-                HKA : {bilateralAngles.leftHKA.toFixed(1)}°
+                HKA : {currentBilateral.leftHKA.toFixed(1)}
+                {"\u00B0"}
               </Text>
               <Text style={styles.hkaClassification}>
-                {hkaLabel(bilateralAngles.leftHKA)}
+                {hkaLabel(currentBilateral.leftHKA)}
               </Text>
             </>
           ) : (
@@ -149,13 +248,14 @@ export function CaptureSuccess({
         </View>
         <View style={styles.legColumn}>
           <Text style={styles.legTitle}>Jambe droite</Text>
-          {bilateralAngles.rightHKA > 0 ? (
+          {currentBilateral.rightHKA > 0 ? (
             <>
               <Text style={styles.hkaAngle} testID="right-hka">
-                HKA : {bilateralAngles.rightHKA.toFixed(1)}°
+                HKA : {currentBilateral.rightHKA.toFixed(1)}
+                {"\u00B0"}
               </Text>
               <Text style={styles.hkaClassification}>
-                {hkaLabel(bilateralAngles.rightHKA)}
+                {hkaLabel(currentBilateral.rightHKA)}
               </Text>
             </>
           ) : (
@@ -166,32 +266,79 @@ export function CaptureSuccess({
 
       {/* Legacy single-leg angles */}
       <Text style={styles.angleLabel}>
-        Genou : {angles.kneeAngle > 0 ? `${angles.kneeAngle.toFixed(1)}°` : "—"}
+        Genou :{" "}
+        {currentAngles.kneeAngle > 0
+          ? `${currentAngles.kneeAngle.toFixed(1)}\u00B0`
+          : "\u2014"}
       </Text>
       <Text style={styles.angleLabel}>
-        Hanche : {angles.hipAngle > 0 ? `${angles.hipAngle.toFixed(1)}°` : "—"}
+        Hanche :{" "}
+        {currentAngles.hipAngle > 0
+          ? `${currentAngles.hipAngle.toFixed(1)}\u00B0`
+          : "\u2014"}
       </Text>
       <Text style={styles.angleLabel}>
         Cheville :{" "}
-        {angles.ankleAngle > 0 ? `${angles.ankleAngle.toFixed(1)}°` : "—"}
+        {currentAngles.ankleAngle > 0
+          ? `${currentAngles.ankleAngle.toFixed(1)}\u00B0`
+          : "\u2014"}
       </Text>
-      <TouchableOpacity
-        style={styles.saveButton}
-        onPress={onSave}
-        testID="save-analysis-button"
-        accessibilityRole="button"
-        accessibilityLabel="Sauvegarder l'analyse"
-      >
-        <Text style={styles.saveButtonText}>Sauvegarder l'analyse</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.discardButton}
-        onPress={onDiscard}
-        accessibilityRole="button"
-        accessibilityLabel="Recommencer la capture"
-      >
-        <Text style={styles.discardButtonText}>Recommencer</Text>
-      </TouchableOpacity>
+
+      {/* Correction mode buttons */}
+      {isCorrecting ? (
+        <View style={styles.correctionButtons}>
+          <TouchableOpacity
+            style={styles.validateCorrectionButton}
+            onPress={handleValidateCorrection}
+            testID="validate-correction-button"
+            accessibilityRole="button"
+            accessibilityLabel="Valider les corrections"
+          >
+            <Text style={styles.saveButtonText}>Valider les corrections</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.cancelCorrectionButton}
+            onPress={handleCancelCorrection}
+            testID="cancel-correction-button"
+            accessibilityRole="button"
+            accessibilityLabel="Annuler les corrections"
+          >
+            <Text style={styles.cancelCorrectionText}>Annuler</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <>
+          {/* Correct points button — only on web where drag works */}
+          {Platform.OS === "web" && (
+            <TouchableOpacity
+              style={styles.correctButton}
+              onPress={handleStartCorrection}
+              testID="correct-points-button"
+              accessibilityRole="button"
+              accessibilityLabel="Corriger les points"
+            >
+              <Text style={styles.correctButtonText}>Corriger les points</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
+            style={styles.saveButton}
+            onPress={handleSave}
+            testID="save-analysis-button"
+            accessibilityRole="button"
+            accessibilityLabel="Sauvegarder l'analyse"
+          >
+            <Text style={styles.saveButtonText}>Sauvegarder l{"'"}analyse</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.discardButton}
+            onPress={onDiscard}
+            accessibilityRole="button"
+            accessibilityLabel="Recommencer la capture"
+          >
+            <Text style={styles.discardButtonText}>Recommencer</Text>
+          </TouchableOpacity>
+        </>
+      )}
     </View>
   );
 }
@@ -216,6 +363,39 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     borderRadius: 12,
+  },
+  correctionOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "rgba(27, 111, 191, 0.15)",
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+  },
+  correctionHelpText: {
+    color: Colors.white,
+    fontSize: 13,
+    textAlign: "center",
+    fontWeight: "600",
+    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  correctionBadge: {
+    backgroundColor: `${Colors.primary}22`,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    borderRadius: BorderRadius.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+  },
+  correctionBadgeText: {
+    color: Colors.primary,
+    fontSize: 13,
+    fontWeight: "600",
   },
   simulationWarning: {
     backgroundColor: `${Colors.warning}33`,
@@ -267,6 +447,42 @@ const styles = StyleSheet.create({
     fontStyle: "italic" as const,
   },
   angleLabel: { color: Colors.textPrimary, fontSize: 18, fontWeight: "500" },
+  correctButton: {
+    backgroundColor: Colors.white,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.lg,
+    width: "100%",
+    alignItems: "center",
+  },
+  correctButtonText: {
+    color: Colors.primary,
+    fontWeight: "600",
+    fontSize: 15,
+  },
+  correctionButtons: {
+    width: "100%",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  validateCorrectionButton: {
+    backgroundColor: Colors.success,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    width: "100%",
+    alignItems: "center",
+  },
+  cancelCorrectionButton: {
+    paddingVertical: Spacing.sm,
+  },
+  cancelCorrectionText: {
+    color: Colors.error,
+    fontSize: 15,
+    fontWeight: "500",
+  },
   saveButton: {
     backgroundColor: Colors.primary,
     paddingHorizontal: Spacing.xl,
