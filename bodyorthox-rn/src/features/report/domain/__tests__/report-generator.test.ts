@@ -22,9 +22,9 @@ const mockAnalysis: Analysis = {
   patientId: "patient-1",
   createdAt: "2026-03-19T14:30:00.000Z",
   angles: {
-    kneeAngle: 5.2,
+    kneeAngle: 176.2,
     hipAngle: 175.0,
-    ankleAngle: 88.5,
+    ankleAngle: 174.5,
   },
   confidenceScore: 0.92,
   manualCorrectionApplied: false,
@@ -92,7 +92,7 @@ describe("buildReportData", () => {
   it("should assess each angle against norms", () => {
     const data = buildReportData(mockAnalysis, mockPatient);
     const knee = data.practitionerView.angles[0];
-    expect(knee.value).toBe(5.2);
+    expect(knee.value).toBe(176.2);
     expect(knee.isWithinNorm).toBe(true);
     expect(knee.label).toBe("Genou");
   });
@@ -100,7 +100,7 @@ describe("buildReportData", () => {
   it("should flag out-of-norm angles", () => {
     const abnormalAnalysis: Analysis = {
       ...mockAnalysis,
-      angles: { kneeAngle: 25, hipAngle: 150, ankleAngle: 60 },
+      angles: { kneeAngle: 160, hipAngle: 150, ankleAngle: 160 },
     };
     const data = buildReportData(abnormalAnalysis, mockPatient);
     expect(data.practitionerView.angles[0].isWithinNorm).toBe(false);
@@ -156,9 +156,9 @@ describe("generateReportHtml", () => {
   it("should include all angle values", () => {
     const data = buildReportData(mockAnalysis, mockPatient);
     const html = generateReportHtml(data);
-    expect(html).toContain("5.2");
+    expect(html).toContain("176.2");
     expect(html).toContain("175");
-    expect(html).toContain("88.5");
+    expect(html).toContain("174.5");
   });
 
   it("should include the MDR disclaimer", () => {

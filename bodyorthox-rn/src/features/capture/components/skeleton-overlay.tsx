@@ -1,7 +1,7 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Colors } from "../../../shared/design-system/colors";
-import type { PoseLandmarks } from "../data/angle-calculator";
+import type { PoseLandmarks, BilateralAngles } from "../data/angle-calculator";
 
 /**
  * Full MediaPipe Pose skeleton connections (33 landmarks).
@@ -140,6 +140,7 @@ interface SkeletonOverlayProps {
     readonly hipAngle: number;
     readonly ankleAngle: number;
   };
+  readonly bilateralAngles?: BilateralAngles;
 }
 
 /**
@@ -158,6 +159,7 @@ export function SkeletonOverlay({
   offsetX,
   offsetY,
   angles,
+  bilateralAngles,
 }: SkeletonOverlayProps) {
   // Use full 33-point landmarks when available, otherwise fall back to the 10-point subset
   const displayLandmarks = allLandmarks ?? landmarks;
@@ -243,8 +245,94 @@ export function SkeletonOverlay({
         );
       })}
 
-      {/* Angle values at key joints */}
-      {angles && (
+      {/* Bilateral angle values at key joints */}
+      {bilateralAngles && (
+        <>
+          {/* Left side angles (labels offset to the left) */}
+          {bilateralAngles.left.hipAngle > 0 && (
+            <AngleLabel
+              landmarks={displayLandmarks}
+              jointIndex={23}
+              fallbackIndex={23}
+              label={`${bilateralAngles.left.hipAngle.toFixed(1)}\u00B0`}
+              displayedWidth={displayedWidth}
+              displayedHeight={displayedHeight}
+              offsetX={offsetX}
+              offsetY={offsetY}
+              side="left"
+            />
+          )}
+          {bilateralAngles.left.kneeAngle > 0 && (
+            <AngleLabel
+              landmarks={displayLandmarks}
+              jointIndex={25}
+              fallbackIndex={25}
+              label={`${bilateralAngles.left.kneeAngle.toFixed(1)}\u00B0`}
+              displayedWidth={displayedWidth}
+              displayedHeight={displayedHeight}
+              offsetX={offsetX}
+              offsetY={offsetY}
+              side="left"
+            />
+          )}
+          {bilateralAngles.left.ankleAngle > 0 && (
+            <AngleLabel
+              landmarks={displayLandmarks}
+              jointIndex={27}
+              fallbackIndex={27}
+              label={`${bilateralAngles.left.ankleAngle.toFixed(1)}\u00B0`}
+              displayedWidth={displayedWidth}
+              displayedHeight={displayedHeight}
+              offsetX={offsetX}
+              offsetY={offsetY}
+              side="left"
+            />
+          )}
+          {/* Right side angles (labels offset to the right) */}
+          {bilateralAngles.right.hipAngle > 0 && (
+            <AngleLabel
+              landmarks={displayLandmarks}
+              jointIndex={24}
+              fallbackIndex={24}
+              label={`${bilateralAngles.right.hipAngle.toFixed(1)}\u00B0`}
+              displayedWidth={displayedWidth}
+              displayedHeight={displayedHeight}
+              offsetX={offsetX}
+              offsetY={offsetY}
+              side="right"
+            />
+          )}
+          {bilateralAngles.right.kneeAngle > 0 && (
+            <AngleLabel
+              landmarks={displayLandmarks}
+              jointIndex={26}
+              fallbackIndex={26}
+              label={`${bilateralAngles.right.kneeAngle.toFixed(1)}\u00B0`}
+              displayedWidth={displayedWidth}
+              displayedHeight={displayedHeight}
+              offsetX={offsetX}
+              offsetY={offsetY}
+              side="right"
+            />
+          )}
+          {bilateralAngles.right.ankleAngle > 0 && (
+            <AngleLabel
+              landmarks={displayLandmarks}
+              jointIndex={28}
+              fallbackIndex={28}
+              label={`${bilateralAngles.right.ankleAngle.toFixed(1)}\u00B0`}
+              displayedWidth={displayedWidth}
+              displayedHeight={displayedHeight}
+              offsetX={offsetX}
+              offsetY={offsetY}
+              side="right"
+            />
+          )}
+        </>
+      )}
+
+      {/* Legacy single-side angle values (backwards compatibility) */}
+      {!bilateralAngles && angles && (
         <>
           {angles.hipAngle > 0 && (
             <AngleLabel
@@ -297,6 +385,7 @@ function AngleLabel({
   displayedHeight,
   offsetX,
   offsetY,
+  side,
 }: {
   readonly landmarks: PoseLandmarks;
   readonly jointIndex: number;
@@ -306,6 +395,7 @@ function AngleLabel({
   readonly displayedHeight: number;
   readonly offsetX: number;
   readonly offsetY: number;
+  readonly side?: "left" | "right";
 }) {
   const lm = landmarks[jointIndex] ?? landmarks[fallbackIndex];
   if (!lm) return null;
@@ -313,8 +403,16 @@ function AngleLabel({
   const x = offsetX + lm.x * displayedWidth;
   const y = offsetY + lm.y * displayedHeight;
 
+  // Position label to the left or right of the joint depending on side
+  const labelOffsetX = side === "left" ? -70 : 14;
+
   return (
-    <View style={[styles.angleLabelContainer, { left: x + 14, top: y - 10 }]}>
+    <View
+      style={[
+        styles.angleLabelContainer,
+        { left: x + labelOffsetX, top: y - 10 },
+      ]}
+    >
       <Text style={styles.angleText}>{label}</Text>
     </View>
   );

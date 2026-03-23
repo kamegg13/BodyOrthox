@@ -15,11 +15,12 @@ import type { RootStackParamList } from "../../../navigation/types";
 import { confidenceLabel } from "../../capture/domain/analysis";
 import { SkeletonOverlay } from "../../capture/components/skeleton-overlay";
 import type { PoseLandmarks } from "../../capture/data/angle-calculator";
-import { ArticularAngleCard } from "../components/articular-angle-card";
+import {
+  calculateBilateralAngles,
+  hkaLabel,
+} from "../../capture/data/angle-calculator";
 import { HkaAngleCard, classifyHka } from "../components/hka-angle-card";
-import { BodyAxisDiagram } from "../components/body-axis-diagram";
 import { NormsReferenceCard } from "../components/norms-reference-card";
-import { assessAngle, REFERENCE_NORMS } from "../domain/reference-norms";
 import { LoadingSpinner } from "../../../shared/components/loading-spinner";
 import { ErrorWidget } from "../../../shared/components/error-widget";
 import { Colors } from "../../../shared/design-system/colors";
@@ -40,10 +41,9 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, "Results">;
 type ViewMode = "simple" | "expert";
 
-function jointLabel(joint: string | null): string {
-  if (!joint) return "";
-  const norm = REFERENCE_NORMS[joint];
-  return norm ? norm.label : joint;
+function formatAngleDisplay(value: number): string {
+  if (value === 0) return "\u2014";
+  return `${value.toFixed(1)}\u00B0`;
 }
 
 export function ResultsScreen() {
@@ -104,14 +104,19 @@ export function ResultsScreen() {
   if (error) return <ErrorWidget message={error} onRetry={handleRetry} />;
   if (!analysis) return <ErrorWidget message="Analyse introuvable." />;
 
-  const kneeAssessment = assessAngle("knee", analysis.angles.kneeAngle);
-  const hipAssessment = assessAngle("hip", analysis.angles.hipAngle);
-  const ankleAssessment = assessAngle("ankle", analysis.angles.ankleAngle);
+  // Use stored bilateral angles or compute from landmarks
+  const bilateral =
+    analysis.bilateralAngles ??
+    (allLandmarks
+      ? calculateBilateralAngles(allLandmarks as PoseLandmarks)
+      : null);
 
-  // Compute a synthetic HKA angle from knee angle
-  // HKA = 180 - knee deviation (simplified model)
-  const hkaAngle = 180 - analysis.angles.kneeAngle;
-  const hkaStatus = classifyHka(hkaAngle);
+  // Compute HKA from bilateral if available, else fallback
+  const leftHKA = bilateral?.leftHKA ?? 0;
+  const rightHKA = bilateral?.rightHKA ?? 0;
+  // Use the best available HKA for the single-value card and norms
+  const primaryHKA = rightHKA > 0 ? rightHKA : leftHKA;
+  const hkaStatus = classifyHka(primaryHKA);
 
   const confidenceColor =
     analysis.confidenceScore >= 0.85
@@ -135,13 +140,13 @@ export function ResultsScreen() {
           accessibilityLabel="Retour"
           style={styles.backButton}
         >
-          <Text style={styles.backText}>{"‹ Analyse HKA"}</Text>
+          <Text style={styles.backText}>{"\u2039 Analyse HKA"}</Text>
         </TouchableOpacity>
       </View>
 
       <Text style={styles.headerTitle}>Résultats</Text>
 
-      {/* Captured photo with skeleton overlay */}
+      {/* Captured photo with skeleton overlay — main visual */}
       {capturedImageUrl && (
         <View style={styles.photoContainer}>
           <Image
@@ -161,6 +166,7 @@ export function ResultsScreen() {
               displayedHeight={photoDisplayLayout.displayedHeight}
               offsetX={photoDisplayLayout.offsetX}
               offsetY={photoDisplayLayout.offsetY}
+              bilateralAngles={bilateral ?? undefined}
             />
           )}
         </View>
@@ -175,7 +181,7 @@ export function ResultsScreen() {
           style={[styles.confidenceBadge, { borderColor: confidenceColor }]}
         >
           <Text style={[styles.confidenceText, { color: confidenceColor }]}>
-            {`Confiance ${confidenceLabel(analysis.confidenceScore)} – ${Math.round(analysis.confidenceScore * 100)}%`}
+            {`Confiance ${confidenceLabel(analysis.confidenceScore)} \u2013 ${Math.round(analysis.confidenceScore * 100)}%`}
           </Text>
         </View>
         {analysis.manualCorrectionApplied && (
@@ -218,26 +224,77 @@ export function ResultsScreen() {
         })}
       </View>
 
-      {/* Main HKA Angle Card */}
+      {/* Bilateral HKA Angle Card */}
       <HkaAngleCard
-        angleValue={hkaAngle}
+        angleValue={primaryHKA}
         confidenceScore={analysis.confidenceScore}
+        leftHKA={leftHKA}
+        rightHKA={rightHKA}
         testID="hka-card"
       />
-
-      {/* Body Axis Diagram */}
-      <BodyAxisDiagram angleValue={hkaAngle} testID="body-axis-diagram" />
 
       {/* Norms Reference Card */}
       <NormsReferenceCard currentStatus={hkaStatus} testID="norms-card" />
 
-      {/* Articular angle cards (knee, hip, ankle) */}
-      <Text style={styles.sectionLabel}>Détail articulaire</Text>
-      <View style={[styles.cards, isTablet && styles.cardsTablet]}>
-        <ArticularAngleCard assessment={kneeAssessment} testID="knee-card" />
-        <ArticularAngleCard assessment={hipAssessment} testID="hip-card" />
-        <ArticularAngleCard assessment={ankleAssessment} testID="ankle-card" />
-      </View>
+      {/* Bilateral detail section */}
+      {bilateral && (
+        <>
+          <Text style={styles.sectionLabel}>Analyse bilatérale</Text>
+          <View style={styles.bilateralCard}>
+            <View style={styles.bilateralRow}>
+              <View style={styles.bilateralColumn}>
+                <Text style={styles.bilateralColumnTitle}>Jambe gauche</Text>
+                <BilateralAngleRow
+                  label="HKA"
+                  value={bilateral.leftHKA}
+                  classification={
+                    bilateral.leftHKA > 0
+                      ? hkaLabel(bilateral.leftHKA)
+                      : undefined
+                  }
+                />
+                <BilateralAngleRow
+                  label="Genou"
+                  value={bilateral.left.kneeAngle}
+                />
+                <BilateralAngleRow
+                  label="Hanche"
+                  value={bilateral.left.hipAngle}
+                />
+                <BilateralAngleRow
+                  label="Cheville"
+                  value={bilateral.left.ankleAngle}
+                />
+              </View>
+              <View style={styles.bilateralDivider} />
+              <View style={styles.bilateralColumn}>
+                <Text style={styles.bilateralColumnTitle}>Jambe droite</Text>
+                <BilateralAngleRow
+                  label="HKA"
+                  value={bilateral.rightHKA}
+                  classification={
+                    bilateral.rightHKA > 0
+                      ? hkaLabel(bilateral.rightHKA)
+                      : undefined
+                  }
+                />
+                <BilateralAngleRow
+                  label="Genou"
+                  value={bilateral.right.kneeAngle}
+                />
+                <BilateralAngleRow
+                  label="Hanche"
+                  value={bilateral.right.hipAngle}
+                />
+                <BilateralAngleRow
+                  label="Cheville"
+                  value={bilateral.right.ankleAngle}
+                />
+              </View>
+            </View>
+          </View>
+        </>
+      )}
 
       {/* Expert section */}
       {viewMode === "expert" && (
@@ -270,6 +327,40 @@ export function ResultsScreen() {
         </Text>
       </TouchableOpacity>
     </ScrollView>
+  );
+}
+
+function jointLabel(joint: string | null): string {
+  if (!joint) return "";
+  const JOINT_LABELS: Record<string, string> = {
+    knee: "Genou",
+    hip: "Hanche",
+    ankle: "Cheville",
+  };
+  return JOINT_LABELS[joint] ?? joint;
+}
+
+function BilateralAngleRow({
+  label,
+  value,
+  classification,
+}: {
+  readonly label: string;
+  readonly value: number;
+  readonly classification?: string;
+}) {
+  return (
+    <View style={styles.bilateralAngleRow}>
+      <Text style={styles.bilateralAngleLabel}>{label}</Text>
+      <View style={styles.bilateralAngleValueGroup}>
+        <Text style={styles.bilateralAngleValue}>
+          {formatAngleDisplay(value)}
+        </Text>
+        {classification && (
+          <Text style={styles.bilateralClassification}>{classification}</Text>
+        )}
+      </View>
+    </View>
   );
 }
 
@@ -330,7 +421,7 @@ const styles = StyleSheet.create({
   },
   photoContainer: {
     width: "100%",
-    maxWidth: 400,
+    maxWidth: 500,
     aspectRatio: 3 / 4,
     alignSelf: "center",
     position: "relative",
@@ -409,13 +500,59 @@ const styles = StyleSheet.create({
     marginTop: Spacing.sm,
   },
 
-  // Cards
-  cards: {
-    gap: Spacing.md,
+  // Bilateral detail card
+  bilateralCard: {
+    backgroundColor: Colors.backgroundCard,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
   },
-  cardsTablet: {
+  bilateralRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
+  },
+  bilateralColumn: {
+    flex: 1,
+    gap: Spacing.sm,
+  },
+  bilateralColumnTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: Colors.textPrimary,
+    textAlign: "center",
+    marginBottom: Spacing.xs,
+  },
+  bilateralDivider: {
+    width: 1,
+    backgroundColor: Colors.border,
+    marginHorizontal: Spacing.md,
+  },
+  bilateralAngleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 2,
+  },
+  bilateralAngleLabel: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    fontWeight: "500",
+  },
+  bilateralAngleValueGroup: {
+    alignItems: "flex-end",
+  },
+  bilateralAngleValue: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: Colors.textPrimary,
+  },
+  bilateralClassification: {
+    fontSize: 11,
+    color: Colors.textSecondary,
+    fontStyle: "italic",
   },
 
   // Expert section

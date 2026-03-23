@@ -26,7 +26,7 @@ describe("REFERENCE_NORMS", () => {
 describe("assessAngle", () => {
   describe("knee joint", () => {
     it("returns normal for angle within range", () => {
-      const result = assessAngle("knee", 5);
+      const result = assessAngle("knee", 175);
       expect(result.level).toBe("normal");
       expect(result.isWithinNorm).toBe(true);
       expect(result.deviation).toBe(0);
@@ -73,15 +73,15 @@ describe("assessAngle", () => {
   });
 
   describe("ankle joint", () => {
-    it("returns normal for 90 degrees", () => {
-      const result = assessAngle("ankle", 90);
+    it("returns normal for angle in frontal standing range", () => {
+      const result = assessAngle("ankle", 175);
       expect(result.isWithinNorm).toBe(true);
     });
   });
 
   it("includes the assessed value in result", () => {
-    const result = assessAngle("knee", 5.5);
-    expect(result.value).toBe(5.5);
+    const result = assessAngle("knee", 175);
+    expect(result.value).toBe(175);
   });
 });
 

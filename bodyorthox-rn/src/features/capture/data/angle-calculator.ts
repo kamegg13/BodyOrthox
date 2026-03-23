@@ -140,7 +140,7 @@ export function calculateHipAngle(landmarks: PoseLandmarks): number {
 }
 
 export function calculateAnkleAngle(landmarks: PoseLandmarks): number {
-  // right_knee (26), right_ankle (28), right_heel (30)
+  // right_knee (26), right_ankle (28), right_heel (30), right_foot_index (32)
   const knee = isLandmarkReliable(landmarks[26])
     ? landmarks[26]
     : isLandmarkReliable(landmarks[25])
@@ -151,14 +151,22 @@ export function calculateAnkleAngle(landmarks: PoseLandmarks): number {
     : isLandmarkReliable(landmarks[27])
       ? landmarks[27]
       : undefined;
-  const heel = isLandmarkReliable(landmarks[30])
+  // Try heel first, fall back to foot_index (toes) if heel is unreliable
+  let foot = isLandmarkReliable(landmarks[30])
     ? landmarks[30]
     : isLandmarkReliable(landmarks[29])
       ? landmarks[29]
       : undefined;
+  if (!foot) {
+    foot = isLandmarkReliable(landmarks[32])
+      ? landmarks[32]
+      : isLandmarkReliable(landmarks[31])
+        ? landmarks[31]
+        : undefined;
+  }
 
-  if (!knee || !ankle || !heel) return 0;
-  return angleBetweenThreePoints3D(knee, ankle, heel);
+  if (!knee || !ankle || !foot) return 0;
+  return angleBetweenThreePoints3D(knee, ankle, foot);
 }
 
 export function calculateConfidenceScore(landmarks: PoseLandmarks): number {
@@ -190,14 +198,15 @@ export interface BilateralAngles {
 
 /**
  * Classify an HKA angle into a clinical category.
- * Normal: 177°–183°, Varum: <177°, Valgum: >183°
+ * Based on clinical literature for frontal standing pose estimation:
+ * Normal (physiological valgus): 175°–180°, Varum: <175°, Valgum: >180°
  */
 export function classifyHKA(
   hkaAngle: number,
 ): "normal" | "varum" | "valgum" | "unavailable" {
   if (hkaAngle === 0) return "unavailable";
-  if (hkaAngle < 177) return "varum";
-  if (hkaAngle > 183) return "valgum";
+  if (hkaAngle < 175) return "varum";
+  if (hkaAngle > 180) return "valgum";
   return "normal";
 }
 
@@ -226,19 +235,29 @@ export function hkaLabel(hkaAngle: number): string {
 export function calculateBilateralAngles(
   landmarks: PoseLandmarks,
 ): BilateralAngles {
-  // Left side: 11=left_shoulder, 23=left_hip, 25=left_knee, 27=left_ankle, 29=left_heel
+  // Left side: 11=left_shoulder, 23=left_hip, 25=left_knee, 27=left_ankle, 29=left_heel, 31=left_foot_index
   const leftShoulder = landmarks[11];
   const leftHip = landmarks[23];
   const leftKnee = landmarks[25];
   const leftAnkle = landmarks[27];
-  const leftHeel = landmarks[29];
+  // Try heel first, fall back to foot_index (toes) if heel is unreliable
+  const leftFoot = isLandmarkReliable(landmarks[29])
+    ? landmarks[29]
+    : isLandmarkReliable(landmarks[31])
+      ? landmarks[31]
+      : landmarks[29]; // keep original for safeAngle to reject
 
-  // Right side: 12=right_shoulder, 24=right_hip, 26=right_knee, 28=right_ankle, 30=right_heel
+  // Right side: 12=right_shoulder, 24=right_hip, 26=right_knee, 28=right_ankle, 30=right_heel, 32=right_foot_index
   const rightShoulder = landmarks[12];
   const rightHip = landmarks[24];
   const rightKnee = landmarks[26];
   const rightAnkle = landmarks[28];
-  const rightHeel = landmarks[30];
+  // Try heel first, fall back to foot_index (toes) if heel is unreliable
+  const rightFoot = isLandmarkReliable(landmarks[30])
+    ? landmarks[30]
+    : isLandmarkReliable(landmarks[32])
+      ? landmarks[32]
+      : landmarks[30]; // keep original for safeAngle to reject
 
   const safeAngle = (
     a: Landmark | undefined,
@@ -258,12 +277,12 @@ export function calculateBilateralAngles(
     left: {
       kneeAngle: safeAngle(leftHip, leftKnee, leftAnkle),
       hipAngle: safeAngle(leftShoulder, leftHip, leftKnee),
-      ankleAngle: safeAngle(leftKnee, leftAnkle, leftHeel),
+      ankleAngle: safeAngle(leftKnee, leftAnkle, leftFoot),
     },
     right: {
       kneeAngle: safeAngle(rightHip, rightKnee, rightAnkle),
       hipAngle: safeAngle(rightShoulder, rightHip, rightKnee),
-      ankleAngle: safeAngle(rightKnee, rightAnkle, rightHeel),
+      ankleAngle: safeAngle(rightKnee, rightAnkle, rightFoot),
     },
     leftHKA: safeAngle(leftHip, leftKnee, leftAnkle),
     rightHKA: safeAngle(rightHip, rightKnee, rightAnkle),

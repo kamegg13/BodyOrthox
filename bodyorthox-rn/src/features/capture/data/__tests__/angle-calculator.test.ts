@@ -206,6 +206,21 @@ describe("calculateAnkleAngle", () => {
   it("returns 0 when landmarks missing", () => {
     expect(calculateAnkleAngle({})).toBe(0);
   });
+
+  it("falls back to foot_index when heel has low visibility", () => {
+    const withFootIndex: PoseLandmarks = {
+      25: { x: 0.42, y: 0.72, visibility: 0.88 },
+      26: { x: 0.58, y: 0.72, visibility: 0.88 },
+      27: { x: 0.42, y: 0.92, visibility: 0.85 },
+      28: { x: 0.58, y: 0.92, visibility: 0.85 },
+      29: { x: 0.4, y: 0.96, visibility: 0.1 }, // low visibility heel
+      30: { x: 0.6, y: 0.96, visibility: 0.1 }, // low visibility heel
+      31: { x: 0.43, y: 0.97, visibility: 0.8 }, // foot_index (toes)
+      32: { x: 0.59, y: 0.97, visibility: 0.8 }, // foot_index (toes)
+    };
+    const angle = calculateAnkleAngle(withFootIndex);
+    expect(angle).toBeGreaterThan(0);
+  });
 });
 
 describe("calculateConfidenceScore", () => {
@@ -299,6 +314,27 @@ describe("calculateBilateralAngles", () => {
     expect(result.rightHKA).toBeCloseTo(result.right.kneeAngle, 5);
   });
 
+  it("uses foot_index as fallback when heels have low visibility", () => {
+    const withFootIndex: PoseLandmarks = {
+      11: { x: 0.4, y: 0.2, visibility: 0.95 },
+      12: { x: 0.6, y: 0.2, visibility: 0.95 },
+      23: { x: 0.42, y: 0.5, visibility: 0.9 },
+      24: { x: 0.58, y: 0.5, visibility: 0.9 },
+      25: { x: 0.42, y: 0.72, visibility: 0.88 },
+      26: { x: 0.58, y: 0.72, visibility: 0.88 },
+      27: { x: 0.42, y: 0.92, visibility: 0.85 },
+      28: { x: 0.58, y: 0.92, visibility: 0.85 },
+      29: { x: 0.4, y: 0.96, visibility: 0.1 }, // low visibility heel
+      30: { x: 0.6, y: 0.96, visibility: 0.1 }, // low visibility heel
+      31: { x: 0.43, y: 0.97, visibility: 0.8 }, // foot_index left
+      32: { x: 0.59, y: 0.97, visibility: 0.8 }, // foot_index right
+    };
+
+    const result = calculateBilateralAngles(withFootIndex);
+    expect(result.left.ankleAngle).toBeGreaterThan(0);
+    expect(result.right.ankleAngle).toBeGreaterThan(0);
+  });
+
   it("detects genu varum in bow-legged landmarks", () => {
     // Simulate bow legs: knees deviate outward
     const bowLegged: PoseLandmarks = {
@@ -322,19 +358,19 @@ describe("calculateBilateralAngles", () => {
 });
 
 describe("classifyHKA", () => {
-  it("classifies varum for angle < 177", () => {
+  it("classifies varum for angle < 175", () => {
     expect(classifyHKA(170)).toBe("varum");
-    expect(classifyHKA(176.9)).toBe("varum");
+    expect(classifyHKA(174.9)).toBe("varum");
   });
 
-  it("classifies normal for 177-183", () => {
+  it("classifies normal for 175-180", () => {
+    expect(classifyHKA(175)).toBe("normal");
     expect(classifyHKA(177)).toBe("normal");
     expect(classifyHKA(180)).toBe("normal");
-    expect(classifyHKA(183)).toBe("normal");
   });
 
-  it("classifies valgum for angle > 183", () => {
-    expect(classifyHKA(183.1)).toBe("valgum");
+  it("classifies valgum for angle > 180", () => {
+    expect(classifyHKA(180.1)).toBe("valgum");
     expect(classifyHKA(190)).toBe("valgum");
   });
 
@@ -346,7 +382,7 @@ describe("classifyHKA", () => {
 describe("hkaLabel", () => {
   it("returns French labels", () => {
     expect(hkaLabel(170)).toBe("Genu varum");
-    expect(hkaLabel(180)).toBe("Normal");
+    expect(hkaLabel(177)).toBe("Normal");
     expect(hkaLabel(190)).toBe("Genu valgum");
     expect(hkaLabel(0)).toBe("Non disponible");
   });

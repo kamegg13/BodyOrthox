@@ -43,7 +43,7 @@ jest.mock("../../../capture/data/sqlite-analysis-repository", () => ({
 }));
 
 // ---------------------------------------------------------------------------
-// Test data
+// Test data (clinically correct values for frontal standing analysis)
 // ---------------------------------------------------------------------------
 function buildAnalysis(overrides: Partial<Analysis> = {}): Analysis {
   return {
@@ -51,9 +51,23 @@ function buildAnalysis(overrides: Partial<Analysis> = {}): Analysis {
     patientId: "patient-001",
     createdAt: "2026-03-15T10:30:00.000Z",
     angles: {
-      kneeAngle: 5.2,
+      kneeAngle: 176.2,
       hipAngle: 175.0,
-      ankleAngle: 88.5,
+      ankleAngle: 174.5,
+    },
+    bilateralAngles: {
+      left: {
+        kneeAngle: 175.8,
+        hipAngle: 174.2,
+        ankleAngle: 173.9,
+      },
+      right: {
+        kneeAngle: 176.2,
+        hipAngle: 175.0,
+        ankleAngle: 174.5,
+      },
+      leftHKA: 175.8,
+      rightHKA: 176.2,
     },
     confidenceScore: 0.92,
     manualCorrectionApplied: false,
@@ -181,48 +195,48 @@ describe("ResultsScreen", () => {
       });
 
       // Date should be displayed (French locale format of 2026-03-15)
-      // The exact format depends on locale; we check for presence of key parts
       expect(screen.getByText(/15/)).toBeTruthy();
     });
   });
 
   // -------------------------------------------------------------------------
-  // AC2: 3 ArticularAngleCards rendered with correct values
+  // AC2: Bilateral HKA card rendered
   // -------------------------------------------------------------------------
-  describe("AC2 — three articular angle cards", () => {
-    it("renders knee, hip, and ankle cards", async () => {
+  describe("AC2 — bilateral HKA card", () => {
+    it("renders the HKA card", async () => {
       renderScreen();
 
       await waitFor(() => {
-        expect(screen.getByTestId("knee-card")).toBeTruthy();
+        expect(screen.getByTestId("hka-card")).toBeTruthy();
       });
-
-      expect(screen.getByTestId("hip-card")).toBeTruthy();
-      expect(screen.getByTestId("ankle-card")).toBeTruthy();
     });
 
-    it("renders correct angle values in the cards", async () => {
-      renderScreen();
-
-      await waitFor(() => {
-        expect(screen.getByTestId("knee-card")).toBeTruthy();
-      });
-
-      expect(screen.getByText("5.2°")).toBeTruthy();
-      expect(screen.getByText("175.0°")).toBeTruthy();
-      expect(screen.getByText("88.5°")).toBeTruthy();
-    });
-
-    it("renders joint labels (Genou, Hanche, Cheville)", async () => {
+    it("displays bilateral HKA angles", async () => {
       renderScreen();
 
       await waitFor(() => {
         expect(screen.getByTestId("results-screen")).toBeTruthy();
       });
 
-      expect(screen.getByText("Genou")).toBeTruthy();
-      expect(screen.getByText("Hanche")).toBeTruthy();
-      expect(screen.getByText("Cheville")).toBeTruthy();
+      // Bilateral section should show both legs (may appear in HKA card + detail)
+      expect(screen.getAllByText("Jambe gauche").length).toBeGreaterThanOrEqual(
+        1,
+      );
+      expect(screen.getAllByText("Jambe droite").length).toBeGreaterThanOrEqual(
+        1,
+      );
+    });
+
+    it("renders joint labels in bilateral detail (Genou, Hanche, Cheville)", async () => {
+      renderScreen();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("results-screen")).toBeTruthy();
+      });
+
+      expect(screen.getAllByText("Genou").length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText("Hanche").length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText("Cheville").length).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -249,7 +263,6 @@ describe("ResultsScreen", () => {
         expect(screen.getByTestId("results-screen")).toBeTruthy();
       });
 
-      // 0.92 → "Élevée" and "92%" (may appear in both confidence badge and HKA card)
       expect(screen.getByText(/Confiance Élevée/)).toBeTruthy();
       expect(screen.getAllByText(/92%/).length).toBeGreaterThanOrEqual(1);
     });
@@ -396,9 +409,6 @@ describe("ResultsScreen", () => {
         expect(screen.getByTestId("results-screen")).toBeTruthy();
       });
 
-      // The meta card correction note should not exist
-      // (Note: "Correction manuelle" also appears in expert mode as a label,
-      //  but in simple mode it should not appear)
       expect(screen.queryByText(/Correction manuelle \(/)).toBeNull();
     });
   });
@@ -443,42 +453,54 @@ describe("ResultsScreen", () => {
   });
 
   // -------------------------------------------------------------------------
-  // Deviation assessment rendering
+  // Bilateral analysis display
   // -------------------------------------------------------------------------
-  describe("angle deviation rendering", () => {
-    it('shows "Normal" badges for within-norm angles', async () => {
+  describe("bilateral analysis display", () => {
+    it("shows bilateral analysis section with both legs", async () => {
       renderScreen();
 
       await waitFor(() => {
         expect(screen.getByTestId("results-screen")).toBeTruthy();
       });
 
-      // knee 5.2° (norm 0-10) → normal
-      // hip 175° (norm 170-180) → normal
-      // ankle 88.5° (norm 80-100) → normal
-      // All three should show "Normal"
-      const normals = screen.getAllByText("Normal");
-      expect(normals.length).toBe(3);
+      // Should show both leg columns
+      expect(screen.getAllByText("Jambe gauche").length).toBeGreaterThanOrEqual(
+        1,
+      );
+      expect(screen.getAllByText("Jambe droite").length).toBeGreaterThanOrEqual(
+        1,
+      );
     });
 
-    it("shows deviation badges for out-of-norm angles", async () => {
-      const abnormalAnalysis = buildAnalysis({
-        angles: {
-          kneeAngle: 25.0, // > 10, deviation 15 → moderate
-          hipAngle: 150.0, // < 170, deviation 20 → severe
-          ankleAngle: 90.0, // normal
-        },
-      });
-      mockGetById.mockResolvedValue(abnormalAnalysis);
+    it("shows HKA classification for each leg", async () => {
       renderScreen();
 
       await waitFor(() => {
         expect(screen.getByTestId("results-screen")).toBeTruthy();
       });
 
-      expect(screen.getByText("Déviation modérée")).toBeTruthy();
-      expect(screen.getByText("Déviation sévère")).toBeTruthy();
-      expect(screen.getByText("Normal")).toBeTruthy();
+      // Both HKA values (175.8 and 176.2) are in normal range (175-180)
+      expect(screen.getAllByText("Normal").length).toBeGreaterThanOrEqual(2);
+    });
+
+    it("shows dash for unavailable angles", async () => {
+      const analysisNoAnkle = buildAnalysis({
+        bilateralAngles: {
+          left: { kneeAngle: 175.8, hipAngle: 174.2, ankleAngle: 0 },
+          right: { kneeAngle: 176.2, hipAngle: 175.0, ankleAngle: 0 },
+          leftHKA: 175.8,
+          rightHKA: 176.2,
+        },
+      });
+      mockGetById.mockResolvedValue(analysisNoAnkle);
+      renderScreen();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("results-screen")).toBeTruthy();
+      });
+
+      // Ankle angles are 0, should show dashes
+      expect(screen.getAllByText("\u2014").length).toBeGreaterThanOrEqual(2);
     });
   });
 });

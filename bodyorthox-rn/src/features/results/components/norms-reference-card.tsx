@@ -19,19 +19,19 @@ interface NormRow {
 const NORM_ROWS: readonly NormRow[] = [
   {
     label: "Neutre",
-    range: "177–183°",
+    range: "175–180°",
     color: Colors.success,
     status: "neutre",
   },
   {
     label: "Genu varum",
-    range: "< 177°",
+    range: "< 175°",
     color: Colors.warning,
     status: "genu_varum",
   },
   {
     label: "Genu valgum",
-    range: "> 183°",
+    range: "> 180°",
     color: Colors.info,
     status: "genu_valgum",
   },

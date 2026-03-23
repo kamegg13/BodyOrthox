@@ -17,22 +17,22 @@ export const REFERENCE_NORMS: Record<string, ReferenceNorm> = {
   knee: {
     joint: "knee",
     label: "Genou",
-    normalMin: 0,
-    normalMax: 10, // degrees of valgus/varus deviation from neutral
+    normalMin: 170,
+    normalMax: 180, // near full extension in frontal standing
     unit: "°",
   },
   hip: {
     joint: "hip",
     label: "Hanche",
     normalMin: 170,
-    normalMax: 180, // full extension range
+    normalMax: 180, // full extension range in standing
     unit: "°",
   },
   ankle: {
     joint: "ankle",
     label: "Cheville",
-    normalMin: 80,
-    normalMax: 100,
+    normalMin: 170,
+    normalMax: 180, // frontal standing: knee-ankle-foot nearly straight
     unit: "°",
   },
 };
