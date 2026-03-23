@@ -102,6 +102,8 @@ describe("useCaptureStore", () => {
       if (phase.type === "success") {
         expect(phase.confidenceScore).toBeGreaterThan(0);
         expect(phase.angles.kneeAngle).toBeDefined();
+        expect(phase.bilateralAngles).toBeDefined();
+        expect(phase.bilateralAngles.rightHKA).toBeGreaterThan(0);
       }
     });
   });

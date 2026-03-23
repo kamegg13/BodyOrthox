@@ -1,7 +1,8 @@
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
+import type { BilateralAngles } from "../data/angle-calculator";
 
 export interface ArticularAngles {
-  readonly kneeAngle: number;   // degrees, 1 decimal
+  readonly kneeAngle: number; // degrees, 1 decimal
   readonly hipAngle: number;
   readonly ankleAngle: number;
 }
@@ -11,23 +12,25 @@ export interface Analysis {
   readonly patientId: string;
   readonly createdAt: string; // ISO 8601 UTC
   readonly angles: ArticularAngles;
+  readonly bilateralAngles?: BilateralAngles;
   readonly confidenceScore: number; // [0.0, 1.0]
   readonly manualCorrectionApplied: boolean;
-  readonly manualCorrectionJoint: 'knee' | 'hip' | 'ankle' | null;
+  readonly manualCorrectionJoint: "knee" | "hip" | "ankle" | null;
 }
 
 export interface CreateAnalysisInput {
   patientId: string;
   angles: ArticularAngles;
+  bilateralAngles?: BilateralAngles;
   confidenceScore: number;
   manualCorrectionApplied?: boolean;
-  manualCorrectionJoint?: 'knee' | 'hip' | 'ankle' | null;
+  manualCorrectionJoint?: "knee" | "hip" | "ankle" | null;
 }
 
 export function createAnalysis(input: CreateAnalysisInput): Analysis {
-  if (!input.patientId) throw new Error('patientId est obligatoire');
+  if (!input.patientId) throw new Error("patientId est obligatoire");
   if (input.confidenceScore < 0 || input.confidenceScore > 1) {
-    throw new Error('confidenceScore doit être entre 0 et 1');
+    throw new Error("confidenceScore doit être entre 0 et 1");
   }
   return {
     id: uuidv4(),
@@ -38,6 +41,7 @@ export function createAnalysis(input: CreateAnalysisInput): Analysis {
       hipAngle: Math.round(input.angles.hipAngle * 10) / 10,
       ankleAngle: Math.round(input.angles.ankleAngle * 10) / 10,
     },
+    bilateralAngles: input.bilateralAngles,
     confidenceScore: input.confidenceScore,
     manualCorrectionApplied: input.manualCorrectionApplied ?? false,
     manualCorrectionJoint: input.manualCorrectionJoint ?? null,
@@ -45,7 +49,7 @@ export function createAnalysis(input: CreateAnalysisInput): Analysis {
 }
 
 export function confidenceLabel(score: number): string {
-  if (score >= 0.85) return 'Élevée';
-  if (score >= 0.60) return 'Moyenne';
-  return 'Faible';
+  if (score >= 0.85) return "Élevée";
+  if (score >= 0.6) return "Moyenne";
+  return "Faible";
 }

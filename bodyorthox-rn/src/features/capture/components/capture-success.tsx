@@ -11,7 +11,8 @@ import {
 import { Colors } from "../../../shared/design-system/colors";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
 import { SkeletonOverlay } from "./skeleton-overlay";
-import type { PoseLandmarks } from "../data/angle-calculator";
+import type { PoseLandmarks, BilateralAngles } from "../data/angle-calculator";
+import { hkaLabel } from "../data/angle-calculator";
 
 interface CaptureSuccessProps {
   capturedImageUrl: string | null;
@@ -21,6 +22,7 @@ interface CaptureSuccessProps {
     hipAngle: number;
     ankleAngle: number;
   };
+  bilateralAngles: BilateralAngles;
   landmarks: PoseLandmarks | null;
   allLandmarks?: PoseLandmarks | null;
   onSave: () => void;
@@ -31,6 +33,7 @@ export function CaptureSuccess({
   capturedImageUrl,
   confidenceScore,
   angles,
+  bilateralAngles,
   landmarks,
   allLandmarks,
   onSave,
@@ -87,6 +90,42 @@ export function CaptureSuccess({
       <Text style={styles.successScore}>
         Confiance : {Math.round(confidenceScore * 100)}%
       </Text>
+
+      {/* Bilateral HKA analysis */}
+      <View style={styles.bilateralSection} testID="bilateral-section">
+        <View style={styles.legColumn}>
+          <Text style={styles.legTitle}>Jambe gauche</Text>
+          {bilateralAngles.leftHKA > 0 ? (
+            <>
+              <Text style={styles.hkaAngle} testID="left-hka">
+                HKA : {bilateralAngles.leftHKA.toFixed(1)}°
+              </Text>
+              <Text style={styles.hkaClassification}>
+                {hkaLabel(bilateralAngles.leftHKA)}
+              </Text>
+            </>
+          ) : (
+            <Text style={styles.hkaUnavailable}>Non disponible</Text>
+          )}
+        </View>
+        <View style={styles.legColumn}>
+          <Text style={styles.legTitle}>Jambe droite</Text>
+          {bilateralAngles.rightHKA > 0 ? (
+            <>
+              <Text style={styles.hkaAngle} testID="right-hka">
+                HKA : {bilateralAngles.rightHKA.toFixed(1)}°
+              </Text>
+              <Text style={styles.hkaClassification}>
+                {hkaLabel(bilateralAngles.rightHKA)}
+              </Text>
+            </>
+          ) : (
+            <Text style={styles.hkaUnavailable}>Non disponible</Text>
+          )}
+        </View>
+      </View>
+
+      {/* Legacy single-leg angles */}
       <Text style={styles.angleLabel}>
         Genou : {angles.kneeAngle.toFixed(1)}°
       </Text>
@@ -155,6 +194,38 @@ const styles = StyleSheet.create({
   },
   successTitle: { color: Colors.success, fontSize: 24, fontWeight: "700" },
   successScore: { color: Colors.textSecondary, fontSize: 16 },
+  bilateralSection: {
+    flexDirection: "row" as const,
+    width: "100%" as const,
+    justifyContent: "space-around" as const,
+    marginVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
+  },
+  legColumn: {
+    alignItems: "center" as const,
+    flex: 1,
+  },
+  legTitle: {
+    color: Colors.textPrimary,
+    fontSize: 16,
+    fontWeight: "700" as const,
+    marginBottom: Spacing.xs,
+  },
+  hkaAngle: {
+    color: Colors.textPrimary,
+    fontSize: 18,
+    fontWeight: "500" as const,
+  },
+  hkaClassification: {
+    color: Colors.textSecondary,
+    fontSize: 14,
+    marginTop: 2,
+  },
+  hkaUnavailable: {
+    color: Colors.textSecondary,
+    fontSize: 14,
+    fontStyle: "italic" as const,
+  },
   angleLabel: { color: Colors.textPrimary, fontSize: 18, fontWeight: "500" },
   saveButton: {
     backgroundColor: Colors.primary,

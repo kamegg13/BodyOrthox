@@ -8,8 +8,10 @@ import {
   calculateHipAngle,
   calculateAnkleAngle,
   calculateConfidenceScore,
+  calculateBilateralAngles,
   PoseLandmarks,
 } from "../data/angle-calculator";
+import type { BilateralAngles } from "../data/angle-calculator";
 import { INotificationService } from "../../../core/notifications/notification-types";
 
 interface CaptureState {
@@ -49,6 +51,7 @@ let _pendingAngles: {
   hipAngle: number;
   ankleAngle: number;
 } | null = null;
+let _pendingBilateralAngles: BilateralAngles | null = null;
 let _pendingConfidence = 0;
 
 export const useCaptureStore = create<CaptureState & CaptureActions>()(
@@ -108,8 +111,10 @@ export const useCaptureStore = create<CaptureState & CaptureActions>()(
       const hipAngle = calculateHipAngle(landmarks);
       const ankleAngle = calculateAnkleAngle(landmarks);
       const confidenceScore = calculateConfidenceScore(landmarks);
+      const bilateralAngles = calculateBilateralAngles(landmarks);
 
       _pendingAngles = { kneeAngle, hipAngle, ankleAngle };
+      _pendingBilateralAngles = bilateralAngles;
       _pendingConfidence = confidenceScore;
 
       set((state) => {
@@ -118,6 +123,7 @@ export const useCaptureStore = create<CaptureState & CaptureActions>()(
         state.phase = {
           type: "success",
           angles: { kneeAngle, hipAngle, ankleAngle },
+          bilateralAngles,
           confidenceScore,
         };
       });
@@ -129,10 +135,12 @@ export const useCaptureStore = create<CaptureState & CaptureActions>()(
         const input: CreateAnalysisInput = {
           patientId,
           angles: _pendingAngles,
+          bilateralAngles: _pendingBilateralAngles ?? undefined,
           confidenceScore: _pendingConfidence,
         };
         const analysis = await _repository.create(input);
         _pendingAngles = null;
+        _pendingBilateralAngles = null;
         _pendingConfidence = 0;
         return analysis;
       } catch {
@@ -165,6 +173,7 @@ export const useCaptureStore = create<CaptureState & CaptureActions>()(
 
     reset() {
       _pendingAngles = null;
+      _pendingBilateralAngles = null;
       _pendingConfidence = 0;
       set((state) => {
         state.phase = { type: "idle" };

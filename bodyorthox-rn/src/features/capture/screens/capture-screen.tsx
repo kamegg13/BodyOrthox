@@ -79,6 +79,7 @@ export function CaptureScreen() {
         capturedImageUrl={capturedImageUrl}
         confidenceScore={phase.confidenceScore}
         angles={phase.angles}
+        bilateralAngles={phase.bilateralAngles}
         landmarks={detectedLandmarks}
         allLandmarks={allDetectedLandmarks}
         onSave={handleSave}
