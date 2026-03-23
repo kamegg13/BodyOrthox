@@ -1,7 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { CapturePhase } from "../domain/capture-state";
-import { LuminosityIndicator } from "./luminosity-indicator";
 import { Colors } from "../../../shared/design-system/colors";
 import { Spacing } from "../../../shared/design-system/spacing";
 
@@ -15,7 +14,6 @@ interface GuidedCameraOverlayProps {
 export function GuidedCameraOverlay({
   phase,
   frameCount,
-  luminosity,
 }: GuidedCameraOverlayProps) {
   return (
     <View
@@ -32,7 +30,6 @@ export function GuidedCameraOverlay({
 
       {/* Top status bar */}
       <View style={styles.topBar}>
-        <LuminosityIndicator value={luminosity} />
         {phase.type === "recording" && (
           <View style={styles.recordingIndicator}>
             <View style={styles.recordingDot} />

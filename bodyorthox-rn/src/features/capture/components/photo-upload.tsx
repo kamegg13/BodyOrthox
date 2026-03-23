@@ -72,7 +72,6 @@ export function PhotoUpload({ onPhotoSelected }: PhotoUploadProps) {
       ref={containerRef}
       style={styles.button}
       testID="photo-upload-button"
-      accessibilityRole="button"
       accessibilityLabel="Importer une photo depuis l'appareil"
     />
   );

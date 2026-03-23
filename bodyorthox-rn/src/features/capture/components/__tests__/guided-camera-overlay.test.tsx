@@ -16,9 +16,9 @@ describe("GuidedCameraOverlay", () => {
     expect(getByTestId("guided-camera-overlay")).toBeTruthy();
   });
 
-  it("shows luminosity indicator", () => {
-    const { getByTestId } = render(<GuidedCameraOverlay {...defaultProps} />);
-    expect(getByTestId("luminosity-indicator")).toBeTruthy();
+  it("does not show luminosity indicator", () => {
+    const { queryByTestId } = render(<GuidedCameraOverlay {...defaultProps} />);
+    expect(queryByTestId("luminosity-indicator")).toBeNull();
   });
 
   it("shows frame count when recording", () => {
