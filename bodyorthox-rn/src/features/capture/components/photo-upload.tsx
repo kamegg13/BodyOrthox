@@ -1,90 +1,82 @@
-import React, { useEffect, useRef } from "react";
-import { Platform } from "react-native";
+import React, { useCallback, useRef, useEffect } from "react";
+import { Platform, StyleSheet, Text, TouchableOpacity } from "react-native";
+import { Colors } from "../../../shared/design-system/colors";
+import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
 
 interface PhotoUploadProps {
   onPhotoSelected: (dataUrl: string) => void;
 }
 
-/**
- * Photo upload for web — renders a native HTML label+input.
- * Uses a raw DOM div instead of React Native View to avoid
- * react-native-web event interception issues.
- */
 export function PhotoUpload({ onPhotoSelected }: PhotoUploadProps) {
-  const divRef = useRef<HTMLDivElement | null>(null);
-  const callbackRef = useRef(onPhotoSelected);
-  callbackRef.current = onPhotoSelected;
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (Platform.OS !== "web") return;
 
-    // Create a raw div outside React Native Web's control
-    const wrapper = document.createElement("div");
-    wrapper.setAttribute("data-testid", "photo-upload-button");
-    wrapper.style.width = "100%";
-    wrapper.style.display = "flex";
-    wrapper.style.justifyContent = "center";
-    wrapper.style.marginTop = "12px";
-
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*";
-    input.id = "bo-photo-input";
     input.style.display = "none";
+    document.body.appendChild(input);
+    inputRef.current = input;
 
-    input.addEventListener("change", () => {
+    const handleChange = () => {
       const file = input.files?.[0];
       if (!file) return;
+
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result;
         if (typeof result === "string") {
-          callbackRef.current(result);
+          onPhotoSelected(result);
         }
       };
       reader.readAsDataURL(file);
       input.value = "";
-    });
+    };
 
-    const label = document.createElement("label");
-    label.htmlFor = "bo-photo-input";
-    label.textContent = "📁 Importer une photo";
-    Object.assign(label.style, {
-      display: "inline-flex",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: "12px 24px",
-      backgroundColor: "rgba(255,255,255,0.15)",
-      borderRadius: "12px",
-      color: "rgba(200,200,210,0.9)",
-      fontSize: "15px",
-      fontWeight: "600",
-      cursor: "pointer",
-      userSelect: "none",
-    });
-
-    wrapper.appendChild(input);
-    wrapper.appendChild(label);
-
-    // Insert into the controls area (parent of this component's mount point)
-    divRef.current = wrapper;
-
-    // Find the controls container and append
-    const controls = document.querySelector('[data-testid="capture-controls"]');
-    if (controls) {
-      controls.appendChild(wrapper);
-    } else {
-      // Fallback: append to body and position
-      document.body.appendChild(wrapper);
-    }
+    input.addEventListener("change", handleChange);
 
     return () => {
-      if (wrapper.parentElement) {
-        wrapper.parentElement.removeChild(wrapper);
+      input.removeEventListener("change", handleChange);
+      if (document.body.contains(input)) {
+        document.body.removeChild(input);
       }
+      inputRef.current = null;
     };
+  }, [onPhotoSelected]);
+
+  const handlePress = useCallback(() => {
+    inputRef.current?.click();
   }, []);
 
-  // Render nothing — the DOM is managed manually
-  return null;
+  if (Platform.OS !== "web") {
+    return null;
+  }
+
+  return (
+    <TouchableOpacity
+      style={styles.button}
+      onPress={handlePress}
+      testID="photo-upload-button"
+    >
+      <Text style={styles.buttonText}>📁 Importer une photo</Text>
+    </TouchableOpacity>
+  );
 }
+
+const styles = StyleSheet.create({
+  button: {
+    backgroundColor: "rgba(255,255,255,0.15)",
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.lg,
+    marginTop: Spacing.md,
+  },
+  buttonText: {
+    color: Colors.textSecondary,
+    fontSize: 15,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+});
