@@ -1,5 +1,6 @@
 import { ArticularAngles } from "./analysis";
 import type { BilateralAngles } from "../data/angle-calculator";
+import type { AnatomicalValidation } from "../data/anatomical-validation";
 
 export type CapturePhase =
   | { type: "idle" }
@@ -13,6 +14,7 @@ export type CapturePhase =
       angles: ArticularAngles;
       bilateralAngles: BilateralAngles;
       confidenceScore: number;
+      anatomicalValidation?: AnatomicalValidation;
     }
   | { type: "error"; message: string };
 

@@ -150,13 +150,21 @@ export function useCaptureLogic(patientId: string) {
             "Confiance faible — la photo pourrait ne pas être optimale. Vous pouvez réessayer ou continuer.",
           onContinue: () => {
             setLowConfidenceWarning(null);
-            processFrames(result.landmarks, result.allLandmarks);
+            processFrames(
+              result.landmarks,
+              result.allLandmarks,
+              result.anatomicalValidation,
+            );
           },
         });
         return;
       }
 
-      processFrames(result.landmarks, result.allLandmarks);
+      processFrames(
+        result.landmarks,
+        result.allLandmarks,
+        result.anatomicalValidation,
+      );
     } catch (error) {
       // Set phase back to 'ready' so UI shows error instead of spinner
       permissionGranted();

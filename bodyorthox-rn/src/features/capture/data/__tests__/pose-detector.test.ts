@@ -29,6 +29,10 @@ import {
   getPoseDetector,
   remapCropLandmark,
   averageLandmarks,
+  calculateShoulderTilt,
+  computeLegBoundingBox,
+  remapRoiLandmark,
+  mergeRoiResults,
 } from "../pose-detector.web";
 import { calculateConfidenceScore } from "../angle-calculator";
 
@@ -389,5 +393,279 @@ describe("averageLandmarks", () => {
   it("should return empty array for empty input", () => {
     const averaged = averageLandmarks([], []);
     expect(averaged).toEqual([]);
+  });
+
+  it("should give high-visibility pass much more weight (visibility²)", () => {
+    // Pass 1: visibility 0.9 → weight = 0.81
+    // Pass 2: visibility 0.3 → weight = 0.09
+    // Ratio ~9:1, so result should be very close to pass 1
+    const lm1 = [{ x: 0.2, y: 0.3, z: 0.1, visibility: 0.9 }];
+    const lm2 = [{ x: 0.8, y: 0.7, z: 0.5, visibility: 0.3 }];
+    const variations = [
+      { type: "original" as const },
+      { type: "brightness" as const },
+    ];
+
+    const averaged = averageLandmarks([lm1, lm2], variations);
+    // With weights 0.81 and 0.09: x = (0.2*0.81 + 0.8*0.09) / 0.90 = 0.26
+    expect(averaged[0].x).toBeCloseTo(0.26, 1);
+    expect(averaged[0].y).toBeCloseTo(0.34, 1);
+  });
+
+  it("should handle zero visibility with minimum weight floor", () => {
+    const lm1 = [{ x: 0.5, y: 0.5, z: 0, visibility: 0 }];
+    const lm2 = [{ x: 0.8, y: 0.8, z: 0, visibility: 0 }];
+    const variations = [
+      { type: "original" as const },
+      { type: "brightness" as const },
+    ];
+
+    const averaged = averageLandmarks([lm1, lm2], variations);
+    // Both have weight 0.0001, so simple average
+    expect(averaged[0].x).toBeCloseTo(0.65, 3);
+    expect(averaged[0].y).toBeCloseTo(0.65, 3);
+  });
+});
+
+describe("calculateShoulderTilt", () => {
+  it("should return 0 when shoulders are level", () => {
+    const landmarks = Array.from({ length: 33 }, () => ({
+      x: 0,
+      y: 0,
+      z: 0,
+      visibility: 0,
+    }));
+    landmarks[11] = { x: 0.3, y: 0.4, z: 0, visibility: 0.9 };
+    landmarks[12] = { x: 0.7, y: 0.4, z: 0, visibility: 0.9 };
+
+    const tilt = calculateShoulderTilt(landmarks);
+    expect(tilt).toBeCloseTo(0, 5);
+  });
+
+  it("should return positive angle when right shoulder is lower", () => {
+    const landmarks = Array.from({ length: 33 }, () => ({
+      x: 0,
+      y: 0,
+      z: 0,
+      visibility: 0,
+    }));
+    landmarks[11] = { x: 0.3, y: 0.4, z: 0, visibility: 0.9 };
+    landmarks[12] = { x: 0.7, y: 0.5, z: 0, visibility: 0.9 };
+
+    const tilt = calculateShoulderTilt(landmarks);
+    expect(tilt).toBeGreaterThan(0);
+  });
+
+  it("should return negative angle when right shoulder is higher", () => {
+    const landmarks = Array.from({ length: 33 }, () => ({
+      x: 0,
+      y: 0,
+      z: 0,
+      visibility: 0,
+    }));
+    landmarks[11] = { x: 0.3, y: 0.5, z: 0, visibility: 0.9 };
+    landmarks[12] = { x: 0.7, y: 0.4, z: 0, visibility: 0.9 };
+
+    const tilt = calculateShoulderTilt(landmarks);
+    expect(tilt).toBeLessThan(0);
+  });
+
+  it("should return 0 when left shoulder has low visibility", () => {
+    const landmarks = Array.from({ length: 33 }, () => ({
+      x: 0,
+      y: 0,
+      z: 0,
+      visibility: 0,
+    }));
+    landmarks[11] = { x: 0.3, y: 0.4, z: 0, visibility: 0.1 };
+    landmarks[12] = { x: 0.7, y: 0.6, z: 0, visibility: 0.9 };
+
+    const tilt = calculateShoulderTilt(landmarks);
+    expect(tilt).toBe(0);
+  });
+
+  it("should return 0 when shoulder landmarks are missing", () => {
+    const landmarks: Array<{
+      x: number;
+      y: number;
+      z: number;
+      visibility: number;
+    }> = [];
+
+    const tilt = calculateShoulderTilt(landmarks);
+    expect(tilt).toBe(0);
+  });
+});
+
+describe("computeLegBoundingBox", () => {
+  it("should compute bounding box from visible leg landmarks", () => {
+    const landmarks = Array.from({ length: 33 }, () => ({
+      x: 0,
+      y: 0,
+      z: 0,
+      visibility: 0,
+    }));
+    // Set leg landmarks (23-32) with varying positions
+    landmarks[23] = { x: 0.3, y: 0.5, z: 0, visibility: 0.9 };
+    landmarks[24] = { x: 0.7, y: 0.5, z: 0, visibility: 0.9 };
+    landmarks[25] = { x: 0.2, y: 0.7, z: 0, visibility: 0.8 };
+    landmarks[26] = { x: 0.8, y: 0.7, z: 0, visibility: 0.8 };
+    landmarks[27] = { x: 0.25, y: 0.9, z: 0, visibility: 0.7 };
+    landmarks[28] = { x: 0.75, y: 0.9, z: 0, visibility: 0.7 };
+
+    const bbox = computeLegBoundingBox(landmarks);
+    expect(bbox).not.toBeNull();
+    expect(bbox!.minX).toBeCloseTo(0.2, 5);
+    expect(bbox!.maxX).toBeCloseTo(0.8, 5);
+    expect(bbox!.minY).toBeCloseTo(0.5, 5);
+    expect(bbox!.maxY).toBeCloseTo(0.9, 5);
+  });
+
+  it("should return null when no leg landmarks are visible", () => {
+    const landmarks = Array.from({ length: 33 }, () => ({
+      x: 0.5,
+      y: 0.5,
+      z: 0,
+      visibility: 0.1, // below MIN_VISIBILITY
+    }));
+
+    const bbox = computeLegBoundingBox(landmarks);
+    expect(bbox).toBeNull();
+  });
+
+  it("should ignore leg landmarks with low visibility", () => {
+    const landmarks = Array.from({ length: 33 }, () => ({
+      x: 0,
+      y: 0,
+      z: 0,
+      visibility: 0,
+    }));
+    landmarks[23] = { x: 0.4, y: 0.6, z: 0, visibility: 0.9 };
+    landmarks[24] = { x: 0.6, y: 0.6, z: 0, visibility: 0.9 };
+    // Low visibility landmark that should be ignored
+    landmarks[25] = { x: 0.1, y: 0.1, z: 0, visibility: 0.1 };
+
+    const bbox = computeLegBoundingBox(landmarks);
+    expect(bbox).not.toBeNull();
+    expect(bbox!.minX).toBeCloseTo(0.4, 5);
+    expect(bbox!.maxX).toBeCloseTo(0.6, 5);
+  });
+});
+
+describe("remapRoiLandmark", () => {
+  it("should remap from ROI coordinates to full image coordinates", () => {
+    // ROI crop starts at (0.2, 0.3) and is 0.5 wide, 0.4 tall
+    const landmark = { x: 0.5, y: 0.5, z: 0.1, visibility: 0.9 };
+    const remapped = remapRoiLandmark(landmark, 0.2, 0.3, 0.5, 0.4);
+
+    // x = 0.2 + 0.5 * 0.5 = 0.45
+    // y = 0.3 + 0.5 * 0.4 = 0.50
+    expect(remapped.x).toBeCloseTo(0.45, 5);
+    expect(remapped.y).toBeCloseTo(0.5, 5);
+    expect(remapped.z).toBe(0.1);
+    expect(remapped.visibility).toBe(0.9);
+  });
+
+  it("should remap top-left corner to crop origin", () => {
+    const landmark = { x: 0, y: 0, z: 0, visibility: 0.9 };
+    const remapped = remapRoiLandmark(landmark, 0.3, 0.4, 0.5, 0.3);
+
+    expect(remapped.x).toBeCloseTo(0.3, 5);
+    expect(remapped.y).toBeCloseTo(0.4, 5);
+  });
+
+  it("should remap bottom-right corner to crop end", () => {
+    const landmark = { x: 1, y: 1, z: 0, visibility: 0.9 };
+    const remapped = remapRoiLandmark(landmark, 0.3, 0.4, 0.5, 0.3);
+
+    // x = 0.3 + 1 * 0.5 = 0.8
+    // y = 0.4 + 1 * 0.3 = 0.7
+    expect(remapped.x).toBeCloseTo(0.8, 5);
+    expect(remapped.y).toBeCloseTo(0.7, 5);
+  });
+});
+
+describe("mergeRoiResults", () => {
+  it("should keep non-leg landmarks from original", () => {
+    const original = Array.from({ length: 33 }, (_, i) => ({
+      x: i * 0.01,
+      y: i * 0.02,
+      z: 0,
+      visibility: 0.9,
+    }));
+    const roi = Array.from({ length: 33 }, (_, i) => ({
+      x: 0.99,
+      y: 0.99,
+      z: 0,
+      visibility: 0.9,
+    }));
+
+    const merged = mergeRoiResults(original, roi);
+
+    // Non-leg landmarks (e.g. index 11) should be unchanged from original
+    expect(merged[11].x).toBeCloseTo(0.11, 5);
+    expect(merged[11].y).toBeCloseTo(0.22, 5);
+  });
+
+  it("should average leg landmarks weighted by visibility²", () => {
+    const original = Array.from({ length: 33 }, () => ({
+      x: 0.4,
+      y: 0.4,
+      z: 0,
+      visibility: 0.9,
+    }));
+    const roi = Array.from({ length: 33 }, () => ({
+      x: 0.6,
+      y: 0.6,
+      z: 0,
+      visibility: 0.9,
+    }));
+
+    const merged = mergeRoiResults(original, roi);
+
+    // Leg landmark (index 23): equal visibility → average of 0.4 and 0.6
+    expect(merged[23].x).toBeCloseTo(0.5, 5);
+    expect(merged[23].y).toBeCloseTo(0.5, 5);
+  });
+
+  it("should favor higher-visibility detection for leg landmarks", () => {
+    const original = Array.from({ length: 33 }, () => ({
+      x: 0.3,
+      y: 0.3,
+      z: 0,
+      visibility: 0.9, // weight = 0.81
+    }));
+    const roi = Array.from({ length: 33 }, () => ({
+      x: 0.7,
+      y: 0.7,
+      z: 0,
+      visibility: 0.3, // weight = 0.09
+    }));
+
+    const merged = mergeRoiResults(original, roi);
+
+    // Leg landmark should be closer to original (0.3) due to higher weight
+    expect(merged[25].x).toBeLessThan(0.5);
+  });
+
+  it("should use original when ROI landmark is missing", () => {
+    const original = Array.from({ length: 33 }, (_, i) => ({
+      x: i * 0.01,
+      y: i * 0.02,
+      z: 0,
+      visibility: 0.9,
+    }));
+    // ROI with fewer landmarks than expected
+    const roi: Array<{
+      x: number;
+      y: number;
+      z: number;
+      visibility: number;
+    }> = [];
+
+    const merged = mergeRoiResults(original, roi);
+
+    // Should fall back to original for all landmarks
+    expect(merged[23].x).toBeCloseTo(0.23, 5);
   });
 });

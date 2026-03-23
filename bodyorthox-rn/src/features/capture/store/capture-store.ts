@@ -12,6 +12,7 @@ import {
   PoseLandmarks,
 } from "../data/angle-calculator";
 import type { BilateralAngles } from "../data/angle-calculator";
+import type { AnatomicalValidation } from "../data/anatomical-validation";
 import { INotificationService } from "../../../core/notifications/notification-types";
 
 interface CaptureState {
@@ -32,7 +33,11 @@ interface CaptureActions {
   permissionDenied(message: string): void;
   startRecording(): void;
   addFrame(): void;
-  processFrames(landmarks: PoseLandmarks, allLandmarks?: PoseLandmarks): void;
+  processFrames(
+    landmarks: PoseLandmarks,
+    allLandmarks?: PoseLandmarks,
+    anatomicalValidation?: AnatomicalValidation,
+  ): void;
   saveAnalysis(
     patientId: string,
     correctedLandmarks?: PoseLandmarks,
@@ -109,7 +114,11 @@ export const useCaptureStore = create<CaptureState & CaptureActions>()(
       });
     },
 
-    processFrames(landmarks: PoseLandmarks, allLandmarks?: PoseLandmarks) {
+    processFrames(
+      landmarks: PoseLandmarks,
+      allLandmarks?: PoseLandmarks,
+      anatomicalValidation?: AnatomicalValidation,
+    ) {
       const kneeAngle = calculateKneeAngle(landmarks);
       const hipAngle = calculateHipAngle(landmarks);
       const ankleAngle = calculateAnkleAngle(landmarks);
@@ -128,6 +137,12 @@ export const useCaptureStore = create<CaptureState & CaptureActions>()(
           angles: { kneeAngle, hipAngle, ankleAngle },
           bilateralAngles,
           confidenceScore,
+          anatomicalValidation: anatomicalValidation
+            ? {
+                ...anatomicalValidation,
+                warnings: [...anatomicalValidation.warnings],
+              }
+            : undefined,
         };
       });
     },

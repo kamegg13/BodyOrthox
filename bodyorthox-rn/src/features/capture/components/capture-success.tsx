@@ -25,6 +25,7 @@ import {
   type NaturalDimensions,
   type DisplayedImageLayout,
 } from "../../../shared/utils/image-dimensions";
+import type { AnatomicalValidation } from "../data/anatomical-validation";
 
 interface CaptureSuccessProps {
   capturedImageUrl: string | null;
@@ -37,6 +38,7 @@ interface CaptureSuccessProps {
   bilateralAngles: BilateralAngles;
   landmarks: PoseLandmarks | null;
   allLandmarks?: PoseLandmarks | null;
+  anatomicalValidation?: AnatomicalValidation;
   onSave: (correctedLandmarks?: PoseLandmarks) => void;
   onDiscard: () => void;
 }
@@ -69,6 +71,7 @@ export function CaptureSuccess({
   bilateralAngles,
   landmarks,
   allLandmarks,
+  anatomicalValidation,
   onSave,
   onDiscard,
 }: CaptureSuccessProps) {
@@ -218,6 +221,23 @@ export function CaptureSuccess({
       <Text style={styles.successScore}>
         Confiance : {Math.round(confidenceScore * 100)}%
       </Text>
+
+      {/* Anatomical validation warnings */}
+      {anatomicalValidation &&
+        !anatomicalValidation.isPlausible &&
+        anatomicalValidation.warnings.length > 0 && (
+          <View
+            style={styles.anatomicalWarningBanner}
+            testID="anatomical-warning-banner"
+            accessibilityRole="alert"
+          >
+            {anatomicalValidation.warnings.map((warning, index) => (
+              <Text key={index} style={styles.anatomicalWarningText}>
+                {warning}
+              </Text>
+            ))}
+          </View>
+        )}
 
       {/* Correction indicator */}
       {correctedLandmarks && !isCorrecting && (
@@ -396,6 +416,20 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontSize: 13,
     fontWeight: "600",
+  },
+  anatomicalWarningBanner: {
+    backgroundColor: `${Colors.warning}22`,
+    borderWidth: 1,
+    borderColor: Colors.warning,
+    borderRadius: BorderRadius.sm,
+    padding: Spacing.md,
+    width: "100%",
+  },
+  anatomicalWarningText: {
+    color: Colors.warning,
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 4,
   },
   simulationWarning: {
     backgroundColor: `${Colors.warning}33`,

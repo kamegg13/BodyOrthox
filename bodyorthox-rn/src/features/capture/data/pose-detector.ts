@@ -9,11 +9,13 @@
  */
 
 import { PoseLandmarks } from "./angle-calculator";
+import type { AnatomicalValidation } from "./anatomical-validation";
 
 export interface PoseDetectionResult {
   landmarks: PoseLandmarks;
   allLandmarks: PoseLandmarks;
   confidenceScore: number;
+  anatomicalValidation?: AnatomicalValidation;
 }
 
 export interface IPoseDetector {

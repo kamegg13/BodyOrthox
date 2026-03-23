@@ -82,6 +82,7 @@ export function CaptureScreen() {
         bilateralAngles={phase.bilateralAngles}
         landmarks={detectedLandmarks}
         allLandmarks={allDetectedLandmarks}
+        anatomicalValidation={phase.anatomicalValidation}
         onSave={handleSave}
         onDiscard={handleDiscard}
       />
