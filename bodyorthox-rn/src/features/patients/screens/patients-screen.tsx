@@ -24,6 +24,7 @@ import {
   FontWeight,
 } from "../../../shared/design-system/typography";
 import { usePlatform } from "../../../shared/hooks/use-platform";
+import { LOGO_DATA_URI } from "../../../assets/logo";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 const DEBOUNCE_MS = 200;
@@ -81,7 +82,7 @@ export function PatientsScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Image
-            source={require("../../../assets/logo-antidote-sport.png")}
+            source={{ uri: LOGO_DATA_URI }}
             style={styles.headerLogo}
             resizeMode="contain"
           />
