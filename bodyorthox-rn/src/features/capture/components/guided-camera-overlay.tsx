@@ -16,15 +16,17 @@ export function GuidedCameraOverlay({
   phase,
   frameCount,
   luminosity,
-  isCorrectPosition,
 }: GuidedCameraOverlayProps) {
   return (
-    <View style={styles.overlay} testID="guided-camera-overlay">
+    <View
+      style={styles.overlay}
+      testID="guided-camera-overlay"
+      pointerEvents="box-none"
+    >
       {/* RGPD banner at the TOP */}
       <View style={styles.rgpdBanner} testID="rgpd-banner">
         <Text style={styles.rgpdText}>
-          {"\uD83D\uDD12"} Donn{"\u00e9"}es enregistr{"\u00e9"}es uniquement sur
-          votre appareil
+          🔒 Données enregistrées uniquement sur votre appareil
         </Text>
       </View>
 
@@ -39,47 +41,23 @@ export function GuidedCameraOverlay({
         )}
       </View>
 
-      {/* Centre guide */}
-      <View style={styles.centre}>
-        <View
-          style={[
-            styles.silhouetteBorder,
-            !isCorrectPosition && styles.silhouetteBorderWarn,
-          ]}
-        >
-          <Text style={styles.silhouetteIcon}>{"\u267F"}</Text>
-          <Text style={styles.silhouetteMainText}>
-            Placez le patient debout,{"\n"}face {"\u00e0"} vous
-          </Text>
-          <Text style={styles.silhouetteSubText}>
-            Corps entier visible dans le cadre
-          </Text>
-        </View>
-
-        {!isCorrectPosition && (
-          <View style={styles.positionHint}>
-            <Text style={styles.positionHintText}>
-              Placez le patient debout, face {"\u00e0"} vous
-            </Text>
-            <Text style={styles.positionHintSubText}>
-              Corps entier visible dans le cadre
-            </Text>
-          </View>
-        )}
+      {/* Instruction text — positioned below status bar, above controls */}
+      <View style={styles.instructionArea} pointerEvents="none">
+        <Text style={styles.instructionText}>
+          Placez le patient debout, face à vous
+        </Text>
+        <Text style={styles.instructionSubText}>
+          Corps entier visible dans le cadre
+        </Text>
       </View>
 
       {/* Bottom status (processing / error only) */}
       <View style={styles.bottomBar}>
         {phase.type === "processing" && (
-          <Text style={styles.processingText}>
-            {"\u2699\uFE0F"} Analyse en cours...
-          </Text>
+          <Text style={styles.processingText}>⚙️ Analyse en cours...</Text>
         )}
-
         {phase.type === "error" && (
-          <Text style={styles.errorText}>
-            {"\u26A0\uFE0F"} {phase.message}
-          </Text>
+          <Text style={styles.errorText}>⚠️ {phase.message}</Text>
         )}
       </View>
     </View>
@@ -129,62 +107,27 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
   },
-  centre: {
-    flex: 1,
+  instructionArea: {
     alignItems: "center",
-    justifyContent: "center",
+    paddingHorizontal: Spacing.lg,
   },
-  silhouetteBorder: {
-    width: "55%",
-    aspectRatio: 0.4,
-    borderWidth: 2,
-    borderColor: Colors.success,
-    borderRadius: 40,
-    opacity: 0.8,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: "rgba(200,200,200,0.15)",
-  },
-  silhouetteIcon: {
-    fontSize: 40,
-    color: Colors.textSecondary,
-  },
-  silhouetteMainText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.textPrimary,
+  instructionText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: Colors.white,
     textAlign: "center",
+    textShadowColor: "rgba(0,0,0,0.8)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
-  silhouetteSubText: {
-    fontSize: 12,
-    color: Colors.textSecondary,
+  instructionSubText: {
+    fontSize: 14,
+    color: "rgba(255,255,255,0.7)",
     textAlign: "center",
-  },
-  silhouetteBorderWarn: {
-    borderColor: Colors.warning,
-    borderStyle: "dashed",
-  },
-  positionHint: {
-    position: "absolute",
-    bottom: Spacing.sm,
-    backgroundColor: `${Colors.warning}CC`,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    borderRadius: 8,
-  },
-  positionHintText: {
-    color: Colors.black,
-    fontSize: 13,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  positionHintSubText: {
-    color: "rgba(0,0,0,0.6)",
-    fontSize: 11,
-    fontWeight: "400",
-    textAlign: "center",
-    marginTop: 2,
+    marginTop: 4,
+    textShadowColor: "rgba(0,0,0,0.6)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   bottomBar: {
     padding: Spacing.md,

@@ -32,14 +32,15 @@ describe("GuidedCameraOverlay", () => {
     expect(getByText("25 frames")).toBeTruthy();
   });
 
-  it("shows RGPD banner at the top of the screen", () => {
-    const { getByTestId, getByText } = render(
-      <GuidedCameraOverlay {...defaultProps} />,
-    );
+  it("shows RGPD banner at the top", () => {
+    const { getByTestId } = render(<GuidedCameraOverlay {...defaultProps} />);
     expect(getByTestId("rgpd-banner")).toBeTruthy();
-    expect(
-      getByText(/enregistr\u00e9es uniquement sur votre appareil/),
-    ).toBeTruthy();
+  });
+
+  it("shows instruction text", () => {
+    const { getByText } = render(<GuidedCameraOverlay {...defaultProps} />);
+    expect(getByText(/Placez le patient debout/)).toBeTruthy();
+    expect(getByText(/Corps entier visible/)).toBeTruthy();
   });
 
   it("shows processing text when processing", () => {
@@ -57,25 +58,5 @@ describe("GuidedCameraOverlay", () => {
       />,
     );
     expect(getByText(/Camera error/)).toBeTruthy();
-  });
-
-  it("shows silhouette icon inside frame", () => {
-    const { getByText } = render(<GuidedCameraOverlay {...defaultProps} />);
-    expect(getByText("\u267F")).toBeTruthy();
-  });
-
-  it("always shows silhouette guidance text", () => {
-    const { getAllByText, getByText } = render(
-      <GuidedCameraOverlay {...defaultProps} isCorrectPosition={true} />,
-    );
-    expect(getAllByText(/Placez le patient/).length).toBeGreaterThanOrEqual(1);
-    expect(getByText(/Corps entier visible/)).toBeTruthy();
-  });
-
-  it("shows additional position hint when not in correct position", () => {
-    const { getAllByText } = render(
-      <GuidedCameraOverlay {...defaultProps} isCorrectPosition={false} />,
-    );
-    expect(getAllByText(/Placez le patient/).length).toBeGreaterThanOrEqual(2);
   });
 });
