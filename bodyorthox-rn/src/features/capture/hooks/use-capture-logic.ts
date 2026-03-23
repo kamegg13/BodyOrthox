@@ -204,11 +204,35 @@ export function useCaptureLogic(patientId: string) {
       if (analysis) {
         const { capturedImageUrl: imgUrl, allDetectedLandmarks: allLm } =
           useCaptureStore.getState();
-        navigation.replace("Results", {
-          analysisId: analysis.id,
-          patientId,
-          capturedImageUrl: imgUrl ?? undefined,
-          allLandmarks: correctedLandmarks ?? allLm ?? undefined,
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: "MainTabs",
+              state: {
+                routes: [
+                  {
+                    name: "AnalysesTab",
+                    state: {
+                      routes: [
+                        { name: "AnalysesHome" },
+                        {
+                          name: "Results",
+                          params: {
+                            analysisId: analysis.id,
+                            patientId,
+                            capturedImageUrl: imgUrl ?? undefined,
+                            allLandmarks:
+                              correctedLandmarks ?? allLm ?? undefined,
+                          },
+                        },
+                      ],
+                    },
+                  },
+                ],
+              },
+            },
+          ],
         });
       } else {
         setError("Impossible de sauvegarder l'analyse.");

@@ -1,5 +1,5 @@
-import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import React, { useState } from "react";
+import { LayoutChangeEvent, StyleSheet, Text, View } from "react-native";
 import { Analysis } from "../../capture/domain/analysis";
 import { Colors } from "../../../shared/design-system/colors";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
@@ -49,8 +49,15 @@ function getAngleRange(data: ReadonlyArray<ChartDataPoint>): {
 const CHART_HEIGHT = 200;
 const DOT_SIZE = 8;
 
+/** Compute pixel X for a data point given the chart width */
+function dataPointX(index: number, total: number, chartWidth: number): number {
+  if (total <= 1) return chartWidth / 2;
+  return (index / (total - 1)) * chartWidth;
+}
+
 export function ProgressionChart({ analyses }: ProgressionChartProps) {
   const data = prepareChartData(analyses);
+  const [chartWidth, setChartWidth] = useState(0);
 
   if (data.length === 0) {
     return null;
@@ -63,8 +70,9 @@ export function ProgressionChart({ analyses }: ProgressionChartProps) {
     return CHART_HEIGHT - ((angle - range.min) / rangeSpan) * CHART_HEIGHT;
   }
 
-  // Calculate evenly spaced X positions for data points
-  const pointSpacing = data.length > 1 ? 1 / (data.length - 1) : 0.5;
+  function handleLayout(e: LayoutChangeEvent) {
+    setChartWidth(e.nativeEvent.layout.width);
+  }
 
   return (
     <View style={styles.container} testID="progression-chart">
@@ -89,38 +97,39 @@ export function ProgressionChart({ analyses }: ProgressionChartProps) {
         </View>
 
         {/* Chart content */}
-        <View style={styles.chartArea}>
+        <View style={styles.chartArea} onLayout={handleLayout}>
           {/* Reference lines */}
           <View style={[styles.refLine, { top: 0 }]} />
           <View style={[styles.refLine, { top: CHART_HEIGHT / 2 }]} />
           <View style={[styles.refLine, { top: CHART_HEIGHT }]} />
 
           {/* Connecting lines between consecutive points */}
-          {data.length > 1 &&
+          {chartWidth > 0 &&
+            data.length > 1 &&
             data.slice(0, -1).map((point, i) => {
               const nextPoint = data[i + 1];
-              const x1Pct = i * pointSpacing * 100;
-              const x2Pct = (i + 1) * pointSpacing * 100;
+              const x1 = dataPointX(i, data.length, chartWidth);
+              const x2 = dataPointX(i + 1, data.length, chartWidth);
               return (
                 <React.Fragment key={`lines-${i}`}>
                   <ChartLine
-                    x1Pct={x1Pct}
+                    x1={x1}
                     y1={angleToY(point.kneeAngle)}
-                    x2Pct={x2Pct}
+                    x2={x2}
                     y2={angleToY(nextPoint.kneeAngle)}
                     color={Colors.chartKnee}
                   />
                   <ChartLine
-                    x1Pct={x1Pct}
+                    x1={x1}
                     y1={angleToY(point.hipAngle)}
-                    x2Pct={x2Pct}
+                    x2={x2}
                     y2={angleToY(nextPoint.hipAngle)}
                     color={Colors.chartHip}
                   />
                   <ChartLine
-                    x1Pct={x1Pct}
+                    x1={x1}
                     y1={angleToY(point.ankleAngle)}
-                    x2Pct={x2Pct}
+                    x2={x2}
                     y2={angleToY(nextPoint.ankleAngle)}
                     color={Colors.chartAnkle}
                   />
@@ -128,9 +137,10 @@ export function ProgressionChart({ analyses }: ProgressionChartProps) {
               );
             })}
 
-          {/* Data points (dots) */}
+          {/* Data points (dots) — use percentage X so they render before layout */}
           {data.map((point, index) => {
-            const xPct = data.length > 1 ? index * pointSpacing * 100 : 50;
+            const xPct =
+              data.length > 1 ? (index / (data.length - 1)) * 100 : 50;
             return (
               <React.Fragment key={`dots-${index}`}>
                 <View
@@ -190,35 +200,30 @@ export function ProgressionChart({ analyses }: ProgressionChartProps) {
   );
 }
 
-/** Line connecting two chart points using CSS rotation */
+/** Line connecting two chart points using pixel coordinates and CSS rotation */
 function ChartLine({
-  x1Pct,
+  x1,
   y1,
-  x2Pct,
+  x2,
   y2,
   color,
 }: {
-  x1Pct: number;
+  x1: number;
   y1: number;
-  x2Pct: number;
+  x2: number;
   y2: number;
   color: string;
 }) {
-  // We need pixel distances — approximate using the fact that the
-  // chart area is flex:1. We use percentages for X and pixels for Y.
-  // The View uses left% and top in px; length is computed via Pythagoras on approx values.
-  const dx = x2Pct - x1Pct; // in percentage points
-  const dy = y2 - y1; // in pixels
-  // Approximate line length — dx is % so scale by ~3 to get reasonable pixel estimate
-  const approxDxPx = dx * 3;
-  const length = Math.sqrt(approxDxPx * approxDxPx + dy * dy);
-  const angle = Math.atan2(dy, approxDxPx);
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const length = Math.sqrt(dx * dx + dy * dy);
+  const angle = Math.atan2(dy, dx);
 
   return (
     <View
       style={{
         position: "absolute",
-        left: `${x1Pct}%` as unknown as number,
+        left: x1,
         top: y1,
         width: length,
         height: 2,

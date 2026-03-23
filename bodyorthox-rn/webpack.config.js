@@ -58,10 +58,7 @@ const babelLoaderConfiguration = {
 
 const imageLoaderConfiguration = {
   test: /\.(gif|jpe?g|png|svg)$/,
-  use: {
-    loader: "url-loader",
-    options: { name: "[name].[ext]" },
-  },
+  type: "asset",
 };
 
 module.exports = {
