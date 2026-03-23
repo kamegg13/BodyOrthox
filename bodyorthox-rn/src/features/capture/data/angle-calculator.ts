@@ -52,6 +52,49 @@ export function angleBetweenThreePoints(
   return (Math.acos(clampedCos) * 180) / Math.PI;
 }
 
+/**
+ * Check whether a landmark has meaningful Z depth information.
+ * Z is considered available when it is defined and non-zero.
+ */
+function hasZDepth(lm: Landmark): boolean {
+  return lm.z !== undefined && lm.z !== 0;
+}
+
+/**
+ * Calculate the angle between three points using 3D coordinates.
+ * Falls back to 2D when Z is unavailable on any of the three points.
+ */
+export function angleBetweenThreePoints3D(
+  a: Landmark,
+  b: Landmark,
+  c: Landmark,
+): number {
+  if (!hasZDepth(a) && !hasZDepth(b) && !hasZDepth(c)) {
+    return angleBetweenThreePoints(a, b, c);
+  }
+
+  const ba = {
+    x: a.x - b.x,
+    y: a.y - b.y,
+    z: (a.z ?? 0) - (b.z ?? 0),
+  };
+  const bc = {
+    x: c.x - b.x,
+    y: c.y - b.y,
+    z: (c.z ?? 0) - (b.z ?? 0),
+  };
+
+  const dot = ba.x * bc.x + ba.y * bc.y + ba.z * bc.z;
+  const magBa = Math.sqrt(ba.x ** 2 + ba.y ** 2 + ba.z ** 2);
+  const magBc = Math.sqrt(bc.x ** 2 + bc.y ** 2 + bc.z ** 2);
+
+  if (magBa === 0 || magBc === 0) return 0;
+
+  const cosAngle = dot / (magBa * magBc);
+  const clampedCos = Math.max(-1, Math.min(1, cosAngle));
+  return (Math.acos(clampedCos) * 180) / Math.PI;
+}
+
 export function calculateKneeAngle(landmarks: PoseLandmarks): number {
   // Prefer right side (26 = right_knee, 24 = right_hip, 28 = right_ankle)
   const hip = isLandmarkReliable(landmarks[24])
@@ -71,7 +114,7 @@ export function calculateKneeAngle(landmarks: PoseLandmarks): number {
       : undefined;
 
   if (!hip || !knee || !ankle) return 0;
-  return angleBetweenThreePoints(hip, knee, ankle);
+  return angleBetweenThreePoints3D(hip, knee, ankle);
 }
 
 export function calculateHipAngle(landmarks: PoseLandmarks): number {
@@ -93,7 +136,7 @@ export function calculateHipAngle(landmarks: PoseLandmarks): number {
       : undefined;
 
   if (!shoulder || !hip || !knee) return 0;
-  return angleBetweenThreePoints(shoulder, hip, knee);
+  return angleBetweenThreePoints3D(shoulder, hip, knee);
 }
 
 export function calculateAnkleAngle(landmarks: PoseLandmarks): number {
@@ -115,7 +158,7 @@ export function calculateAnkleAngle(landmarks: PoseLandmarks): number {
       : undefined;
 
   if (!knee || !ankle || !heel) return 0;
-  return angleBetweenThreePoints(knee, ankle, heel);
+  return angleBetweenThreePoints3D(knee, ankle, heel);
 }
 
 export function calculateConfidenceScore(landmarks: PoseLandmarks): number {
@@ -208,7 +251,7 @@ export function calculateBilateralAngles(
       !isLandmarkReliable(c)
     )
       return 0;
-    return angleBetweenThreePoints(a, b, c);
+    return angleBetweenThreePoints3D(a, b, c);
   };
 
   return {

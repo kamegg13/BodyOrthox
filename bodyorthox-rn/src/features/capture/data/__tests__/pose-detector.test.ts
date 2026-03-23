@@ -27,6 +27,8 @@ import {
   hasValidPose,
   NoPoseDetectedError,
   getPoseDetector,
+  remapCropLandmark,
+  averageLandmarks,
 } from "../pose-detector.web";
 import { calculateConfidenceScore } from "../angle-calculator";
 
@@ -47,9 +49,9 @@ describe("mediapipeToPoseLandmarks", () => {
     const resultIndices = Object.keys(result).map(Number);
     expect(resultIndices.sort((a, b) => a - b)).toEqual(expectedIndices);
 
-    // Verify values are correctly mapped
-    expect(result[11]).toEqual({ x: 0.11, y: 0.22, visibility: 0.9 });
-    expect(result[24]).toEqual({ x: 0.24, y: 0.48, visibility: 0.9 });
+    // Verify values are correctly mapped (including z coordinate)
+    expect(result[11]).toEqual({ x: 0.11, y: 0.22, z: 0, visibility: 0.9 });
+    expect(result[24]).toEqual({ x: 0.24, y: 0.48, z: 0, visibility: 0.9 });
   });
 
   it("should handle missing visibility by defaulting to 0", () => {
@@ -251,5 +253,141 @@ describe("getPoseDetector", () => {
     expect(typeof detector.detect).toBe("function");
     expect(typeof detector.isReady).toBe("function");
     expect(typeof detector.dispose).toBe("function");
+  });
+});
+
+describe("mediapipeToPoseLandmarks z-coordinate", () => {
+  it("should include z coordinate from MediaPipe landmarks", () => {
+    const mpLandmarks = Array.from({ length: 33 }, (_, i) => ({
+      x: i * 0.01,
+      y: i * 0.02,
+      z: i * 0.001,
+      visibility: 0.9,
+    }));
+
+    const result = mediapipeToPoseLandmarks(mpLandmarks);
+
+    expect(result[11]?.z).toBeCloseTo(0.011, 5);
+    expect(result[24]?.z).toBeCloseTo(0.024, 5);
+  });
+
+  it("should default z to 0 when not provided", () => {
+    const mpLandmarks = Array.from({ length: 33 }, (_, i) => ({
+      x: i * 0.01,
+      y: i * 0.02,
+      visibility: 0.9,
+    }));
+
+    const result = mediapipeToPoseLandmarks(
+      mpLandmarks as Array<{
+        x: number;
+        y: number;
+        z?: number;
+        visibility: number;
+      }>,
+    );
+
+    expect(result[11]?.z).toBe(0);
+  });
+});
+
+describe("remapCropLandmark", () => {
+  it("should remap center of cropped image to center of original", () => {
+    const landmark = { x: 0.5, y: 0.5, z: 0.1, visibility: 0.9 };
+    const remapped = remapCropLandmark(landmark, 0.95);
+
+    // Center should map to center: offset + 0.5 * cropPercent
+    // = (1-0.95)/2 + 0.5 * 0.95 = 0.025 + 0.475 = 0.5
+    expect(remapped.x).toBeCloseTo(0.5, 5);
+    expect(remapped.y).toBeCloseTo(0.5, 5);
+  });
+
+  it("should remap top-left corner back to crop origin", () => {
+    const landmark = { x: 0, y: 0, z: 0, visibility: 0.9 };
+    const remapped = remapCropLandmark(landmark, 0.9);
+
+    // offset = (1-0.9)/2 = 0.05
+    expect(remapped.x).toBeCloseTo(0.05, 5);
+    expect(remapped.y).toBeCloseTo(0.05, 5);
+  });
+
+  it("should remap bottom-right corner to crop end", () => {
+    const landmark = { x: 1, y: 1, z: 0, visibility: 0.9 };
+    const remapped = remapCropLandmark(landmark, 0.9);
+
+    // offset + 1 * 0.9 = 0.05 + 0.9 = 0.95
+    expect(remapped.x).toBeCloseTo(0.95, 5);
+    expect(remapped.y).toBeCloseTo(0.95, 5);
+  });
+
+  it("should preserve z and visibility", () => {
+    const landmark = { x: 0.5, y: 0.5, z: 0.3, visibility: 0.85 };
+    const remapped = remapCropLandmark(landmark, 0.95);
+
+    expect(remapped.z).toBe(0.3);
+    expect(remapped.visibility).toBe(0.85);
+  });
+});
+
+describe("averageLandmarks", () => {
+  it("should return input directly for single result", () => {
+    const landmarks = [
+      { x: 0.5, y: 0.5, z: 0.1, visibility: 0.9 },
+      { x: 0.3, y: 0.7, z: 0.2, visibility: 0.8 },
+    ];
+    const variations = [{ type: "original" as const }];
+
+    const averaged = averageLandmarks([landmarks], variations);
+    expect(averaged).toBe(landmarks);
+  });
+
+  it("should average two identical results to the same values", () => {
+    const lm1 = [{ x: 0.5, y: 0.5, z: 0.1, visibility: 0.9 }];
+    const lm2 = [{ x: 0.5, y: 0.5, z: 0.1, visibility: 0.9 }];
+    const variations = [
+      { type: "original" as const },
+      { type: "brightness" as const },
+    ];
+
+    const averaged = averageLandmarks([lm1, lm2], variations);
+    expect(averaged[0].x).toBeCloseTo(0.5, 5);
+    expect(averaged[0].y).toBeCloseTo(0.5, 5);
+    expect(averaged[0].z).toBeCloseTo(0.1, 5);
+    expect(averaged[0].visibility).toBeCloseTo(0.9, 5);
+  });
+
+  it("should weight by visibility", () => {
+    // High visibility landmark at x=0.4, low visibility at x=0.6
+    const lm1 = [{ x: 0.4, y: 0.5, z: 0, visibility: 0.9 }];
+    const lm2 = [{ x: 0.6, y: 0.5, z: 0, visibility: 0.1 }];
+    const variations = [
+      { type: "original" as const },
+      { type: "brightness" as const },
+    ];
+
+    const averaged = averageLandmarks([lm1, lm2], variations);
+    // Should be closer to 0.4 due to higher weight of first pass
+    expect(averaged[0].x).toBeLessThan(0.5);
+  });
+
+  it("should remap crop variation coordinates before averaging", () => {
+    // Original: landmark at center (0.5, 0.5)
+    const lm1 = [{ x: 0.5, y: 0.5, z: 0, visibility: 0.9 }];
+    // 90% crop: landmark at center (0.5, 0.5) should remap to (0.5, 0.5)
+    const lm2 = [{ x: 0.5, y: 0.5, z: 0, visibility: 0.9 }];
+    const variations = [
+      { type: "original" as const },
+      { type: "crop" as const, cropPercent: 0.9 },
+    ];
+
+    const averaged = averageLandmarks([lm1, lm2], variations);
+    // Center remaps to center, so average should still be ~0.5
+    expect(averaged[0].x).toBeCloseTo(0.5, 3);
+    expect(averaged[0].y).toBeCloseTo(0.5, 3);
+  });
+
+  it("should return empty array for empty input", () => {
+    const averaged = averageLandmarks([], []);
+    expect(averaged).toEqual([]);
   });
 });

@@ -8,6 +8,7 @@ import {
   hkaLabel,
   isLandmarkReliable,
   angleBetweenThreePoints,
+  angleBetweenThreePoints3D,
   PoseLandmarks,
 } from "../angle-calculator";
 
@@ -64,6 +65,60 @@ describe("angleBetweenThreePoints", () => {
   it("returns 0 when vectors have zero length", () => {
     const a = { x: 1, y: 1 };
     expect(angleBetweenThreePoints(a, a, a)).toBe(0);
+  });
+});
+
+describe("angleBetweenThreePoints3D", () => {
+  it("returns 180 for collinear points in 3D", () => {
+    const a = { x: 0, y: 0, z: 0 };
+    const b = { x: 0.5, y: 0, z: 0 };
+    const c = { x: 1, y: 0, z: 0 };
+    expect(angleBetweenThreePoints3D(a, b, c)).toBeCloseTo(180, 0);
+  });
+
+  it("returns 90 for perpendicular points in 3D", () => {
+    const a = { x: 0, y: 0, z: 0 };
+    const b = { x: 0, y: 1, z: 0 };
+    const c = { x: 1, y: 1, z: 0 };
+    expect(angleBetweenThreePoints3D(a, b, c)).toBeCloseTo(90, 0);
+  });
+
+  it("returns 90 for perpendicular points using z dimension", () => {
+    const a = { x: 0, y: 0, z: 1 };
+    const b = { x: 0, y: 0, z: 0 };
+    const c = { x: 1, y: 0, z: 0 };
+    expect(angleBetweenThreePoints3D(a, b, c)).toBeCloseTo(90, 0);
+  });
+
+  it("falls back to 2D when all z are 0", () => {
+    const a = { x: 0, y: 0, z: 0 };
+    const b = { x: 0.5, y: 0, z: 0 };
+    const c = { x: 1, y: 0, z: 0 };
+    expect(angleBetweenThreePoints3D(a, b, c)).toBeCloseTo(
+      angleBetweenThreePoints(a, b, c),
+      5,
+    );
+  });
+
+  it("falls back to 2D when z is undefined", () => {
+    const a = { x: 0, y: 0 };
+    const b = { x: 0.5, y: 0 };
+    const c = { x: 1, y: 0 };
+    expect(angleBetweenThreePoints3D(a, b, c)).toBeCloseTo(180, 0);
+  });
+
+  it("returns 0 when vectors have zero length", () => {
+    const a = { x: 1, y: 1, z: 1 };
+    expect(angleBetweenThreePoints3D(a, a, a)).toBe(0);
+  });
+
+  it("considers z depth for angled limbs", () => {
+    // Points forming a 3D angle where z makes a difference
+    const a = { x: 0, y: 1, z: 0 };
+    const b = { x: 0, y: 0, z: 0 };
+    const c = { x: 0, y: 0, z: 1 };
+    // ba = (0,1,0), bc = (0,0,1) → 90 degrees
+    expect(angleBetweenThreePoints3D(a, b, c)).toBeCloseTo(90, 0);
   });
 });
 
