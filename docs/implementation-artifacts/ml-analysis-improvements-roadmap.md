@@ -11,19 +11,43 @@
 
 Exécuter 5 détections sur la même image avec légers crops/rotations et moyenner les landmarks. Réduit le bruit de détection de ~15-20%.
 
-### ✅ Coordonnées Z (3D)
-
-Utiliser les coordonnées Z (profondeur) retournées par MediaPipe pour corriger la perspective et calculer des angles 3D plus précis.
-
 ### ✅ Upscale image 1920px
 
 Redimensionner l'image à 1920px minimum avant analyse. MediaPipe performe mieux sur les grandes images.
+
+### ✅ Smoothing des landmarks (visibility² weighting)
+
+Moyenne pondérée par visibility² pour supprimer les détections bruitées.
+
+### ✅ ROI crop jambes
+
+Re-détection focalisée sur la zone hanches→pieds pour plus de précision.
+
+### ✅ Auto-rotation
+
+Détection et correction de l'inclinaison de l'image via les épaules.
+
+### ✅ Validation anatomique
+
+Vérification des proportions (fémur/tibia, symétrie, position genoux).
+
+### ✅ Détection qualité photo
+
+Analyse résolution, luminosité, contraste, netteté avant ML.
+
+### ✅ Multi-modèle (heavy + full)
+
+Fusion des résultats de 2 modèles par moyenne pondérée.
+
+### ❌ Coordonnées Z (3D) — Retiré
+
+Implémenté puis retiré : les coordonnées Z de MediaPipe sur des photos 2D frontales sont trop bruitées et donnaient des angles incorrects (~90° au lieu de ~175°).
 
 ---
 
 ## À implémenter plus tard
 
-### 🔲 Smoothing des landmarks (gain +5%)
+### 🔲 Modèle custom fine-tuné (gain +20-30%)
 
 Appliquer un filtre de lissage (weighted average par confiance) sur les landmarks détectés pour stabiliser les positions. Les landmarks avec haute visibilité pèsent plus que ceux avec faible visibilité.
 
