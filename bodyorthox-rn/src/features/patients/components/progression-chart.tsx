@@ -19,7 +19,6 @@ interface ChartDataPoint {
 function prepareChartData(
   analyses: ReadonlyArray<Analysis>,
 ): ReadonlyArray<ChartDataPoint> {
-  // Sort chronologically ascending for the chart
   const sorted = [...analyses].sort(
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
   );
@@ -48,7 +47,7 @@ function getAngleRange(data: ReadonlyArray<ChartDataPoint>): {
 }
 
 const CHART_HEIGHT = 200;
-const BAR_SECTION_WIDTH = 80;
+const DOT_SIZE = 8;
 
 export function ProgressionChart({ analyses }: ProgressionChartProps) {
   const data = prepareChartData(analyses);
@@ -63,6 +62,9 @@ export function ProgressionChart({ analyses }: ProgressionChartProps) {
   function angleToY(angle: number): number {
     return CHART_HEIGHT - ((angle - range.min) / rangeSpan) * CHART_HEIGHT;
   }
+
+  // Calculate evenly spaced X positions for data points
+  const pointSpacing = data.length > 1 ? 1 / (data.length - 1) : 0.5;
 
   return (
     <View style={styles.container} testID="progression-chart">
@@ -86,62 +88,146 @@ export function ProgressionChart({ analyses }: ProgressionChartProps) {
           <Text style={styles.axisLabel}>{range.min}°</Text>
         </View>
 
-        {/* Data columns */}
+        {/* Chart content */}
         <View style={styles.chartArea}>
           {/* Reference lines */}
           <View style={[styles.refLine, { top: 0 }]} />
           <View style={[styles.refLine, { top: CHART_HEIGHT / 2 }]} />
           <View style={[styles.refLine, { top: CHART_HEIGHT }]} />
 
-          {/* Data points */}
-          <View style={styles.dataColumns}>
-            {data.map((point, index) => (
-              <View
-                key={index}
-                style={styles.dataColumn}
-                testID={`chart-point-${index}`}
-              >
-                <View style={[styles.chartColumn, { height: CHART_HEIGHT }]}>
-                  <View
-                    style={[
-                      styles.dot,
-                      {
-                        backgroundColor: Colors.chartKnee,
-                        top: angleToY(point.kneeAngle) - 4,
-                      },
-                    ]}
-                    testID={`knee-dot-${index}`}
+          {/* Connecting lines between consecutive points */}
+          {data.length > 1 &&
+            data.slice(0, -1).map((point, i) => {
+              const nextPoint = data[i + 1];
+              const x1Pct = i * pointSpacing * 100;
+              const x2Pct = (i + 1) * pointSpacing * 100;
+              return (
+                <React.Fragment key={`lines-${i}`}>
+                  <ChartLine
+                    x1Pct={x1Pct}
+                    y1={angleToY(point.kneeAngle)}
+                    x2Pct={x2Pct}
+                    y2={angleToY(nextPoint.kneeAngle)}
+                    color={Colors.chartKnee}
                   />
-                  <View
-                    style={[
-                      styles.dot,
-                      {
-                        backgroundColor: Colors.chartHip,
-                        top: angleToY(point.hipAngle) - 4,
-                      },
-                    ]}
-                    testID={`hip-dot-${index}`}
+                  <ChartLine
+                    x1Pct={x1Pct}
+                    y1={angleToY(point.hipAngle)}
+                    x2Pct={x2Pct}
+                    y2={angleToY(nextPoint.hipAngle)}
+                    color={Colors.chartHip}
                   />
-                  <View
-                    style={[
-                      styles.dot,
-                      {
-                        backgroundColor: Colors.chartAnkle,
-                        top: angleToY(point.ankleAngle) - 4,
-                      },
-                    ]}
-                    testID={`ankle-dot-${index}`}
+                  <ChartLine
+                    x1Pct={x1Pct}
+                    y1={angleToY(point.ankleAngle)}
+                    x2Pct={x2Pct}
+                    y2={angleToY(nextPoint.ankleAngle)}
+                    color={Colors.chartAnkle}
                   />
-                </View>
-                <Text style={styles.xLabel} numberOfLines={1}>
-                  {point.date}
-                </Text>
-              </View>
-            ))}
-          </View>
+                </React.Fragment>
+              );
+            })}
+
+          {/* Data points (dots) */}
+          {data.map((point, index) => {
+            const xPct = data.length > 1 ? index * pointSpacing * 100 : 50;
+            return (
+              <React.Fragment key={`dots-${index}`}>
+                <View
+                  style={[
+                    styles.dot,
+                    {
+                      backgroundColor: Colors.chartKnee,
+                      top: angleToY(point.kneeAngle) - DOT_SIZE / 2,
+                      left: `${xPct}%` as unknown as number,
+                      marginLeft: -DOT_SIZE / 2,
+                    },
+                  ]}
+                  testID={`knee-dot-${index}`}
+                />
+                <View
+                  style={[
+                    styles.dot,
+                    {
+                      backgroundColor: Colors.chartHip,
+                      top: angleToY(point.hipAngle) - DOT_SIZE / 2,
+                      left: `${xPct}%` as unknown as number,
+                      marginLeft: -DOT_SIZE / 2,
+                    },
+                  ]}
+                  testID={`hip-dot-${index}`}
+                />
+                <View
+                  style={[
+                    styles.dot,
+                    {
+                      backgroundColor: Colors.chartAnkle,
+                      top: angleToY(point.ankleAngle) - DOT_SIZE / 2,
+                      left: `${xPct}%` as unknown as number,
+                      marginLeft: -DOT_SIZE / 2,
+                    },
+                  ]}
+                  testID={`ankle-dot-${index}`}
+                />
+              </React.Fragment>
+            );
+          })}
+        </View>
+      </View>
+
+      {/* X-axis date labels */}
+      <View style={styles.xAxisRow}>
+        <View style={{ width: 44 }} />
+        <View style={styles.xLabels}>
+          {data.map((point, index) => (
+            <Text key={index} style={styles.xLabel} numberOfLines={1}>
+              {point.date}
+            </Text>
+          ))}
         </View>
       </View>
     </View>
+  );
+}
+
+/** Line connecting two chart points using CSS rotation */
+function ChartLine({
+  x1Pct,
+  y1,
+  x2Pct,
+  y2,
+  color,
+}: {
+  x1Pct: number;
+  y1: number;
+  x2Pct: number;
+  y2: number;
+  color: string;
+}) {
+  // We need pixel distances — approximate using the fact that the
+  // chart area is flex:1. We use percentages for X and pixels for Y.
+  // The View uses left% and top in px; length is computed via Pythagoras on approx values.
+  const dx = x2Pct - x1Pct; // in percentage points
+  const dy = y2 - y1; // in pixels
+  // Approximate line length — dx is % so scale by ~3 to get reasonable pixel estimate
+  const approxDxPx = dx * 3;
+  const length = Math.sqrt(approxDxPx * approxDxPx + dy * dy);
+  const angle = Math.atan2(dy, approxDxPx);
+
+  return (
+    <View
+      style={{
+        position: "absolute",
+        left: `${x1Pct}%` as unknown as number,
+        top: y1,
+        width: length,
+        height: 2,
+        backgroundColor: color,
+        opacity: 0.7,
+        transform: [{ rotate: `${angle}rad` }],
+        transformOrigin: "0 0",
+      }}
+    />
   );
 }
 
@@ -211,6 +297,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: CHART_HEIGHT,
     position: "relative",
+    overflow: "hidden",
   },
   refLine: {
     position: "absolute",
@@ -219,30 +306,27 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: Colors.chartReference,
   },
-  dataColumns: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    flex: 1,
-  },
-  dataColumn: {
-    alignItems: "center",
-    width: BAR_SECTION_WIDTH,
-  },
-  chartColumn: {
-    position: "relative",
-    width: "100%",
-    alignItems: "center",
-  },
   dot: {
     position: "absolute",
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: DOT_SIZE,
+    height: DOT_SIZE,
+    borderRadius: DOT_SIZE / 2,
+    borderWidth: 2,
+    borderColor: Colors.backgroundCard,
+    zIndex: 2,
+  },
+  xAxisRow: {
+    flexDirection: "row",
+    gap: Spacing.xs,
+  },
+  xLabels: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   xLabel: {
     color: Colors.textSecondary,
     fontSize: 9,
-    marginTop: Spacing.xs,
     textAlign: "center",
   },
 });

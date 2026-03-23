@@ -104,6 +104,16 @@ export function PatientTimelineScreen() {
           ))}
         </>
       )}
+
+      {/* Quick navigation back to patients list */}
+      <TouchableOpacity
+        style={styles.backToPatients}
+        onPress={() => navigation.navigate("MainTabs" as never)}
+        accessibilityRole="button"
+        accessibilityLabel="Retour à la liste des patients"
+      >
+        <Text style={styles.backToPatientsText}>← Retour aux patients</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -160,5 +170,19 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     fontSize: 14,
     fontWeight: "500",
+  },
+  backToPatients: {
+    backgroundColor: Colors.backgroundCard,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginTop: Spacing.lg,
+  },
+  backToPatientsText: {
+    color: Colors.primary,
+    fontSize: 15,
+    fontWeight: "600",
   },
 });

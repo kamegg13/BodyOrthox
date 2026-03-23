@@ -153,10 +153,10 @@ describe("PatientTimelineScreen", () => {
     it("renders chart data points", async () => {
       const { getByTestId } = render(<PatientTimelineScreen />);
       await waitFor(() => {
-        // Chart should have data points for each analysis
-        expect(getByTestId("chart-point-0")).toBeTruthy();
-        expect(getByTestId("chart-point-1")).toBeTruthy();
-        expect(getByTestId("chart-point-2")).toBeTruthy();
+        // Chart should have knee/hip/ankle dots for each analysis
+        expect(getByTestId("knee-dot-0")).toBeTruthy();
+        expect(getByTestId("hip-dot-0")).toBeTruthy();
+        expect(getByTestId("ankle-dot-0")).toBeTruthy();
       });
     });
   });
