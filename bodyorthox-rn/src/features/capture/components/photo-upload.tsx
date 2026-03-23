@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useEffect } from "react";
+import React, { useCallback } from "react";
 import { Platform, StyleSheet, Text, TouchableOpacity } from "react-native";
 import { Colors } from "../../../shared/design-system/colors";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
@@ -8,47 +8,39 @@ interface PhotoUploadProps {
 }
 
 export function PhotoUpload({ onPhotoSelected }: PhotoUploadProps) {
-  const inputRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
+  const handlePress = useCallback(() => {
     if (Platform.OS !== "web") return;
 
+    // Create a temporary file input, click it, read the result, then remove it
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*";
     input.style.display = "none";
     document.body.appendChild(input);
-    inputRef.current = input;
 
-    const handleChange = () => {
+    input.addEventListener("change", () => {
       const file = input.files?.[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result;
-        if (typeof result === "string") {
-          onPhotoSelected(result);
-        }
-      };
-      reader.readAsDataURL(file);
-      input.value = "";
-    };
-
-    input.addEventListener("change", handleChange);
-
-    return () => {
-      input.removeEventListener("change", handleChange);
-      if (document.body.contains(input)) {
-        document.body.removeChild(input);
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const result = e.target?.result;
+          if (typeof result === "string") {
+            onPhotoSelected(result);
+          }
+        };
+        reader.readAsDataURL(file);
       }
-      inputRef.current = null;
-    };
-  }, [onPhotoSelected]);
+      // Clean up
+      document.body.removeChild(input);
+    });
 
-  const handlePress = useCallback(() => {
-    inputRef.current?.click();
-  }, []);
+    // Also clean up if the user cancels
+    input.addEventListener("cancel", () => {
+      document.body.removeChild(input);
+    });
+
+    input.click();
+  }, [onPhotoSelected]);
 
   if (Platform.OS !== "web") {
     return null;
