@@ -1,5 +1,7 @@
 import React, { useCallback, useState } from "react";
 import {
+  Image,
+  LayoutChangeEvent,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,6 +13,8 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RouteProp } from "@react-navigation/native";
 import type { RootStackParamList } from "../../../navigation/types";
 import { confidenceLabel } from "../../capture/domain/analysis";
+import { SkeletonOverlay } from "../../capture/components/skeleton-overlay";
+import type { PoseLandmarks } from "../../capture/data/angle-calculator";
 import { ArticularAngleCard } from "../components/articular-angle-card";
 import { HkaAngleCard, classifyHka } from "../components/hka-angle-card";
 import { BodyAxisDiagram } from "../components/body-axis-diagram";
@@ -39,9 +43,18 @@ function jointLabel(joint: string | null): string {
 export function ResultsScreen() {
   const navigation = useNavigation<Nav>();
   const { params } = useRoute<Route>();
-  const { analysisId, patientId } = params;
+  const { analysisId, patientId, capturedImageUrl, allLandmarks } = params;
   const { isTablet } = usePlatform();
   const [viewMode, setViewMode] = useState<ViewMode>("simple");
+  const [photoLayout, setPhotoLayout] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
+
+  const handlePhotoLayout = useCallback((e: LayoutChangeEvent) => {
+    const { width, height } = e.nativeEvent.layout;
+    setPhotoLayout({ width, height });
+  }, []);
 
   const repo = useAnalysisRepository();
   const {
@@ -96,6 +109,27 @@ export function ResultsScreen() {
       </View>
 
       <Text style={styles.headerTitle}>Résultats</Text>
+
+      {/* Captured photo with skeleton overlay */}
+      {capturedImageUrl && (
+        <View style={styles.photoContainer}>
+          <Image
+            source={{ uri: capturedImageUrl }}
+            style={styles.photoImage}
+            resizeMode="contain"
+            onLayout={handlePhotoLayout}
+            testID="results-photo"
+          />
+          {allLandmarks && photoLayout && (
+            <SkeletonOverlay
+              landmarks={allLandmarks as PoseLandmarks}
+              allLandmarks={allLandmarks as PoseLandmarks}
+              imageWidth={photoLayout.width}
+              imageHeight={photoLayout.height}
+            />
+          )}
+        </View>
+      )}
 
       {/* Patient info subtitle */}
       <View style={styles.patientInfoRow}>
@@ -258,6 +292,20 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: Colors.textPrimary,
     marginBottom: Spacing.xs,
+  },
+  photoContainer: {
+    width: "100%",
+    maxWidth: 400,
+    aspectRatio: 3 / 4,
+    alignSelf: "center",
+    position: "relative",
+    borderRadius: 12,
+    overflow: "hidden",
+    backgroundColor: Colors.surface,
+  },
+  photoImage: {
+    width: "100%",
+    height: "100%",
   },
 
   // Patient info

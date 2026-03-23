@@ -19,6 +19,7 @@ interface CaptureState {
   isCorrectPosition: boolean;
   capturedImageUrl: string | null;
   detectedLandmarks: PoseLandmarks | null;
+  allDetectedLandmarks: PoseLandmarks | null;
 }
 
 interface CaptureActions {
@@ -29,7 +30,7 @@ interface CaptureActions {
   permissionDenied(message: string): void;
   startRecording(): void;
   addFrame(): void;
-  processFrames(landmarks: PoseLandmarks): void;
+  processFrames(landmarks: PoseLandmarks, allLandmarks?: PoseLandmarks): void;
   saveAnalysis(patientId: string): Promise<Analysis | null>;
   sendAnalysisReadyNotification(patientName: string): Promise<void>;
   setLuminosity(value: number): void;
@@ -58,6 +59,7 @@ export const useCaptureStore = create<CaptureState & CaptureActions>()(
     isCorrectPosition: false,
     capturedImageUrl: null,
     detectedLandmarks: null,
+    allDetectedLandmarks: null,
 
     setRepository(repo: IAnalysisRepository) {
       _repository = repo;
@@ -101,7 +103,7 @@ export const useCaptureStore = create<CaptureState & CaptureActions>()(
       });
     },
 
-    processFrames(landmarks: PoseLandmarks) {
+    processFrames(landmarks: PoseLandmarks, allLandmarks?: PoseLandmarks) {
       const kneeAngle = calculateKneeAngle(landmarks);
       const hipAngle = calculateHipAngle(landmarks);
       const ankleAngle = calculateAnkleAngle(landmarks);
@@ -112,6 +114,7 @@ export const useCaptureStore = create<CaptureState & CaptureActions>()(
 
       set((state) => {
         state.detectedLandmarks = landmarks;
+        state.allDetectedLandmarks = allLandmarks ?? null;
         state.phase = {
           type: "success",
           angles: { kneeAngle, hipAngle, ankleAngle },
@@ -170,6 +173,7 @@ export const useCaptureStore = create<CaptureState & CaptureActions>()(
         state.isCorrectPosition = false;
         state.capturedImageUrl = null;
         state.detectedLandmarks = null;
+        state.allDetectedLandmarks = null;
       });
     },
 

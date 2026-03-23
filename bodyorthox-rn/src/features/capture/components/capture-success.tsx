@@ -22,6 +22,7 @@ interface CaptureSuccessProps {
     ankleAngle: number;
   };
   landmarks: PoseLandmarks | null;
+  allLandmarks?: PoseLandmarks | null;
   onSave: () => void;
   onDiscard: () => void;
 }
@@ -31,6 +32,7 @@ export function CaptureSuccess({
   confidenceScore,
   angles,
   landmarks,
+  allLandmarks,
   onSave,
   onDiscard,
 }: CaptureSuccessProps) {
@@ -61,6 +63,7 @@ export function CaptureSuccess({
           {landmarks && imageLayout && (
             <SkeletonOverlay
               landmarks={landmarks}
+              allLandmarks={allLandmarks ?? undefined}
               imageWidth={imageLayout.width}
               imageHeight={imageLayout.height}
               angles={angles}

@@ -16,7 +16,15 @@ export type RootStackParamList = {
   CreatePatient: undefined;
   PatientDetail: { patientId: string };
   Capture: { patientId: string };
-  Results: { analysisId: string; patientId: string };
+  Results: {
+    analysisId: string;
+    patientId: string;
+    capturedImageUrl?: string;
+    allLandmarks?: Record<
+      number,
+      { x: number; y: number; visibility?: number }
+    >;
+  };
   Replay: { analysisId: string; patientId: string };
   Timeline: { patientId: string };
   Report: { analysis: Analysis; patient: Patient };

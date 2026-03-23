@@ -51,6 +51,27 @@ export function mediapipeToPoseLandmarks(
 }
 
 /**
+ * Convert ALL 33 MediaPipe landmarks to PoseLandmarks for full skeleton
+ * visualization. This is separate from the angle-relevant subset.
+ */
+export function mediapipeToAllLandmarks(
+  mpLandmarks: NormalizedLandmark[],
+): PoseLandmarks {
+  const result: PoseLandmarks = {};
+  for (let i = 0; i < mpLandmarks.length; i++) {
+    const lm = mpLandmarks[i];
+    if (lm) {
+      result[i] = {
+        x: lm.x,
+        y: lm.y,
+        visibility: lm.visibility ?? 0,
+      };
+    }
+  }
+  return result;
+}
+
+/**
  * Check whether the detected landmarks are usable (at least the key joints
  * have visibility above the minimum threshold).
  */
@@ -129,6 +150,7 @@ class MediaPipePoseDetector implements IPoseDetector {
       }
 
       const landmarks = mediapipeToPoseLandmarks(result.landmarks[0]);
+      const allLandmarks = mediapipeToAllLandmarks(result.landmarks[0]);
 
       if (!hasValidPose(landmarks)) {
         throw new NoPoseDetectedError(
@@ -138,7 +160,7 @@ class MediaPipePoseDetector implements IPoseDetector {
 
       const confidenceScore = calculateConfidenceScore(landmarks);
 
-      return { landmarks, confidenceScore };
+      return { landmarks, allLandmarks, confidenceScore };
     } finally {
       // Clean up HTMLImageElement to prevent memory leaks
       image.onload = null;

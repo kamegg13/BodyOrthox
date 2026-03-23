@@ -12,6 +12,7 @@ import { PoseLandmarks } from "./angle-calculator";
 
 export interface PoseDetectionResult {
   landmarks: PoseLandmarks;
+  allLandmarks: PoseLandmarks;
   confidenceScore: number;
 }
 

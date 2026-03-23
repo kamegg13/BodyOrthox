@@ -39,6 +39,7 @@ export function useCaptureLogic(patientId: string) {
     isCorrectPosition,
     capturedImageUrl,
     detectedLandmarks,
+    allDetectedLandmarks,
     requestPermission,
     permissionGranted,
     permissionDenied,
@@ -148,13 +149,13 @@ export function useCaptureLogic(patientId: string) {
             "Confiance faible — la photo pourrait ne pas être optimale. Vous pouvez réessayer ou continuer.",
           onContinue: () => {
             setLowConfidenceWarning(null);
-            processFrames(result.landmarks);
+            processFrames(result.landmarks, result.allLandmarks);
           },
         });
         return;
       }
 
-      processFrames(result.landmarks);
+      processFrames(result.landmarks, result.allLandmarks);
     } catch (error) {
       // Set phase back to 'ready' so UI shows error instead of spinner
       permissionGranted();
@@ -191,7 +192,14 @@ export function useCaptureLogic(patientId: string) {
     if (phase.type !== "success") return;
     const analysis = await saveAnalysis(patientId);
     if (analysis) {
-      navigation.replace("Results", { analysisId: analysis.id, patientId });
+      const { capturedImageUrl: imgUrl, allDetectedLandmarks: allLm } =
+        useCaptureStore.getState();
+      navigation.replace("Results", {
+        analysisId: analysis.id,
+        patientId,
+        capturedImageUrl: imgUrl ?? undefined,
+        allLandmarks: allLm ?? undefined,
+      });
     } else {
       setError("Impossible de sauvegarder l'analyse.");
     }
@@ -219,6 +227,7 @@ export function useCaptureLogic(patientId: string) {
     isCorrectPosition,
     capturedImageUrl,
     detectedLandmarks,
+    allDetectedLandmarks,
     previewUrl,
     mlLoading,
     detectionError,

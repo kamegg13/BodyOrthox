@@ -23,6 +23,7 @@ jest.mock("@mediapipe/tasks-vision", () => ({
 // Now we can safely import the pure functions
 import {
   mediapipeToPoseLandmarks,
+  mediapipeToAllLandmarks,
   hasValidPose,
   NoPoseDetectedError,
   getPoseDetector,
@@ -87,6 +88,61 @@ describe("mediapipeToPoseLandmarks", () => {
     expect(result[24]).toBeDefined();
     expect(result[12]).toBeUndefined();
     expect(result[23]).toBeUndefined();
+  });
+});
+
+describe("mediapipeToAllLandmarks", () => {
+  it("should extract all 33 landmark indices", () => {
+    const mpLandmarks = Array.from({ length: 33 }, (_, i) => ({
+      x: i * 0.01,
+      y: i * 0.02,
+      z: 0,
+      visibility: 0.9,
+    }));
+
+    const result = mediapipeToAllLandmarks(mpLandmarks);
+
+    const resultIndices = Object.keys(result)
+      .map(Number)
+      .sort((a, b) => a - b);
+    const expectedIndices = Array.from({ length: 33 }, (_, i) => i);
+    expect(resultIndices).toEqual(expectedIndices);
+  });
+
+  it("should handle missing visibility by defaulting to 0", () => {
+    const mpLandmarks = Array.from({ length: 33 }, (_, i) => ({
+      x: i * 0.01,
+      y: i * 0.02,
+      z: 0,
+    }));
+
+    const result = mediapipeToAllLandmarks(
+      mpLandmarks as Array<{
+        x: number;
+        y: number;
+        z: number;
+        visibility?: number;
+      }>,
+    );
+
+    expect(result[0]?.visibility).toBe(0);
+    expect(result[32]?.visibility).toBe(0);
+  });
+
+  it("should skip undefined entries gracefully", () => {
+    const mpLandmarks: Array<
+      { x: number; y: number; visibility: number } | undefined
+    > = new Array(33).fill(undefined);
+    mpLandmarks[0] = { x: 0.1, y: 0.2, visibility: 0.95 };
+    mpLandmarks[32] = { x: 0.5, y: 0.5, visibility: 0.9 };
+
+    const result = mediapipeToAllLandmarks(
+      mpLandmarks as Array<{ x: number; y: number; visibility: number }>,
+    );
+
+    expect(result[0]).toBeDefined();
+    expect(result[32]).toBeDefined();
+    expect(result[15]).toBeUndefined();
   });
 });
 
