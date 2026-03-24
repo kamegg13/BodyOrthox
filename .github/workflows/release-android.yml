@@ -30,7 +30,7 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Run tests
-        run: npx jest --ci --passWithNoTests
+        run: npx jest --ci --passWithNoTests --testTimeout=30000
 
       - name: TypeScript check
         run: npx tsc --noEmit

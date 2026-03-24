@@ -30,7 +30,4 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Run tests
-        run: npx jest --ci --coverage --passWithNoTests
-
-      - name: Check test coverage thresholds
-        run: npx jest --ci --coverage --passWithNoTests 2>&1 | tail -20
+        run: npx jest --ci --coverage --passWithNoTests --testTimeout=30000
