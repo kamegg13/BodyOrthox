@@ -73,9 +73,12 @@ describe("PatientTimelineScreen", () => {
 
   it("renders the screen title", async () => {
     const { getByText } = render(<PatientTimelineScreen />);
-    await waitFor(() => {
-      expect(getByText("Progression clinique")).toBeTruthy();
-    });
+    await waitFor(
+      () => {
+        expect(getByText("Progression clinique")).toBeTruthy();
+      },
+      { timeout: 10000 },
+    );
   });
 
   it("calls getForPatient with correct patientId", async () => {

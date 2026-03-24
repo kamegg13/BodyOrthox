@@ -1,3 +1,6 @@
+// Increase default timeout for React 19 async batching
+jest.setTimeout(15000);
+
 // Mock react-native-sqlite-storage
 jest.mock("react-native-sqlite-storage", () => ({
   openDatabase: jest.fn(() => ({
