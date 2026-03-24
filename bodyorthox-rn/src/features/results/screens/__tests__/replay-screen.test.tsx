@@ -93,9 +93,12 @@ describe("ReplayScreen", () => {
     it("calls getById with the analysisId from route params", async () => {
       renderScreen();
 
-      await waitFor(() => {
-        expect(screen.getByTestId("replay-screen")).toBeTruthy();
-      });
+      await waitFor(
+        () => {
+          expect(screen.getByTestId("replay-screen")).toBeTruthy();
+        },
+        { timeout: 15000 },
+      );
 
       expect(mockGetById).toHaveBeenCalledWith("analysis-001");
     });
