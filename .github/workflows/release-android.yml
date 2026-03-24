@@ -44,38 +44,10 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Download Gradle wrapper jar
-        run: |
-          cd android/gradle/wrapper
-          curl -sL "https://services.gradle.org/distributions/gradle-8.11.1-bin.zip" -o /tmp/gradle.zip
-          unzip -q -o /tmp/gradle.zip "gradle-8.11.1/lib/gradle-launcher-*.jar" -d /tmp
-          # Extract the wrapper jar from the distribution
-          curl -sL "https://raw.githubusercontent.com/gradle/gradle/v8.11.1/gradle/wrapper/gradle-wrapper.jar" -o gradle-wrapper.jar || true
-          # If direct download fails, generate it
-          if [ ! -s gradle-wrapper.jar ]; then
-            cd /tmp
-            unzip -q -o gradle.zip
-            /tmp/gradle-8.11.1/bin/gradle wrapper --gradle-version 8.11.1 --project-dir /tmp/wrapper-gen 2>/dev/null || true
-            if [ -f /tmp/wrapper-gen/gradle/wrapper/gradle-wrapper.jar ]; then
-              cp /tmp/wrapper-gen/gradle/wrapper/gradle-wrapper.jar $GITHUB_WORKSPACE/bodyorthox-rn/android/gradle/wrapper/gradle-wrapper.jar
-            fi
-          fi
-
-      - name: Generate Gradle wrapper if needed
-        run: |
-          cd android
-          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
-            # Use system gradle to generate wrapper with correct version
-            gradle wrapper --gradle-version 8.11.1 --no-daemon 2>/dev/null || true
-          fi
-          chmod +x gradlew
-
       - name: Build Android Debug APK
         run: |
           cd android
-          ./gradlew assembleDebug --no-daemon -Dorg.gradle.jvmargs=-Xmx4096m
-        env:
-          GRADLE_OPTS: -Dorg.gradle.daemon=false
+          ./gradlew assembleDebug --no-daemon
 
       - name: Rename APK
         run: |
@@ -94,5 +66,3 @@ jobs:
         with:
           files: bodyorthox-rn/BodyOrthox-*-debug.apk
           generate_release_notes: true
-          draft: false
-          prerelease: false
