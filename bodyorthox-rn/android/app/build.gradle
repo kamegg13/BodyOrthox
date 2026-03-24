@@ -3,17 +3,17 @@ apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
 react {
-    // empty — auto-configured
+    // auto-configured by React Native gradle plugin
 }
 
 android {
     namespace "com.bodyorthox.app"
-    compileSdk rootProject.ext.compileSdkVersion
+    compileSdk 35
 
     defaultConfig {
         applicationId "com.bodyorthox.app"
-        minSdk rootProject.ext.minSdkVersion
-        targetSdk rootProject.ext.targetSdkVersion
+        minSdk 24
+        targetSdk 35
         versionCode 1
         versionName "1.0.0"
     }
