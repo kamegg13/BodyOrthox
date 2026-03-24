@@ -5,11 +5,6 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version tag (e.g. v1.0.0)'
-        required: false
-        default: 'dev'
 
 permissions:
   contents: write
@@ -31,6 +26,15 @@ jobs:
           cache: 'npm'
           cache-dependency-path: bodyorthox-rn/package-lock.json
 
+      - name: Install npm dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Run tests
+        run: npx jest --ci --passWithNoTests
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
       - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
@@ -40,30 +44,21 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.11.1'
-
       - name: Generate Gradle wrapper
         run: |
           cd android
+          # Create wrapper using system gradle (node_modules must exist first)
           gradle wrapper --gradle-version 8.11.1
-
-      - name: Install dependencies
-        run: npm ci --legacy-peer-deps
-
-      - name: Run tests
-        run: npx jest --ci --passWithNoTests
-
-      - name: TypeScript check
-        run: npx tsc --noEmit
+          chmod +x gradlew
+        env:
+          GRADLE_OPTS: -Dorg.gradle.daemon=false
 
       - name: Build Android Debug APK
         run: |
           cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon --warning-mode=all
+        env:
+          GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx4096m
 
       - name: Rename APK
         run: |
