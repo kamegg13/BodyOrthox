@@ -4,8 +4,14 @@ pluginManagement {
 plugins {
     id("com.facebook.react.settings")
 }
+
 extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
     ex.autolinkLibrariesFromCommand()
 }
+
 rootProject.name = 'BodyOrthox'
 include ':app'
+
+// Include the React Native gradle plugin as a composite build
+// so that 'com.facebook.react' plugin ID is resolvable from app/build.gradle
+includeBuild("../node_modules/@react-native/gradle-plugin")
