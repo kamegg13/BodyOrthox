@@ -4,17 +4,25 @@ module.exports = {
     "@mediapipe/tasks-vision": {
       platforms: { android: null, ios: null },
     },
-    // Disable native modules that may crash on startup
-    // These are used on web via .web.ts platform files
-    // On Android, they need proper native configuration first
+    // Disable all non-essential native modules for Android stability
+    // The app runs as a web-like experience on Android via Hermes
     "react-native-vision-camera": {
-      platforms: { android: null },
+      platforms: { android: null, ios: null },
     },
     "react-native-biometrics": {
-      platforms: { android: null },
+      platforms: { android: null, ios: null },
     },
     "react-native-sqlite-storage": {
+      platforms: { android: null, ios: null },
+    },
+    "react-native-keychain": {
+      platforms: { android: null, ios: null },
+    },
+    "react-native-svg": {
       platforms: { android: null },
+    },
+    "@notifee/react-native": {
+      platforms: { android: null, ios: null },
     },
   },
 };
