@@ -151,8 +151,8 @@ export function AccountScreen() {
 
   async function handleDeleteAllData() {
     showConfirm(
-      "Supprimer toutes les donn\u00E9es",
-      "Cette action est irr\u00E9versible. Toutes les donn\u00E9es patients et analyses seront supprim\u00E9es.",
+      "Supprimer toutes les données",
+      "Cette action est irréversible. Toutes les données patients et analyses seront supprimées.",
       async () => {
         try {
           const { getDatabase } = await import("../../../core/database/init");
@@ -161,12 +161,9 @@ export function AccountScreen() {
           await db.execute("DELETE FROM patients");
           setPatientCount(0);
           setAnalysisCount(0);
-          showAlert(
-            "Succ\u00E8s",
-            "Toutes les donn\u00E9es ont \u00E9t\u00E9 supprim\u00E9es.",
-          );
+          showAlert("Succès", "Toutes les données ont été supprimées.");
         } catch {
-          showAlert("Erreur", "Impossible de supprimer les donn\u00E9es.");
+          showAlert("Erreur", "Impossible de supprimer les données.");
         }
       },
     );
@@ -194,14 +191,14 @@ export function AccountScreen() {
           label="Cabinet"
           storageKey="practitioner_cabinet"
           defaultValue=""
-          placeholder="Cabinet d'orthop\u00E9die"
+          placeholder="Cabinet d'orthopédie"
         />
         <View style={styles.separator} />
         <ProfileInput
-          label="Sp{'\u00E9'}cialit{'\u00E9'}"
+          label="Spécialité"
           storageKey="practitioner_specialty"
-          defaultValue="Orthop\u00E9die"
-          placeholder="Orthop\u00E9die"
+          defaultValue="Orthopédie"
+          placeholder="Orthopédie"
         />
       </View>
 
@@ -221,21 +218,19 @@ export function AccountScreen() {
           onPress={() =>
             showAlert(
               "Abonnement",
-              "La gestion d'abonnement sera bient\u00F4t disponible.",
+              "La gestion d'abonnement sera bientôt disponible.",
             )
           }
           accessibilityRole="button"
           testID="manage-subscription-button"
         >
-          <Text style={styles.rowLabelLink}>
-            G{"\u00E9"}rer l{"\u2019"}abonnement
-          </Text>
-          <Text style={styles.chevron}>{"\u203A"}</Text>
+          <Text style={styles.rowLabelLink}>Gérer l'abonnement</Text>
+          <Text style={styles.chevron}>›</Text>
         </TouchableOpacity>
       </View>
 
       {/* SECURITE */}
-      <SectionHeader title="S{'\u00C9'}CURIT{'\u00C9'}" />
+      <SectionHeader title="SÉCURITÉ" />
       <View style={styles.card}>
         <View style={styles.row}>
           <View style={styles.rowLabelGroup}>
@@ -255,7 +250,7 @@ export function AccountScreen() {
       </View>
 
       {/* DONNEES */}
-      <SectionHeader title="DONN{'\u00C9'}ES" />
+      <SectionHeader title="DONNÉES" />
       <View style={styles.card}>
         <SettingsRow label="Patients">
           <Text style={styles.rowValue}>{patientCount}</Text>
@@ -270,16 +265,14 @@ export function AccountScreen() {
           onPress={() =>
             showAlert(
               "Exporter",
-              "L'export de donn\u00E9es sera disponible prochainement.",
+              "L'export de données sera disponible prochainement.",
             )
           }
           accessibilityRole="button"
           testID="export-data-button"
         >
-          <Text style={styles.rowLabelLink}>
-            Exporter toutes les donn{"\u00E9"}es
-          </Text>
-          <Text style={styles.chevron}>{"\u203A"}</Text>
+          <Text style={styles.rowLabelLink}>Exporter toutes les données</Text>
+          <Text style={styles.chevron}>›</Text>
         </TouchableOpacity>
         <View style={styles.separator} />
         <TouchableOpacity
@@ -289,13 +282,13 @@ export function AccountScreen() {
           testID="delete-data-button"
         >
           <Text style={styles.rowLabelDestructive}>
-            Supprimer toutes les donn{"\u00E9"}es
+            Supprimer toutes les données
           </Text>
         </TouchableOpacity>
       </View>
 
       {/* A PROPOS */}
-      <SectionHeader title="{'\u00C0'} PROPOS" />
+      <SectionHeader title="À PROPOS" />
       <View style={styles.card}>
         <SettingsRow label="Version">
           <Text style={styles.rowValue}>1.0.0 (MVP)</Text>
@@ -305,37 +298,35 @@ export function AccountScreen() {
           style={styles.row}
           onPress={() =>
             showAlert(
-              "Mentions l\u00E9gales",
-              "BodyOrthox est un outil d\u2019aide \u00E0 la d\u00E9cision clinique. " +
-                "Il ne constitue pas un dispositif m\u00E9dical certifi\u00E9 au sens du r\u00E8glement EU MDR 2017/745. " +
-                "Les r\u00E9sultats doivent \u00EAtre valid\u00E9s par un professionnel de sant\u00E9 qualifi\u00E9.",
+              "Mentions légales",
+              "BodyOrthox est un outil d'aide à la décision clinique. " +
+                "Il ne constitue pas un dispositif médical certifié au sens du règlement EU MDR 2017/745. " +
+                "Les résultats doivent être validés par un professionnel de santé qualifié.",
             )
           }
           accessibilityRole="button"
           testID="legal-button"
         >
-          <Text style={styles.rowLabelLink}>Mentions l{"\u00E9"}gales</Text>
-          <Text style={styles.chevron}>{"\u203A"}</Text>
+          <Text style={styles.rowLabelLink}>Mentions légales</Text>
+          <Text style={styles.chevron}>›</Text>
         </TouchableOpacity>
         <View style={styles.separator} />
         <TouchableOpacity
           style={styles.row}
           onPress={() =>
             showAlert(
-              "Politique de confidentialit\u00E9",
-              "BodyOrthox respecte le R\u00E8glement G\u00E9n\u00E9ral sur la Protection des Donn\u00E9es (RGPD). " +
-                "Toutes les donn\u00E9es patients sont stock\u00E9es localement sur votre appareil. " +
-                "Aucune donn\u00E9e personnelle n\u2019est transmise \u00E0 des serveurs externes. " +
-                "Vous pouvez exporter ou supprimer vos donn\u00E9es \u00E0 tout moment depuis les param\u00E8tres.",
+              "Politique de confidentialité",
+              "BodyOrthox respecte le Règlement Général sur la Protection des Données (RGPD). " +
+                "Toutes les données patients sont stockées localement sur votre appareil. " +
+                "Aucune donnée personnelle n'est transmise à des serveurs externes. " +
+                "Vous pouvez exporter ou supprimer vos données à tout moment depuis les paramètres.",
             )
           }
           accessibilityRole="button"
           testID="privacy-button"
         >
-          <Text style={styles.rowLabelLink}>
-            Politique de confidentialit{"\u00E9"}
-          </Text>
-          <Text style={styles.chevron}>{"\u203A"}</Text>
+          <Text style={styles.rowLabelLink}>Politique de confidentialité</Text>
+          <Text style={styles.chevron}>›</Text>
         </TouchableOpacity>
         <View style={styles.separator} />
         <TouchableOpacity
@@ -343,14 +334,14 @@ export function AccountScreen() {
           onPress={() =>
             showAlert(
               "Contact support",
-              "Pour toute question, contactez-nous \u00E0 support@bodyorthox.com",
+              "Pour toute question, contactez-nous à support@bodyorthox.com",
             )
           }
           accessibilityRole="button"
           testID="contact-button"
         >
           <Text style={styles.rowLabelLink}>Contact support</Text>
-          <Text style={styles.chevron}>{"\u203A"}</Text>
+          <Text style={styles.chevron}>›</Text>
         </TouchableOpacity>
       </View>
 

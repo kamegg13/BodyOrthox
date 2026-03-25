@@ -60,7 +60,7 @@ function HkaPhoneIllustration() {
         </View>
         {/* HKA angle label */}
         <View style={illustrationStyles.angleLabel}>
-          <Text style={illustrationStyles.angleDegree}>174{"\u00B0"}</Text>
+          <Text style={illustrationStyles.angleDegree}>174°</Text>
           <Text style={illustrationStyles.angleType}>Genu varum</Text>
         </View>
         {/* Dashed HKA axis line */}
@@ -95,10 +95,10 @@ function PdfExportIllustration() {
       {/* Share icons */}
       <View style={illustrationStyles.shareRow}>
         <View style={illustrationStyles.shareIcon}>
-          <Text style={illustrationStyles.shareIconText}>{"\uD83D\uDD12"}</Text>
+          <Text style={illustrationStyles.shareIconText}>🔒</Text>
         </View>
         <View style={illustrationStyles.shareIcon}>
-          <Text style={illustrationStyles.shareIconText}>{"\uD83D\uDCE4"}</Text>
+          <Text style={illustrationStyles.shareIconText}>📤</Text>
         </View>
       </View>
     </View>
@@ -111,18 +111,18 @@ function PdfExportIllustration() {
 
 const PAGE_1_FEATURES = [
   {
-    icon: "\uD83D\uDCF7",
+    icon: "📷",
     title: "Photo debout en 1 tap",
     description: "Appareil photo iOS natif, aucun guidage requis",
   },
   {
-    icon: "\uD83D\uDCD0",
+    icon: "📐",
     title: "Angle HKA automatique",
-    description: "ML Kit d\u00e9tecte hanche, genou et cheville",
+    description: "ML Kit détecte hanche, genou et cheville",
   },
   {
-    icon: "\uD83D\uDCC4",
-    title: "Rapport PDF nomm\u00e9",
+    icon: "📄",
+    title: "Rapport PDF nommé",
     description: "DupontJean_AnalyseHKA_2026-03-08.pdf",
   },
 ] as const;
@@ -219,7 +219,7 @@ export function OnboardingScreen() {
         {/* Page 1: Analyse HKA (mockup 10) */}
         <OnboardingPage
           title="Analysez les angles articulaires en 30 secondes"
-          subtitle="Une photo. Un r\u00e9sultat clinique. Un rapport PDF."
+          subtitle="Une photo. Un résultat clinique. Un rapport PDF."
           illustration={<HkaPhoneIllustration />}
           features={PAGE_1_FEATURES}
           testID="onboarding-page-result"
@@ -230,14 +230,14 @@ export function OnboardingScreen() {
           title="Filmez la marche du patient"
           subtitle="Positionnez le patient de profil et filmez 12 secondes."
           description="BodyOrthox utilise la camera uniquement pour filmer la marche. La video n'est jamais stockee ni transmise."
-          icon={"\uD83D\uDCF7"}
+          icon="📷"
           testID="onboarding-page-capture"
         />
 
-        {/* Page 3: Export s\u00e9curis\u00e9 (mockup 11) */}
+        {/* Page 3: Exportation sécurisée (mockup 11) */}
         <OnboardingPage
-          title="Exportation s\u00e9curis\u00e9e"
-          description="G\u00e9n\u00e9rez des rapports PDF d\u00e9taill\u00e9s de votre analyse HKA et partagez-les en toute s\u00e9curit\u00e9 avec vos confr\u00e8res ou vos patients."
+          title="Exportation sécurisée"
+          description="Générez des rapports PDF détaillés de votre analyse HKA et partagez-les en toute sécurité avec vos confrères ou vos patients."
           illustration={<PdfExportIllustration />}
           testID="onboarding-page-privacy"
         />

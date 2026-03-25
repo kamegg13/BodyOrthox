@@ -17,22 +17,21 @@ interface ProtocolCard {
 
 const PROTOCOLS: readonly ProtocolCard[] = [
   {
-    icon: "\uD83D\uDCD0",
+    icon: "📐",
     title: "Vue frontale HKA",
     description:
-      "Patient debout, face \u00E0 vous, pieds \u00E9cart\u00E9s largeur \u00E9paules. Corps entier visible.",
+      "Patient debout, face à vous, pieds écartés largeur épaules. Corps entier visible.",
   },
   {
-    icon: "\uD83D\uDCD0",
+    icon: "📐",
     title: "Vue de profil",
     description:
       "Patient de profil strict. Bras le long du corps. Marche naturelle.",
   },
   {
-    icon: "\uD83D\uDCA1",
+    icon: "💡",
     title: "Conditions optimales",
-    description:
-      "\u00C9clairage uniforme. Fond neutre. Distance 2-3 m\u00E8tres.",
+    description: "Éclairage uniforme. Fond neutre. Distance 2-3 mètres.",
   },
 ] as const;
 
@@ -55,7 +54,7 @@ export function ProtocolsScreen() {
     >
       <Text style={styles.headerTitle}>Protocoles de capture</Text>
       <Text style={[Typography.body, styles.headerSubtitle]}>
-        Guides de positionnement pour des mesures pr{"\u00E9"}cises.
+        Guides de positionnement pour des mesures précises.
       </Text>
 
       {PROTOCOLS.map((card) => (

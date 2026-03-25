@@ -36,11 +36,10 @@ function showAlert(title: string, message: string) {
 function formatDate(iso: string): string {
   try {
     const d = new Date(iso);
-    return d.toLocaleDateString("fr-FR", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+    const day = d.getDate() < 10 ? `0${d.getDate()}` : String(d.getDate());
+    const month =
+      d.getMonth() + 1 < 10 ? `0${d.getMonth() + 1}` : String(d.getMonth() + 1);
+    return `${day}/${month}/${d.getFullYear()}`;
   } catch {
     return iso;
   }
@@ -55,7 +54,7 @@ function ReportItem({ item }: { readonly item: ReportRow }) {
         </Text>
         <Text style={styles.meta}>
           {formatDate(item.date)}
-          {item.hkaAngle != null ? ` \u00B7 HKA ${item.hkaAngle}\u00B0` : ""}
+          {item.hkaAngle != null ? ` · HKA ${item.hkaAngle}°` : ""}
         </Text>
       </View>
       <View style={styles.actions}>
@@ -63,16 +62,14 @@ function ReportItem({ item }: { readonly item: ReportRow }) {
           style={styles.actionButton}
           onPress={() =>
             showAlert(
-              "G\u00E9n\u00E9rer PDF",
-              "La g\u00E9n\u00E9ration de PDF sera disponible prochainement.",
+              "Générer PDF",
+              "La génération de PDF sera disponible prochainement.",
             )
           }
           accessibilityRole="button"
           activeOpacity={0.7}
         >
-          <Text style={styles.actionText}>
-            G{"\u00E9"}n{"\u00E9"}rer PDF
-          </Text>
+          <Text style={styles.actionText}>Générer PDF</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.actionButton, styles.shareButton]}
@@ -138,13 +135,12 @@ export function ReportsScreen() {
 
       {reports.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>{"\uD83D\uDCC4"}</Text>
+          <Text style={styles.emptyIcon}>📄</Text>
           <Text style={[Typography.h3, styles.emptyTitle]}>
-            Aucun rapport g{"\u00E9"}n{"\u00E9"}r{"\u00E9"}
+            Aucun rapport généré
           </Text>
           <Text style={[Typography.body, styles.emptySubtitle]}>
-            R{"\u00E9"}alisez une analyse pour cr{"\u00E9"}er votre premier
-            rapport.
+            Réalisez une analyse pour créer votre premier rapport.
           </Text>
         </View>
       ) : (

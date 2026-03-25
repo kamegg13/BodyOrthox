@@ -91,12 +91,12 @@ export function PatientListTile({
         </View>
         <Text style={[Typography.bodySmall, styles.meta]} numberOfLines={1}>
           {lastAnalysisDate != null
-            ? `${lastAnalysisType} \u00B7 ${formatRelativeShort(lastAnalysisDate)}`
+            ? `${lastAnalysisType} · ${formatRelativeShort(lastAnalysisDate)}`
             : `${age} ans`}
         </Text>
       </View>
 
-      <Text style={styles.chevron}>{"\u203A"}</Text>
+      <Text style={styles.chevron}>›</Text>
     </TouchableOpacity>
   );
 }

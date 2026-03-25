@@ -51,8 +51,8 @@ function confidenceColor(score: number): string {
 }
 
 function formatAngle(value: number): string {
-  if (value === 0) return "\u2014";
-  return `${value.toFixed(1)}\u00B0`;
+  if (value === 0) return "—";
+  return `${value.toFixed(1)}°`;
 }
 
 function HkaSideColumn({
@@ -134,7 +134,7 @@ export function HkaAngleCard({
           </Text>
         </View>
         <Text style={styles.normSubtitle}>
-          {`Norme adulte : ${HKA_NORM_MIN}\u2013${HKA_NORM_MAX}\u00B0`}
+          {`Norme adulte : ${HKA_NORM_MIN}–${HKA_NORM_MAX}°`}
         </Text>
         <View style={styles.mlRow}>
           <View style={[styles.mlDot, { backgroundColor: mlColor }]} />

@@ -52,14 +52,14 @@ export function CreatePatientScreen() {
         Number(heightCm) < 50 ||
         Number(heightCm) > 250)
     )
-      e.heightCm = "Taille invalide (50\u2013250 cm).";
+      e.heightCm = "Taille invalide (50–250 cm).";
     if (
       weightKg &&
       (isNaN(Number(weightKg)) ||
         Number(weightKg) < 10 ||
         Number(weightKg) > 300)
     )
-      e.weightKg = "Poids invalide (10\u2013300 kg).";
+      e.weightKg = "Poids invalide (10–300 kg).";
     setErrors(e);
     return Object.keys(e).length === 0;
   }, [fullName, dateOfBirth, heightCm, weightKg]);
@@ -83,7 +83,7 @@ export function CreatePatientScreen() {
         "Erreur",
         error instanceof Error
           ? error.message
-          : "Impossible de cr\u00e9er le patient.",
+          : "Impossible de créer le patient.",
       );
     } finally {
       setIsSubmitting(false);
@@ -124,14 +124,14 @@ export function CreatePatientScreen() {
           onPress={handleSubmit}
           disabled={isSubmitting}
           accessibilityRole="button"
-          accessibilityLabel="Cr\u00E9er"
+          accessibilityLabel="Créer"
           testID="nav-create-button"
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Text
             style={[styles.navCreate, isSubmitting && styles.navCreateDisabled]}
           >
-            {"Cr\u00e9er"}
+            Créer
           </Text>
         </Pressable>
       </View>
@@ -147,12 +147,12 @@ export function CreatePatientScreen() {
         {/* iOS grouped form card */}
         <View style={styles.formCard}>
           <View style={styles.formRow}>
-            <Text style={styles.formLabel}>{"Pr\u00e9nom"}</Text>
+            <Text style={styles.formLabel}>Prénom</Text>
             <TextInput
               style={styles.formInput}
               value={firstName}
               onChangeText={setFirstName}
-              placeholder="Entrer le pr\u00e9nom"
+              placeholder="Entrer le prénom"
               placeholderTextColor={Colors.textDisabled}
               autoCapitalize="words"
               testID="name-input"
@@ -184,7 +184,7 @@ export function CreatePatientScreen() {
                 keyboardType="numbers-and-punctuation"
                 testID="dob-input"
               />
-              <Text style={styles.calendarIcon}>{"\uD83D\uDCC5"}</Text>
+              <Text style={styles.calendarIcon}>📅</Text>
             </View>
           </View>
         </View>
@@ -197,7 +197,7 @@ export function CreatePatientScreen() {
 
         {/* RGPD notice */}
         <Text style={styles.rgpdNotice}>
-          {"Ces informations sont stock\u00e9es uniquement sur cet appareil."}
+          Ces informations sont stockées uniquement sur cet appareil.
         </Text>
 
         {/* Profil morphologique (optional, collapsible) */}
@@ -237,7 +237,7 @@ export function CreatePatientScreen() {
               style={styles.formInput}
               value={notes}
               onChangeText={setNotes}
-              placeholder={"Informations compl\u00e9mentaires..."}
+              placeholder="Informations complémentaires..."
               placeholderTextColor={Colors.textDisabled}
               testID="notes-input"
             />
@@ -254,13 +254,13 @@ export function CreatePatientScreen() {
         {/* Avatar illustration placeholder */}
         <View style={styles.illustrationContainer}>
           <View style={styles.avatarCircle}>
-            <Text style={styles.avatarIcon}>{"\uD83D\uDC65"}</Text>
+            <Text style={styles.avatarIcon}>👥</Text>
             <View style={styles.avatarBadge}>
               <Text style={styles.avatarBadgeText}>+</Text>
             </View>
           </View>
           <Text style={styles.illustrationText}>
-            {"Compl\u00e9tez le formulaire pour commencer le suivi BodyOrthox"}
+            Complétez le formulaire pour commencer le suivi BodyOrthox
           </Text>
         </View>
 
@@ -271,10 +271,10 @@ export function CreatePatientScreen() {
           disabled={isSubmitting}
           testID="submit-button"
           accessibilityRole="button"
-          accessibilityLabel="Cr\u00e9er le patient"
+          accessibilityLabel="Créer le patient"
         >
           <Text style={styles.submitText}>
-            {isSubmitting ? "Enregistrement..." : "Cr\u00E9er le patient"}
+            {isSubmitting ? "Enregistrement..." : "Créer le patient"}
           </Text>
         </Pressable>
       </ScrollView>

@@ -1,42 +1,225 @@
-import SQLite, { SQLiteDatabase } from 'react-native-sqlite-storage';
-import { ALL_MIGRATIONS } from './schema';
-import { IDatabase, QueryResult } from './database';
+/**
+ * Native (Android/iOS) implementation of IDatabase using in-memory Map storage.
+ *
+ * SQLite native module is disabled for Android 16 compatibility, so we use the
+ * same in-memory approach as the web implementation. Persistence via AsyncStorage
+ * could be added later if needed.
+ */
+import { IDatabase, QueryResult } from "./database";
 
-SQLite.enablePromise(true);
+const DEBUG_DB =
+  typeof process !== "undefined" ? process.env.NODE_ENV !== "test" : true;
+
+function dbLog(...args: unknown[]): void {
+  if (DEBUG_DB) {
+    // eslint-disable-next-line no-console
+    console.log("[NativeDB]", ...args);
+  }
+}
 
 class NativeDatabase implements IDatabase {
-  private db: SQLiteDatabase | null = null;
-
-  constructor(private readonly dbName: string) {}
+  private tables: Map<string, Record<string, unknown>[]> = new Map();
 
   async initialize(): Promise<void> {
-    this.db = await SQLite.openDatabase({ name: this.dbName, location: 'default' });
-    for (const migration of ALL_MIGRATIONS) {
-      await this.db.executeSql(migration);
+    // Load persisted data from localStorage if available (web/dev only)
+    try {
+      const stored =
+        typeof localStorage !== "undefined"
+          ? localStorage.getItem("bodyorthox_db")
+          : null;
+      if (stored) {
+        const parsed = JSON.parse(stored) as Record<
+          string,
+          Record<string, unknown>[]
+        >;
+        for (const [table, rows] of Object.entries(parsed)) {
+          this.tables.set(table, rows);
+        }
+      }
+    } catch {
+      // On native, localStorage is not available — silently fall back to in-memory only
     }
   }
 
   async execute(sql: string, params: unknown[] = []): Promise<QueryResult> {
-    if (!this.db) throw new Error('Database not initialized');
+    const trimmed = sql.trim().toUpperCase();
 
-    const [result] = await this.db.executeSql(sql, params);
-    const rows: Record<string, unknown>[] = [];
-    for (let i = 0; i < result.rows.length; i++) {
-      rows.push(result.rows.item(i));
+    if (trimmed.startsWith("CREATE") || trimmed.startsWith("PRAGMA")) {
+      return { rows: [], rowsAffected: 0 };
     }
+
+    if (trimmed.startsWith("SELECT")) {
+      return this.handleSelect(sql, params);
+    }
+
+    if (trimmed.startsWith("INSERT")) {
+      return this.handleInsert(sql, params);
+    }
+
+    if (trimmed.startsWith("UPDATE")) {
+      return this.handleUpdate(sql, params);
+    }
+
+    if (trimmed.startsWith("DELETE")) {
+      return this.handleDelete(sql, params);
+    }
+
+    return { rows: [], rowsAffected: 0 };
+  }
+
+  private handleSelect(sql: string, params: unknown[]): QueryResult {
+    const tableMatch = sql.match(/FROM\s+(\w+)/i);
+    if (!tableMatch) return { rows: [], rowsAffected: 0 };
+
+    const tableName = tableMatch[1].toLowerCase();
+    const rows = this.tables.get(tableName) ?? [];
+
+    dbLog("SELECT", tableName, "totalRows:", rows.length, "params:", params);
+
+    // Parse WHERE clause — supports multiple AND conditions
+    const whereMatch = sql.match(/WHERE\s+(.+?)(?:\s+ORDER|\s+LIMIT|$)/i);
+    if (whereMatch) {
+      const condition = whereMatch[1].trim();
+      // Split on AND to support compound conditions
+      const clauses = condition.split(/\s+AND\s+/i);
+      let filtered = [...rows];
+      let paramIndex = 0;
+
+      for (const clause of clauses) {
+        const trimmedClause = clause.trim();
+
+        // Match column_name = ? (use full word boundary to avoid partial matches)
+        const eqMatch = trimmedClause.match(/^(\w+)\s*=\s*\?$/i);
+        if (eqMatch) {
+          const col = eqMatch[1];
+          const val = params[paramIndex++];
+          filtered = filtered.filter((r) => r[col] === val);
+          continue;
+        }
+
+        // Match column_name LIKE ?
+        const likeMatch = trimmedClause.match(/^(\w+)\s+LIKE\s+\?$/i);
+        if (likeMatch) {
+          const col = likeMatch[1];
+          const pattern = String(params[paramIndex++]).replace(/%/g, "");
+          filtered = filtered.filter((r) =>
+            String(r[col]).toLowerCase().includes(pattern.toLowerCase()),
+          );
+          continue;
+        }
+
+        // Unrecognized clause — skip param placeholder if present
+        if (trimmedClause.includes("?")) {
+          paramIndex++;
+        }
+      }
+
+      dbLog(
+        "SELECT WHERE result:",
+        filtered.length,
+        "rows (from",
+        rows.length,
+        ")",
+      );
+      return { rows: filtered, rowsAffected: 0 };
+    }
+
+    return { rows: [...rows], rowsAffected: 0 };
+  }
+
+  private handleInsert(sql: string, params: unknown[]): QueryResult {
+    const tableMatch = sql.match(/INTO\s+(\w+)/i);
+    if (!tableMatch) return { rows: [], rowsAffected: 0 };
+
+    const tableName = tableMatch[1].toLowerCase();
+    const colMatch = sql.match(/\(([^)]+)\)\s+VALUES/i);
+    if (!colMatch) return { rows: [], rowsAffected: 0 };
+
+    const columns = colMatch[1]
+      .split(",")
+      .map((c) => c.trim().replace(/"/g, ""));
+    const row: Record<string, unknown> = {};
+    columns.forEach((col, i) => {
+      row[col] = params[i];
+    });
+
+    if (!this.tables.has(tableName)) {
+      this.tables.set(tableName, []);
+    }
+    this.tables.get(tableName)!.push(row);
+    this.persist();
+
+    dbLog("INSERT", tableName, "columns:", columns, "id:", row["id"]);
+
+    return { rows: [], rowsAffected: 1 };
+  }
+
+  private handleUpdate(sql: string, params: unknown[]): QueryResult {
+    const tableMatch = sql.match(/UPDATE\s+(\w+)/i);
+    if (!tableMatch) return { rows: [], rowsAffected: 0 };
+
+    const tableName = tableMatch[1].toLowerCase();
+    const rows = this.tables.get(tableName) ?? [];
+    const idParam = params[params.length - 1];
+    let affected = 0;
+
+    const setMatch = sql.match(/SET\s+(.+?)\s+WHERE/i);
+    if (setMatch) {
+      const sets = setMatch[1].split(",").map((s) => s.trim());
+      rows.forEach((row) => {
+        if (row["id"] === idParam) {
+          sets.forEach((set, i) => {
+            const colMatch = set.match(/(\w+)\s*=\s*\?/);
+            if (colMatch) row[colMatch[1]] = params[i];
+          });
+          affected++;
+        }
+      });
+    }
+
+    this.persist();
+    return { rows: [], rowsAffected: affected };
+  }
+
+  private handleDelete(sql: string, params: unknown[]): QueryResult {
+    const tableMatch = sql.match(/FROM\s+(\w+)/i);
+    if (!tableMatch) return { rows: [], rowsAffected: 0 };
+
+    const tableName = tableMatch[1].toLowerCase();
+    const rows = this.tables.get(tableName) ?? [];
+    const idParam = params[0];
+    const initial = rows.length;
+    this.tables.set(
+      tableName,
+      rows.filter((r) => r["id"] !== idParam),
+    );
+    this.persist();
+
     return {
-      rows,
-      rowsAffected: result.rowsAffected,
-      insertId: result.insertId,
+      rows: [],
+      rowsAffected: initial - (this.tables.get(tableName)?.length ?? 0),
     };
   }
 
+  private persist(): void {
+    try {
+      if (typeof localStorage !== "undefined") {
+        const data: Record<string, Record<string, unknown>[]> = {};
+        for (const [k, v] of this.tables.entries()) {
+          data[k] = v;
+        }
+        localStorage.setItem("bodyorthox_db", JSON.stringify(data));
+      }
+    } catch {
+      // On native, localStorage is not available — silently ignore
+    }
+  }
+
   async close(): Promise<void> {
-    await this.db?.close();
-    this.db = null;
+    this.persist();
   }
 }
 
-export function createDatabase(dbName: string): IDatabase {
-  return new NativeDatabase(dbName);
+export function createDatabase(_dbName: string): IDatabase {
+  return new NativeDatabase();
 }

@@ -42,8 +42,8 @@ type Route = RouteProp<RootStackParamList, "Results">;
 type ViewMode = "simple" | "expert";
 
 function formatAngleDisplay(value: number): string {
-  if (value === 0) return "\u2014";
-  return `${value.toFixed(1)}\u00B0`;
+  if (value === 0) return "—";
+  return `${value.toFixed(1)}°`;
 }
 
 export function ResultsScreen() {
@@ -144,7 +144,7 @@ export function ResultsScreen() {
           accessibilityLabel="Retour"
           style={styles.backButton}
         >
-          <Text style={styles.backText}>{"\u2039 Analyse HKA"}</Text>
+          <Text style={styles.backText}>‹ Analyse HKA</Text>
         </TouchableOpacity>
       </View>
 
@@ -185,12 +185,12 @@ export function ResultsScreen() {
           style={[styles.confidenceBadge, { borderColor: confidenceColor }]}
         >
           <Text style={[styles.confidenceText, { color: confidenceColor }]}>
-            {`Confiance ${confidenceLabel(analysis.confidenceScore)} \u2013 ${Math.round(analysis.confidenceScore * 100)}%`}
+            {`Confiance ${confidenceLabel(analysis.confidenceScore)} – ${Math.round(analysis.confidenceScore * 100)}%`}
           </Text>
         </View>
         {analysis.manualCorrectionApplied && (
           <Text style={styles.correctionNote}>
-            {"\u270F\uFE0F"} Correction manuelle (
+            {"✏️"} Correction manuelle (
             {jointLabel(analysis.manualCorrectionJoint)})
           </Text>
         )}
@@ -326,9 +326,7 @@ export function ResultsScreen() {
         accessibilityRole="button"
         accessibilityLabel="Relecture experte"
       >
-        <Text style={styles.actionButtonText}>
-          {"\u25B6 Relecture experte"}
-        </Text>
+        <Text style={styles.actionButtonText}>{"▶ Relecture experte"}</Text>
       </TouchableOpacity>
     </ScrollView>
   );

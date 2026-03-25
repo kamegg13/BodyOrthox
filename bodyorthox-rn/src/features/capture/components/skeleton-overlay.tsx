@@ -277,7 +277,7 @@ export function SkeletonOverlay({
               landmarks={displayLandmarks}
               jointIndex={23}
               fallbackIndex={23}
-              label={`${bilateralAngles.left.hipAngle.toFixed(1)}\u00B0`}
+              label={`${bilateralAngles.left.hipAngle.toFixed(1)}°`}
               displayedWidth={displayedWidth}
               displayedHeight={displayedHeight}
               offsetX={offsetX}
@@ -290,7 +290,7 @@ export function SkeletonOverlay({
               landmarks={displayLandmarks}
               jointIndex={25}
               fallbackIndex={25}
-              label={`${bilateralAngles.left.kneeAngle.toFixed(1)}\u00B0`}
+              label={`${bilateralAngles.left.kneeAngle.toFixed(1)}°`}
               displayedWidth={displayedWidth}
               displayedHeight={displayedHeight}
               offsetX={offsetX}
@@ -303,7 +303,7 @@ export function SkeletonOverlay({
               landmarks={displayLandmarks}
               jointIndex={27}
               fallbackIndex={27}
-              label={`${bilateralAngles.left.ankleAngle.toFixed(1)}\u00B0`}
+              label={`${bilateralAngles.left.ankleAngle.toFixed(1)}°`}
               displayedWidth={displayedWidth}
               displayedHeight={displayedHeight}
               offsetX={offsetX}
@@ -317,7 +317,7 @@ export function SkeletonOverlay({
               landmarks={displayLandmarks}
               jointIndex={24}
               fallbackIndex={24}
-              label={`${bilateralAngles.right.hipAngle.toFixed(1)}\u00B0`}
+              label={`${bilateralAngles.right.hipAngle.toFixed(1)}°`}
               displayedWidth={displayedWidth}
               displayedHeight={displayedHeight}
               offsetX={offsetX}
@@ -330,7 +330,7 @@ export function SkeletonOverlay({
               landmarks={displayLandmarks}
               jointIndex={26}
               fallbackIndex={26}
-              label={`${bilateralAngles.right.kneeAngle.toFixed(1)}\u00B0`}
+              label={`${bilateralAngles.right.kneeAngle.toFixed(1)}°`}
               displayedWidth={displayedWidth}
               displayedHeight={displayedHeight}
               offsetX={offsetX}
@@ -343,7 +343,7 @@ export function SkeletonOverlay({
               landmarks={displayLandmarks}
               jointIndex={28}
               fallbackIndex={28}
-              label={`${bilateralAngles.right.ankleAngle.toFixed(1)}\u00B0`}
+              label={`${bilateralAngles.right.ankleAngle.toFixed(1)}°`}
               displayedWidth={displayedWidth}
               displayedHeight={displayedHeight}
               offsetX={offsetX}
@@ -362,7 +362,7 @@ export function SkeletonOverlay({
               landmarks={landmarks}
               jointIndex={24}
               fallbackIndex={23}
-              label={`${angles.hipAngle.toFixed(1)}\u00B0`}
+              label={`${angles.hipAngle.toFixed(1)}°`}
               displayedWidth={displayedWidth}
               displayedHeight={displayedHeight}
               offsetX={offsetX}
@@ -374,7 +374,7 @@ export function SkeletonOverlay({
               landmarks={landmarks}
               jointIndex={26}
               fallbackIndex={25}
-              label={`${angles.kneeAngle.toFixed(1)}\u00B0`}
+              label={`${angles.kneeAngle.toFixed(1)}°`}
               displayedWidth={displayedWidth}
               displayedHeight={displayedHeight}
               offsetX={offsetX}
@@ -386,7 +386,7 @@ export function SkeletonOverlay({
               landmarks={landmarks}
               jointIndex={28}
               fallbackIndex={27}
-              label={`${angles.ankleAngle.toFixed(1)}\u00B0`}
+              label={`${angles.ankleAngle.toFixed(1)}°`}
               displayedWidth={displayedWidth}
               displayedHeight={displayedHeight}
               offsetX={offsetX}

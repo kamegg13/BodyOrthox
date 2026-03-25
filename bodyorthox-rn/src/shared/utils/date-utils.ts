@@ -3,24 +3,19 @@
  * All dates stored as UTC ISO 8601 strings.
  */
 
-/** Format a date for display in the UI (French locale). */
-export function formatDisplayDate(date: Date): string {
-  return date.toLocaleDateString('fr-FR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
+/** Pad a number to 2 digits. */
+function pad2(n: number): string {
+  return n < 10 ? `0${n}` : String(n);
 }
 
-/** Format a datetime for display. */
+/** Format a date for display in the UI (DD/MM/YYYY). */
+export function formatDisplayDate(date: Date): string {
+  return `${pad2(date.getDate())}/${pad2(date.getMonth() + 1)}/${date.getFullYear()}`;
+}
+
+/** Format a datetime for display (DD/MM/YYYY HH:MM). */
 export function formatDisplayDateTime(date: Date): string {
-  return date.toLocaleDateString('fr-FR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  return `${pad2(date.getDate())}/${pad2(date.getMonth() + 1)}/${date.getFullYear()} ${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
 }
 
 /** Calculate age in years from date of birth. */
@@ -28,7 +23,10 @@ export function calculateAge(dateOfBirth: Date): number {
   const today = new Date();
   let age = today.getFullYear() - dateOfBirth.getFullYear();
   const monthDiff = today.getMonth() - dateOfBirth.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dateOfBirth.getDate())) {
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && today.getDate() < dateOfBirth.getDate())
+  ) {
     age--;
   }
   return age;
@@ -36,7 +34,7 @@ export function calculateAge(dateOfBirth: Date): number {
 
 /** Convert a date to ISO 8601 string (YYYY-MM-DD). */
 export function toISODateString(date: Date): string {
-  return date.toISOString().split('T')[0];
+  return date.toISOString().split("T")[0];
 }
 
 /** Parse an ISO 8601 date string to Date. */
@@ -55,7 +53,7 @@ export function formatRelativeTime(date: Date): string {
   if (diffMinutes < 1) return "À l'instant";
   if (diffMinutes < 60) return `Il y a ${diffMinutes} min`;
   if (diffHours < 24) return `Il y a ${diffHours}h`;
-  if (diffDays === 1) return 'Hier';
+  if (diffDays === 1) return "Hier";
   if (diffDays < 7) return `Il y a ${diffDays} jours`;
   if (diffDays < 30) return `Il y a ${Math.floor(diffDays / 7)} semaine(s)`;
   if (diffDays < 365) return `Il y a ${Math.floor(diffDays / 30)} mois`;

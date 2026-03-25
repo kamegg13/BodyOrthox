@@ -139,7 +139,7 @@ export function PatientsScreen() {
 
       {/* Section header: PATIENTS RECENTS */}
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>PATIENTS R{"\u00C9"}CENTS</Text>
+        <Text style={styles.sectionTitle}>PATIENTS RÉCENTS</Text>
         <TouchableOpacity accessibilityRole="button">
           <Text style={styles.sectionLink}>Tout voir</Text>
         </TouchableOpacity>
@@ -150,11 +150,11 @@ export function PatientsScreen() {
         <LoadingSpinner message="Chargement des patients..." />
       ) : patients.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>{"\uD83D\uDC64"}</Text>
+          <Text style={styles.emptyIcon}>👤</Text>
           <Text style={[Typography.h3, styles.emptyTitle]}>Aucun patient</Text>
           <Text style={[Typography.body, styles.emptySubtitle]}>
             {searchQuery
-              ? "Aucun patient ne correspond \u00E0 votre recherche."
+              ? "Aucun patient ne correspond à votre recherche."
               : "Ajoutez votre premier patient pour commencer."}
           </Text>
         </View>
@@ -194,7 +194,7 @@ function ClinicalResourcesSection() {
           testID="resource-protocoles"
           onPress={() => navigation.navigate("Protocols")}
         >
-          <Text style={styles.resourceIcon}>{"\uD83D\uDCCB"}</Text>
+          <Text style={styles.resourceIcon}>📋</Text>
           <Text style={styles.resourceTitle}>Protocoles</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -204,7 +204,7 @@ function ClinicalResourcesSection() {
           testID="resource-rapports"
           onPress={() => navigation.navigate("Reports")}
         >
-          <Text style={styles.resourceIcon}>{"\uD83D\uDCC4"}</Text>
+          <Text style={styles.resourceIcon}>📄</Text>
           <Text style={styles.resourceTitle}>Rapports PDF</Text>
         </TouchableOpacity>
       </View>

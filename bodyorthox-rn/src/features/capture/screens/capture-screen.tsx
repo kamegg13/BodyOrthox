@@ -140,11 +140,11 @@ export function CaptureScreen() {
                 accessibilityLabel="Prendre une photo"
                 activeOpacity={0.8}
               >
-                <Text style={styles.captureButtonIcon}>{"\uD83D\uDCF7"}</Text>
+                <Text style={styles.captureButtonIcon}>📷</Text>
                 <Text style={styles.captureButtonText}>Prendre une photo</Text>
               </TouchableOpacity>
               <Text style={styles.captureHint}>
-                L'analyse HKA d{"\u00E9"}marre automatiquement
+                L'analyse HKA démarre automatiquement
               </Text>
               {Platform.OS === "web" && (
                 <PhotoUpload onPhotoSelected={handlePhotoUploaded} />

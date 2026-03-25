@@ -116,11 +116,11 @@ export function PatientsListScreen() {
         <LoadingSpinner message="Chargement des patients..." />
       ) : patients.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>{"\uD83D\uDC64"}</Text>
+          <Text style={styles.emptyIcon}>👤</Text>
           <Text style={[Typography.h3, styles.emptyTitle]}>Aucun patient</Text>
           <Text style={[Typography.body, styles.emptySubtitle]}>
             {searchQuery
-              ? "Aucun patient ne correspond \u00E0 votre recherche."
+              ? "Aucun patient ne correspond à votre recherche."
               : "Ajoutez votre premier patient pour commencer."}
           </Text>
         </View>

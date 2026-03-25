@@ -210,14 +210,12 @@ export function CaptureSuccess({
           accessibilityRole="alert"
         >
           <Text style={styles.simulationWarningText}>
-            {"\u26A0\uFE0F"} Donn{"\u00E9"}es de d{"\u00E9"}monstration — l{"'"}
-            analyse ML native n{"'"}est pas encore int{"\u00E9"}gr{"\u00E9"}
-            e. Les valeurs affich{"\u00E9"}es ne refl{"\u00E8"}tent pas la r
-            {"\u00E9"}alit{"\u00E9"}.
+            {"⚠️"} Données de démonstration — l'analyse ML native n'est pas
+            encore intégrée. Les valeurs affichées ne reflètent pas la réalité.
           </Text>
         </View>
       )}
-      <Text style={styles.successTitle}>Analyse compl{"\u00E8"}te</Text>
+      <Text style={styles.successTitle}>Analyse complète</Text>
       <Text style={styles.successScore}>
         Confiance : {Math.round(confidenceScore * 100)}%
       </Text>
@@ -243,7 +241,7 @@ export function CaptureSuccess({
       {correctedLandmarks && !isCorrecting && (
         <View style={styles.correctionBadge} testID="correction-applied-badge">
           <Text style={styles.correctionBadgeText}>
-            Correction manuelle appliqu{"\u00E9"}e
+            Correction manuelle appliquée
           </Text>
         </View>
       )}
@@ -255,8 +253,7 @@ export function CaptureSuccess({
           {currentBilateral.leftHKA > 0 ? (
             <>
               <Text style={styles.hkaAngle} testID="left-hka">
-                HKA : {currentBilateral.leftHKA.toFixed(1)}
-                {"\u00B0"}
+                HKA : {currentBilateral.leftHKA.toFixed(1)}°
               </Text>
               <Text style={styles.hkaClassification}>
                 {hkaLabel(currentBilateral.leftHKA)}
@@ -271,8 +268,7 @@ export function CaptureSuccess({
           {currentBilateral.rightHKA > 0 ? (
             <>
               <Text style={styles.hkaAngle} testID="right-hka">
-                HKA : {currentBilateral.rightHKA.toFixed(1)}
-                {"\u00B0"}
+                HKA : {currentBilateral.rightHKA.toFixed(1)}°
               </Text>
               <Text style={styles.hkaClassification}>
                 {hkaLabel(currentBilateral.rightHKA)}
@@ -288,20 +284,20 @@ export function CaptureSuccess({
       <Text style={styles.angleLabel}>
         Genou :{" "}
         {currentAngles.kneeAngle > 0
-          ? `${currentAngles.kneeAngle.toFixed(1)}\u00B0`
-          : "\u2014"}
+          ? `${currentAngles.kneeAngle.toFixed(1)}°`
+          : "—"}
       </Text>
       <Text style={styles.angleLabel}>
         Hanche :{" "}
         {currentAngles.hipAngle > 0
-          ? `${currentAngles.hipAngle.toFixed(1)}\u00B0`
-          : "\u2014"}
+          ? `${currentAngles.hipAngle.toFixed(1)}°`
+          : "—"}
       </Text>
       <Text style={styles.angleLabel}>
         Cheville :{" "}
         {currentAngles.ankleAngle > 0
-          ? `${currentAngles.ankleAngle.toFixed(1)}\u00B0`
-          : "\u2014"}
+          ? `${currentAngles.ankleAngle.toFixed(1)}°`
+          : "—"}
       </Text>
 
       {/* Correction mode buttons */}
@@ -347,7 +343,7 @@ export function CaptureSuccess({
             accessibilityRole="button"
             accessibilityLabel="Sauvegarder l'analyse"
           >
-            <Text style={styles.saveButtonText}>Sauvegarder l{"'"}analyse</Text>
+            <Text style={styles.saveButtonText}>Sauvegarder l'analyse</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.discardButton}
