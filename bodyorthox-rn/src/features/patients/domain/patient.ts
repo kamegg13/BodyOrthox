@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import { generateId } from "../../../shared/utils/generate-id";
 
 export interface MorphologicalProfile {
   heightCm?: number;
@@ -23,21 +23,21 @@ export interface CreatePatientInput {
 
 export function createPatient(input: CreatePatientInput): Patient {
   if (!input.name.trim()) {
-    throw new Error('Le nom du patient est obligatoire.');
+    throw new Error("Le nom du patient est obligatoire.");
   }
   if (!input.dateOfBirth) {
-    throw new Error('La date de naissance est obligatoire.');
+    throw new Error("La date de naissance est obligatoire.");
   }
   const dob = new Date(input.dateOfBirth);
   if (isNaN(dob.getTime())) {
-    throw new Error('La date de naissance est invalide.');
+    throw new Error("La date de naissance est invalide.");
   }
   if (dob > new Date()) {
-    throw new Error('La date de naissance ne peut pas être dans le futur.');
+    throw new Error("La date de naissance ne peut pas être dans le futur.");
   }
 
   return {
-    id: uuidv4(),
+    id: generateId(),
     name: input.name.trim(),
     dateOfBirth: input.dateOfBirth,
     morphologicalProfile: input.morphologicalProfile ?? null,

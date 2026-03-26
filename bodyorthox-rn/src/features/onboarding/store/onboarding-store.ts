@@ -1,7 +1,9 @@
 import { create } from "zustand";
-import { Platform } from "react-native";
 
 const STORAGE_KEY = "onboarding_completed";
+
+/** In-memory fallback when localStorage is unavailable (Android Hermes). */
+let inMemoryCompleted = false;
 
 interface OnboardingState {
   isCompleted: boolean;
@@ -14,27 +16,25 @@ interface OnboardingActions {
 }
 
 function readFromStorage(): boolean {
-  if (Platform.OS === "web") {
-    try {
+  try {
+    if (typeof localStorage !== "undefined") {
       return localStorage.getItem(STORAGE_KEY) === "true";
-    } catch {
-      return false;
     }
+  } catch {
+    // localStorage not available on Android — in-memory only
   }
-  // On native, AsyncStorage would be used — for MVP/web-first, localStorage suffices
-  return false;
+  return inMemoryCompleted;
 }
 
 function writeToStorage(value: boolean): void {
-  if (Platform.OS === "web") {
-    try {
+  inMemoryCompleted = value;
+  try {
+    if (typeof localStorage !== "undefined") {
       localStorage.setItem(STORAGE_KEY, String(value));
-    } catch {
-      // Storage not available — fail silently
     }
-    return;
+  } catch {
+    // localStorage not available on Android — in-memory only
   }
-  // On native, AsyncStorage would be used
 }
 
 export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(

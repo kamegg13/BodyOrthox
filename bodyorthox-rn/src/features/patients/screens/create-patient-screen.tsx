@@ -20,6 +20,27 @@ import { FontSize, FontWeight } from "../../../shared/design-system/typography";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
+/**
+ * Parse date input accepting both DD/MM/YYYY (French) and YYYY-MM-DD (ISO).
+ * Returns ISO YYYY-MM-DD string or null if invalid.
+ */
+function parseDateInput(input: string): string | null {
+  // Try DD/MM/YYYY first (French format matching placeholder)
+  const frMatch = input.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (frMatch) {
+    const [, day, month, year] = frMatch;
+    const date = new Date(Number(year), Number(month) - 1, Number(day));
+    if (!isNaN(date.getTime())) return date.toISOString().split("T")[0];
+  }
+  // Fallback to YYYY-MM-DD (ISO format)
+  const isoMatch = input.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoMatch) {
+    const date = new Date(input);
+    if (!isNaN(date.getTime())) return input;
+  }
+  return null;
+}
+
 export function CreatePatientScreen() {
   const navigation = useNavigation<Nav>();
   const { createPatient } = usePatientsStore();
@@ -41,10 +62,12 @@ export function CreatePatientScreen() {
     if (!dateOfBirth) {
       e.dateOfBirth = "La date de naissance est obligatoire.";
     } else {
-      const d = new Date(dateOfBirth);
-      if (isNaN(d.getTime())) e.dateOfBirth = "Date invalide (YYYY-MM-DD).";
-      else if (d > new Date())
-        e.dateOfBirth = "Ne peut pas être dans le futur.";
+      const parsed = parseDateInput(dateOfBirth);
+      if (!parsed) e.dateOfBirth = "Date invalide (JJ/MM/AAAA).";
+      else {
+        const d = new Date(parsed);
+        if (d > new Date()) e.dateOfBirth = "Ne peut pas être dans le futur.";
+      }
     }
     if (
       heightCm &&
@@ -68,9 +91,10 @@ export function CreatePatientScreen() {
     if (!validate()) return;
     setIsSubmitting(true);
     try {
+      const parsedDob = parseDateInput(dateOfBirth) ?? dateOfBirth;
       await createPatient({
         name: fullName,
-        dateOfBirth,
+        dateOfBirth: parsedDob,
         morphologicalProfile: {
           ...(heightCm ? { heightCm: Number(heightCm) } : {}),
           ...(weightKg ? { weightKg: Number(weightKg) } : {}),

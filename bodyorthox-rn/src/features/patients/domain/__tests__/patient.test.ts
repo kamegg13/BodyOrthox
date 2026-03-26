@@ -1,7 +1,8 @@
 import { createPatient, patientAge, Patient } from "../patient";
 
-// Fix uuid mock
-jest.mock("uuid", () => ({ v4: () => "mock-uuid-1234" }));
+jest.mock("../../../../shared/utils/generate-id", () => ({
+  generateId: () => "mock-uuid-1234",
+}));
 
 describe("createPatient", () => {
   const validInput = {

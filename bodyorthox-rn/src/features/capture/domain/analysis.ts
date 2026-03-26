@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from "uuid";
+import { generateId } from "../../../shared/utils/generate-id";
 import type { BilateralAngles, PoseLandmarks } from "../data/angle-calculator";
 
 export interface ArticularAngles {
@@ -37,7 +37,7 @@ export function createAnalysis(input: CreateAnalysisInput): Analysis {
     throw new Error("confidenceScore doit être entre 0 et 1");
   }
   return {
-    id: uuidv4(),
+    id: generateId(),
     patientId: input.patientId,
     createdAt: new Date().toISOString(),
     angles: {
