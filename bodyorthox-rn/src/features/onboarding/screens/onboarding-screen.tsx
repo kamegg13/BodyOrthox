@@ -8,7 +8,6 @@ import {
   useWindowDimensions,
   NativeSyntheticEvent,
   NativeScrollEvent,
-  Platform,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -173,14 +172,9 @@ export function OnboardingScreen() {
   }, [completeOnboarding, navigation]);
 
   const requestCameraPermission = useCallback(() => {
-    if (Platform.OS !== "web") {
-      try {
-        const { Camera } = require("react-native-vision-camera");
-        Camera.requestCameraPermission?.();
-      } catch {
-        // Vision camera not available (e.g., web)
-      }
-    }
+    // Camera permission is handled by the capture screen when needed.
+    // react-native-vision-camera is not linked for Android builds,
+    // so we skip the permission request here to avoid fatal crashes.
   }, []);
 
   const isLastPage = currentPage === TOTAL_PAGES - 1;
