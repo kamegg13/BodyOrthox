@@ -22,16 +22,10 @@ import { PhotoUpload } from "../components/photo-upload";
 
 type Route = RouteProp<RootStackParamList, "Capture">;
 
-// Dynamic camera import – avoids crashes on web
-let CameraComponent: React.ComponentType<Record<string, unknown>> | null = null;
-if (Platform.OS !== "web") {
-  try {
-    const { Camera } = require("react-native-vision-camera");
-    CameraComponent = Camera;
-  } catch {
-    /* unavailable */
-  }
-}
+// Native camera disabled — react-native-vision-camera is not linked for Android builds.
+// On web: uses WebCamera component (getUserMedia). On Android: uses photo import only.
+const CameraComponent: React.ComponentType<Record<string, unknown>> | null =
+  null;
 
 export function CaptureScreen() {
   const { params } = useRoute<Route>();

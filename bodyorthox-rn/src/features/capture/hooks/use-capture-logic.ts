@@ -78,24 +78,10 @@ export function useCaptureLogic(patientId: string) {
     }
 
     requestPermission();
-    if (Platform.OS === "web") {
-      // Permission is handled by the WebCamera component via getUserMedia
-      permissionGranted();
-    } else {
-      (async () => {
-        try {
-          const { Camera } = require("react-native-vision-camera");
-          const status = await Camera.requestCameraPermission();
-          if (status === "granted") permissionGranted();
-          else
-            permissionDenied(
-              "Accès caméra refusé. Activez-le dans les réglages.",
-            );
-        } catch {
-          permissionDenied("Impossible d'accéder à la caméra.");
-        }
-      })();
-    }
+    // On web and Android (without native camera module), grant permission immediately.
+    // The web uses getUserMedia via WebCamera; Android uses simulated capture.
+    // Native camera via react-native-vision-camera is disabled for now.
+    permissionGranted();
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
       reset();
