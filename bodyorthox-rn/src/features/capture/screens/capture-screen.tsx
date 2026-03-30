@@ -22,11 +22,6 @@ import { PhotoUpload } from "../components/photo-upload";
 
 type Route = RouteProp<RootStackParamList, "Capture">;
 
-// Native camera disabled — react-native-vision-camera is not linked for Android builds.
-// On web: uses WebCamera component (getUserMedia). On Android: uses photo import only.
-const CameraComponent: React.ComponentType<Record<string, unknown>> | null =
-  null;
-
 export function CaptureScreen() {
   const { params } = useRoute<Route>();
   const { patientId } = params;
@@ -46,6 +41,8 @@ export function CaptureScreen() {
     webCameraRef,
     handleWebCameraPermissionDenied,
     handlePhotoUploaded,
+    handleNativeCamera,
+    handleNativeGallery,
     handleAnalyze,
     handleRetake,
     handleStartCapture,
@@ -84,7 +81,7 @@ export function CaptureScreen() {
   }
 
   // Preview state: photo taken or uploaded, waiting for analysis
-  if (previewUrl && Platform.OS === "web") {
+  if (previewUrl) {
     return (
       <CapturePreview
         previewUrl={previewUrl}
@@ -100,20 +97,17 @@ export function CaptureScreen() {
 
   return (
     <View style={styles.container} testID="capture-screen">
-      {CameraComponent && Platform.OS !== "web" ? (
-        <CameraComponent
-          style={StyleSheet.absoluteFill}
-          device={{ id: "back" }}
-          isActive
-        />
-      ) : Platform.OS === "web" ? (
+      {Platform.OS === "web" ? (
         <WebCamera
           ref={webCameraRef}
           onPermissionDenied={handleWebCameraPermissionDenied}
         />
       ) : (
-        <View style={[StyleSheet.absoluteFill, styles.webPlaceholder]}>
-          <Text style={styles.webText}>Camera indisponible</Text>
+        <View style={[StyleSheet.absoluteFill, styles.nativePlaceholder]}>
+          <Text style={styles.nativeInstructionTitle}>📷</Text>
+          <Text style={styles.nativeInstructionText}>
+            Prenez une photo du patient ou importez depuis votre galerie
+          </Text>
         </View>
       )}
       <GuidedCameraOverlay
@@ -122,31 +116,53 @@ export function CaptureScreen() {
         luminosity={luminosity}
         isCorrectPosition={isCorrectPosition}
       />
-      {(phase.type === "ready" || phase.type === "recording") && (
-        <View style={styles.controls} testID="capture-controls">
-          {phase.type === "ready" ? (
-            <>
-              <TouchableOpacity
-                style={styles.captureButton}
-                onPress={handleStartCapture}
-                testID="start-capture-button"
-                accessibilityRole="button"
-                accessibilityLabel="Prendre une photo"
-                activeOpacity={0.8}
-              >
-                <Text style={styles.captureButtonIcon}>📷</Text>
-                <Text style={styles.captureButtonText}>Prendre une photo</Text>
-              </TouchableOpacity>
-              <Text style={styles.captureHint}>
-                L'analyse HKA démarre automatiquement
-              </Text>
-              {Platform.OS === "web" && (
+      {(phase.type === "ready" || phase.type === "recording") &&
+        Platform.OS === "web" && (
+          <View style={styles.controls} testID="capture-controls">
+            {phase.type === "ready" ? (
+              <>
+                <TouchableOpacity
+                  style={styles.captureButton}
+                  onPress={handleStartCapture}
+                  testID="start-capture-button"
+                  accessibilityRole="button"
+                  accessibilityLabel="Prendre une photo"
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.captureButtonIcon}>📷</Text>
+                  <Text style={styles.captureButtonText}>
+                    Prendre une photo
+                  </Text>
+                </TouchableOpacity>
+                <Text style={styles.captureHint}>
+                  L'analyse HKA démarre automatiquement
+                </Text>
                 <PhotoUpload onPhotoSelected={handlePhotoUploaded} />
-              )}
-            </>
-          ) : (
-            <LoadingSpinner message="Capture en cours..." />
-          )}
+              </>
+            ) : (
+              <LoadingSpinner message="Capture en cours..." />
+            )}
+          </View>
+        )}
+      {phase.type === "ready" && Platform.OS !== "web" && (
+        <View style={styles.controls}>
+          <TouchableOpacity
+            style={styles.captureButton}
+            onPress={handleNativeCamera}
+            testID="native-camera-button"
+          >
+            <Text style={styles.captureButtonIcon}>📷</Text>
+            <Text style={styles.captureButtonText}>Prendre une photo</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.galleryButton}
+            onPress={handleNativeGallery}
+            testID="native-gallery-button"
+          >
+            <Text style={styles.galleryButtonText}>
+              📁 Choisir depuis la galerie
+            </Text>
+          </TouchableOpacity>
         </View>
       )}
     </View>
@@ -193,10 +209,33 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     textAlign: "center",
   },
-  webPlaceholder: {
+  nativePlaceholder: {
     backgroundColor: Colors.darkGrey,
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: Spacing.xl,
   },
-  webText: { color: Colors.textSecondary, fontSize: 18 },
+  nativeInstructionTitle: {
+    fontSize: 48,
+    marginBottom: Spacing.md,
+  },
+  nativeInstructionText: {
+    color: Colors.textSecondary,
+    fontSize: FontSize.md,
+    textAlign: "center",
+  },
+  galleryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.darkGrey,
+    borderRadius: BorderRadius.button,
+    height: 48,
+    width: "100%",
+  },
+  galleryButtonText: {
+    color: Colors.textOnPrimary,
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.medium,
+  },
 });

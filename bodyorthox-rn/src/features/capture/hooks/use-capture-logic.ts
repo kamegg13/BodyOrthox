@@ -6,6 +6,11 @@ import type { RootStackParamList } from "../../../navigation/types";
 import { useCaptureStore } from "../store/capture-store";
 import { WebCameraRef } from "../components/web-camera";
 import { getPoseDetector } from "../data/pose-detector";
+import {
+  openNativeCamera,
+  openNativeGallery,
+  imagePickerResultToDataUrl,
+} from "../services/native-image-picker";
 import type { IPoseDetector } from "../data/pose-detector";
 import type { PoseLandmarks } from "../data/angle-calculator";
 
@@ -169,6 +174,28 @@ export function useCaptureLogic(patientId: string) {
     setLowConfidenceWarning(null);
   }, [setCapturedImageUrl]);
 
+  const handleNativeCamera = useCallback(async () => {
+    try {
+      const result = await openNativeCamera();
+      const dataUrl = imagePickerResultToDataUrl(result);
+      handlePhotoUploaded(dataUrl);
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message === "cancelled") return;
+      setError(error instanceof Error ? error.message : "Erreur caméra");
+    }
+  }, [handlePhotoUploaded, setError]);
+
+  const handleNativeGallery = useCallback(async () => {
+    try {
+      const result = await openNativeGallery();
+      const dataUrl = imagePickerResultToDataUrl(result);
+      handlePhotoUploaded(dataUrl);
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message === "cancelled") return;
+      setError(error instanceof Error ? error.message : "Erreur galerie");
+    }
+  }, [handlePhotoUploaded, setError]);
+
   const handleStartCapture = useCallback(async () => {
     if (phase.type !== "ready") return;
 
@@ -258,6 +285,8 @@ export function useCaptureLogic(patientId: string) {
     handleWebCameraPermissionDenied,
     handleTakeWebPhoto,
     handlePhotoUploaded,
+    handleNativeCamera,
+    handleNativeGallery,
     handleAnalyze,
     handleRetake,
     handleStartCapture,

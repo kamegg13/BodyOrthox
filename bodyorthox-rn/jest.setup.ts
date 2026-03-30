@@ -83,6 +83,12 @@ jest.mock("@notifee/react-native", () => ({
   },
 }));
 
+// Mock react-native-image-picker
+jest.mock("react-native-image-picker", () => ({
+  launchCamera: jest.fn(),
+  launchImageLibrary: jest.fn(),
+}));
+
 // Mock uuid
 jest.mock("uuid", () => ({
   v4: jest.fn(() => "test-uuid-1234"),
