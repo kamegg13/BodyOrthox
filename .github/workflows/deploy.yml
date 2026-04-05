@@ -1,0 +1,108 @@
+name: Deploy to Raspberry Pi
+
+on:
+  workflow_dispatch: # Déclenchement manuel
+  push:
+    branches:
+      - main
+    paths:
+      - 'bodyorthox-rn/**'
+      - '.github/workflows/deploy.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy BodyOrthox Web to Raspberry Pi
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: bodyorthox-rn/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd bodyorthox-rn
+          npm ci
+
+      - name: Build web bundle
+        run: |
+          cd bodyorthox-rn
+          npm run build:web
+
+      - name: Verify build output
+        run: |
+          ls -lh bodyorthox-rn/web-dist/
+          test -f bodyorthox-rn/web-dist/bundle.web.js || exit 1
+          test -f bodyorthox-rn/web-dist/index.html || exit 1
+
+      - name: Setup Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.RASPBERRY_PI_SSH_KEY }}
+
+      - name: Add Raspberry Pi to known hosts
+        env:
+          PI_HOST: ${{ secrets.RASPBERRY_PI_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "$PI_HOST" >> ~/.ssh/known_hosts
+
+      - name: Deploy web bundle to Raspberry Pi
+        env:
+          RASPBERRY_PI_HOST: ${{ secrets.RASPBERRY_PI_HOST }}
+          RASPBERRY_PI_USER: ${{ secrets.RASPBERRY_PI_USER }}
+        run: |
+          echo "📦 Transfert du bundle web vers Raspberry Pi..."
+          rsync -avz --delete \
+            bodyorthox-rn/web-dist/ \
+            ${RASPBERRY_PI_USER}@${RASPBERRY_PI_HOST}:/home/pi/bodyorthox-web/
+
+      - name: Restart service
+        env:
+          RASPBERRY_PI_HOST: ${{ secrets.RASPBERRY_PI_HOST }}
+          RASPBERRY_PI_USER: ${{ secrets.RASPBERRY_PI_USER }}
+        run: |
+          echo "🔄 Redémarrage du service systemd..."
+          ssh ${RASPBERRY_PI_USER}@${RASPBERRY_PI_HOST} << 'ENDSSH'
+            sudo systemctl restart bodyorthox-web
+            sleep 3
+            systemctl is-active --quiet bodyorthox-web || exit 1
+            echo "✅ Service bodyorthox-web actif"
+          ENDSSH
+
+      - name: Health check
+        env:
+          RASPBERRY_PI_HOST: ${{ secrets.RASPBERRY_PI_HOST }}
+          RASPBERRY_PI_USER: ${{ secrets.RASPBERRY_PI_USER }}
+        run: |
+          echo "🏥 Vérification de l'application..."
+          ssh ${RASPBERRY_PI_USER}@${RASPBERRY_PI_HOST} \
+            "curl -f -s -I http://localhost:3000 > /dev/null || exit 1"
+          echo "✅ Application accessible sur port 3000"
+
+      - name: Deployment summary
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+        run: |
+          echo "## 🎉 Déploiement réussi!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Application**: BodyOrthox Web" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branche**: $REF_NAME" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: \`$SHA\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Déployé sur**: Raspberry Pi (Tailscale)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Service**: bodyorthox-web.service (systemd)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Port**: 3000" >> $GITHUB_STEP_SUMMARY
