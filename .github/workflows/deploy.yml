@@ -28,7 +28,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd bodyorthox-rn
-          npm ci
+          npm ci --legacy-peer-deps
 
       - name: Build web bundle
         run: |
