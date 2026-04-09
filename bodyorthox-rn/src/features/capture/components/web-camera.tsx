@@ -61,7 +61,6 @@ export const WebCamera = forwardRef<WebCameraRef, WebCameraProps>(
       video.style.width = "100%";
       video.style.height = "100%";
       video.style.objectFit = "cover";
-      video.style.transform = "scaleX(-1)";
       container.appendChild(video);
       videoRef.current = video;
 
