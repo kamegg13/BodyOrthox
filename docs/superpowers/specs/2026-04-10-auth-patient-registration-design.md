@@ -127,7 +127,20 @@ CREATE TABLE refresh_tokens (
   created_at TEXT NOT NULL
 );
 
+CREATE TABLE analyses (
+  id TEXT PRIMARY KEY,
+  patient_id TEXT NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+  hka_left REAL,
+  hka_right REAL,
+  landmarks_json TEXT,   -- JSON des 33 landmarks MediaPipe
+  photo_path TEXT,       -- chemin relatif sur le Pi ou null
+  notes TEXT,
+  analyzed_at TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
 CREATE INDEX idx_patients_user_id ON patients(user_id);
+CREATE INDEX idx_analyses_patient_id ON analyses(patient_id);
 CREATE INDEX idx_refresh_tokens_user_id ON refresh_tokens(user_id);
 ```
 
