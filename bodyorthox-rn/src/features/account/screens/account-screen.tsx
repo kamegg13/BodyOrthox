@@ -10,10 +10,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { Colors } from "../../../shared/design-system/colors";
 import { Spacing } from "../../../shared/design-system/spacing";
 import { FontSize, FontWeight } from "../../../shared/design-system/typography";
 import { CardShadow } from "../../../shared/design-system/card-styles";
+import { useAuthStore } from "../../../core/auth/auth-store";
 
 // ---------------------------------------------------------------------------
 // localStorage helpers (web-safe)
@@ -127,6 +129,9 @@ export function AccountScreen() {
   const [patientCount, setPatientCount] = useState<number>(0);
   const [analysisCount, setAnalysisCount] = useState<number>(0);
   const [faceIdEnabled, setFaceIdEnabled] = useState(false);
+  const logout = useAuthStore((s) => s.logout);
+  const user = useAuthStore((s) => s.user);
+  const navigation = useNavigation<any>();
 
   useEffect(() => {
     loadCounts();
@@ -176,6 +181,49 @@ export function AccountScreen() {
       testID="account-screen"
     >
       <Text style={styles.headerTitle}>Compte</Text>
+
+      {/* SESSION */}
+      <SectionHeader title="SESSION" />
+      <View style={styles.card}>
+        <SettingsRow label="Email">
+          <Text style={styles.rowValue}>{user?.email ?? "—"}</Text>
+        </SettingsRow>
+        <View style={styles.separator} />
+        <SettingsRow label="Rôle">
+          <Text style={styles.rowValue}>
+            {user?.role === "admin" ? "Administrateur" : "Praticien"}
+          </Text>
+        </SettingsRow>
+        {user?.role === "admin" && (
+          <>
+            <View style={styles.separator} />
+            <TouchableOpacity
+              style={styles.row}
+              onPress={() => navigation.navigate("Admin")}
+              accessibilityRole="button"
+              testID="admin-button"
+            >
+              <Text style={styles.rowLabelLink}>Administration des comptes</Text>
+              <Text style={styles.chevron}>›</Text>
+            </TouchableOpacity>
+          </>
+        )}
+        <View style={styles.separator} />
+        <TouchableOpacity
+          style={styles.row}
+          onPress={() => {
+            showConfirm(
+              "Déconnexion",
+              "Voulez-vous vous déconnecter ?",
+              () => { logout(); },
+            );
+          }}
+          accessibilityRole="button"
+          testID="logout-button"
+        >
+          <Text style={styles.rowLabelDestructive}>Se déconnecter</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* PROFIL PRATICIEN */}
       <SectionHeader title="PROFIL PRATICIEN" />

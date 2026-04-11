@@ -41,6 +41,10 @@ export const useAuthStore = create<AuthState & AuthActions>()((set) => ({
   login: async (email, password) => {
     const { user } = await authService.login(email, password);
     set({ isAuthenticated: true, user });
+    // Fire-and-forget migration (ne bloque pas le login)
+    import('../../features/patients/data/migration').then(({ migrateLocalPatients }) => {
+      migrateLocalPatients();
+    }).catch(() => { /* ignore */ });
   },
 
   logout: async () => {
