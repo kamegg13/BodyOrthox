@@ -10,6 +10,7 @@ export type BottomTabParamList = {
 
 export type RootStackParamList = {
   Lock: undefined;
+  Login: undefined;
   Onboarding: undefined;
   MainTabs: NavigatorScreenParams<BottomTabParamList>;
   Patients: undefined;

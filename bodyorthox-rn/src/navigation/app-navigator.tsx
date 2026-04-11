@@ -5,6 +5,8 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import type { RootStackParamList, BottomTabParamList } from "./types";
 import { Colors } from "../shared/design-system/colors";
 import { useOnboardingStore } from "../features/onboarding/store/onboarding-store";
+import { LoginScreen } from "../features/auth/screens/login-screen";
+import { useAuthStore } from "../core/auth/auth-store";
 
 // Screens
 import { BiometricLockScreen } from "../shared/components/lock-screen";
@@ -191,15 +193,19 @@ const rootScreenOptions = {
 } as const;
 
 export function AppNavigator() {
+  const initialize = useAuthStore((s) => s.initialize);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isAuthLoading = useAuthStore((s) => s.isLoading);
   const checkOnboarding = useOnboardingStore((s) => s.checkOnboarding);
   const isOnboardingCompleted = useOnboardingStore((s) => s.isCompleted);
-  const isLoading = useOnboardingStore((s) => s.isLoading);
+  const isOnboardingLoading = useOnboardingStore((s) => s.isLoading);
 
   useEffect(() => {
+    initialize();
     checkOnboarding();
-  }, [checkOnboarding]);
+  }, [initialize, checkOnboarding]);
 
-  if (isLoading) {
+  if (isAuthLoading || isOnboardingLoading) {
     return (
       <Stack.Navigator
         screenOptions={rootScreenOptions}
@@ -208,6 +214,21 @@ export function AppNavigator() {
         <Stack.Screen
           name="Lock"
           component={BiometricLockScreen}
+          options={{ headerShown: false }}
+        />
+      </Stack.Navigator>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <Stack.Navigator
+        screenOptions={rootScreenOptions}
+        initialRouteName="Login"
+      >
+        <Stack.Screen
+          name="Login"
+          component={LoginScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>
