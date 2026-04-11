@@ -20,6 +20,7 @@ import { ResultsScreen } from "../features/results/screens/results-screen";
 import { ReplayScreen } from "../features/results/screens/replay-screen";
 import { PatientTimelineScreen } from "../features/patients/screens/patient-timeline-screen";
 import { AccountScreen } from "../features/account/screens/account-screen";
+import { AdminScreen } from "../features/admin/screens/admin-screen";
 import { ProtocolsScreen } from "../features/resources/screens/protocols-screen";
 import { ReportsScreen } from "../features/resources/screens/reports-screen";
 
@@ -122,6 +123,11 @@ function CompteStackScreen() {
         name="CompteHome"
         component={AccountScreen}
         options={{ headerShown: false }}
+      />
+      <CompteStack.Screen
+        name="Admin"
+        component={AdminScreen}
+        options={{ title: 'Administration' }}
       />
     </CompteStack.Navigator>
   );

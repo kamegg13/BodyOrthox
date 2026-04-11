@@ -31,4 +31,5 @@ export type RootStackParamList = {
   Report: { analysis: Analysis; patient: Patient };
   Protocols: undefined;
   Reports: undefined;
+  Admin: undefined;
 };
