@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Platform, Text, StyleSheet } from "react-native";
+import { ActivityIndicator, Platform, Text, StyleSheet, View } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import type { RootStackParamList, BottomTabParamList } from "./types";
@@ -213,16 +213,9 @@ export function AppNavigator() {
 
   if (isAuthLoading || isOnboardingLoading) {
     return (
-      <Stack.Navigator
-        screenOptions={rootScreenOptions}
-        initialRouteName="Lock"
-      >
-        <Stack.Screen
-          name="Lock"
-          component={BiometricLockScreen}
-          options={{ headerShown: false }}
-        />
-      </Stack.Navigator>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.background }}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
     );
   }
 
