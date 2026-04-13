@@ -208,12 +208,7 @@ export function PatientsScreen() {
         <Text style={styles.sectionTitle}>PATIENTS RÉCENTS</Text>
         <Pressable
           onPress={() => {
-            const next: SortBy =
-              sortBy === "alpha"
-                ? "recent"
-                : sortBy === "recent"
-                  ? "last-analyzed"
-                  : "alpha";
+            const next: SortBy = sortBy === "alpha" ? "recent" : "alpha";
             setSortBy(next);
           }}
           testID="sort-button"
@@ -221,11 +216,7 @@ export function PatientsScreen() {
           accessibilityLabel="Changer le tri"
         >
           <Text style={styles.sectionLink}>
-            {sortBy === "alpha"
-              ? "↕ A→Z"
-              : sortBy === "recent"
-                ? "↕ Récents"
-                : "↕ Analysé"}
+            {sortBy === "alpha" ? "↕ A→Z" : "↕ Récents"}
           </Text>
         </Pressable>
       </View>

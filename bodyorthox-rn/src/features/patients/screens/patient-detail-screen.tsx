@@ -32,6 +32,13 @@ import { usePlatform } from "../../../shared/hooks/use-platform";
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, "PatientDetail">;
 
+const SEX_LABELS: Record<string, string> = { male: "Homme", female: "Femme", other: "Autre" };
+const LATERALITY_LABELS: Record<string, string> = { right: "Droitier", left: "Gaucher", ambidextrous: "Ambidextre" };
+const ACTIVITY_LABELS: Record<string, string> = { sedentary: "Sédentaire", moderate: "Modéré", active: "Actif", athlete: "Athlète" };
+const LOCATION_LABELS: Record<string, string> = { knee: "Genou", hip: "Hanche", ankle: "Cheville", back: "Dos", shoulder: "Épaule", other: "Autre" };
+const SIDE_LABELS: Record<string, string> = { left: "Gauche", right: "Droite", bilateral: "Bilatéral" };
+const TYPE_LABELS: Record<string, string> = { acute: "Aigu", chronic: "Chronique" };
+
 const ItemSeparatorComponent = () => <View style={styles.separator} />;
 
 export function PatientDetailScreen() {
@@ -154,7 +161,7 @@ export function PatientDetailScreen() {
         </Text>
       </View>
 
-      {profile && (profile.heightCm || profile.weightKg) && (
+      {profile && (profile.heightCm || profile.weightKg || profile.sex || profile.laterality || profile.activityLevel || profile.sport || profile.pathology || (profile.pains && profile.pains.length > 0)) && (
         <View style={styles.card}>
           <Text style={[Typography.label, styles.cardTitle]}>
             Profil morphologique
@@ -173,6 +180,28 @@ export function PatientDetailScreen() {
               )}
             />
           )}
+          {profile.sex && (
+            <InfoRow label="Sexe" value={SEX_LABELS[profile.sex] ?? profile.sex} />
+          )}
+          {profile.laterality && (
+            <InfoRow label="Latéralité" value={LATERALITY_LABELS[profile.laterality] ?? profile.laterality} />
+          )}
+          {profile.activityLevel && (
+            <InfoRow label="Niveau d'activité" value={ACTIVITY_LABELS[profile.activityLevel] ?? profile.activityLevel} />
+          )}
+          {profile.sport && (
+            <InfoRow label="Sport" value={profile.sport} />
+          )}
+          {profile.pathology && (
+            <InfoRow label="Pathologie" value={profile.pathology} />
+          )}
+          {profile.pains && profile.pains.map((p) => (
+            <InfoRow
+              key={p.id}
+              label="Douleur"
+              value={`${LOCATION_LABELS[p.location] ?? p.location} ${SIDE_LABELS[p.side] ?? p.side} • ${p.intensity}/10 • ${TYPE_LABELS[p.type] ?? p.type}`}
+            />
+          ))}
           {profile.notes && <InfoRow label="Notes" value={profile.notes} />}
         </View>
       )}
