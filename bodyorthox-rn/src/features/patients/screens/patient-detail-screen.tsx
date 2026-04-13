@@ -39,7 +39,7 @@ export function PatientDetailScreen() {
   const { params } = useRoute<Route>();
   const { patientId } = params;
   const { isTablet } = usePlatform();
-  const { deletePatient, patients, error: storeError } = usePatientsStore();
+  const { deletePatient, archivePatient, patients, error: storeError } = usePatientsStore();
   const [patient, setPatient] = useState<Patient | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
@@ -96,6 +96,27 @@ export function PatientDetailScreen() {
       ],
     );
   }, [patient, patientId, deletePatient, navigation]);
+
+  const handleArchive = useCallback(() => {
+    Alert.alert(
+      "Archiver le patient",
+      `Voulez-vous archiver ${patient?.name} ? Il ne sera plus visible dans la liste principale.`,
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Archiver",
+          onPress: async () => {
+            try {
+              await archivePatient(patientId);
+              navigation.goBack();
+            } catch {
+              // Error handled by store
+            }
+          },
+        },
+      ],
+    );
+  }, [patient, patientId, archivePatient, navigation]);
 
   const handleAnalysisPress = useCallback(
     (analysis: Analysis) => {
@@ -176,12 +197,30 @@ export function PatientDetailScreen() {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.secondaryAction}
+          onPress={() => navigation.navigate("EditPatient", { patientId })}
+          accessibilityRole="button"
+          accessibilityLabel="Modifier le patient"
+          testID="edit-button"
+        >
+          <Text style={styles.secondaryActionText}>Modifier le patient</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.secondaryAction}
           onPress={() => navigation.navigate("Timeline", { patientId })}
           accessibilityRole="button"
           accessibilityLabel="Voir la progression clinique"
           testID="timeline-button"
         >
           <Text style={styles.secondaryActionText}>Progression clinique</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.archiveAction}
+          onPress={handleArchive}
+          accessibilityRole="button"
+          accessibilityLabel="Archiver le patient"
+          testID="archive-button"
+        >
+          <Text style={styles.archiveActionText}>Archiver le patient</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.dangerAction}
@@ -380,6 +419,13 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 15,
   },
+  archiveAction: {
+    paddingVertical: Spacing.md,
+    alignItems: "center",
+    minHeight: 44,
+    justifyContent: "center",
+  },
+  archiveActionText: { color: "#FF9500", fontSize: 15 },
   dangerAction: {
     paddingVertical: Spacing.md,
     alignItems: "center",

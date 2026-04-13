@@ -325,4 +325,20 @@ describe("PatientDetailScreen", () => {
       expect(mockGetForPatient).toHaveBeenCalledWith("p1");
     });
   });
+
+  it("renders Modifier button", () => {
+    const { getByTestId } = render(<PatientDetailScreen />);
+    expect(getByTestId("edit-button")).toBeTruthy();
+  });
+
+  it("renders Archiver button", () => {
+    const { getByTestId } = render(<PatientDetailScreen />);
+    expect(getByTestId("archive-button")).toBeTruthy();
+  });
+
+  it("navigates to EditPatient on Modifier press", () => {
+    const { getByTestId } = render(<PatientDetailScreen />);
+    fireEvent.press(getByTestId("edit-button"));
+    expect(mockNavigate).toHaveBeenCalledWith("EditPatient", { patientId: "p1" });
+  });
 });
