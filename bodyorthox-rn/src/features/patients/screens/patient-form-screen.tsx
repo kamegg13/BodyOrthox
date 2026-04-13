@@ -229,6 +229,7 @@ export function PatientFormScreen({
 
   const handleSubmit = useCallback(async () => {
     if (!validate()) return;
+    if (!dateOfBirth) return; // type narrowing — validate() le garantit déjà
     setIsSubmitting(true);
     try {
       const morpho: MorphologicalProfile = {
@@ -245,7 +246,7 @@ export function PatientFormScreen({
 
       const payload: CreatePatientInput | UpdatePatientInput = {
         name: `${firstName.trim()} ${lastName.trim()}`.trim(),
-        dateOfBirth: dateOfBirth!,
+        dateOfBirth: dateOfBirth,
         morphologicalProfile: Object.keys(morpho).length > 0 ? morpho : undefined,
       };
       await onSubmit(payload);

@@ -98,7 +98,30 @@ describe("PatientFormScreen", () => {
         onSubmit={onSubmit}
       />,
     );
-    expect(getByText(/22\.9|IMC/i)).toBeTruthy();
+    expect(getByText(/22\.9/)).toBeTruthy();
+  });
+
+  it("calls onSubmit with correctly shaped payload", async () => {
+    const { getByTestId } = render(
+      <PatientFormScreen
+        mode="create"
+        initialValues={{
+          firstName: "Jean",
+          lastName: "Dupont",
+          dateOfBirth: "1990-06-15",
+          morphologicalProfile: null,
+        }}
+        onSubmit={onSubmit}
+      />
+    );
+    fireEvent.press(getByTestId("submit-button"));
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith({
+        name: "Jean Dupont",
+        dateOfBirth: "1990-06-15",
+        morphologicalProfile: undefined,
+      });
+    });
   });
 
   it("shows validation error for future date of birth", async () => {
