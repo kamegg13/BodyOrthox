@@ -77,6 +77,7 @@ interface PatientsActions {
   deletePatient(id: string): Promise<void>;
   setSortBy(sort: SortBy): void;
   toggleFilter(filter: PatientFilter): void;
+  clearFilters(): void;
   clearError(): void;
 }
 
@@ -254,6 +255,18 @@ export const usePatientsStore = create<PatientsState & PatientsActions>()(
           state.searchQuery,
           state.sortBy,
           next,
+        );
+      });
+    },
+
+    clearFilters() {
+      set((state) => {
+        state.activeFilters = new Set();
+        state.filteredPatients = computeFiltered(
+          state.patients,
+          state.searchQuery,
+          state.sortBy,
+          new Set(),
         );
       });
     },

@@ -33,6 +33,7 @@ const mockSetSearchQuery = jest.fn();
 const mockClearError = jest.fn();
 const mockSetSortBy = jest.fn();
 const mockToggleFilter = jest.fn();
+const mockClearFilters = jest.fn();
 
 let mockStoreState: {
   patients: Patient[];
@@ -47,6 +48,7 @@ let mockStoreState: {
   clearError: jest.Mock;
   setSortBy: jest.Mock;
   toggleFilter: jest.Mock;
+  clearFilters: jest.Mock;
 };
 
 jest.mock("../../store/patients-store", () => ({
@@ -100,6 +102,7 @@ function defaultStoreState(): typeof mockStoreState {
     clearError: mockClearError,
     setSortBy: mockSetSortBy,
     toggleFilter: mockToggleFilter,
+    clearFilters: mockClearFilters,
   };
 }
 
@@ -157,6 +160,7 @@ describe("PatientsScreen", () => {
       mockStoreState = {
         ...defaultStoreState(),
         patients: [],
+        filteredPatients: [],
         isLoading: true,
       };
       renderScreen();
@@ -227,6 +231,7 @@ describe("PatientsScreen", () => {
       mockStoreState = {
         ...defaultStoreState(),
         patients: [],
+        filteredPatients: [],
         searchQuery: "xyz",
       };
       renderScreen();
@@ -270,6 +275,7 @@ describe("PatientsScreen", () => {
       mockStoreState = {
         ...defaultStoreState(),
         patients: [],
+        filteredPatients: [],
         searchQuery: "",
       };
       renderScreen();
@@ -284,6 +290,7 @@ describe("PatientsScreen", () => {
       mockStoreState = {
         ...defaultStoreState(),
         patients: [],
+        filteredPatients: [],
       };
       renderScreen();
 

@@ -47,6 +47,7 @@ export function PatientsScreen() {
     setSearchQuery,
     setSortBy,
     toggleFilter,
+    clearFilters,
     clearError,
   } = usePatientsStore();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -157,20 +158,7 @@ export function PatientsScreen() {
             styles.filterChip,
             activeFilters.size === 0 && styles.filterChipActive,
           ]}
-          onPress={() => {
-            (
-              [
-                "male",
-                "female",
-                "active",
-                "sedentary",
-                "has-pains",
-                "archived",
-              ] as PatientFilter[]
-            ).forEach((f) => {
-              if (activeFilters.has(f)) toggleFilter(f);
-            });
-          }}
+          onPress={clearFilters}
           testID="filter-chip-all"
           accessibilityRole="button"
         >
@@ -243,16 +231,20 @@ export function PatientsScreen() {
       </View>
 
       {/* Patient list */}
-      {isLoading && patients.length === 0 ? (
+      {isLoading && filteredPatients.length === 0 && patients.length === 0 ? (
         <LoadingSpinner message="Chargement des patients..." />
-      ) : patients.length === 0 ? (
+      ) : filteredPatients.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyIcon}>👤</Text>
-          <Text style={[Typography.h3, styles.emptyTitle]}>Aucun patient</Text>
+          <Text style={[Typography.h3, styles.emptyTitle]}>
+            {patients.length === 0 ? "Aucun patient" : "Aucun résultat"}
+          </Text>
           <Text style={[Typography.body, styles.emptySubtitle]}>
-            {searchQuery
-              ? "Aucun patient ne correspond à votre recherche."
-              : "Ajoutez votre premier patient pour commencer."}
+            {patients.length === 0
+              ? (searchQuery
+                  ? "Aucun patient ne correspond à votre recherche."
+                  : "Ajoutez votre premier patient pour commencer.")
+              : "Aucun patient ne correspond aux filtres sélectionnés."}
           </Text>
         </View>
       ) : (

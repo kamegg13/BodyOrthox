@@ -155,6 +155,18 @@ describe('usePatientsStore', () => {
     });
   });
 
+  describe('clearFilters', () => {
+    it('clearFilters removes all active filters', () => {
+      usePatientsStore.setState({
+        patients: [mockPatient, mockPatient2],
+        activeFilters: new Set<import('../patients-store').PatientFilter>(['male', 'active']),
+        filteredPatients: [],
+      });
+      usePatientsStore.getState().clearFilters();
+      expect(usePatientsStore.getState().activeFilters.size).toBe(0);
+    });
+  });
+
   describe('archivePatient', () => {
     it('sets archivedAt on patient in list', async () => {
       const repo = createMockRepo();
