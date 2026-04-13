@@ -306,6 +306,57 @@ describe("PatientDetailScreen", () => {
     });
   });
 
+  describe("Patient Archive", () => {
+    it("shows archive confirmation alert when archive button pressed", async () => {
+      const alertSpy = jest.spyOn(Alert, "alert");
+
+      const { getByTestId } = render(<PatientDetailScreen />);
+      await waitFor(() => {
+        expect(getByTestId("archive-button")).toBeTruthy();
+      });
+
+      fireEvent.press(getByTestId("archive-button"));
+
+      expect(alertSpy).toHaveBeenCalledWith(
+        "Archiver le patient",
+        expect.stringContaining(mockPatient.name),
+        expect.any(Array),
+      );
+
+      alertSpy.mockRestore();
+    });
+
+    it("calls archivePatient and navigates back on archive confirm", async () => {
+      const mockArchivePatient = jest.fn().mockResolvedValue(undefined);
+      usePatientsStore.setState({
+        patients: [mockPatient],
+        archivePatient: mockArchivePatient,
+      } as any);
+
+      const alertSpy = jest
+        .spyOn(Alert, "alert")
+        .mockImplementationOnce((_title, _msg, buttons) => {
+          const confirmButton = buttons?.find((b: any) => b.text === "Archiver");
+          confirmButton?.onPress?.();
+        });
+
+      const { getByTestId } = render(<PatientDetailScreen />);
+      await waitFor(() => {
+        expect(getByTestId("archive-button")).toBeTruthy();
+      });
+
+      await act(async () => {
+        fireEvent.press(getByTestId("archive-button"));
+      });
+
+      await waitFor(() => {
+        expect(mockArchivePatient).toHaveBeenCalledWith("p1");
+      });
+
+      alertSpy.mockRestore();
+    });
+  });
+
   it("shows error widget when patient is not found", async () => {
     usePatientsStore.setState({
       patients: [],

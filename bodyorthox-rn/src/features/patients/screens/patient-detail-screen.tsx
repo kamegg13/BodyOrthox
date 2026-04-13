@@ -425,7 +425,7 @@ const styles = StyleSheet.create({
     minHeight: 44,
     justifyContent: "center",
   },
-  archiveActionText: { color: "#FF9500", fontSize: 15 },
+  archiveActionText: { color: Colors.warning, fontSize: 15 },
   dangerAction: {
     paddingVertical: Spacing.md,
     alignItems: "center",
