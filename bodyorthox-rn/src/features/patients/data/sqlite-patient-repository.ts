@@ -103,6 +103,17 @@ export class SqlitePatientRepository implements IPatientRepository {
     return updated;
   }
 
+  async archive(id: string): Promise<Patient> {
+    const archivedAt = new Date().toISOString();
+    await this.db.execute(
+      `UPDATE patients SET archived_at = ? WHERE id = ?`,
+      [archivedAt, id],
+    );
+    const patient = await this.getById(id);
+    if (!patient) throw new Error(`Patient ${id} not found after archive`);
+    return patient;
+  }
+
   async delete(id: string): Promise<void> {
     await this.db.execute(`DELETE FROM patients WHERE id = ?`, [id]);
   }
