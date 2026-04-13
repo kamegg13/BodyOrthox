@@ -35,6 +35,7 @@ function createMockRepo(overrides?: Partial<IPatientRepository>): IPatientReposi
 
 describe('usePatientsStore', () => {
   beforeEach(() => {
+    usePatientsStore.getState().setRepository(null as unknown as IPatientRepository);
     usePatientsStore.setState({
       patients: [],
       isLoading: false,
@@ -164,6 +165,8 @@ describe('usePatientsStore', () => {
 
       const p = usePatientsStore.getState().patients.find(p => p.id === 'p1');
       expect(p?.archivedAt).toBe('2024-06-01T00:00:00Z');
+      const { filteredPatients } = usePatientsStore.getState();
+      expect(filteredPatients.find(p => p.id === 'p1')).toBeUndefined();
     });
   });
 
@@ -184,10 +187,12 @@ describe('usePatientsStore', () => {
       usePatientsStore.setState({
         patients: [mockPatient, mockPatient2, archived],
         activeFilters: new Set(),
-        filteredPatients: [mockPatient2, mockPatient], // archived excluded
+        filteredPatients: [],
       });
+      usePatientsStore.getState().setSortBy('alpha'); // triggers computeFiltered
       const { filteredPatients } = usePatientsStore.getState();
       expect(filteredPatients.find(p => p.id === 'p3')).toBeUndefined();
+      expect(filteredPatients.length).toBe(2);
     });
 
     it('shows archived when filter "archived" is active', () => {
