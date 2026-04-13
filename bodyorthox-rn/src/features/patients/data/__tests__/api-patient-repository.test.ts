@@ -1,47 +1,54 @@
-global.fetch = jest.fn();
-
-jest.mock('../../../../core/auth/token-storage', () => ({
-  loadTokens: jest.fn().mockResolvedValue({ jwt: 'test-jwt', refreshToken: 'ref' }),
-  saveTokens: jest.fn(),
-}));
-
 import { ApiPatientRepository } from '../api-patient-repository';
+import { apiRequest } from '../../../../core/api/api-client';
 
-const mockFetch = global.fetch as jest.Mock;
+jest.mock('../../../../core/api/api-client');
+const mockApiRequest = apiRequest as jest.MockedFunction<typeof apiRequest>;
 
-function mockOk(data: unknown, status = 200) {
-  mockFetch.mockResolvedValueOnce({ ok: true, status, json: async () => data });
-}
+const apiPatient = {
+  id: 'p1',
+  userId: 'u1',
+  name: 'Jean Dupont',
+  dateOfBirth: '1990-01-01',
+  heightCm: 175,
+  weightKg: 70,
+  bmi: 22.9,
+  notes: 'notes',
+  sex: 'male',
+  laterality: 'right',
+  activityLevel: 'active',
+  sport: 'tennis',
+  pathology: 'gonarthrose',
+  pains: [{ id: 'pain1', location: 'knee', side: 'left', intensity: 7, type: 'chronic' }],
+  createdAt: '2024-01-01T00:00:00Z',
+  updatedAt: '2024-01-01T00:00:00Z',
+};
 
-beforeEach(() => {
-  jest.clearAllMocks();
-});
+describe('ApiPatientRepository', () => {
+  let repo: ApiPatientRepository;
 
-test('getAll returns patients from API', async () => {
-  mockOk([{ id: '1', name: 'Jean', dateOfBirth: '1980-01-01', userId: 'u1', createdAt: '', updatedAt: '' }]);
-  const repo = new ApiPatientRepository();
-  const patients = await repo.getAll();
-  expect(patients).toHaveLength(1);
-  expect(patients[0].name).toBe('Jean');
-});
+  beforeEach(() => {
+    repo = new ApiPatientRepository();
+    jest.clearAllMocks();
+  });
 
-test('create sends POST and maps response to Patient', async () => {
-  mockOk({ id: '2', name: 'Marie', dateOfBirth: '1990-05-10', userId: 'u1', createdAt: '', updatedAt: '' }, 201);
-  const repo = new ApiPatientRepository();
-  const patient = await repo.create({ name: 'Marie', dateOfBirth: '1990-05-10' });
-  expect(patient.name).toBe('Marie');
-  expect(mockFetch).toHaveBeenCalledWith(
-    expect.stringContaining('/patients'),
-    expect.objectContaining({ method: 'POST' }),
-  );
-});
+  it('getAll maps API response to Patient', async () => {
+    mockApiRequest.mockResolvedValue([apiPatient]);
+    const patients = await repo.getAll();
+    expect(patients[0].morphologicalProfile?.sex).toBe('male');
+    expect(patients[0].morphologicalProfile?.pains).toHaveLength(1);
+  });
 
-test('delete calls DELETE endpoint', async () => {
-  mockFetch.mockResolvedValueOnce({ ok: true, status: 204, json: async () => undefined });
-  const repo = new ApiPatientRepository();
-  await repo.delete('patient-id');
-  expect(mockFetch).toHaveBeenCalledWith(
-    expect.stringContaining('/patients/patient-id'),
-    expect.objectContaining({ method: 'DELETE' }),
-  );
+  it('update sends new fields and maps response', async () => {
+    mockApiRequest.mockResolvedValue({ ...apiPatient, name: 'Marie' });
+    const updated = await repo.update('p1', { name: 'Marie' });
+    expect(updated.name).toBe('Marie');
+    expect(mockApiRequest).toHaveBeenCalledWith('/patients/p1', expect.objectContaining({ method: 'PUT' }));
+  });
+
+  it('archive calls PATCH /patients/:id/archive', async () => {
+    mockApiRequest.mockResolvedValue({ ...apiPatient, archivedAt: '2024-06-01T00:00:00Z' });
+    const archived = await repo.archive('p1');
+    expect(archived.archivedAt).toBe('2024-06-01T00:00:00Z');
+    expect(mockApiRequest).toHaveBeenCalledWith('/patients/p1/archive', expect.objectContaining({ method: 'PATCH' }));
+  });
 });
