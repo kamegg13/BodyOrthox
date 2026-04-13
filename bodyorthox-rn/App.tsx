@@ -1,6 +1,7 @@
 import React, { useEffect, Component, ErrorInfo } from "react";
 import {
   Alert,
+  Platform,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -13,6 +14,8 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppNavigator } from "./src/navigation/app-navigator";
 import { Colors } from "./src/shared/design-system/colors";
 import { initializeDatabase } from "./src/core/database/init";
+import { FeedbackFab } from "./src/features/feedback/components/feedback-fab";
+import { FeedbackModal } from "./src/features/feedback/components/feedback-modal";
 
 /**
  * Global error boundary — catches JS errors and displays them
@@ -111,6 +114,12 @@ function AppContent() {
         <NavigationContainer>
           <AppNavigator />
         </NavigationContainer>
+        {Platform.OS === 'web' && (
+          <>
+            <FeedbackFab />
+            <FeedbackModal />
+          </>
+        )}
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
