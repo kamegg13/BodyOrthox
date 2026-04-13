@@ -50,13 +50,9 @@ interface DraftPain {
   notes: string;
 }
 
-const defaultDraft: DraftPain = {
-  location: "knee",
-  side: "left",
-  intensity: 5,
-  type: "acute",
-  notes: "",
-};
+function makeDraft(): DraftPain {
+  return { location: "knee", side: "left", intensity: 5, type: "acute", notes: "" };
+}
 
 function painLabel(p: PainEntry): string {
   const loc = LOCATIONS.find(l => l.value === p.location)?.label ?? p.location;
@@ -67,7 +63,7 @@ function painLabel(p: PainEntry): string {
 
 export function PainEditor({ pains, onChange }: PainEditorProps) {
   const [showForm, setShowForm] = useState(false);
-  const [draft, setDraft] = useState<DraftPain>(defaultDraft);
+  const [draft, setDraft] = useState<DraftPain>(makeDraft);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   function handleRemove(id: string) {
@@ -101,13 +97,13 @@ export function PainEditor({ pains, onChange }: PainEditorProps) {
       onChange([...pains, entry]);
     }
     setShowForm(false);
-    setDraft(defaultDraft);
+    setDraft(makeDraft());
     setEditingId(null);
   }
 
   function handleCancel() {
     setShowForm(false);
-    setDraft(defaultDraft);
+    setDraft(makeDraft());
     setEditingId(null);
   }
 
@@ -116,7 +112,12 @@ export function PainEditor({ pains, onChange }: PainEditorProps) {
       {/* Pills */}
       {pains.map(p => (
         <View key={p.id} style={styles.pill}>
-          <Pressable onPress={() => handleEdit(p)} style={styles.pillText}>
+          <Pressable
+              onPress={() => handleEdit(p)}
+              style={styles.pillText}
+              accessibilityRole="button"
+              accessibilityLabel={`Modifier douleur ${painLabel(p)}`}
+            >
             <Text style={styles.pillLabel}>{painLabel(p)}</Text>
           </Pressable>
           <Pressable
@@ -189,25 +190,27 @@ export function PainEditor({ pains, onChange }: PainEditorProps) {
           </View>
 
           <Text style={styles.formTitle}>Intensité (EVA) : {draft.intensity}/10</Text>
-          <View style={styles.sliderRow}>
-            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(v => (
-              <Pressable
-                key={v}
-                style={[styles.sliderDot, draft.intensity === v && styles.sliderDotActive]}
-                onPress={() => setDraft(d => ({ ...d, intensity: v }))}
-                accessibilityLabel={`Intensité ${v}`}
-              >
-                <Text
-                  style={[
-                    styles.sliderDotText,
-                    draft.intensity === v && styles.sliderDotTextActive,
-                  ]}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={styles.sliderRow}>
+              {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(v => (
+                <Pressable
+                  key={v}
+                  style={[styles.sliderDot, draft.intensity === v && styles.sliderDotActive]}
+                  onPress={() => setDraft(d => ({ ...d, intensity: v }))}
+                  accessibilityLabel={`Intensité ${v}`}
                 >
-                  {v}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
+                  <Text
+                    style={[
+                      styles.sliderDotText,
+                      draft.intensity === v && styles.sliderDotTextActive,
+                    ]}
+                  >
+                    {v}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </ScrollView>
 
           <Text style={styles.formTitle}>Type</Text>
           <View style={styles.optionsRow}>
@@ -339,8 +342,7 @@ const styles = StyleSheet.create({
   },
   sliderRow: {
     flexDirection: "row",
-    gap: Spacing.xxs,
-    flexWrap: "wrap",
+    gap: Spacing.xxs ?? 4,
   },
   sliderDot: {
     width: 28,
