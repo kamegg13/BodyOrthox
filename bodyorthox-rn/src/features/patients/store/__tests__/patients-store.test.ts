@@ -6,8 +6,19 @@ const mockPatient: Patient = {
   id: 'p1',
   name: 'Jean Dupont',
   dateOfBirth: '1990-01-01',
-  morphologicalProfile: null,
+  morphologicalProfile: { sex: 'male', activityLevel: 'active' },
   createdAt: '2024-01-01T00:00:00Z',
+};
+
+const mockPatient2: Patient = {
+  id: 'p2',
+  name: 'Alice Martin',
+  dateOfBirth: '1985-03-20',
+  morphologicalProfile: {
+    sex: 'female',
+    pains: [{ id: 'x', location: 'knee', side: 'left', intensity: 5, type: 'chronic' }],
+  },
+  createdAt: '2024-02-01T00:00:00Z',
 };
 
 function createMockRepo(overrides?: Partial<IPatientRepository>): IPatientRepository {
@@ -16,6 +27,7 @@ function createMockRepo(overrides?: Partial<IPatientRepository>): IPatientReposi
     getById: jest.fn().mockResolvedValue(mockPatient),
     create: jest.fn().mockResolvedValue(mockPatient),
     update: jest.fn().mockResolvedValue(mockPatient),
+    archive: jest.fn().mockResolvedValue({ ...mockPatient, archivedAt: '2024-06-01T00:00:00Z' }),
     delete: jest.fn().mockResolvedValue(undefined),
     ...overrides,
   };
@@ -28,6 +40,9 @@ describe('usePatientsStore', () => {
       isLoading: false,
       error: null,
       searchQuery: '',
+      sortBy: 'alpha',
+      activeFilters: new Set(),
+      filteredPatients: [],
     });
   });
 
@@ -136,6 +151,79 @@ describe('usePatientsStore', () => {
       usePatientsStore.setState({ error: 'Some error' });
       usePatientsStore.getState().clearError();
       expect(usePatientsStore.getState().error).toBeNull();
+    });
+  });
+
+  describe('archivePatient', () => {
+    it('sets archivedAt on patient in list', async () => {
+      const repo = createMockRepo();
+      usePatientsStore.setState({ patients: [mockPatient, mockPatient2] });
+      usePatientsStore.getState().setRepository(repo);
+
+      await usePatientsStore.getState().archivePatient('p1');
+
+      const p = usePatientsStore.getState().patients.find(p => p.id === 'p1');
+      expect(p?.archivedAt).toBe('2024-06-01T00:00:00Z');
+    });
+  });
+
+  describe('filteredPatients', () => {
+    beforeEach(() => {
+      usePatientsStore.setState({
+        patients: [mockPatient, mockPatient2],
+        searchQuery: '',
+        sortBy: 'alpha',
+        activeFilters: new Set(),
+        // compute filtered: both patients are active (no archivedAt), sorted alpha → Alice, Jean
+        filteredPatients: [mockPatient2, mockPatient],
+      });
+    });
+
+    it('excludes archived patients by default', () => {
+      const archived = { ...mockPatient, id: 'p3', archivedAt: '2024-01-01T00:00:00Z' };
+      usePatientsStore.setState({
+        patients: [mockPatient, mockPatient2, archived],
+        activeFilters: new Set(),
+        filteredPatients: [mockPatient2, mockPatient], // archived excluded
+      });
+      const { filteredPatients } = usePatientsStore.getState();
+      expect(filteredPatients.find(p => p.id === 'p3')).toBeUndefined();
+    });
+
+    it('shows archived when filter "archived" is active', () => {
+      const archived = { ...mockPatient, id: 'p3', archivedAt: '2024-01-01T00:00:00Z' };
+      usePatientsStore.setState({
+        patients: [mockPatient, archived],
+        activeFilters: new Set(),
+        filteredPatients: [],
+      });
+      usePatientsStore.getState().toggleFilter('archived');
+      const { filteredPatients } = usePatientsStore.getState();
+      expect(filteredPatients.find(p => p.id === 'p3')).toBeDefined();
+    });
+
+    it('filters by sex "male"', () => {
+      usePatientsStore.getState().toggleFilter('male');
+      const { filteredPatients } = usePatientsStore.getState();
+      expect(filteredPatients.every(p => p.morphologicalProfile?.sex === 'male')).toBe(true);
+    });
+
+    it('filters patients with pains', () => {
+      usePatientsStore.getState().toggleFilter('has-pains');
+      const { filteredPatients } = usePatientsStore.getState();
+      expect(filteredPatients.every(p => (p.morphologicalProfile?.pains?.length ?? 0) > 0)).toBe(true);
+    });
+
+    it('sorts alphabetically', () => {
+      usePatientsStore.getState().setSortBy('alpha');
+      const { filteredPatients } = usePatientsStore.getState();
+      expect(filteredPatients[0].name).toBe('Alice Martin');
+    });
+
+    it('sorts by most recent (createdAt desc)', () => {
+      usePatientsStore.getState().setSortBy('recent');
+      const { filteredPatients } = usePatientsStore.getState();
+      expect(filteredPatients[0].id).toBe('p2');
     });
   });
 });
