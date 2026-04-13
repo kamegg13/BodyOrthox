@@ -1,5 +1,5 @@
 import type { IPatientRepository } from './patient-repository';
-import type { Patient, CreatePatientInput, UpdatePatientInput, PainEntry } from '../domain/patient';
+import type { Patient, CreatePatientInput, UpdatePatientInput, PainEntry, MorphologicalProfile } from '../domain/patient';
 import { apiRequest } from '../../../core/api/api-client';
 
 interface ApiPatient {
@@ -43,9 +43,9 @@ function toPatient(p: ApiPatient): Patient {
       weightKg: p.weightKg,
       bmi: p.bmi,
       notes: p.notes,
-      sex: p.sex as Patient['morphologicalProfile'] extends null ? never : NonNullable<Patient['morphologicalProfile']>['sex'],
-      laterality: p.laterality as any,
-      activityLevel: p.activityLevel as any,
+      sex: p.sex as MorphologicalProfile['sex'],
+      laterality: p.laterality as MorphologicalProfile['laterality'],
+      activityLevel: p.activityLevel as MorphologicalProfile['activityLevel'],
       sport: p.sport,
       pathology: p.pathology,
       pains: p.pains?.map((pain) => ({
@@ -67,6 +67,7 @@ function morphoToBody(morpho: Patient['morphologicalProfile']) {
   return {
     heightCm: morpho.heightCm,
     weightKg: morpho.weightKg,
+    // bmi is server-computed from heightCm and weightKg — not sent by client
     notes: morpho.notes,
     sex: morpho.sex,
     laterality: morpho.laterality,

@@ -51,4 +51,27 @@ describe('ApiPatientRepository', () => {
     expect(archived.archivedAt).toBe('2024-06-01T00:00:00Z');
     expect(mockApiRequest).toHaveBeenCalledWith('/patients/p1/archive', expect.objectContaining({ method: 'PATCH' }));
   });
+
+  it('create sends all morpho fields including sex and pains', async () => {
+    mockApiRequest.mockResolvedValue(apiPatient);
+    await repo.create({
+      name: 'Jean Dupont',
+      dateOfBirth: '1990-01-01',
+      morphologicalProfile: {
+        sex: 'male',
+        sport: 'tennis',
+        pains: [{ id: 'pain1', location: 'knee', side: 'left', intensity: 7, type: 'chronic' }],
+      },
+    });
+    expect(mockApiRequest).toHaveBeenCalledWith('/patients', expect.objectContaining({
+      method: 'POST',
+      body: expect.stringContaining('"sex":"male"'),
+    }));
+  });
+
+  it('delete calls DELETE /patients/:id', async () => {
+    mockApiRequest.mockResolvedValue(undefined);
+    await repo.delete('p1');
+    expect(mockApiRequest).toHaveBeenCalledWith('/patients/p1', expect.objectContaining({ method: 'DELETE' }));
+  });
 });
