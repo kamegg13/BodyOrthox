@@ -10,6 +10,12 @@ import { Colors } from "../../../shared/design-system/colors";
 import { Spacing } from "../../../shared/design-system/spacing";
 import { FontSize } from "../../../shared/design-system/typography";
 
+const DateTimePicker =
+  Platform.OS !== "web"
+    ? // eslint-disable-next-line @typescript-eslint/no-var-requires
+      (require("@react-native-community/datetimepicker").default as React.ComponentType<any>)
+    : null;
+
 interface DatePickerProps {
   value: string | null; // ISO YYYY-MM-DD ou null
   onChange: (iso: string) => void;
@@ -60,9 +66,6 @@ function WebDatePicker({ value, onChange, placeholder, maxDate }: DatePickerProp
 function NativeDatePicker({ value, onChange, placeholder, maxDate }: DatePickerProps) {
   const [show, setShow] = useState(false);
 
-  // Import dynamique pour éviter les erreurs web
-  const DateTimePicker = require("@react-native-community/datetimepicker").default;
-
   const date = value ? new Date(value) : new Date();
   const max = maxDate ? new Date(maxDate) : new Date();
 
@@ -80,7 +83,7 @@ function NativeDatePicker({ value, onChange, placeholder, maxDate }: DatePickerP
         <Text style={styles.calendarIcon}>📅</Text>
       </Pressable>
 
-      {show && (
+      {show && DateTimePicker && (
         <DateTimePicker
           value={date}
           mode="date"
