@@ -16,7 +16,13 @@ const mockAnalysis: Analysis = {
   id: "analysis-1",
   patientId: "patient-1",
   createdAt: "2026-03-19T14:30:00.000Z",
-  angles: { kneeAngle: 5.2, hipAngle: 175.0, ankleAngle: 88.5 },
+  angles: { kneeAngle: 176.2, hipAngle: 175.0, ankleAngle: 174.5 },
+  bilateralAngles: {
+    leftHKA: 176.2,
+    rightHKA: 177.5,
+    left: { kneeAngle: 176.2, hipAngle: 175.0, ankleAngle: 174.5 },
+    right: { kneeAngle: 177.5, hipAngle: 176.0, ankleAngle: 175.0 },
+  },
   confidenceScore: 0.92,
   manualCorrectionApplied: false,
   manualCorrectionJoint: null,
@@ -68,19 +74,11 @@ describe("ReportScreen", () => {
     });
   });
 
-  it("should display the practitioner view with angles", async () => {
+  it("should display the bilateral angles card when bilateral data is present", async () => {
     const { getByTestId } = render(<ReportScreen />);
 
     await waitFor(() => {
-      expect(getByTestId("report-practitioner-view")).toBeTruthy();
-    });
-  });
-
-  it("should display the detailed view", async () => {
-    const { getByTestId } = render(<ReportScreen />);
-
-    await waitFor(() => {
-      expect(getByTestId("report-detailed-view")).toBeTruthy();
+      expect(getByTestId("report-bilateral")).toBeTruthy();
     });
   });
 

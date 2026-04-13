@@ -5,7 +5,9 @@ import {
   generateReportFileName,
   buildReportData,
   generateReportHtml,
+  generateInterpretation,
 } from "../report-generator";
+import type { BilateralAngles } from "../../../capture/data/angle-calculator";
 
 // ─── Fixtures ─────────────────────────────────────────────────
 
@@ -17,6 +19,13 @@ const mockPatient: Patient = {
   createdAt: "2026-03-19T10:00:00.000Z",
 };
 
+const mockBilateral: BilateralAngles = {
+  leftHKA: 176.2,
+  rightHKA: 177.5,
+  left: { kneeAngle: 176.2, hipAngle: 175.0, ankleAngle: 174.5 },
+  right: { kneeAngle: 177.5, hipAngle: 176.0, ankleAngle: 175.0 },
+};
+
 const mockAnalysis: Analysis = {
   id: "analysis-1",
   patientId: "patient-1",
@@ -26,6 +35,7 @@ const mockAnalysis: Analysis = {
     hipAngle: 175.0,
     ankleAngle: 174.5,
   },
+  bilateralAngles: mockBilateral,
   confidenceScore: 0.92,
   manualCorrectionApplied: false,
   manualCorrectionJoint: null,
@@ -46,92 +56,94 @@ describe("generateReportFileName", () => {
       "Jean Dupont",
       "2026-03-19T14:30:00.000Z",
     );
-    expect(result).toBe("JeanDupont_AnalyseMarche_2026-03-19.pdf");
+    expect(result).toBe("JeanDupont_AnalyseHKA_2026-03-19.pdf");
   });
 
   it("should handle single-word names", () => {
     const result = generateReportFileName("Marie", "2026-01-01");
-    expect(result).toBe("Marie_AnalyseMarche_2026-01-01.pdf");
+    expect(result).toBe("Marie_AnalyseHKA_2026-01-01.pdf");
   });
 
   it("should handle multiple spaces in names", () => {
     const result = generateReportFileName("Jean Pierre Dupont", "2026-06-15");
-    expect(result).toBe("JeanPierreDupont_AnalyseMarche_2026-06-15.pdf");
+    expect(result).toBe("JeanPierreDupont_AnalyseHKA_2026-06-15.pdf");
   });
 
   it("should truncate ISO date to YYYY-MM-DD", () => {
     const result = generateReportFileName("Test", "2026-03-19T14:30:00.000Z");
-    expect(result).toBe("Test_AnalyseMarche_2026-03-19.pdf");
+    expect(result).toBe("Test_AnalyseHKA_2026-03-19.pdf");
   });
 });
 
 // ─── buildReportData ─────────────────────────────────────────
 
 describe("buildReportData", () => {
-  it("should include patient metadata", () => {
+  it("should include patient name", () => {
     const data = buildReportData(mockAnalysis, mockPatient);
-    expect(data.metadata.patientName).toBe("Jean Dupont");
-    expect(data.metadata.analysisDate).toBe("2026-03-19T14:30:00.000Z");
+    expect(data.patientName).toBe("Jean Dupont");
   });
 
-  it("should include device info in metadata", () => {
+  it("should include analysis date", () => {
     const data = buildReportData(mockAnalysis, mockPatient);
-    expect(data.metadata.device).toBeDefined();
-    expect(data.metadata.device.length).toBeGreaterThan(0);
+    expect(data.analysisDate).toBe("2026-03-19T14:30:00.000Z");
   });
 
-  it("should include practitioner view with all 3 angles", () => {
+  it("should include bilateral angles when present", () => {
     const data = buildReportData(mockAnalysis, mockPatient);
-    expect(data.practitionerView.angles).toHaveLength(3);
-
-    const joints = data.practitionerView.angles.map((a) => a.joint);
-    expect(joints).toEqual(["knee", "hip", "ankle"]);
+    expect(data.bilateral).toBeDefined();
+    expect(data.bilateral?.leftHKA).toBe(176.2);
+    expect(data.bilateral?.rightHKA).toBe(177.5);
   });
 
-  it("should assess each angle against norms", () => {
-    const data = buildReportData(mockAnalysis, mockPatient);
-    const knee = data.practitionerView.angles[0];
-    expect(knee.value).toBe(176.2);
-    expect(knee.isWithinNorm).toBe(true);
-    expect(knee.label).toBe("Genou");
-  });
-
-  it("should flag out-of-norm angles", () => {
-    const abnormalAnalysis: Analysis = {
+  it("should set bilateral to undefined when not in analysis", () => {
+    const analysisNoBilateral: Analysis = {
       ...mockAnalysis,
-      angles: { kneeAngle: 160, hipAngle: 150, ankleAngle: 160 },
+      bilateralAngles: undefined,
     };
-    const data = buildReportData(abnormalAnalysis, mockPatient);
-    expect(data.practitionerView.angles[0].isWithinNorm).toBe(false);
-    expect(data.practitionerView.angles[1].isWithinNorm).toBe(false);
-    expect(data.practitionerView.angles[2].isWithinNorm).toBe(false);
-  });
-
-  it("should include detailed view with confidence data", () => {
-    const data = buildReportData(mockAnalysis, mockPatient);
-    expect(data.detailedView.confidenceScore).toBe(0.92);
-    expect(data.detailedView.confidencePercent).toBe("92%");
-    expect(data.detailedView.confidenceLabel).toBe("Élevée");
-    expect(data.detailedView.analysisId).toBe("analysis-1");
-  });
-
-  it("should set manualCorrectionDisclaimer to null when no correction", () => {
-    const data = buildReportData(mockAnalysis, mockPatient);
-    expect(data.detailedView.manualCorrectionApplied).toBe(false);
-    expect(data.detailedView.manualCorrectionDisclaimer).toBeNull();
-  });
-
-  it("should include manual correction disclaimer when correction applied", () => {
-    const data = buildReportData(mockAnalysisWithCorrection, mockPatient);
-    expect(data.detailedView.manualCorrectionApplied).toBe(true);
-    expect(data.detailedView.manualCorrectionDisclaimer).toBe(
-      "Donnees Genou : estimees — verification manuelle effectuee.",
-    );
+    const data = buildReportData(analysisNoBilateral, mockPatient);
+    expect(data.bilateral).toBeUndefined();
   });
 
   it("should include EU MDR disclaimer from LEGAL_CONSTANTS", () => {
     const data = buildReportData(mockAnalysis, mockPatient);
     expect(data.disclaimer).toBe(LEGAL_CONSTANTS.mdrDisclaimer);
+  });
+
+  it("should include notes when provided", () => {
+    const data = buildReportData(mockAnalysis, mockPatient, {
+      notes: "Suivi recommandé",
+    });
+    expect(data.notes).toBe("Suivi recommandé");
+  });
+
+  it("should trim and omit empty notes", () => {
+    const data = buildReportData(mockAnalysis, mockPatient, { notes: "   " });
+    expect(data.notes).toBeUndefined();
+  });
+});
+
+// ─── generateInterpretation ──────────────────────────────────
+
+describe("generateInterpretation", () => {
+  it("should return fallback message when bilateral is undefined", () => {
+    const result = generateInterpretation(undefined);
+    expect(result).toContain("Aucune donnée angulaire");
+  });
+
+  it("should mention normal alignment for HKA in range", () => {
+    const result = generateInterpretation(mockBilateral);
+    expect(result).toContain("limites physiologiques");
+  });
+
+  it("should detect genu varum for HKA < 175", () => {
+    const abnormal: BilateralAngles = {
+      leftHKA: 170,
+      rightHKA: 172,
+      left: { kneeAngle: 170, hipAngle: 170, ankleAngle: 170 },
+      right: { kneeAngle: 172, hipAngle: 172, ankleAngle: 172 },
+    };
+    const result = generateInterpretation(abnormal);
+    expect(result.toLowerCase()).toContain("genu varum");
   });
 });
 
@@ -156,8 +168,7 @@ describe("generateReportHtml", () => {
     const data = buildReportData(mockAnalysis, mockPatient);
     const html = generateReportHtml(data);
     expect(html).toContain("176.2");
-    expect(html).toContain("175");
-    expect(html).toContain("174.5");
+    expect(html).toContain("177.5");
   });
 
   it("should include the MDR disclaimer", () => {
@@ -166,21 +177,23 @@ describe("generateReportHtml", () => {
     expect(html).toContain(LEGAL_CONSTANTS.mdrDisclaimer);
   });
 
-  it("should include confidence percent", () => {
+  it("should include clinic name", () => {
     const data = buildReportData(mockAnalysis, mockPatient);
     const html = generateReportHtml(data);
-    expect(html).toContain("92%");
+    expect(html).toContain("Antidote Sport");
   });
 
-  it("should include correction note when correction applied", () => {
-    const data = buildReportData(mockAnalysisWithCorrection, mockPatient);
+  it("should include notes when provided", () => {
+    const data = buildReportData(mockAnalysis, mockPatient, {
+      notes: "Suivi recommandé dans 3 mois",
+    });
     const html = generateReportHtml(data);
-    expect(html).toContain("verification manuelle effectuee");
+    expect(html).toContain("Suivi recommandé dans 3 mois");
   });
 
-  it("should NOT include correction note when no correction", () => {
+  it("should NOT include notes section when notes are absent", () => {
     const data = buildReportData(mockAnalysis, mockPatient);
     const html = generateReportHtml(data);
-    expect(html).not.toContain('<p class="correction-note">');
+    expect(html).not.toContain("Notes cliniques");
   });
 });

@@ -41,7 +41,7 @@ describe("useReportStore", () => {
     expect(state.status).toBe("ready");
     expect(state.reportData).not.toBeNull();
     expect(state.reportHtml).not.toBeNull();
-    expect(state.fileName).toBe("JeanDupont_AnalyseMarche_2026-03-19.pdf");
+    expect(state.fileName).toBe("JeanDupont_AnalyseHKA_2026-03-19.pdf");
   });
 
   it("should include MDR disclaimer in report data", () => {
