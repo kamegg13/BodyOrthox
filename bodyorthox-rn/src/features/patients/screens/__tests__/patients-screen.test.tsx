@@ -31,15 +31,22 @@ jest.mock("@react-navigation/native", () => ({
 const mockLoadPatients = jest.fn();
 const mockSetSearchQuery = jest.fn();
 const mockClearError = jest.fn();
+const mockSetSortBy = jest.fn();
+const mockToggleFilter = jest.fn();
 
 let mockStoreState: {
   patients: Patient[];
+  filteredPatients: Patient[];
   isLoading: boolean;
   error: string | null;
   searchQuery: string;
+  sortBy: string;
+  activeFilters: Set<string>;
   loadPatients: jest.Mock;
   setSearchQuery: jest.Mock;
   clearError: jest.Mock;
+  setSortBy: jest.Mock;
+  toggleFilter: jest.Mock;
 };
 
 jest.mock("../../store/patients-store", () => ({
@@ -82,12 +89,17 @@ function renderScreen() {
 function defaultStoreState(): typeof mockStoreState {
   return {
     patients: [patient1, patient2],
+    filteredPatients: [patient1, patient2],
     isLoading: false,
     error: null,
     searchQuery: "",
+    sortBy: "alpha",
+    activeFilters: new Set<string>(),
     loadPatients: mockLoadPatients,
     setSearchQuery: mockSetSearchQuery,
     clearError: mockClearError,
+    setSortBy: mockSetSortBy,
+    toggleFilter: mockToggleFilter,
   };
 }
 
@@ -359,12 +371,36 @@ describe("PatientsScreen", () => {
       mockStoreState = {
         ...defaultStoreState(),
         patients: [patient1, patient2, patient3],
+        filteredPatients: [patient1, patient2, patient3],
       };
       renderScreen();
 
       expect(screen.getByTestId("patient-tile-patient-1")).toBeTruthy();
       expect(screen.getByTestId("patient-tile-patient-2")).toBeTruthy();
       expect(screen.getByTestId("patient-tile-patient-3")).toBeTruthy();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // AC7: Filter chips
+  // -------------------------------------------------------------------------
+  describe("AC7 — filter chips and sort", () => {
+    it("renders filter chips", () => {
+      const { getByTestId } = render(<PatientsScreen />);
+      expect(getByTestId("filter-chip-all")).toBeTruthy();
+      expect(getByTestId("filter-chip-male")).toBeTruthy();
+      expect(getByTestId("filter-chip-has-pains")).toBeTruthy();
+    });
+
+    it("renders sort button", () => {
+      const { getByTestId } = render(<PatientsScreen />);
+      expect(getByTestId("sort-button")).toBeTruthy();
+    });
+
+    it("calls toggleFilter when filter chip pressed", () => {
+      const { getByTestId } = render(<PatientsScreen />);
+      fireEvent.press(getByTestId("filter-chip-male"));
+      expect(mockToggleFilter).toHaveBeenCalledWith("male");
     });
   });
 });

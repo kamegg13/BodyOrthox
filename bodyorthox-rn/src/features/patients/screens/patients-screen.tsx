@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useCallback } from "react";
 import {
   FlatList,
   Image,
+  Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -12,6 +14,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../../navigation/types";
 import { usePatientsStore } from "../store/patients-store";
+import type { PatientFilter, SortBy } from "../store/patients-store";
 import { PatientListTile } from "../components/patient-list-tile";
 import { Patient } from "../domain/patient";
 import { LoadingSpinner } from "../../../shared/components/loading-spinner";
@@ -34,11 +37,16 @@ export function PatientsScreen() {
   const { isTablet } = usePlatform();
   const {
     patients,
+    filteredPatients,
     isLoading,
     error,
     searchQuery,
+    sortBy,
+    activeFilters,
     loadPatients,
     setSearchQuery,
+    setSortBy,
+    toggleFilter,
     clearError,
   } = usePatientsStore();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -137,12 +145,101 @@ export function PatientsScreen() {
         />
       </View>
 
-      {/* Section header: PATIENTS RECENTS */}
+      {/* Chips filtres */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.filtersRow}
+        contentContainerStyle={styles.filtersContent}
+      >
+        <Pressable
+          style={[
+            styles.filterChip,
+            activeFilters.size === 0 && styles.filterChipActive,
+          ]}
+          onPress={() => {
+            (
+              [
+                "male",
+                "female",
+                "active",
+                "sedentary",
+                "has-pains",
+                "archived",
+              ] as PatientFilter[]
+            ).forEach((f) => {
+              if (activeFilters.has(f)) toggleFilter(f);
+            });
+          }}
+          testID="filter-chip-all"
+          accessibilityRole="button"
+        >
+          <Text
+            style={[
+              styles.filterChipText,
+              activeFilters.size === 0 && styles.filterChipTextActive,
+            ]}
+          >
+            Tous
+          </Text>
+        </Pressable>
+        {(
+          [
+            { value: "male", label: "Homme" },
+            { value: "female", label: "Femme" },
+            { value: "active", label: "Actif" },
+            { value: "sedentary", label: "Sédentaire" },
+            { value: "has-pains", label: "Avec douleurs" },
+            { value: "archived", label: "Archivés" },
+          ] as { value: PatientFilter; label: string }[]
+        ).map((f) => (
+          <Pressable
+            key={f.value}
+            style={[
+              styles.filterChip,
+              activeFilters.has(f.value) && styles.filterChipActive,
+            ]}
+            onPress={() => toggleFilter(f.value)}
+            testID={`filter-chip-${f.value}`}
+            accessibilityRole="button"
+          >
+            <Text
+              style={[
+                styles.filterChipText,
+                activeFilters.has(f.value) && styles.filterChipTextActive,
+              ]}
+            >
+              {f.label}
+            </Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+
+      {/* Section header: PATIENTS RECENTS + sort */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>PATIENTS RÉCENTS</Text>
-        <TouchableOpacity accessibilityRole="button">
-          <Text style={styles.sectionLink}>Tout voir</Text>
-        </TouchableOpacity>
+        <Pressable
+          onPress={() => {
+            const next: SortBy =
+              sortBy === "alpha"
+                ? "recent"
+                : sortBy === "recent"
+                  ? "last-analyzed"
+                  : "alpha";
+            setSortBy(next);
+          }}
+          testID="sort-button"
+          accessibilityRole="button"
+          accessibilityLabel="Changer le tri"
+        >
+          <Text style={styles.sectionLink}>
+            {sortBy === "alpha"
+              ? "↕ A→Z"
+              : sortBy === "recent"
+                ? "↕ Récents"
+                : "↕ Analysé"}
+          </Text>
+        </Pressable>
       </View>
 
       {/* Patient list */}
@@ -161,7 +258,7 @@ export function PatientsScreen() {
       ) : (
         <FlatList
           key={`patients-grid-${numColumns}`}
-          data={patients}
+          data={filteredPatients}
           numColumns={numColumns}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
@@ -419,5 +516,33 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     fontWeight: FontWeight.medium,
     color: Colors.textPrimary,
+  },
+  filtersRow: {
+    marginBottom: Spacing.xs,
+  },
+  filtersContent: {
+    paddingHorizontal: Spacing.lg,
+    gap: Spacing.xs,
+    flexDirection: "row",
+  },
+  filterChip: {
+    paddingHorizontal: Spacing.sm + 2,
+    paddingVertical: Spacing.xs + 2,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.backgroundCard,
+  },
+  filterChipActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  filterChipText: {
+    fontSize: FontSize.sm,
+    color: Colors.textPrimary,
+  },
+  filterChipTextActive: {
+    color: Colors.textOnPrimary,
+    fontWeight: FontWeight.semiBold,
   },
 });
