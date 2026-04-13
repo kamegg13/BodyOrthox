@@ -4,7 +4,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../../navigation/types";
 import { usePatientsStore } from "../store/patients-store";
 import { PatientFormScreen } from "./patient-form-screen";
-import type { CreatePatientInput } from "../domain/patient";
+import type { CreatePatientInput, UpdatePatientInput } from "../domain/patient";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -13,8 +13,8 @@ export function CreatePatientScreen() {
   const { createPatient } = usePatientsStore();
 
   const handleSubmit = useCallback(
-    async (data: CreatePatientInput) => {
-      await createPatient(data);
+    async (data: CreatePatientInput | UpdatePatientInput) => {
+      await createPatient(data as CreatePatientInput);
       navigation.goBack();
     },
     [createPatient, navigation],

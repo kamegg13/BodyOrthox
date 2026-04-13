@@ -15,6 +15,7 @@ export type RootStackParamList = {
   MainTabs: NavigatorScreenParams<BottomTabParamList>;
   Patients: undefined;
   CreatePatient: undefined;
+  EditPatient: { patientId: string };
   PatientDetail: { patientId: string };
   Capture: { patientId: string };
   Results: {

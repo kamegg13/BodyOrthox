@@ -14,6 +14,7 @@ import { OnboardingScreen } from "../features/onboarding/screens/onboarding-scre
 import { PatientsScreen } from "../features/patients/screens/patients-screen";
 import { PatientsListScreen } from "../features/patients/screens/patients-list-screen";
 import { CreatePatientScreen } from "../features/patients/screens/create-patient-screen";
+import { EditPatientScreen } from "../features/patients/screens/edit-patient-screen";
 import { PatientDetailScreen } from "../features/patients/screens/patient-detail-screen";
 import { CaptureScreen } from "../features/capture/screens/capture-screen";
 import { ResultsScreen } from "../features/results/screens/results-screen";
@@ -23,6 +24,7 @@ import { AccountScreen } from "../features/account/screens/account-screen";
 import { AdminScreen } from "../features/admin/screens/admin-screen";
 import { ProtocolsScreen } from "../features/resources/screens/protocols-screen";
 import { ReportsScreen } from "../features/resources/screens/reports-screen";
+import { ReportScreen } from "../features/report/screens/report-screen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<BottomTabParamList>();
@@ -54,6 +56,11 @@ function AnalysesStackScreen() {
         options={{ title: "Nouveau patient" }}
       />
       <AnalysesStack.Screen
+        name="EditPatient"
+        component={EditPatientScreen}
+        options={{ title: "Modifier le patient" }}
+      />
+      <AnalysesStack.Screen
         name="PatientDetail"
         component={PatientDetailScreen}
         options={{ title: "Patient" }}
@@ -83,6 +90,11 @@ function AnalysesStackScreen() {
         component={ReportsScreen}
         options={{ title: "Rapports PDF" }}
       />
+      <AnalysesStack.Screen
+        name="Report"
+        component={ReportScreen}
+        options={{ title: "Rapport PDF" }}
+      />
     </AnalysesStack.Navigator>
   );
 }
@@ -95,6 +107,11 @@ function PatientsTabStackScreen() {
         name="PatientsList"
         component={PatientsListScreen}
         options={{ headerShown: false }}
+      />
+      <PatientsTabStack.Screen
+        name="EditPatient"
+        component={EditPatientScreen}
+        options={{ title: "Modifier le patient" }}
       />
       <PatientsTabStack.Screen
         name="PatientDetail"
@@ -110,6 +127,11 @@ function PatientsTabStackScreen() {
         name="Timeline"
         component={PatientTimelineScreen}
         options={{ title: "Progression clinique" }}
+      />
+      <PatientsTabStack.Screen
+        name="Report"
+        component={ReportScreen}
+        options={{ title: "Rapport PDF" }}
       />
     </PatientsTabStack.Navigator>
   );
