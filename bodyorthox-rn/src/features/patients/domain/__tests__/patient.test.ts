@@ -185,4 +185,22 @@ describe("updatePatient", () => {
     expect(updated.id).toBe("p1");
     expect(updated.createdAt).toBe("2024-01-01T00:00:00Z");
   });
+
+  it("preserves archivedAt when present", () => {
+    const archived = { ...base, archivedAt: "2025-01-01T00:00:00Z" };
+    const updated = updatePatient(archived, { name: "Marie" });
+    expect(updated.archivedAt).toBe("2025-01-01T00:00:00Z");
+  });
+
+  it("throws if dateOfBirth is invalid string", () => {
+    expect(() => updatePatient(base, { dateOfBirth: "not-a-date" })).toThrow();
+  });
+
+  it("returns equivalent patient when no fields are provided", () => {
+    const updated = updatePatient(base, {});
+    expect(updated.id).toBe(base.id);
+    expect(updated.name).toBe(base.name);
+    expect(updated.dateOfBirth).toBe(base.dateOfBirth);
+    expect(updated.morphologicalProfile).toBe(base.morphologicalProfile);
+  });
 });
