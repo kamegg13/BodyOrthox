@@ -242,6 +242,21 @@ export function PatientDetailScreen() {
         >
           <Text style={styles.secondaryActionText}>Progression clinique</Text>
         </TouchableOpacity>
+        {analyses.length >= 2 && (
+          <TouchableOpacity
+            style={styles.secondaryAction}
+            onPress={() =>
+              navigation.navigate("ProgressionReport", { patient, analyses })
+            }
+            accessibilityRole="button"
+            accessibilityLabel="Générer le rapport de progression"
+            testID="progression-report-button"
+          >
+            <Text style={styles.secondaryActionText}>
+              Rapport de progression
+            </Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity
           style={styles.archiveAction}
           onPress={handleArchive}

@@ -15,12 +15,64 @@ function dbLog(...args: unknown[]): void {
   }
 }
 
+// IndexedDB helpers for large binary fields (captured_image_url)
+// localStorage is limited to ~5MB; images can exceed this causing silent failures.
+const IDB_NAME = "bodyorthox_images";
+const IDB_STORE = "images";
+
+function openImagesIDB(): Promise<IDBDatabase | null> {
+  if (typeof indexedDB === "undefined") return Promise.resolve(null);
+  return new Promise((resolve) => {
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = (e) => {
+      (e.target as IDBOpenDBRequest).result.createObjectStore(IDB_STORE);
+    };
+    req.onsuccess = (e) => resolve((e.target as IDBOpenDBRequest).result);
+    req.onerror = () => resolve(null);
+  });
+}
+
+async function loadAllImages(): Promise<Map<string, string>> {
+  const db = await openImagesIDB();
+  if (!db) return new Map();
+  return new Promise((resolve) => {
+    const tx = db.transaction(IDB_STORE, "readonly");
+    const store = tx.objectStore(IDB_STORE);
+    const keysReq = store.getAllKeys();
+    keysReq.onsuccess = () => {
+      const keys = keysReq.result as string[];
+      const valsReq = store.getAll();
+      valsReq.onsuccess = () => {
+        const vals = valsReq.result as string[];
+        const map = new Map<string, string>();
+        keys.forEach((k, i) => map.set(k, vals[i]));
+        resolve(map);
+      };
+      valsReq.onerror = () => resolve(new Map());
+    };
+    keysReq.onerror = () => resolve(new Map());
+  });
+}
+
+function saveImageToIDB(id: string, url: string): void {
+  openImagesIDB().then((db) => {
+    if (!db) return;
+    const tx = db.transaction(IDB_STORE, "readwrite");
+    tx.objectStore(IDB_STORE).put(url, id);
+  });
+}
+
 // Minimal in-memory store for web (no sql.js bundled for simplicity)
 class WebDatabase implements IDatabase {
   private tables: Map<string, Record<string, unknown>[]> = new Map();
+  private imageCache: Map<string, string> = new Map();
 
   async initialize(): Promise<void> {
-    // Load persisted data from localStorage if available
+    // Load images from IndexedDB first (large data)
+    this.imageCache = await loadAllImages();
+    dbLog("Loaded", this.imageCache.size, "images from IndexedDB");
+
+    // Load metadata from localStorage (small data)
     try {
       const stored =
         typeof localStorage !== "undefined"
@@ -32,7 +84,19 @@ class WebDatabase implements IDatabase {
           Record<string, unknown>[]
         >;
         for (const [table, rows] of Object.entries(parsed)) {
-          this.tables.set(table, rows);
+          if (table === "analyses") {
+            // Re-attach images from IndexedDB cache
+            this.tables.set(
+              table,
+              rows.map((row) => ({
+                ...row,
+                captured_image_url:
+                  this.imageCache.get(row["id"] as string) ?? null,
+              })),
+            );
+          } else {
+            this.tables.set(table, rows);
+          }
         }
       }
     } catch {
@@ -142,6 +206,18 @@ class WebDatabase implements IDatabase {
       row[col] = params[i];
     });
 
+    // Save large image fields to IndexedDB before persisting to localStorage
+    if (
+      tableName === "analyses" &&
+      row["captured_image_url"] &&
+      row["id"]
+    ) {
+      const id = row["id"] as string;
+      const url = row["captured_image_url"] as string;
+      this.imageCache.set(id, url);
+      saveImageToIDB(id, url);
+    }
+
     if (!this.tables.has(tableName)) {
       this.tables.set(tableName, []);
     }
@@ -205,12 +281,17 @@ class WebDatabase implements IDatabase {
       if (typeof localStorage !== "undefined") {
         const data: Record<string, Record<string, unknown>[]> = {};
         for (const [k, v] of this.tables.entries()) {
-          data[k] = v;
+          if (k === "analyses") {
+            // Strip captured_image_url — stored separately in IndexedDB
+            data[k] = v.map(({ captured_image_url: _img, ...rest }) => rest);
+          } else {
+            data[k] = v;
+          }
         }
         localStorage.setItem("bodyorthox_db", JSON.stringify(data));
       }
-    } catch {
-      // ignore quota errors
+    } catch (e) {
+      dbLog("persist() failed:", e);
     }
   }
 

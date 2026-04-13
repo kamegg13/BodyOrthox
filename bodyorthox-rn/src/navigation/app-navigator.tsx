@@ -25,6 +25,7 @@ import { AdminScreen } from "../features/admin/screens/admin-screen";
 import { ProtocolsScreen } from "../features/resources/screens/protocols-screen";
 import { ReportsScreen } from "../features/resources/screens/reports-screen";
 import { ReportScreen } from "../features/report/screens/report-screen";
+import { ProgressionReportScreen } from "../features/report/screens/progression-report-screen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<BottomTabParamList>();
@@ -95,6 +96,11 @@ function AnalysesStackScreen() {
         component={ReportScreen}
         options={{ title: "Rapport PDF" }}
       />
+      <AnalysesStack.Screen
+        name="ProgressionReport"
+        component={ProgressionReportScreen}
+        options={{ title: "Rapport de progression" }}
+      />
     </AnalysesStack.Navigator>
   );
 }
@@ -132,6 +138,11 @@ function PatientsTabStackScreen() {
         name="Report"
         component={ReportScreen}
         options={{ title: "Rapport PDF" }}
+      />
+      <PatientsTabStack.Screen
+        name="ProgressionReport"
+        component={ProgressionReportScreen}
+        options={{ title: "Rapport de progression" }}
       />
     </PatientsTabStack.Navigator>
   );

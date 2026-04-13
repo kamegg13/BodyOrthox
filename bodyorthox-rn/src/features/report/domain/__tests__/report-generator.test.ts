@@ -72,7 +72,6 @@ describe("buildReportData", () => {
     const data = buildReportData(mockAnalysis, mockPatient);
     expect(data.metadata.patientName).toBe("Jean Dupont");
     expect(data.metadata.analysisDate).toBe("2026-03-19T14:30:00.000Z");
-    expect(data.metadata.confidenceLevel).toBe("Élevée");
   });
 
   it("should include device info in metadata", () => {

@@ -6,7 +6,7 @@ import React, {
   forwardRef,
   useCallback,
 } from "react";
-import { Platform, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Colors } from "../../../shared/design-system/colors";
 import { Spacing } from "../../../shared/design-system/spacing";
 
@@ -25,6 +25,12 @@ export const WebCamera = forwardRef<WebCameraRef, WebCameraProps>(
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [retryKey, setRetryKey] = useState(0);
+
+    const handleRetry = useCallback(() => {
+      setError(null);
+      setRetryKey((k) => k + 1);
+    }, []);
 
     const takePhoto = useCallback((): string | null => {
       const video = videoRef.current;
@@ -100,7 +106,7 @@ export const WebCamera = forwardRef<WebCameraRef, WebCameraProps>(
           container.removeChild(video);
         }
       };
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [retryKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
     if (Platform.OS !== "web") {
       return null;
@@ -111,6 +117,9 @@ export const WebCamera = forwardRef<WebCameraRef, WebCameraProps>(
         <View style={[StyleSheet.absoluteFill, styles.errorContainer]}>
           <Text style={styles.errorIcon}>🚫</Text>
           <Text style={styles.errorText}>{error}</Text>
+          <Pressable onPress={handleRetry} style={styles.retryButton}>
+            <Text style={styles.retryText}>Réessayer</Text>
+          </Pressable>
         </View>
       );
     }
@@ -141,5 +150,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center",
     lineHeight: 24,
+  },
+  retryButton: {
+    marginTop: Spacing.lg,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.sm,
+    borderRadius: 8,
+    backgroundColor: Colors.primary,
+  },
+  retryText: {
+    color: Colors.white,
+    fontSize: 15,
+    fontWeight: "600",
   },
 });

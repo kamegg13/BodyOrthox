@@ -97,7 +97,7 @@ module.exports = {
   plugins: [
     new webpack.DefinePlugin({
       __DEV__: JSON.stringify(true),
-      process: { env: {} },
+      process: { env: { EXPO_PUBLIC_API_URL: JSON.stringify('/api') } },
     }),
     new HtmlWebpackPlugin({
       template: path.resolve(appDirectory, "web/index.html"),
@@ -115,6 +115,14 @@ module.exports = {
         errors: true,
       },
     },
+    proxy: [
+      {
+        context: ["/api"],
+        target: "https://orthogenai.inconnu-elevator.ts.net",
+        changeOrigin: true,
+        secure: true,
+      },
+    ],
   },
   mode: "development",
 };

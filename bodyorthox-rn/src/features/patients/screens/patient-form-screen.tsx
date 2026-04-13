@@ -50,7 +50,7 @@ export interface PatientFormScreenProps {
 type ToggleProps<T extends string> = {
   options: { value: T; label: string }[];
   value: T | undefined;
-  onSelect: (v: T) => void;
+  onSelect: (v: T | undefined) => void;
 };
 
 function ToggleGroup<T extends string>({
@@ -67,7 +67,7 @@ function ToggleGroup<T extends string>({
             toggleStyles.btn,
             value === o.value && toggleStyles.btnActive,
           ]}
-          onPress={() => onSelect(o.value)}
+          onPress={() => onSelect(value === o.value ? undefined : o.value)}
           accessibilityRole="radio"
           accessibilityState={{ checked: value === o.value }}
         >

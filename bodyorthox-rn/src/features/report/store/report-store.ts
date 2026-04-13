@@ -7,6 +7,7 @@ import {
   generateReportHtml,
   generateReportFileName,
   ReportData,
+  ReportOptions,
 } from "../domain/report-generator";
 
 // ─── Types ────────────────────────────────────────────────────
@@ -22,7 +23,11 @@ interface ReportState {
 }
 
 interface ReportActions {
-  generateReport(analysis: Analysis, patient: Patient): void;
+  generateReport(
+    analysis: Analysis,
+    patient: Patient,
+    options?: ReportOptions,
+  ): void;
   reset(): void;
 }
 
@@ -36,23 +41,19 @@ export const useReportStore = create<ReportState & ReportActions>()(
     fileName: null,
     errorMessage: null,
 
-    generateReport(analysis: Analysis, patient: Patient) {
+    generateReport(analysis: Analysis, patient: Patient, options: ReportOptions = {}) {
       set((state) => {
         state.status = "generating";
         state.errorMessage = null;
       });
 
       try {
-        const data = buildReportData(analysis, patient);
+        const data = buildReportData(analysis, patient, options);
         const html = generateReportHtml(data);
-        const fileName = generateReportFileName(
-          patient.name,
-          analysis.createdAt,
-        );
+        const fileName = generateReportFileName(patient.name, analysis.createdAt);
 
         set((state) => {
           state.status = "ready";
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           state.reportData = data as any;
           state.reportHtml = html;
           state.fileName = fileName;

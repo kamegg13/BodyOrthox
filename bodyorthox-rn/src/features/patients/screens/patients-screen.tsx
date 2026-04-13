@@ -123,7 +123,7 @@ export function PatientsScreen() {
         activeOpacity={0.8}
       >
         <Text style={styles.ctaIcon}>+</Text>
-        <Text style={styles.ctaText}>Nouvelle analyse</Text>
+        <Text style={styles.ctaText}>Nouveau patient</Text>
       </TouchableOpacity>
 
       {/* Search */}
@@ -507,10 +507,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     gap: Spacing.xs,
     flexDirection: "row",
+    alignItems: "center",
   },
   filterChip: {
     paddingHorizontal: Spacing.sm + 2,
-    paddingVertical: Spacing.xs + 2,
+    paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.full,
     borderWidth: 1,
     borderColor: Colors.border,

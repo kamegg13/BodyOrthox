@@ -1,14 +1,13 @@
-import { Platform } from "react-native";
-import { Analysis, confidenceLabel } from "../../capture/domain/analysis";
-import { Patient } from "../../patients/domain/patient";
+import { Analysis } from "../../capture/domain/analysis";
 import {
-  assessAngle,
-  REFERENCE_NORMS,
-} from "../../results/domain/reference-norms";
-import { Colors } from "../../../shared/design-system/colors";
+  BilateralAngles,
+  classifyHKA,
+  hkaLabel,
+} from "../../capture/data/angle-calculator";
+import { Patient } from "../../patients/domain/patient";
 import { LEGAL_CONSTANTS } from "../../../core/legal/legal-constants";
 
-// ─── HTML escaping (XSS prevention) ──────────────────────────
+// ─── HTML escaping ────────────────────────────────────────────
 
 function escapeHtml(text: string): string {
   return text
@@ -21,43 +20,18 @@ function escapeHtml(text: string): string {
 
 // ─── Types ────────────────────────────────────────────────────
 
-export interface AngleReportEntry {
-  readonly joint: string;
-  readonly label: string;
-  readonly value: number;
-  readonly unit: string;
-  readonly normalMin: number;
-  readonly normalMax: number;
-  readonly isWithinNorm: boolean;
-  readonly deviationLevel: string;
-}
-
-export interface PractitionerView {
-  readonly angles: readonly AngleReportEntry[];
-}
-
-export interface DetailedView {
-  readonly confidenceScore: number;
-  readonly confidencePercent: string;
-  readonly confidenceLabel: string;
-  readonly analysisId: string;
-  readonly manualCorrectionApplied: boolean;
-  readonly manualCorrectionJoint: string | null;
-  readonly manualCorrectionDisclaimer: string | null;
-}
-
-export interface ReportMetadata {
+export interface ReportData {
   readonly patientName: string;
   readonly analysisDate: string;
-  readonly device: string;
-  readonly confidenceLevel: string;
+  readonly photoBase64?: string;
+  readonly bilateral?: BilateralAngles;
+  readonly notes?: string;
+  readonly disclaimer: string;
 }
 
-export interface ReportData {
-  readonly metadata: ReportMetadata;
-  readonly practitionerView: PractitionerView;
-  readonly detailedView: DetailedView;
-  readonly disclaimer: string;
+export interface ReportOptions {
+  photoBase64?: string;
+  notes?: string;
 }
 
 // ─── File naming ──────────────────────────────────────────────
@@ -67,158 +41,432 @@ export function generateReportFileName(
   date: string,
 ): string {
   const sanitized = patientName.replace(/\s+/g, "");
-  const dateStr = date.slice(0, 10); // YYYY-MM-DD
-  return `${sanitized}_AnalyseMarche_${dateStr}.pdf`;
+  const dateStr = date.slice(0, 10);
+  return `${sanitized}_AnalyseHKA_${dateStr}.pdf`;
 }
 
-// ─── Build report data ───────────────────────────────────────
-
-function buildAngleEntry(
-  joint: "knee" | "hip" | "ankle",
-  value: number,
-): AngleReportEntry {
-  const norm = REFERENCE_NORMS[joint];
-  const assessment = assessAngle(joint, value);
-  return {
-    joint,
-    label: norm.label,
-    value,
-    unit: norm.unit,
-    normalMin: norm.normalMin,
-    normalMax: norm.normalMax,
-    isWithinNorm: assessment.isWithinNorm,
-    deviationLevel: assessment.level,
-  };
-}
-
-function getDeviceInfo(): string {
-  try {
-    return `${Platform.OS} (${Platform.Version ?? "unknown"})`;
-  } catch {
-    return "unknown";
-  }
-}
+// ─── Build report data ────────────────────────────────────────
 
 export function buildReportData(
   analysis: Analysis,
   patient: Patient,
+  options: ReportOptions = {},
 ): ReportData {
-  const angles: AngleReportEntry[] = [
-    buildAngleEntry("knee", analysis.angles.kneeAngle),
-    buildAngleEntry("hip", analysis.angles.hipAngle),
-    buildAngleEntry("ankle", analysis.angles.ankleAngle),
-  ];
-
-  const manualCorrectionDisclaimer =
-    analysis.manualCorrectionApplied && analysis.manualCorrectionJoint
-      ? `Donnees ${REFERENCE_NORMS[analysis.manualCorrectionJoint].label} : estimees — verification manuelle effectuee.`
-      : null;
-
   return {
-    metadata: {
-      patientName: patient.name,
-      analysisDate: analysis.createdAt,
-      device: getDeviceInfo(),
-      confidenceLevel: confidenceLabel(analysis.confidenceScore),
-    },
-    practitionerView: { angles },
-    detailedView: {
-      confidenceScore: analysis.confidenceScore,
-      confidencePercent: `${Math.round(analysis.confidenceScore * 100)}%`,
-      confidenceLabel: confidenceLabel(analysis.confidenceScore),
-      analysisId: analysis.id,
-      manualCorrectionApplied: analysis.manualCorrectionApplied,
-      manualCorrectionJoint: analysis.manualCorrectionJoint,
-      manualCorrectionDisclaimer,
-    },
+    patientName: patient.name,
+    analysisDate: analysis.createdAt,
+    photoBase64: options.photoBase64,
+    bilateral: analysis.bilateralAngles,
+    notes: options.notes?.trim() || undefined,
     disclaimer: LEGAL_CONSTANTS.mdrDisclaimer,
   };
 }
 
-// ─── HTML generation ─────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────
 
-function angleRowHtml(entry: AngleReportEntry): string {
-  const statusColor = entry.isWithinNorm ? Colors.success : Colors.error;
-  const statusLabel = entry.isWithinNorm
-    ? "Dans la norme"
-    : `Hors norme (${entry.deviationLevel})`;
-  return `
-    <tr>
-      <td>${escapeHtml(entry.label)}</td>
-      <td>${escapeHtml(String(entry.value))}${escapeHtml(entry.unit)}</td>
-      <td>${escapeHtml(String(entry.normalMin))}${escapeHtml(entry.unit)} – ${escapeHtml(String(entry.normalMax))}${escapeHtml(entry.unit)}</td>
-      <td style="color: ${statusColor}; font-weight: 600;">${escapeHtml(statusLabel)}</td>
-    </tr>`;
+/** Print-safe color: in-range green, ≤5° off orange, >5° off red, zero grey */
+function angleColor(value: number, min: number, max: number): string {
+  if (value === 0) return "#888888";
+  if (value >= min && value <= max) return "#1a7f37";
+  const dev = value < min ? min - value : value - max;
+  return dev <= 5 ? "#b45309" : "#c0392b";
 }
 
-export function generateReportHtml(data: ReportData): string {
-  const angleRows = data.practitionerView.angles.map(angleRowHtml).join("\n");
+function fmt(v: number): string {
+  return v === 0 ? "—" : `${v.toFixed(1)}°`;
+}
 
-  const correctionNote = data.detailedView.manualCorrectionDisclaimer
-    ? `<p class="correction-note">${escapeHtml(data.detailedView.manualCorrectionDisclaimer)}</p>`
+// ─── Clinical interpretation ──────────────────────────────────
+
+export function generateInterpretation(bilateral?: BilateralAngles): string {
+  if (!bilateral) {
+    return "Aucune donnée angulaire disponible pour l'interprétation.";
+  }
+
+  const { leftHKA, rightHKA } = bilateral;
+  const leftClass = classifyHKA(leftHKA);
+  const rightClass = classifyHKA(rightHKA);
+
+  const lines: string[] = [];
+
+  // Per-side description
+  if (leftClass === "unavailable" && rightClass === "unavailable") {
+    return "Les angles HKA n'ont pas pu être calculés pour les deux membres inférieurs.";
+  }
+
+  if (leftClass !== "unavailable") {
+    if (leftClass === "normal") {
+      lines.push(
+        `Côté gauche\u00a0: alignement mécanique dans les limites physiologiques (HKA\u00a0= ${leftHKA.toFixed(1)}°).`,
+      );
+    } else {
+      const label = hkaLabel(leftHKA);
+      const norm = leftHKA < 175 ? 175 : 180;
+      const deviation = Math.abs(leftHKA - norm).toFixed(1);
+      const direction = leftHKA < 175 ? "inférieure" : "supérieure";
+      lines.push(
+        `Côté gauche\u00a0: ${label} (HKA\u00a0= ${leftHKA.toFixed(1)}°, déviation de ${deviation}° par rapport à la limite ${direction} de la norme de ${norm}°).`,
+      );
+    }
+  } else {
+    lines.push("Côté gauche\u00a0: donnée non disponible.");
+  }
+
+  if (rightClass !== "unavailable") {
+    if (rightClass === "normal") {
+      lines.push(
+        `Côté droit\u00a0: alignement mécanique dans les limites physiologiques (HKA\u00a0= ${rightHKA.toFixed(1)}°).`,
+      );
+    } else {
+      const label = hkaLabel(rightHKA);
+      const norm = rightHKA < 175 ? 175 : 180;
+      const deviation = Math.abs(rightHKA - norm).toFixed(1);
+      const direction = rightHKA < 175 ? "inférieure" : "supérieure";
+      lines.push(
+        `Côté droit\u00a0: ${label} (HKA\u00a0= ${rightHKA.toFixed(1)}°, déviation de ${deviation}° par rapport à la limite ${direction} de la norme de ${norm}°).`,
+      );
+    }
+  } else {
+    lines.push("Côté droit\u00a0: donnée non disponible.");
+  }
+
+  // Global conclusion
+  const bothNormal = leftClass === "normal" && rightClass === "normal";
+  const bothAbnormal =
+    leftClass !== "normal" &&
+    leftClass !== "unavailable" &&
+    rightClass !== "normal" &&
+    rightClass !== "unavailable";
+  const leftAbnormal =
+    leftClass !== "normal" && leftClass !== "unavailable" && rightClass === "normal";
+  const rightAbnormal =
+    rightClass !== "normal" && rightClass !== "unavailable" && leftClass === "normal";
+
+  if (bothNormal) {
+    lines.push(
+      "Conclusion\u00a0: L'analyse ne révèle pas d'anomalie significative de l'axe mécanique des membres inférieurs.",
+    );
+  } else if (bothAbnormal) {
+    const leftLabel = hkaLabel(leftHKA);
+    const rightLabel = hkaLabel(rightHKA);
+    lines.push(
+      `Conclusion\u00a0: Des déviations bilatérales sont identifiées — ${leftLabel} à gauche, ${rightLabel} à droite. Une évaluation clinique approfondie est recommandée.`,
+    );
+  } else if (leftAbnormal) {
+    const label = hkaLabel(leftHKA);
+    lines.push(
+      `Conclusion\u00a0: Une déviation en ${label.toLowerCase()} est observée du côté gauche. Le côté droit présente un alignement normal.`,
+    );
+  } else if (rightAbnormal) {
+    const label = hkaLabel(rightHKA);
+    lines.push(
+      `Conclusion\u00a0: Une déviation en ${label.toLowerCase()} est observée du côté droit. Le côté gauche présente un alignement normal.`,
+    );
+  } else {
+    lines.push(
+      "Conclusion\u00a0: Données partielles — une évaluation complémentaire peut être nécessaire.",
+    );
+  }
+
+  return lines.join(" ");
+}
+
+// ─── HTML generation ──────────────────────────────────────────
+
+export function generateReportHtml(data: ReportData): string {
+  const reportDate = new Date().toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+
+  const analysisDateFmt = data.analysisDate.slice(0, 10);
+
+  // ── Photo section ──
+  const photoSection = data.photoBase64
+    ? `<div class="photo-section">
+        <img src="${data.photoBase64}" alt="Analyse HKA" class="analysis-photo" />
+      </div>`
+    : "";
+
+  // ── Measurements table ──
+  const bilateralSection = (() => {
+    if (!data.bilateral) return "";
+    const b = data.bilateral;
+
+    const row = (
+      label: string,
+      left: number,
+      right: number,
+      min: number,
+      max: number,
+      isAlt: boolean,
+    ): string => {
+      const leftColor = angleColor(left, min, max);
+      const rightColor = angleColor(right, min, max);
+      const rowClass = isAlt ? ` class="row-alt"` : "";
+      return `<tr${rowClass}>
+        <td class="col-measure">${label}</td>
+        <td class="col-value" style="color:${leftColor}">${fmt(left)}</td>
+        <td class="col-norm">${min}–${max}°</td>
+        <td class="col-value" style="color:${rightColor}">${fmt(right)}</td>
+      </tr>`;
+    };
+
+    const hkaLeftColor = angleColor(b.leftHKA, 175, 180);
+    const hkaRightColor = angleColor(b.rightHKA, 175, 180);
+    const leftClassLabel = b.leftHKA === 0 ? "—" : escapeHtml(hkaLabel(b.leftHKA));
+    const rightClassLabel = b.rightHKA === 0 ? "—" : escapeHtml(hkaLabel(b.rightHKA));
+
+    return `<div class="section" style="page-break-inside:avoid">
+      <h2 class="section-title">Mesures articulaires</h2>
+      <table>
+        <thead>
+          <tr>
+            <th class="col-measure">Mesure</th>
+            <th class="col-value">Gauche</th>
+            <th class="col-norm">Norme</th>
+            <th class="col-value">Droite</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-measure"><strong>HKA (axe méc.)</strong></td>
+            <td class="col-value" style="color:${hkaLeftColor};font-weight:600">${fmt(b.leftHKA)}</td>
+            <td class="col-norm">175–180°</td>
+            <td class="col-value" style="color:${hkaRightColor};font-weight:600">${fmt(b.rightHKA)}</td>
+          </tr>
+          <tr class="row-alt">
+            <td class="col-measure">Classification HKA</td>
+            <td class="col-value" style="color:${hkaLeftColor}">${leftClassLabel}</td>
+            <td class="col-norm">—</td>
+            <td class="col-value" style="color:${hkaRightColor}">${rightClassLabel}</td>
+          </tr>
+          ${row("Genou", b.left.kneeAngle, b.right.kneeAngle, 170, 180, false)}
+          ${row("Hanche", b.left.hipAngle, b.right.hipAngle, 170, 180, true)}
+          ${row("Cheville", b.left.ankleAngle, b.right.ankleAngle, 170, 180, false)}
+        </tbody>
+      </table>
+    </div>`;
+  })();
+
+  // ── Clinical interpretation ──
+  const interpretation = generateInterpretation(data.bilateral);
+  const interpretationSection = `<div class="section" style="page-break-inside:avoid">
+    <h2 class="section-title">Interprétation clinique</h2>
+    <p class="interpretation-text">${escapeHtml(interpretation)}</p>
+  </div>`;
+
+  // ── Notes section ──
+  const notesSection = data.notes
+    ? `<div class="section" style="page-break-inside:avoid">
+        <h2 class="section-title">Notes cliniques</h2>
+        <p class="notes-text">${escapeHtml(data.notes)}</p>
+      </div>`
     : "";
 
   return `<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Rapport BodyOrthox — ${escapeHtml(data.metadata.patientName)}</title>
+  <title>Rapport HKA — ${escapeHtml(data.patientName)}</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #222; background: #fff; padding: 24px; }
-    .header { text-align: center; margin-bottom: 32px; border-bottom: 2px solid #4a90d9; padding-bottom: 16px; }
-    .header h1 { font-size: 22px; color: #4a90d9; }
-    .header .subtitle { font-size: 14px; color: #666; margin-top: 4px; }
-    .section { margin-bottom: 24px; }
-    .section h2 { font-size: 16px; color: #4a90d9; margin-bottom: 12px; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
-    .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .meta-item { font-size: 13px; }
-    .meta-item .label { color: #888; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #eee; }
-    th { background: #f5f5f5; font-weight: 600; color: #444; }
-    .correction-note { font-size: 12px; color: #e67e22; font-style: italic; margin-top: 8px; }
-    .disclaimer { font-size: 11px; color: #888; text-align: center; border-top: 1px solid #ddd; padding-top: 12px; margin-top: 32px; }
-    @media print { body { padding: 0; } .disclaimer { position: fixed; bottom: 12px; left: 0; right: 0; } }
+    /* ── Reset & base ── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 11px;
+      color: #1a1a1a;
+      background: #fff;
+      padding: 28px 32px 24px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    /* ── Header bar ── */
+    .header-bar {
+      background: #1A56B0;
+      color: #fff;
+      padding: 14px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .header-bar .clinic-name {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+    .header-bar .report-title {
+      font-size: 11px;
+      opacity: 0.85;
+      margin-top: 2px;
+    }
+    .header-bar .report-date {
+      font-size: 11px;
+      opacity: 0.9;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    /* ── Patient info block ── */
+    .patient-block {
+      border: 1px solid #ddd;
+      border-left: 4px solid #1A56B0;
+      padding: 10px 14px;
+      margin-bottom: 18px;
+      display: flex;
+      gap: 40px;
+      align-items: flex-start;
+    }
+    .patient-block .info-group { display: flex; flex-direction: column; gap: 4px; }
+    .patient-block .info-label { font-size: 9px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+    .patient-block .info-value { font-size: 12px; font-weight: 600; color: #1a1a1a; }
+    .patient-block .exam-type { font-size: 10px; color: #444; line-height: 1.4; }
+
+    /* ── Photo ── */
+    .photo-section {
+      margin-bottom: 18px;
+      text-align: center;
+      page-break-inside: avoid;
+    }
+    .analysis-photo {
+      max-width: 100%;
+      max-height: 45vh;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto;
+      border: 1px solid #ddd;
+    }
+
+    /* ── Sections ── */
+    .section { margin-bottom: 18px; }
+    .section-title {
+      font-size: 10px;
+      font-weight: 700;
+      color: #1A56B0;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 5px;
+      margin-bottom: 10px;
+    }
+
+    /* ── Measurements table ── */
+    table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    thead tr { background: #f0f2f5; }
+    th {
+      padding: 8px 10px;
+      text-align: left;
+      font-size: 10px;
+      font-weight: 600;
+      color: #444;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      border-bottom: 2px solid #ddd;
+    }
+    td {
+      padding: 7px 10px;
+      border-bottom: 1px solid #eee;
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    .row-alt { background: #f8f9fc; }
+    .col-measure { font-weight: 500; width: 38%; }
+    .col-value { font-weight: 500; width: 24%; }
+    .col-norm { color: #999; font-size: 10px; width: 14%; }
+
+    /* ── Interpretation ── */
+    .interpretation-text {
+      font-size: 11px;
+      color: #1a1a1a;
+      line-height: 1.65;
+      background: #f8f9fc;
+      border-left: 3px solid #1A56B0;
+      padding: 10px 14px;
+    }
+
+    /* ── Notes ── */
+    .notes-text {
+      font-size: 11px;
+      color: #333;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      background: #fffbf0;
+      border-left: 3px solid #b45309;
+      padding: 10px 14px;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      border-top: 1px solid #ddd;
+      padding-top: 10px;
+      margin-top: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 16px;
+    }
+    .footer .disclaimer {
+      font-size: 9px;
+      color: #aaa;
+      line-height: 1.5;
+      flex: 1;
+    }
+    .footer .page-info {
+      font-size: 9px;
+      color: #bbb;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* ── Print optimisation ── */
+    @media print {
+      body { padding: 0; margin: 0; }
+      @page { size: A4 portrait; margin: 15mm 15mm 12mm; }
+      .analysis-photo { max-height: 40vh; }
+      table { page-break-inside: avoid; }
+      .section { page-break-inside: avoid; }
+    }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h1>Rapport d'Analyse de Marche</h1>
-    <div class="subtitle">BodyOrthox — Document de documentation clinique</div>
+  <!-- Header bar -->
+  <div class="header-bar">
+    <div>
+      <div class="clinic-name">Antidote Sport</div>
+      <div class="report-title">Analyse morphologique de l'axe mécanique — Membres inférieurs</div>
+    </div>
+    <div class="report-date">Généré le ${escapeHtml(reportDate)}</div>
   </div>
 
-  <div class="section">
-    <h2>Informations patient</h2>
-    <div class="meta-grid">
-      <div class="meta-item"><span class="label">Patient :</span> ${escapeHtml(data.metadata.patientName)}</div>
-      <div class="meta-item"><span class="label">Date :</span> ${escapeHtml(data.metadata.analysisDate.slice(0, 10))}</div>
-      <div class="meta-item"><span class="label">Appareil :</span> ${escapeHtml(data.metadata.device)}</div>
-      <div class="meta-item"><span class="label">Confiance :</span> ${escapeHtml(data.metadata.confidenceLevel)}</div>
+  <!-- Patient info -->
+  <div class="patient-block">
+    <div class="info-group">
+      <span class="info-label">Nom du patient</span>
+      <span class="info-value">${escapeHtml(data.patientName)}</span>
+    </div>
+    <div class="info-group">
+      <span class="info-label">Date d'analyse</span>
+      <span class="info-value">${escapeHtml(analysisDateFmt)}</span>
+    </div>
+    <div class="info-group">
+      <span class="info-label">Type d'examen</span>
+      <span class="exam-type">Analyse morphologique de l'axe mécanique<br>des membres inférieurs (HKA)</span>
     </div>
   </div>
 
-  <div class="section">
-    <h2>Vue praticien — Angles articulaires</h2>
-    <table>
-      <thead><tr><th>Articulation</th><th>Valeur</th><th>Norme</th><th>Statut</th></tr></thead>
-      <tbody>${angleRows}</tbody>
-    </table>
-    ${correctionNote}
-  </div>
+  ${photoSection}
+  ${bilateralSection}
+  ${interpretationSection}
+  ${notesSection}
 
-  <div class="section">
-    <h2>Vue detaillee</h2>
-    <div class="meta-grid">
-      <div class="meta-item"><span class="label">Score de confiance ML :</span> ${data.detailedView.confidencePercent}</div>
-      <div class="meta-item"><span class="label">Niveau :</span> ${data.detailedView.confidenceLabel}</div>
-      <div class="meta-item"><span class="label">ID analyse :</span> ${data.detailedView.analysisId}</div>
-      <div class="meta-item"><span class="label">Correction manuelle :</span> ${data.detailedView.manualCorrectionApplied ? "Oui" : "Non"}</div>
-    </div>
+  <!-- Footer -->
+  <div class="footer">
+    <div class="disclaimer">${escapeHtml(data.disclaimer)}</div>
+    <div class="page-info">Page 1/1</div>
   </div>
-
-  <div class="disclaimer">${data.disclaimer}</div>
 </body>
 </html>`;
 }

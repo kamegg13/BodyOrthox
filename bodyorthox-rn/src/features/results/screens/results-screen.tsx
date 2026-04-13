@@ -30,6 +30,7 @@ import { formatDisplayDateTime } from "../../../shared/utils/date-utils";
 import { useAnalysisRepository } from "../../../shared/hooks/use-analysis-repository";
 import { useAsyncData } from "../../../shared/hooks/use-async-data";
 import { usePlatform } from "../../../shared/hooks/use-platform";
+import { usePatientsStore } from "../../patients/store/patients-store";
 import {
   getNaturalImageSize,
   calculateContainLayout,
@@ -71,6 +72,8 @@ export function ResultsScreen() {
     error,
     refetch: handleRetry,
   } = useAsyncData(() => repo.getById(analysisId), [analysisId, repo]);
+
+  const patient = usePatientsStore((s) => s.patients.find((p) => p.id === patientId));
 
   // Prefer nav params, fall back to stored data from DB
   const effectiveImageUrl = capturedImageUrl ?? analysis?.capturedImageUrl;
@@ -328,6 +331,19 @@ export function ResultsScreen() {
       >
         <Text style={styles.actionButtonText}>{"▶ Relecture experte"}</Text>
       </TouchableOpacity>
+
+      {/* PDF Report button */}
+      {patient && (
+        <TouchableOpacity
+          style={[styles.actionButton, styles.reportButton]}
+          onPress={() => navigation.navigate("Report", { analysis, patient })}
+          testID="report-button"
+          accessibilityRole="button"
+          accessibilityLabel="Générer le rapport PDF"
+        >
+          <Text style={[styles.actionButtonText, { color: Colors.primary }]}>{"📄 Générer le rapport PDF"}</Text>
+        </TouchableOpacity>
+      )}
     </ScrollView>
   );
 }
@@ -645,5 +661,12 @@ const styles = StyleSheet.create({
     color: Colors.textOnPrimary,
     fontWeight: "600",
     fontSize: 15,
+  },
+  reportButton: {
+    backgroundColor: Colors.backgroundCard,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    shadowColor: Colors.black,
+    shadowOpacity: 0.06,
   },
 });

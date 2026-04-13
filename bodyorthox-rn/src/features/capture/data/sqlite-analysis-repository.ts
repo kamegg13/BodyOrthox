@@ -5,7 +5,7 @@ import {
   createAnalysis,
 } from "../domain/analysis";
 import { IAnalysisRepository } from "./analysis-repository";
-import type { PoseLandmarks } from "./angle-calculator";
+import { calculateBilateralAngles, type PoseLandmarks } from "./angle-calculator";
 
 interface AnalysisRow {
   id: string;
@@ -34,6 +34,10 @@ function parseLandmarksJson(
 
 function rowToAnalysis(row: Record<string, unknown>): Analysis {
   const r = row as unknown as AnalysisRow;
+  const allLandmarks = parseLandmarksJson(r.landmarks_json);
+  const bilateralAngles = allLandmarks
+    ? calculateBilateralAngles(allLandmarks)
+    : undefined;
   return {
     id: r.id,
     patientId: r.patient_id,
@@ -43,11 +47,12 @@ function rowToAnalysis(row: Record<string, unknown>): Analysis {
       hipAngle: r.hip_angle,
       ankleAngle: r.ankle_angle,
     },
+    bilateralAngles,
     confidenceScore: r.confidence_score,
     manualCorrectionApplied: r.ml_corrected === 1,
     manualCorrectionJoint:
       (r.manual_correction_joint as Analysis["manualCorrectionJoint"]) ?? null,
-    allLandmarks: parseLandmarksJson(r.landmarks_json),
+    allLandmarks,
     capturedImageUrl: r.captured_image_url ?? undefined,
   };
 }

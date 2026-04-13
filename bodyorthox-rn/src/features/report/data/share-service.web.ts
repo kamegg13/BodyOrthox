@@ -1,35 +1,29 @@
 import { ShareResult } from "./share-service";
 
-/**
- * Web share implementation.
- * Uses the Web Share API if available, otherwise falls back to blob download.
- */
 export async function shareReport(
   htmlContent: string,
-  fileName: string,
+  _fileName: string,
 ): Promise<ShareResult> {
   try {
-    // Fallback: trigger a download via blob
     const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
     const url = URL.createObjectURL(blob);
-
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = fileName.replace(/\.pdf$/, ".html");
-    anchor.style.display = "none";
-    document.body.appendChild(anchor);
-    anchor.click();
-
-    // Cleanup
-    setTimeout(() => {
-      document.body.removeChild(anchor);
+    const printWindow = window.open(url, "_blank");
+    if (!printWindow) {
       URL.revokeObjectURL(url);
-    }, 100);
-
+      return {
+        kind: "error",
+        message:
+          "Impossible d'ouvrir une fenêtre — autorisez les popups pour ce site.",
+      };
+    }
+    printWindow.addEventListener("load", () => {
+      printWindow.print();
+      URL.revokeObjectURL(url);
+    });
     return { kind: "shared" };
   } catch (err) {
     const message =
-      err instanceof Error ? err.message : "Erreur lors du telechargement";
+      err instanceof Error ? err.message : "Erreur lors de l'export PDF";
     return { kind: "error", message };
   }
 }
