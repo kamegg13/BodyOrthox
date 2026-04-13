@@ -1,4 +1,4 @@
-import { createPatient, patientAge, Patient } from "../patient";
+import { createPatient, updatePatient, patientAge, Patient, PainEntry } from "../patient";
 
 jest.mock("../../../../shared/utils/generate-id", () => ({
   generateId: () => "mock-uuid-1234",
@@ -113,5 +113,76 @@ describe("patientAge", () => {
     );
     const expectedAge = today < birthdayThisYear ? ageYear - 1 : ageYear;
     expect(patientAge(patient)).toBe(expectedAge);
+  });
+});
+
+describe("updatePatient", () => {
+  const base: Patient = {
+    id: "p1",
+    name: "Jean Dupont",
+    dateOfBirth: "1990-01-01",
+    morphologicalProfile: null,
+    createdAt: "2024-01-01T00:00:00Z",
+  };
+
+  it("returns a new object (immutable)", () => {
+    const updated = updatePatient(base, { name: "Marie Dupont" });
+    expect(updated).not.toBe(base);
+    expect(updated.name).toBe("Marie Dupont");
+    expect(base.name).toBe("Jean Dupont");
+  });
+
+  it("updates name", () => {
+    const updated = updatePatient(base, { name: "Marie Dupont" });
+    expect(updated.name).toBe("Marie Dupont");
+  });
+
+  it("updates dateOfBirth", () => {
+    const updated = updatePatient(base, { dateOfBirth: "1985-06-15" });
+    expect(updated.dateOfBirth).toBe("1985-06-15");
+  });
+
+  it("updates morphologicalProfile with new fields", () => {
+    const pain: PainEntry = {
+      id: "pain1",
+      location: "knee",
+      side: "left",
+      intensity: 7,
+      type: "chronic",
+      notes: "douleur à l'effort",
+    };
+    const updated = updatePatient(base, {
+      morphologicalProfile: {
+        sex: "female",
+        laterality: "right",
+        activityLevel: "active",
+        sport: "tennis",
+        pathology: "gonarthrose",
+        pains: [pain],
+        heightCm: 165,
+        weightKg: 60,
+      },
+    });
+    expect(updated.morphologicalProfile?.sex).toBe("female");
+    expect(updated.morphologicalProfile?.pains).toHaveLength(1);
+    expect(updated.morphologicalProfile?.pains?.[0].location).toBe("knee");
+  });
+
+  it("throws if name is empty string", () => {
+    expect(() => updatePatient(base, { name: "" })).toThrow();
+  });
+
+  it("throws if dateOfBirth is in the future", () => {
+    const future = new Date();
+    future.setFullYear(future.getFullYear() + 1);
+    expect(() =>
+      updatePatient(base, { dateOfBirth: future.toISOString().split("T")[0] })
+    ).toThrow();
+  });
+
+  it("preserves id and createdAt", () => {
+    const updated = updatePatient(base, { name: "Marie" });
+    expect(updated.id).toBe("p1");
+    expect(updated.createdAt).toBe("2024-01-01T00:00:00Z");
   });
 });
