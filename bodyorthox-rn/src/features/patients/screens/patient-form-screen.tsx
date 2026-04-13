@@ -17,6 +17,8 @@ import {
   Laterality,
   ActivityLevel,
   PainEntry,
+  CreatePatientInput,
+  UpdatePatientInput,
 } from "../domain/patient";
 import { DatePicker } from "../components/date-picker";
 import { PainEditor } from "../components/pain-editor";
@@ -38,11 +40,7 @@ export interface PatientFormInitialValues {
 export interface PatientFormScreenProps {
   mode: "create" | "edit";
   initialValues?: Partial<PatientFormInitialValues>;
-  onSubmit: (data: {
-    name: string;
-    dateOfBirth: string;
-    morphologicalProfile?: MorphologicalProfile;
-  }) => Promise<void>;
+  onSubmit: (data: CreatePatientInput | UpdatePatientInput) => Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -245,12 +243,12 @@ export function PatientFormScreen({
         ...(pains.length > 0 ? { pains } : {}),
       };
 
-      await onSubmit({
+      const payload: CreatePatientInput | UpdatePatientInput = {
         name: `${firstName.trim()} ${lastName.trim()}`.trim(),
         dateOfBirth: dateOfBirth!,
-        morphologicalProfile:
-          Object.keys(morpho).length > 0 ? morpho : undefined,
-      });
+        morphologicalProfile: Object.keys(morpho).length > 0 ? morpho : undefined,
+      };
+      await onSubmit(payload);
     } catch (error) {
       Alert.alert(
         "Erreur",
@@ -457,6 +455,7 @@ export function PatientFormScreen({
               onChangeText={setPathology}
               placeholder="Gonarthrose, scoliose..."
               placeholderTextColor={Colors.textDisabled}
+              multiline
               testID="pathology-input"
             />
           </View>

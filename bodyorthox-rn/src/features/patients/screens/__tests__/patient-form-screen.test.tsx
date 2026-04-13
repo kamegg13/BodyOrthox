@@ -100,4 +100,50 @@ describe("PatientFormScreen", () => {
     );
     expect(getByText(/22\.9|IMC/i)).toBeTruthy();
   });
+
+  it("shows validation error for future date of birth", async () => {
+    const futureDate = new Date();
+    futureDate.setFullYear(futureDate.getFullYear() + 1);
+    const futureDateStr = futureDate.toISOString().split("T")[0];
+
+    const { getByTestId, getByText } = render(
+      <PatientFormScreen
+        mode="create"
+        initialValues={{
+          firstName: "Jean",
+          lastName: "Dupont",
+          dateOfBirth: futureDateStr,
+          morphologicalProfile: null,
+        }}
+        onSubmit={onSubmit}
+      />,
+    );
+    fireEvent.press(getByTestId("submit-button"));
+    await waitFor(() => {
+      expect(getByText(/futur/i)).toBeTruthy();
+    });
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("shows validation error for invalid height", async () => {
+    const { getByTestId, getByText } = render(
+      <PatientFormScreen mode="create" onSubmit={onSubmit} />,
+    );
+    fireEvent.changeText(getByTestId("height-input"), "30");
+    fireEvent.press(getByTestId("submit-button"));
+    await waitFor(() => {
+      expect(getByText(/taille invalide/i)).toBeTruthy();
+    });
+  });
+
+  it("shows validation error for invalid weight", async () => {
+    const { getByTestId, getByText } = render(
+      <PatientFormScreen mode="create" onSubmit={onSubmit} />,
+    );
+    fireEvent.changeText(getByTestId("weight-input"), "5");
+    fireEvent.press(getByTestId("submit-button"));
+    await waitFor(() => {
+      expect(getByText(/poids invalide/i)).toBeTruthy();
+    });
+  });
 });
