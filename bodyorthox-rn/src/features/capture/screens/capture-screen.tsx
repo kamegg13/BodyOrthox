@@ -53,7 +53,14 @@ export function CaptureScreen() {
   if (phase.type === "permission_denied") {
     return (
       <View style={styles.container}>
-        <Text style={styles.permissionText}>{phase.message}</Text>
+        <View style={styles.permissionContainer}>
+          <Text style={styles.permissionIcon}>🚫</Text>
+          <Text style={styles.permissionTitle}>Accès caméra refusé</Text>
+          <Text style={styles.permissionText}>{phase.message}</Text>
+          <View style={styles.permissionActions}>
+            <PhotoUpload onPhotoSelected={handlePhotoUploaded} />
+          </View>
+        </View>
       </View>
     );
   }
@@ -171,11 +178,31 @@ export function CaptureScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.black },
-  permissionText: {
+  permissionContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: Spacing.xl,
+    gap: Spacing.md,
+  },
+  permissionIcon: {
+    fontSize: 48,
+  },
+  permissionTitle: {
     color: Colors.error,
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.semiBold,
     textAlign: "center",
-    padding: Spacing.xl,
-    fontSize: 16,
+  },
+  permissionText: {
+    color: Colors.textOnPrimary,
+    textAlign: "center",
+    fontSize: FontSize.sm,
+    opacity: 0.75,
+  },
+  permissionActions: {
+    width: "100%",
+    marginTop: Spacing.lg,
   },
   controls: {
     position: "absolute",
