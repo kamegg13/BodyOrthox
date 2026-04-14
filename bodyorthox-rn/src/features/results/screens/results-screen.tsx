@@ -31,6 +31,8 @@ import { useAnalysisRepository } from "../../../shared/hooks/use-analysis-reposi
 import { useAsyncData } from "../../../shared/hooks/use-async-data";
 import { usePlatform } from "../../../shared/hooks/use-platform";
 import { usePatientsStore } from "../../patients/store/patients-store";
+import { Icon } from "../../../shared/components/icon";
+import { Shadows } from "../../../shared/design-system/card-styles";
 import {
   getNaturalImageSize,
   calculateContainLayout,
@@ -192,10 +194,12 @@ export function ResultsScreen() {
           </Text>
         </View>
         {analysis.manualCorrectionApplied && (
-          <Text style={styles.correctionNote}>
-            {"✏️"} Correction manuelle (
-            {jointLabel(analysis.manualCorrectionJoint)})
-          </Text>
+          <View style={styles.correctionNoteRow}>
+            <Icon name="edit" size={14} color={Colors.warning} strokeWidth={2} />
+            <Text style={styles.correctionNote}>
+              Correction manuelle ({jointLabel(analysis.manualCorrectionJoint)})
+            </Text>
+          </View>
         )}
       </View>
 
@@ -329,7 +333,8 @@ export function ResultsScreen() {
         accessibilityRole="button"
         accessibilityLabel="Relecture experte"
       >
-        <Text style={styles.actionButtonText}>{"▶ Relecture experte"}</Text>
+        <Icon name="play" size={18} color={Colors.textOnPrimary} strokeWidth={2} />
+        <Text style={styles.actionButtonText}>Relecture experte</Text>
       </TouchableOpacity>
 
       {/* PDF Report button */}
@@ -341,7 +346,8 @@ export function ResultsScreen() {
           accessibilityRole="button"
           accessibilityLabel="Générer le rapport PDF"
         >
-          <Text style={[styles.actionButtonText, { color: Colors.primary }]}>{"📄 Générer le rapport PDF"}</Text>
+          <Icon name="document" size={18} color={Colors.primary} />
+          <Text style={[styles.actionButtonText, { color: Colors.primary }]}>Générer le rapport PDF</Text>
         </TouchableOpacity>
       )}
     </ScrollView>
@@ -499,6 +505,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
   },
+  correctionNoteRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+  },
   correctionNote: {
     color: Colors.warning,
     fontSize: 13,
@@ -645,17 +656,15 @@ const styles = StyleSheet.create({
 
   // Action button
   actionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
     backgroundColor: Colors.primary,
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.lg,
-    alignItems: "center",
-    justifyContent: "center",
     minHeight: 44,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
+    ...Shadows.primary,
   },
   actionButtonText: {
     color: Colors.textOnPrimary,
@@ -668,5 +677,6 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
     shadowColor: Colors.black,
     shadowOpacity: 0.06,
+    elevation: 2,
   },
 });

@@ -21,6 +21,7 @@ import { LoadingSpinner } from "../../../shared/components/loading-spinner";
 import { ErrorWidget } from "../../../shared/components/error-widget";
 import { Colors } from "../../../shared/design-system/colors";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
+import { Shadows } from "../../../shared/design-system/card-styles";
 import {
   Typography,
   FontSize,
@@ -28,6 +29,7 @@ import {
 } from "../../../shared/design-system/typography";
 import { usePlatform } from "../../../shared/hooks/use-platform";
 import { LOGO_DATA_URI } from "../../../assets/logo";
+import { Icon } from "../../../shared/components/icon";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 const DEBOUNCE_MS = 200;
@@ -87,33 +89,38 @@ export function PatientsScreen() {
 
   return (
     <View style={styles.container} testID="patients-screen">
-      {/* Header: Logo + title + profile avatar */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Image
-            source={{ uri: LOGO_DATA_URI }}
-            style={styles.headerLogo}
-            resizeMode="contain"
-          />
-          <Text style={styles.headerTitle}>Antidote Sport</Text>
+      {/* Header zone bleue — brand anchor */}
+      <View style={styles.headerZone}>
+        <View style={styles.headerRow}>
+          <View style={styles.headerLeft}>
+            <Image
+              source={{ uri: LOGO_DATA_URI }}
+              style={styles.headerLogo}
+              resizeMode="contain"
+            />
+            <View>
+              <Text style={styles.headerTitle}>Antidote Sport</Text>
+              <Text style={styles.headerSubtitle}>Orthopédie · Performance</Text>
+            </View>
+          </View>
+          <View style={styles.profileAvatar}>
+            <Text style={styles.profileAvatarText}>K</Text>
+          </View>
         </View>
-        <View style={styles.profileAvatar}>
-          <Text style={styles.profileAvatarText}>K</Text>
+
+        {/* Freemium counter — intégré dans le header */}
+        <View style={styles.freemiumBar}>
+          <View style={styles.freemiumContent}>
+            <Text style={styles.freemiumText}>10 analyses restantes ce mois</Text>
+            <Text style={styles.freemiumCount}>10/10</Text>
+          </View>
+          <View style={styles.freemiumProgressTrack}>
+            <View style={[styles.freemiumProgressFill, { width: "100%" }]} />
+          </View>
         </View>
       </View>
 
-      {/* Freemium counter bar — light blue background with progress */}
-      <View style={styles.freemiumBar}>
-        <View style={styles.freemiumContent}>
-          <Text style={styles.freemiumText}>10 analyses restantes ce mois</Text>
-          <Text style={styles.freemiumCount}>10/10</Text>
-        </View>
-        <View style={styles.freemiumProgressTrack}>
-          <View style={[styles.freemiumProgressFill, { width: "100%" }]} />
-        </View>
-      </View>
-
-      {/* Big blue CTA button */}
+      {/* CTA button — sort du header, accent fort */}
       <TouchableOpacity
         style={styles.ctaButton}
         onPress={() => navigation.navigate("CreatePatient")}
@@ -122,7 +129,7 @@ export function PatientsScreen() {
         testID="add-patient-button"
         activeOpacity={0.8}
       >
-        <Text style={styles.ctaIcon}>+</Text>
+        <Icon name="plus" size={20} color={Colors.textOnPrimary} strokeWidth={2.5} />
         <Text style={styles.ctaText}>Nouveau patient</Text>
       </TouchableOpacity>
 
@@ -226,7 +233,7 @@ export function PatientsScreen() {
         <LoadingSpinner message="Chargement des patients..." />
       ) : filteredPatients.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>👤</Text>
+          <Icon name="user" size={64} color={Colors.textDisabled} strokeWidth={1.25} />
           <Text style={[Typography.h3, styles.emptyTitle]}>
             {patients.length === 0 ? "Aucun patient" : "Aucun résultat"}
           </Text>
@@ -274,7 +281,9 @@ function ClinicalResourcesSection() {
           testID="resource-protocoles"
           onPress={() => navigation.navigate("Protocols")}
         >
-          <Text style={styles.resourceIcon}>📋</Text>
+          <View style={[styles.resourceIconWrap, { backgroundColor: `${Colors.primary}15` }]}>
+            <Icon name="clipboard" size={22} color={Colors.primary} />
+          </View>
           <Text style={styles.resourceTitle}>Protocoles</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -284,7 +293,9 @@ function ClinicalResourcesSection() {
           testID="resource-rapports"
           onPress={() => navigation.navigate("Reports")}
         >
-          <Text style={styles.resourceIcon}>📄</Text>
+          <View style={[styles.resourceIconWrap, { backgroundColor: `${Colors.primary}15` }]}>
+            <Icon name="document" size={22} color={Colors.primary} />
+          </View>
           <Text style={styles.resourceTitle}>Rapports PDF</Text>
         </TouchableOpacity>
       </View>
@@ -297,13 +308,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  header: {
+  // ── Header zone bleue ──────────────────────────
+  headerZone: {
+    backgroundColor: Colors.primaryDark,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.lg,
+    gap: Spacing.md,
+  },
+  headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.lg,
-    paddingBottom: Spacing.sm,
   },
   headerLeft: {
     flexDirection: "row",
@@ -311,35 +327,39 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   headerLogo: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
   },
   headerTitle: {
-    fontSize: FontSize.xxl,
+    fontSize: FontSize.xl,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
+    color: Colors.white,
+    lineHeight: 24,
+  },
+  headerSubtitle: {
+    fontSize: FontSize.xs,
+    color: "rgba(255,255,255,0.65)",
+    letterSpacing: 0.3,
+    marginTop: 1,
   },
   profileAvatar: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.primary,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.4)",
     alignItems: "center",
     justifyContent: "center",
   },
   profileAvatarText: {
-    color: Colors.textOnPrimary,
+    color: Colors.white,
     fontWeight: FontWeight.bold,
     fontSize: 16,
   },
+  // Freemium — intégré dans header zone
   freemiumBar: {
-    marginHorizontal: Spacing.lg,
-    marginBottom: Spacing.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm + 2,
-    backgroundColor: Colors.primaryLight,
-    borderRadius: BorderRadius.lg,
     gap: Spacing.xs,
   },
   freemiumContent: {
@@ -349,46 +369,39 @@ const styles = StyleSheet.create({
   },
   freemiumText: {
     fontSize: FontSize.sm,
-    color: Colors.textPrimary,
+    color: "rgba(255,255,255,0.80)",
     flex: 1,
   },
   freemiumCount: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.semiBold,
-    color: Colors.primary,
+    color: Colors.white,
   },
   freemiumProgressTrack: {
     width: "100%",
     height: 4,
     borderRadius: 2,
-    backgroundColor: Colors.border,
+    backgroundColor: "rgba(255,255,255,0.20)",
     overflow: "hidden",
   },
   freemiumProgressFill: {
     height: 4,
     borderRadius: 2,
-    backgroundColor: Colors.primary,
+    backgroundColor: "rgba(255,255,255,0.80)",
   },
+  // ── CTA ──────────────────────────────────────
   ctaButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     marginHorizontal: Spacing.lg,
-    marginBottom: Spacing.md,
-    paddingVertical: Spacing.md,
+    marginTop: Spacing.md,
+    marginBottom: Spacing.sm,
+    paddingVertical: Spacing.md + 2,
     backgroundColor: Colors.primary,
     borderRadius: BorderRadius.lg,
     gap: Spacing.sm,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  ctaIcon: {
-    fontSize: 22,
-    fontWeight: FontWeight.bold,
-    color: Colors.textOnPrimary,
+    ...Shadows.primary,
   },
   ctaText: {
     fontSize: FontSize.lg,
@@ -452,9 +465,6 @@ const styles = StyleSheet.create({
     padding: Spacing.xl,
     gap: Spacing.md,
   },
-  emptyIcon: {
-    fontSize: 64,
-  },
   emptyTitle: {
     color: Colors.textPrimary,
     textAlign: "center",
@@ -485,15 +495,15 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.md,
     alignItems: "center",
-    gap: Spacing.xs,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+    gap: Spacing.sm,
+    ...Shadows.md,
   },
-  resourceIcon: {
-    fontSize: 28,
+  resourceIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: BorderRadius.md,
+    alignItems: "center",
+    justifyContent: "center",
   },
   resourceTitle: {
     fontSize: FontSize.sm,

@@ -66,6 +66,10 @@ export function PatientListTile({
 
   const badgeInfo = getBadgeStyle(statusBadge);
 
+  const accentColor = badgeInfo
+    ? badgeInfo.bg
+    : Colors.primary;
+
   return (
     <TouchableOpacity
       style={styles.container}
@@ -74,8 +78,11 @@ export function PatientListTile({
       accessibilityLabel={`Patient ${patient.name}, ${age} ans`}
       testID={testID ?? `patient-tile-${patient.id}`}
     >
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>{initials}</Text>
+      {/* Barre d'accent gauche */}
+      <View style={[styles.accentBar, { backgroundColor: accentColor }]} />
+
+      <View style={[styles.avatar, { backgroundColor: `${accentColor}20` }]}>
+        <Text style={[styles.avatarText, { color: accentColor }]}>{initials}</Text>
       </View>
 
       <View style={styles.info}>
@@ -106,22 +113,28 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     ...CardShadow,
-    padding: Spacing.md,
+    paddingVertical: Spacing.md,
+    paddingRight: Spacing.md,
+    paddingLeft: 0,
     marginBottom: Spacing.sm,
     gap: Spacing.md,
+    overflow: "hidden",
+  },
+  accentBar: {
+    width: 4,
+    alignSelf: "stretch",
+    borderRadius: 2,
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.primary,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     alignItems: "center",
     justifyContent: "center",
   },
   avatarText: {
-    color: Colors.textOnPrimary,
     fontWeight: "700",
-    fontSize: 18,
+    fontSize: 17,
   },
   info: {
     flex: 1,

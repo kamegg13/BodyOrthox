@@ -2,6 +2,7 @@ import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Colors } from "../../../shared/design-system/colors";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
+import { Shadows } from "../../../shared/design-system/card-styles";
 
 export type HkaStatus = "neutre" | "genu_varum" | "genu_valgum";
 
@@ -65,13 +66,16 @@ function HkaSideColumn({
   const available = hkaAngle > 0;
   const status = available ? classifyHka(hkaAngle) : null;
   const badgeColor = status ? statusColor(status) : Colors.textDisabled;
+  const angleColor = status ? statusColor(status) : Colors.textDisabled;
 
   return (
     <View style={styles.sideColumn}>
       <Text style={styles.sideLabel}>{label}</Text>
-      <Text style={styles.sideAngleValue}>{formatAngle(hkaAngle)}</Text>
+      <Text style={[styles.sideAngleValue, { color: angleColor }]}>
+        {formatAngle(hkaAngle)}
+      </Text>
       {status ? (
-        <View style={[styles.badge, { backgroundColor: `${badgeColor}20` }]}>
+        <View style={[styles.badge, { backgroundColor: `${badgeColor}18` }]}>
           <Text style={[styles.badgeText, { color: badgeColor }]}>
             {statusLabel(status)}
           </Text>
@@ -101,7 +105,7 @@ export function HkaAngleCard({
   if (hasBilateral) {
     return (
       <View style={styles.card} testID={testID ?? "hka-angle-card"}>
-        <View style={styles.blueTint} />
+        <View style={[styles.topAccent, { backgroundColor: Colors.primary }]} />
         <View style={styles.content}>
           <Text style={styles.label}>ANALYSE HKA BILATÉRALE</Text>
           <View style={styles.bilateralRow}>
@@ -124,11 +128,13 @@ export function HkaAngleCard({
 
   return (
     <View style={styles.card} testID={testID ?? "hka-angle-card"}>
-      <View style={styles.blueTint} />
+      <View style={[styles.topAccent, { backgroundColor: badgeColor }]} />
       <View style={styles.content}>
         <Text style={styles.label}>ANGLE HKA</Text>
-        <Text style={styles.angleValue}>{formatAngle(angleValue)}</Text>
-        <View style={[styles.badge, { backgroundColor: `${badgeColor}20` }]}>
+        <Text style={[styles.angleValue, { color: badgeColor }]}>
+          {formatAngle(angleValue)}
+        </Text>
+        <View style={[styles.badge, { backgroundColor: `${badgeColor}18` }]}>
           <Text style={[styles.badgeText, { color: badgeColor }]}>
             {statusLabel(status)}
           </Text>
@@ -150,15 +156,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.backgroundCard,
     borderRadius: BorderRadius.lg,
     overflow: "hidden",
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+    ...Shadows.md,
   },
-  blueTint: {
-    height: 4,
-    backgroundColor: Colors.primary,
+  topAccent: {
+    height: 5,
   },
   content: {
     padding: Spacing.lg,
@@ -229,10 +230,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   sideAngleValue: {
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: "700",
-    color: Colors.textPrimary,
-    lineHeight: 38,
+    lineHeight: 42,
   },
   divider: {
     width: 1,

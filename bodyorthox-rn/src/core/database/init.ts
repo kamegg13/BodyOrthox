@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 import { AppConfiguration } from '../config/app-config';
 import { IDatabase } from './database';
 import { ApiPatientRepository } from '../../features/patients/data/api-patient-repository';
-import { SqliteAnalysisRepository } from '../../features/capture/data/sqlite-analysis-repository';
+import { ApiAnalysisRepository } from '../../features/capture/data/api-analysis-repository';
 import { usePatientsStore } from '../../features/patients/store/patients-store';
 import { useCaptureStore } from '../../features/capture/store/capture-store';
 
@@ -20,7 +20,7 @@ export async function initializeDatabase(): Promise<IDatabase> {
   await _db.initialize();
 
   usePatientsStore.getState().setRepository(new ApiPatientRepository());
-  useCaptureStore.getState().setRepository(new SqliteAnalysisRepository(_db));
+  useCaptureStore.getState().setRepository(new ApiAnalysisRepository());
 
   return _db;
 }
