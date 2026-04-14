@@ -1,13 +1,14 @@
 import React, { useCallback } from 'react';
 import { Platform, Pressable, StyleSheet, Text } from 'react-native';
 import { Colors } from '@/shared/design-system/colors';
+import { Shadows } from '@/shared/design-system/card-styles';
 import { useFeedbackStore } from '../store/feedback-store';
 
 export function FeedbackFab() {
   const { openModal } = useFeedbackStore();
 
   const handlePress = useCallback(() => {
-    openModal('bug');
+    openModal();
   }, [openModal]);
 
   if (Platform.OS !== 'web') {
@@ -37,11 +38,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    ...Shadows.lg,
     zIndex: 999,
   },
   fabPressed: {

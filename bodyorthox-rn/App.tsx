@@ -1,7 +1,6 @@
 import React, { useEffect, Component, ErrorInfo } from "react";
 import {
   Alert,
-  Platform,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -114,12 +113,8 @@ function AppContent() {
         <NavigationContainer>
           <AppNavigator />
         </NavigationContainer>
-        {Platform.OS === 'web' && (
-          <>
-            <FeedbackFab />
-            <FeedbackModal />
-          </>
-        )}
+        <FeedbackFab />
+        <FeedbackModal />
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

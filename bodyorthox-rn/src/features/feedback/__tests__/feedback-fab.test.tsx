@@ -31,10 +31,10 @@ describe('FeedbackFab — web platform', () => {
     expect(getByRole('button')).toBeTruthy();
   });
 
-  it('calls openModal with "bug" when pressed', () => {
+  it('calls openModal without arguments when pressed', () => {
     const { getByRole } = render(<FeedbackFab />);
     fireEvent.press(getByRole('button'));
-    expect(mockOpenModal).toHaveBeenCalledWith('bug');
+    expect(mockOpenModal).toHaveBeenCalledWith();
     expect(mockOpenModal).toHaveBeenCalledTimes(1);
   });
 
