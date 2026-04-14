@@ -189,15 +189,16 @@ const styles = StyleSheet.create({
     fontSize: 48,
   },
   permissionTitle: {
-    color: Colors.textOnPrimary,
+    color: Colors.error,
     fontSize: FontSize.lg,
     fontWeight: FontWeight.semiBold,
     textAlign: "center",
   },
   permissionText: {
-    color: Colors.textSecondary,
+    color: Colors.textOnPrimary,
     textAlign: "center",
     fontSize: FontSize.sm,
+    opacity: 0.75,
   },
   permissionActions: {
     width: "100%",
