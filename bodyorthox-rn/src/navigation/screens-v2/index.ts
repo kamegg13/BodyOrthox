@@ -1,0 +1,9 @@
+export { DashboardRoute } from "./dashboard-route";
+export { PatientsListRoute } from "./patients-list-route";
+export { PatientDetailRoute } from "./patient-detail-route";
+export { CreatePatientRoute } from "./create-patient-route";
+export { ResultsRoute } from "./results-route";
+export { ReportRoute } from "./report-route";
+export { ReportsListRoute } from "./reports-list-route";
+export { ProcessingRoute } from "./processing-route";
+export { V2TabBar } from "./v2-tab-bar";

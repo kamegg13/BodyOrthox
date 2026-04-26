@@ -5,6 +5,7 @@ import type { NavigatorScreenParams } from "@react-navigation/native";
 export type BottomTabParamList = {
   AnalysesTab: undefined;
   PatientsTab: undefined;
+  RapportsTab: undefined;
   CompteTab: undefined;
 };
 
@@ -18,6 +19,15 @@ export type RootStackParamList = {
   EditPatient: { patientId: string };
   PatientDetail: { patientId: string };
   Capture: { patientId: string };
+  Processing: {
+    analysisId: string;
+    patientId: string;
+    capturedImageUrl?: string;
+    allLandmarks?: Record<
+      number,
+      { x: number; y: number; visibility?: number }
+    >;
+  };
   Results: {
     analysisId: string;
     patientId: string;

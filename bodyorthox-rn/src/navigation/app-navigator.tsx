@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { ActivityIndicator, Platform, Text, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Platform, View } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import type { RootStackParamList, BottomTabParamList } from "./types";
@@ -7,25 +7,32 @@ import { Colors } from "../shared/design-system/colors";
 import { useOnboardingStore } from "../features/onboarding/store/onboarding-store";
 import { LoginScreen } from "../features/auth/screens/login-screen";
 import { useAuthStore } from "../core/auth/auth-store";
+import { isDevMode } from "../dev/dev-mode";
 
 // Screens
 import { BiometricLockScreen } from "../shared/components/lock-screen";
 import { OnboardingScreen } from "../features/onboarding/screens/onboarding-screen";
-import { PatientsScreen } from "../features/patients/screens/patients-screen";
-import { PatientsListScreen } from "../features/patients/screens/patients-list-screen";
-import { CreatePatientScreen } from "../features/patients/screens/create-patient-screen";
 import { EditPatientScreen } from "../features/patients/screens/edit-patient-screen";
-import { PatientDetailScreen } from "../features/patients/screens/patient-detail-screen";
 import { CaptureScreen } from "../features/capture/screens/capture-screen";
-import { ResultsScreen } from "../features/results/screens/results-screen";
 import { ReplayScreen } from "../features/results/screens/replay-screen";
 import { PatientTimelineScreen } from "../features/patients/screens/patient-timeline-screen";
 import { AccountScreen } from "../features/account/screens/account-screen";
 import { AdminScreen } from "../features/admin/screens/admin-screen";
 import { ProtocolsScreen } from "../features/resources/screens/protocols-screen";
 import { ReportsScreen } from "../features/resources/screens/reports-screen";
-import { ReportScreen } from "../features/report/screens/report-screen";
 import { ProgressionReportScreen } from "../features/report/screens/progression-report-screen";
+// Screens v2 (refonte design)
+import {
+  DashboardRoute,
+  PatientsListRoute,
+  PatientDetailRoute,
+  CreatePatientRoute,
+  ResultsRoute,
+  ReportRoute,
+  ReportsListRoute,
+  ProcessingRoute,
+  V2TabBar,
+} from "./screens-v2";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<BottomTabParamList>();
@@ -33,6 +40,7 @@ const Tab = createBottomTabNavigator<BottomTabParamList>();
 // Stacks inside each tab — so the tab bar stays visible
 const AnalysesStack = createNativeStackNavigator();
 const PatientsTabStack = createNativeStackNavigator();
+const RapportsTabStack = createNativeStackNavigator();
 const CompteStack = createNativeStackNavigator();
 
 const innerScreenOptions = {
@@ -48,13 +56,13 @@ function AnalysesStackScreen() {
     <AnalysesStack.Navigator screenOptions={innerScreenOptions}>
       <AnalysesStack.Screen
         name="AnalysesHome"
-        component={PatientsScreen}
+        component={DashboardRoute}
         options={{ headerShown: false }}
       />
       <AnalysesStack.Screen
         name="CreatePatient"
-        component={CreatePatientScreen}
-        options={{ title: "Nouveau patient" }}
+        component={CreatePatientRoute}
+        options={{ headerShown: false }}
       />
       <AnalysesStack.Screen
         name="EditPatient"
@@ -63,12 +71,12 @@ function AnalysesStackScreen() {
       />
       <AnalysesStack.Screen
         name="PatientDetail"
-        component={PatientDetailScreen}
-        options={{ title: "Patient" }}
+        component={PatientDetailRoute}
+        options={{ headerShown: false }}
       />
       <AnalysesStack.Screen
         name="Results"
-        component={ResultsScreen}
+        component={ResultsRoute}
         options={{ headerShown: false }}
       />
       <AnalysesStack.Screen
@@ -93,8 +101,8 @@ function AnalysesStackScreen() {
       />
       <AnalysesStack.Screen
         name="Report"
-        component={ReportScreen}
-        options={{ title: "Rapport PDF" }}
+        component={ReportRoute}
+        options={{ headerShown: false }}
       />
       <AnalysesStack.Screen
         name="ProgressionReport"
@@ -111,7 +119,12 @@ function PatientsTabStackScreen() {
     <PatientsTabStack.Navigator screenOptions={innerScreenOptions}>
       <PatientsTabStack.Screen
         name="PatientsList"
-        component={PatientsListScreen}
+        component={PatientsListRoute}
+        options={{ headerShown: false }}
+      />
+      <PatientsTabStack.Screen
+        name="CreatePatient"
+        component={CreatePatientRoute}
         options={{ headerShown: false }}
       />
       <PatientsTabStack.Screen
@@ -121,12 +134,12 @@ function PatientsTabStackScreen() {
       />
       <PatientsTabStack.Screen
         name="PatientDetail"
-        component={PatientDetailScreen}
-        options={{ title: "Patient" }}
+        component={PatientDetailRoute}
+        options={{ headerShown: false }}
       />
       <PatientsTabStack.Screen
         name="Results"
-        component={ResultsScreen}
+        component={ResultsRoute}
         options={{ headerShown: false }}
       />
       <PatientsTabStack.Screen
@@ -136,8 +149,8 @@ function PatientsTabStackScreen() {
       />
       <PatientsTabStack.Screen
         name="Report"
-        component={ReportScreen}
-        options={{ title: "Rapport PDF" }}
+        component={ReportRoute}
+        options={{ headerShown: false }}
       />
       <PatientsTabStack.Screen
         name="ProgressionReport"
@@ -145,6 +158,24 @@ function PatientsTabStackScreen() {
         options={{ title: "Rapport de progression" }}
       />
     </PatientsTabStack.Navigator>
+  );
+}
+
+/** Rapports tab: liste globale des rapports + acces a un rapport individuel */
+function RapportsTabStackScreen() {
+  return (
+    <RapportsTabStack.Navigator screenOptions={innerScreenOptions}>
+      <RapportsTabStack.Screen
+        name="RapportsHome"
+        component={ReportsListRoute}
+        options={{ headerShown: false }}
+      />
+      <RapportsTabStack.Screen
+        name="Report"
+        component={ReportRoute}
+        options={{ headerShown: false }}
+      />
+    </RapportsTabStack.Navigator>
   );
 }
 
@@ -166,60 +197,16 @@ function CompteStackScreen() {
   );
 }
 
-function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
-  return (
-    <Text
-      style={[
-        tabStyles.icon,
-        { color: focused ? Colors.primary : Colors.textSecondary },
-      ]}
-    >
-      {emoji}
-    </Text>
-  );
-}
-
 function MainTabs() {
   return (
     <Tab.Navigator
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: Colors.textSecondary,
-        tabBarStyle: {
-          backgroundColor: Colors.backgroundCard,
-          borderTopColor: Colors.border,
-        },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: "600",
-        },
-      }}
+      tabBar={(props) => <V2TabBar {...props} />}
+      screenOptions={{ headerShown: false }}
     >
-      <Tab.Screen
-        name="AnalysesTab"
-        component={AnalysesStackScreen}
-        options={{
-          tabBarLabel: "Analyses",
-          tabBarIcon: ({ focused }) => <TabIcon emoji="📊" focused={focused} />,
-        }}
-      />
-      <Tab.Screen
-        name="PatientsTab"
-        component={PatientsTabStackScreen}
-        options={{
-          tabBarLabel: "Patients",
-          tabBarIcon: ({ focused }) => <TabIcon emoji="👥" focused={focused} />,
-        }}
-      />
-      <Tab.Screen
-        name="CompteTab"
-        component={CompteStackScreen}
-        options={{
-          tabBarLabel: "Compte",
-          tabBarIcon: ({ focused }) => <TabIcon emoji="👤" focused={focused} />,
-        }}
-      />
+      <Tab.Screen name="AnalysesTab" component={AnalysesStackScreen} />
+      <Tab.Screen name="PatientsTab" component={PatientsTabStackScreen} />
+      <Tab.Screen name="RapportsTab" component={RapportsTabStackScreen} />
+      <Tab.Screen name="CompteTab" component={CompteStackScreen} />
     </Tab.Navigator>
   );
 }
@@ -240,6 +227,7 @@ export function AppNavigator() {
   const isOnboardingLoading = useOnboardingStore((s) => s.isLoading);
 
   useEffect(() => {
+    if (isDevMode()) return;
     initialize();
     checkOnboarding();
   }, [initialize, checkOnboarding]);
@@ -295,12 +283,11 @@ export function AppNavigator() {
           orientation: Platform.OS !== "web" ? "portrait" : undefined,
         }}
       />
+      <Stack.Screen
+        name="Processing"
+        component={ProcessingRoute}
+        options={{ headerShown: false, gestureEnabled: false }}
+      />
     </Stack.Navigator>
   );
 }
-
-const tabStyles = StyleSheet.create({
-  icon: {
-    fontSize: 22,
-  },
-});
