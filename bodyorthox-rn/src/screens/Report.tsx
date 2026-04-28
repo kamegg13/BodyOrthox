@@ -1,5 +1,5 @@
 import React from "react";
-import { ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
+import { Image, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Badge, Btn, Gradient, Icon, Logo, NavBar } from "../components";
 import { colors, fonts, fontSize, fontWeight, gradients, shadows, spacing } from "../theme/tokens";
@@ -22,6 +22,7 @@ export interface ReportData {
   readonly severityLabel: string;
   readonly severityColor: "green" | "amber" | "red";
   readonly rows: readonly ReportRow[];
+  readonly capturedImageUrl?: string;
 }
 
 interface ReportProps {
@@ -78,8 +79,25 @@ export function Report({ data, onBack, onShare, onDownload, onSend }: ReportProp
           <View style={[styles.section, styles.sectionBorder]}>
             <Text style={styles.eyebrow}>Capture</Text>
             <View style={styles.captureBlock}>
-              <Icon name="user" size={48} color={colors.textMuted} strokeWidth={1.25} />
-              <Text style={styles.captureCaption}>Capture sujet · annotée ML</Text>
+              {data.capturedImageUrl ? (
+                <>
+                  <Image
+                    source={{ uri: data.capturedImageUrl }}
+                    style={styles.captureImage}
+                    resizeMode="contain"
+                  />
+                  <View style={styles.captureCaptionOverlay}>
+                    <Text style={styles.captureCaptionLight}>
+                      Capture sujet · annotée ML
+                    </Text>
+                  </View>
+                </>
+              ) : (
+                <>
+                  <Icon name="user" size={48} color={colors.textMuted} strokeWidth={1.25} />
+                  <Text style={styles.captureCaption}>Capture sujet · annotée ML</Text>
+                </>
+              )}
             </View>
           </View>
 
@@ -222,6 +240,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
+    overflow: "hidden",
+  },
+  captureImage: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  captureCaptionOverlay: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: spacing.s12,
+    paddingVertical: 6,
+    backgroundColor: "rgba(12,31,53,0.55)",
+  },
+  captureCaptionLight: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.eyebrow,
+    fontWeight: fontWeight.semiBold,
+    color: colors.textInverse,
   },
   captureCaption: {
     fontFamily: fonts.sans,

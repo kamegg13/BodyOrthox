@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../types";
@@ -9,6 +9,7 @@ import { useReportStore } from "../../features/report/store/report-store";
 import { shareReport } from "../../features/report/data/share-service";
 import { useAuthStore } from "../../core/auth/auth-store";
 import { calculateBilateralAngles } from "../../features/capture/data/angle-calculator";
+import { composeSkeletonImage } from "../../features/capture/data/skeleton-canvas";
 import type { Analysis } from "../../features/capture/domain/analysis";
 import type { Patient } from "../../features/patients/domain/patient";
 
@@ -28,16 +29,34 @@ export function ReportRoute() {
   const generateReport = useReportStore((s) => s.generateReport);
   const reset = useReportStore((s) => s.reset);
 
-  // Génère le HTML du rapport au mount, comme l'écran legacy.
+  // Compose photo + skeleton + labels (web). Sert au preview ET au PDF.
+  const [photoBase64, setPhotoBase64] = useState<string | undefined>(analysis.capturedImageUrl);
+  useEffect(() => {
+    let cancelled = false;
+    const url = analysis.capturedImageUrl;
+    setPhotoBase64(url);
+    if (!url) return;
+    const bilateral =
+      analysis.bilateralAngles ??
+      (analysis.allLandmarks ? calculateBilateralAngles(analysis.allLandmarks) : undefined);
+    composeSkeletonImage(url, analysis.allLandmarks, bilateral).then((composed) => {
+      if (!cancelled) setPhotoBase64(composed);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [analysis]);
+
+  // (Re-)génère le HTML du rapport quand la photo composée est prête.
   useEffect(() => {
     reset();
-    generateReport(analysis, patient, {});
+    generateReport(analysis, patient, photoBase64 ? { photoBase64 } : {});
     return () => reset();
-  }, [analysis, patient, generateReport, reset]);
+  }, [analysis, patient, photoBase64, generateReport, reset]);
 
   const data = useMemo<ReportData>(
-    () => buildReportData(analysis, patient, user),
-    [analysis, patient, user],
+    () => buildReportData(analysis, patient, user, photoBase64),
+    [analysis, patient, user, photoBase64],
   );
 
   const handleBack = useCallback(() => navigation.goBack(), [navigation]);
@@ -81,6 +100,7 @@ function buildReportData(
   analysis: Analysis,
   patient: Patient,
   user: { firstName?: string; lastName?: string; email: string } | null,
+  capturedImageUrl?: string,
 ): ReportData {
   const date = new Date(analysis.createdAt).toLocaleDateString("fr-FR", {
     day: "2-digit",
@@ -121,6 +141,7 @@ function buildReportData(
     severityLabel: sevLabel,
     severityColor: sevColor,
     rows,
+    ...(capturedImageUrl ? { capturedImageUrl } : {}),
   };
 }
 

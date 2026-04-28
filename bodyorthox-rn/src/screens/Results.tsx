@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Image,
   ScrollView,
@@ -50,6 +50,26 @@ export function Results({ data, onBack, onShare, onGenerateReport }: ResultsProp
   const sevLabel =
     data.severity === "normal" ? "Normal" : data.severity === "moderate" ? "Modéré" : "Sévère";
 
+  // Mesure la photo pour adapter dynamiquement l'aspect ratio du conteneur,
+  // sinon une photo verticale (3:4) est croppée dans un cadre 4:3.
+  const [imageAspect, setImageAspect] = useState<number | null>(null);
+  useEffect(() => {
+    const url = data.capturedImageUrl;
+    setImageAspect(null);
+    if (!url) return;
+    let cancelled = false;
+    Image.getSize(
+      url,
+      (w, h) => {
+        if (!cancelled && w > 0 && h > 0) setImageAspect(w / h);
+      },
+      () => undefined,
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [data.capturedImageUrl]);
+
   return (
     <View style={styles.root}>
       <StatusBar barStyle="dark-content" />
@@ -79,13 +99,18 @@ export function Results({ data, onBack, onShare, onGenerateReport }: ResultsProp
           <Badge label={sevLabel} color={sevColor} />
         </View>
 
-        <View style={styles.heroPreview}>
+        <View
+          style={[
+            styles.heroPreview,
+            { aspectRatio: imageAspect ?? (data.capturedImageUrl ? 3 / 4 : 4 / 3) },
+          ]}
+        >
           {data.capturedImageUrl ? (
             <>
               <Image
                 source={{ uri: data.capturedImageUrl }}
                 style={styles.heroImage}
-                resizeMode="cover"
+                resizeMode="contain"
               />
               <View style={styles.heroCaptionOverlay}>
                 <Text style={styles.heroCaptionLight}>Capture · {data.date}</Text>
@@ -224,7 +249,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   heroPreview: {
-    aspectRatio: 4 / 3,
+    width: "100%",
     borderRadius: 14,
     backgroundColor: colors.bgSubtle,
     borderWidth: 1.5,

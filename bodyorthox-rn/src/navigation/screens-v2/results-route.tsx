@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Share, Platform } from "react-native";
@@ -10,7 +10,8 @@ import { useAnalysisRepository } from "../../shared/hooks/use-analysis-repositor
 import { useAsyncData } from "../../shared/hooks/use-async-data";
 import { usePatientsStore } from "../../features/patients/store/patients-store";
 import { calculateBilateralAngles } from "../../features/capture/data/angle-calculator";
-import type { PoseLandmarks } from "../../features/capture/data/angle-calculator";
+import type { PoseLandmarks, BilateralAngles } from "../../features/capture/data/angle-calculator";
+import { composeSkeletonImage } from "../../features/capture/data/skeleton-canvas";
 import type { Analysis } from "../../features/capture/domain/analysis";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -34,11 +35,32 @@ export function ResultsRoute() {
   );
 
   const effectiveImageUrl = capturedImageUrl ?? analysis?.capturedImageUrl;
+  const effectiveLandmarks: PoseLandmarks | undefined = (allLandmarks ?? analysis?.allLandmarks) as
+    | PoseLandmarks
+    | undefined;
+  const bilateral: BilateralAngles | undefined =
+    analysis?.bilateralAngles ??
+    (effectiveLandmarks ? calculateBilateralAngles(effectiveLandmarks) : undefined);
+
+  // Photo + skeleton compositee (web). Native renvoie l'URL d'origine.
+  const [composedImage, setComposedImage] = useState<string | undefined>(effectiveImageUrl);
+
+  useEffect(() => {
+    let cancelled = false;
+    setComposedImage(effectiveImageUrl);
+    if (!effectiveImageUrl || !effectiveLandmarks || !bilateral) return;
+    composeSkeletonImage(effectiveImageUrl, effectiveLandmarks, bilateral).then((url) => {
+      if (!cancelled) setComposedImage(url);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveImageUrl, effectiveLandmarks, bilateral]);
 
   const data = useMemo<ResultsData | null>(() => {
     if (!analysis || !patient) return null;
-    return buildResultsData(analysis, patient.name, allLandmarks, effectiveImageUrl);
-  }, [analysis, patient, allLandmarks, effectiveImageUrl]);
+    return buildResultsData(analysis, patient.name, effectiveLandmarks, composedImage);
+  }, [analysis, patient, effectiveLandmarks, composedImage]);
 
   const handleBack = useCallback(() => {
     // La stack est garantie [..., PatientDetail, Results] :
