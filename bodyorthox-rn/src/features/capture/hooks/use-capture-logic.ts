@@ -231,32 +231,20 @@ export function useCaptureLogic(patientId: string) {
       if (analysis) {
         const { capturedImageUrl: imgUrl, allDetectedLandmarks: allLm } =
           useCaptureStore.getState();
+        // On passe par l'écran Processing v2 qui auto-advance vers Results.
         navigation.reset({
           index: 0,
           routes: [
+            { name: "MainTabs" },
             {
-              name: "MainTabs",
-              state: {
-                routes: [
-                  {
-                    name: "AnalysesTab",
-                    state: {
-                      routes: [
-                        { name: "AnalysesHome" },
-                        {
-                          name: "Results",
-                          params: {
-                            analysisId: analysis.id,
-                            patientId,
-                            capturedImageUrl: imgUrl ?? undefined,
-                            allLandmarks:
-                              correctedLandmarks ?? allLm ?? undefined,
-                          },
-                        },
-                      ],
-                    },
-                  },
-                ],
+              name: "Processing",
+              params: {
+                analysisId: analysis.id,
+                patientId,
+                ...(imgUrl ? { capturedImageUrl: imgUrl } : {}),
+                ...(correctedLandmarks ?? allLm
+                  ? { allLandmarks: correctedLandmarks ?? allLm ?? undefined }
+                  : {}),
               },
             },
           ],

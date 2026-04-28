@@ -12,6 +12,7 @@ import { Spacing } from "../../../shared/design-system/spacing";
 
 export interface WebCameraRef {
   takePhoto: () => string | null;
+  switchCamera: () => void;
 }
 
 interface WebCameraProps {
@@ -26,10 +27,16 @@ export const WebCamera = forwardRef<WebCameraRef, WebCameraProps>(
     const streamRef = useRef<MediaStream | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [retryKey, setRetryKey] = useState(0);
+    const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
 
     const handleRetry = useCallback(() => {
       setError(null);
       setRetryKey((k) => k + 1);
+    }, []);
+
+    const switchCamera = useCallback(() => {
+      setError(null);
+      setFacingMode((prev) => (prev === "environment" ? "user" : "environment"));
     }, []);
 
     const takePhoto = useCallback((): string | null => {
@@ -46,7 +53,7 @@ export const WebCamera = forwardRef<WebCameraRef, WebCameraProps>(
       return canvas.toDataURL("image/jpeg", 0.9);
     }, []);
 
-    useImperativeHandle(ref, () => ({ takePhoto }), [takePhoto]);
+    useImperativeHandle(ref, () => ({ takePhoto, switchCamera }), [takePhoto, switchCamera]);
 
     // Store callbacks in refs to avoid re-running the effect when they change
     const onPermissionDeniedRef = useRef(onPermissionDenied);
@@ -73,7 +80,7 @@ export const WebCamera = forwardRef<WebCameraRef, WebCameraProps>(
       navigator.mediaDevices
         .getUserMedia({
           video: {
-            facingMode: "environment",
+            facingMode,
             width: { ideal: 1280 },
             height: { ideal: 720 },
           },
@@ -106,7 +113,7 @@ export const WebCamera = forwardRef<WebCameraRef, WebCameraProps>(
           container.removeChild(video);
         }
       };
-    }, [retryKey]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [retryKey, facingMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
     if (Platform.OS !== "web") {
       return null;

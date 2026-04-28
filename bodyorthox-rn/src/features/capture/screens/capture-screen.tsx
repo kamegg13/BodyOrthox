@@ -144,6 +144,18 @@ export function CaptureScreen() {
                 <Text style={styles.captureHint}>
                   L'analyse HKA démarre automatiquement
                 </Text>
+                <TouchableOpacity
+                  style={styles.switchCameraButton}
+                  onPress={() => webCameraRef.current?.switchCamera()}
+                  testID="switch-camera-button"
+                  accessibilityRole="button"
+                  accessibilityLabel="Changer de caméra"
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.switchCameraText}>
+                    🔄 Changer de caméra
+                  </Text>
+                </TouchableOpacity>
                 <PhotoUpload onPhotoSelected={handlePhotoUploaded} />
               </>
             ) : (
@@ -263,6 +275,23 @@ const styles = StyleSheet.create({
   galleryButtonText: {
     color: Colors.textOnPrimary,
     fontSize: FontSize.md,
+    fontWeight: FontWeight.medium,
+  },
+  switchCameraButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderColor: "rgba(255,255,255,0.25)",
+    borderWidth: 1,
+    borderRadius: BorderRadius.button,
+    height: 44,
+    width: "100%",
+    marginTop: Spacing.sm,
+  },
+  switchCameraText: {
+    color: Colors.textOnPrimary,
+    fontSize: FontSize.sm,
     fontWeight: FontWeight.medium,
   },
 });
