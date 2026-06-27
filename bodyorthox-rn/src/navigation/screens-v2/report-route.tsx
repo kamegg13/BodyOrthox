@@ -11,7 +11,10 @@ import { useAuthStore } from "../../core/auth/auth-store";
 import { calculateBilateralAngles } from "../../features/capture/data/angle-calculator";
 import { composeSkeletonImage } from "../../features/capture/data/skeleton-canvas";
 import type { Analysis } from "../../features/capture/domain/analysis";
-import type { Patient } from "../../features/patients/domain/patient";
+import {
+  patientDisplayName,
+  type Patient,
+} from "../../features/patients/domain/patient";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, "Report">;
@@ -134,7 +137,7 @@ function buildReportData(
   return {
     number,
     title: "Rapport d’analyse posturale",
-    patientName: patient.name,
+    patientName: patientDisplayName(patient),
     date,
     practitioner,
     practitionerId,

@@ -27,82 +27,162 @@ export type Sex = NonNullable<MorphologicalProfile["sex"]>;
 export type Laterality = NonNullable<MorphologicalProfile["laterality"]>;
 export type ActivityLevel = NonNullable<MorphologicalProfile["activityLevel"]>;
 
+/**
+ * Patient — modèle minimisé (privacy by design, RGPD).
+ *
+ * Principe de minimisation des données : aucune donnée d'identité n'est
+ * obligatoire. Le praticien peut n'enregistrer qu'un libellé court non-identifiant
+ * (`displayLabel`, ex. "Jean D." ou un code "PAT-0427") et/ou une simple année de
+ * naissance (`birthYear`) plutôt qu'une date complète (`dateOfBirth`).
+ *
+ * `name` et `dateOfBirth` restent disponibles pour rétrocompatibilité mais sont
+ * désormais OPTIONNELS. Préférer `patientDisplayName()` / `patientBirthYear()` /
+ * `patientAge()` à un accès direct pour l'affichage.
+ */
 export interface Patient {
   readonly id: string;
-  readonly name: string;
-  readonly dateOfBirth: string; // ISO 8601 YYYY-MM-DD
+  /** Identité complète — optionnelle (minimisation). */
+  readonly name?: string;
+  /** Libellé court non-identifiant pour l'affichage (ex. "Jean D.", "PAT-0427"). */
+  readonly displayLabel?: string;
+  /** Date de naissance complète ISO 8601 YYYY-MM-DD — optionnelle (minimisation). */
+  readonly dateOfBirth?: string;
+  /** Alternative minimisée : année de naissance seule. */
+  readonly birthYear?: number;
   readonly morphologicalProfile: MorphologicalProfile | null;
   readonly createdAt: string; // ISO 8601 UTC
   readonly archivedAt?: string; // ISO 8601 UTC — absent = actif
+  /** Consentement patient enregistré par le praticien. */
+  readonly consentGiven?: boolean;
+  readonly consentDate?: string; // ISO 8601 UTC
 }
 
 export interface CreatePatientInput {
-  name: string;
-  dateOfBirth: string;
+  name?: string;
+  displayLabel?: string;
+  dateOfBirth?: string;
+  birthYear?: number;
   morphologicalProfile?: MorphologicalProfile;
+  consentGiven?: boolean;
+  consentDate?: string;
 }
 
 export interface UpdatePatientInput {
   name?: string;
+  displayLabel?: string;
   dateOfBirth?: string;
+  birthYear?: number;
   morphologicalProfile?: MorphologicalProfile;
+  consentGiven?: boolean;
+  consentDate?: string;
 }
 
-export function createPatient(input: CreatePatientInput): Patient {
-  if (!input.name.trim()) {
-    throw new Error("Le nom du patient est obligatoire.");
-  }
-  if (!input.dateOfBirth) {
-    throw new Error("La date de naissance est obligatoire.");
-  }
-  const dob = new Date(input.dateOfBirth);
+/** Validate an optional date-of-birth string. Never throws for absence. */
+function assertValidDateOfBirth(dateOfBirth: string): void {
+  const dob = new Date(dateOfBirth);
   if (isNaN(dob.getTime())) {
     throw new Error("La date de naissance est invalide.");
   }
   if (dob > new Date()) {
     throw new Error("La date de naissance ne peut pas être dans le futur.");
   }
+}
+
+export function createPatient(input: CreatePatientInput): Patient {
+  // Minimisation : on ne lève PLUS d'erreur sur l'absence de name / dateOfBirth.
+  // On valide uniquement le format de la date si elle est fournie.
+  if (input.dateOfBirth) {
+    assertValidDateOfBirth(input.dateOfBirth);
+  }
+
+  const id = generateId();
+  const name = input.name?.trim() || undefined;
+  const displayLabel = input.displayLabel?.trim() || undefined;
+
+  // Au moins un identifiant d'affichage doit exister : si ni name ni displayLabel,
+  // on génère un libellé par défaut non-identifiant à partir de l'id.
+  const resolvedLabel =
+    displayLabel ?? (name ? undefined : `Patient ${id.slice(0, 6)}`);
 
   return {
-    id: generateId(),
-    name: input.name.trim(),
-    dateOfBirth: input.dateOfBirth,
+    id,
+    ...(name ? { name } : {}),
+    ...(resolvedLabel ? { displayLabel: resolvedLabel } : {}),
+    ...(input.dateOfBirth ? { dateOfBirth: input.dateOfBirth } : {}),
+    ...(input.birthYear !== undefined ? { birthYear: input.birthYear } : {}),
     morphologicalProfile: input.morphologicalProfile ?? null,
     createdAt: new Date().toISOString(),
+    ...(input.consentGiven !== undefined
+      ? { consentGiven: input.consentGiven }
+      : {}),
+    ...(input.consentDate ? { consentDate: input.consentDate } : {}),
   };
 }
 
-export function updatePatient(patient: Patient, input: UpdatePatientInput): Patient {
-  if (input.name !== undefined && !input.name.trim()) {
-    throw new Error("Le nom du patient est obligatoire.");
-  }
-  if (input.dateOfBirth !== undefined) {
-    const dob = new Date(input.dateOfBirth);
-    if (isNaN(dob.getTime())) {
-      throw new Error("La date de naissance est invalide.");
-    }
-    if (dob > new Date()) {
-      throw new Error("La date de naissance ne peut pas être dans le futur.");
-    }
+export function updatePatient(
+  patient: Patient,
+  input: UpdatePatientInput,
+): Patient {
+  if (input.dateOfBirth !== undefined && input.dateOfBirth) {
+    assertValidDateOfBirth(input.dateOfBirth);
   }
 
   return {
     ...patient,
-    ...(input.name !== undefined ? { name: input.name.trim() } : {}),
+    ...(input.name !== undefined
+      ? { name: input.name.trim() || undefined }
+      : {}),
+    ...(input.displayLabel !== undefined
+      ? { displayLabel: input.displayLabel.trim() || undefined }
+      : {}),
     ...(input.dateOfBirth !== undefined ? { dateOfBirth: input.dateOfBirth } : {}),
+    ...(input.birthYear !== undefined ? { birthYear: input.birthYear } : {}),
     ...(input.morphologicalProfile !== undefined
       ? { morphologicalProfile: input.morphologicalProfile }
       : {}),
+    ...(input.consentGiven !== undefined
+      ? { consentGiven: input.consentGiven }
+      : {}),
+    ...(input.consentDate !== undefined ? { consentDate: input.consentDate } : {}),
   };
 }
 
-export function patientAge(patient: Patient): number {
-  const dob = new Date(patient.dateOfBirth);
-  const today = new Date();
-  let age = today.getFullYear() - dob.getFullYear();
-  const m = today.getMonth() - dob.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
-    age--;
+/**
+ * Libellé d'affichage du patient, sans jamais exposer plus que nécessaire.
+ * Ordre de préférence : displayLabel → name → libellé dérivé de l'id.
+ */
+export function patientDisplayName(patient: Patient): string {
+  return (
+    patient.displayLabel ?? patient.name ?? `Patient ${patient.id.slice(0, 6)}`
+  );
+}
+
+/** Année de naissance (donnée minimisée) ou dérivée de la date complète. */
+export function patientBirthYear(patient: Patient): number | undefined {
+  if (patient.birthYear !== undefined) return patient.birthYear;
+  if (patient.dateOfBirth) return new Date(patient.dateOfBirth).getFullYear();
+  return undefined;
+}
+
+/**
+ * Âge du patient.
+ * - Exact à partir de `dateOfBirth` si disponible.
+ * - Approximé à partir de `birthYear` sinon.
+ * - `undefined` si aucune information de naissance.
+ */
+export function patientAge(patient: Patient): number | undefined {
+  if (patient.dateOfBirth) {
+    const dob = new Date(patient.dateOfBirth);
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const m = today.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+      age--;
+    }
+    return age;
   }
-  return age;
+  if (patient.birthYear !== undefined) {
+    return new Date().getFullYear() - patient.birthYear;
+  }
+  return undefined;
 }

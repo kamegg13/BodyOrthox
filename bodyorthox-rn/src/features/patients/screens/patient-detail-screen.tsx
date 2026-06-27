@@ -13,7 +13,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RouteProp } from "@react-navigation/native";
 import type { RootStackParamList } from "../../../navigation/types";
 import { usePatientsStore } from "../store/patients-store";
-import { Patient, patientAge } from "../domain/patient";
+import { Patient, patientAge, patientDisplayName } from "../domain/patient";
 import { Analysis } from "../../capture/domain/analysis";
 import { useAnalysisRepository } from "../../../shared/hooks/use-analysis-repository";
 import { PatientHistoryTile } from "../components/patient-history-tile";
@@ -140,14 +140,22 @@ export function PatientDetailScreen() {
   if (!patient) return <ErrorWidget message="Patient introuvable." />;
 
   const age = patientAge(patient);
+  const displayName = patientDisplayName(patient);
   const profile = patient.morphologicalProfile;
+
+  const metaParts = [
+    age != null ? `${age} ans` : null,
+    patient.dateOfBirth
+      ? formatDisplayDate(new Date(patient.dateOfBirth))
+      : null,
+  ].filter((p): p is string => p != null);
 
   const infoSection = (
     <>
       <View style={styles.profileHeader}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>
-            {patient.name
+            {displayName
               .split(" ")
               .map((w: string) => w[0])
               .slice(0, 2)
@@ -155,10 +163,10 @@ export function PatientDetailScreen() {
               .toUpperCase()}
           </Text>
         </View>
-        <Text style={[Typography.h2, styles.name]}>{patient.name}</Text>
-        <Text style={styles.meta}>
-          {age} ans · {formatDisplayDate(new Date(patient.dateOfBirth))}
-        </Text>
+        <Text style={[Typography.h2, styles.name]}>{displayName}</Text>
+        {metaParts.length > 0 && (
+          <Text style={styles.meta}>{metaParts.join(" · ")}</Text>
+        )}
       </View>
 
       {profile && (profile.heightCm || profile.weightKg || profile.sex || profile.laterality || profile.activityLevel || profile.sport || profile.pathology || (profile.pains && profile.pains.length > 0)) && (

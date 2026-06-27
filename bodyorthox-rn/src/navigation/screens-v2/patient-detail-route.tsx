@@ -11,7 +11,11 @@ import { LoadingSpinner } from "../../shared/components/loading-spinner";
 import { ErrorWidget } from "../../shared/components/error-widget";
 import { usePatientsStore } from "../../features/patients/store/patients-store";
 import { useAnalysisRepository } from "../../shared/hooks/use-analysis-repository";
-import { patientAge, type Patient } from "../../features/patients/domain/patient";
+import {
+  patientAge,
+  patientDisplayName,
+  type Patient,
+} from "../../features/patients/domain/patient";
 import type { Analysis } from "../../features/capture/domain/analysis";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -158,7 +162,7 @@ function buildDetailData(patient: Patient, analyses: readonly Analysis[]): Patie
     ? { label: "Suivi", color: "amber" }
     : { label: "Actif", color: "teal" };
 
-  const dob = formatShortDob(patient.dateOfBirth);
+  const dob = patient.dateOfBirth ? formatShortDob(patient.dateOfBirth) : "—";
   const id = shortId(patient.id);
   const diagnosisDescription =
     patient.morphologicalProfile?.pathology?.trim() ||
@@ -166,9 +170,9 @@ function buildDetailData(patient: Patient, analyses: readonly Analysis[]): Patie
     "Aucun diagnostic renseigné.";
 
   return {
-    name: patient.name,
+    name: patientDisplayName(patient),
     sex,
-    age: patientAge(patient),
+    age: patientAge(patient) ?? 0,
     id,
     status,
     heightCm: patient.morphologicalProfile?.heightCm ?? 0,

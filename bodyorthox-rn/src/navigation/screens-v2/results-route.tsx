@@ -9,6 +9,7 @@ import { ErrorWidget } from "../../shared/components/error-widget";
 import { useAnalysisRepository } from "../../shared/hooks/use-analysis-repository";
 import { useAsyncData } from "../../shared/hooks/use-async-data";
 import { usePatientsStore } from "../../features/patients/store/patients-store";
+import { patientDisplayName } from "../../features/patients/domain/patient";
 import { calculateBilateralAngles } from "../../features/capture/data/angle-calculator";
 import type { PoseLandmarks, BilateralAngles } from "../../features/capture/data/angle-calculator";
 import { composeSkeletonImage } from "../../features/capture/data/skeleton-canvas";
@@ -59,7 +60,7 @@ export function ResultsRoute() {
 
   const data = useMemo<ResultsData | null>(() => {
     if (!analysis || !patient) return null;
-    return buildResultsData(analysis, patient.name, effectiveLandmarks, composedImage);
+    return buildResultsData(analysis, patientDisplayName(patient), effectiveLandmarks, composedImage);
   }, [analysis, patient, effectiveLandmarks, composedImage]);
 
   const handleBack = useCallback(() => {

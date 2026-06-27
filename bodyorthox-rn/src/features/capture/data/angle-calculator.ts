@@ -159,40 +159,42 @@ export interface SidedAngles {
 export interface BilateralAngles {
   readonly left: SidedAngles;
   readonly right: SidedAngles;
-  /** HKA angle for left leg (hip-knee-ankle). ~180° = normal, <177° = varum, >183° = valgum */
+  /** HKA angle for left leg (hip-knee-ankle). Reference range 175°–180°; below/above = deviation from range. */
   readonly leftHKA: number;
-  /** HKA angle for right leg (hip-knee-ankle). ~180° = normal, <177° = varum, >183° = valgum */
+  /** HKA angle for right leg (hip-knee-ankle). Reference range 175°–180°; below/above = deviation from range. */
   readonly rightHKA: number;
 }
 
 /**
- * Classify an HKA angle into a clinical category.
- * Based on clinical literature for frontal standing pose estimation:
- * Normal (physiological valgus): 175°–180°, Varum: <175°, Valgum: >180°
+ * Classify an HKA angle relative to a geometric reference range.
+ * The 175°–180° reference range comes from the literature on frontal
+ * standing pose estimation. Below the range = "below", above = "above",
+ * within = "in_range". A value of 0 means the angle could not be measured.
  */
 export function classifyHKA(
   hkaAngle: number,
-): "normal" | "varum" | "valgum" | "unavailable" {
+): "below" | "in_range" | "above" | "unavailable" {
   if (hkaAngle === 0) return "unavailable";
-  if (hkaAngle < 175) return "varum";
-  if (hkaAngle > 180) return "valgum";
-  return "normal";
+  if (hkaAngle < 175) return "below";
+  if (hkaAngle > 180) return "above";
+  return "in_range";
 }
 
 /**
- * French label for an HKA classification.
+ * Neutral geometric label for an HKA measurement, describing how the
+ * measured angle relates to the 175°–180° reference range.
  */
 export function hkaLabel(hkaAngle: number): string {
   const classification = classifyHKA(hkaAngle);
   switch (classification) {
-    case "varum":
-      return "Genu varum";
-    case "valgum":
-      return "Genu valgum";
-    case "normal":
-      return "Normal";
+    case "below":
+      return `Sous la plage (−${(175 - hkaAngle).toFixed(1)}°)`;
+    case "above":
+      return `Au-dessus de la plage (+${(hkaAngle - 180).toFixed(1)}°)`;
+    case "in_range":
+      return "Dans la plage de référence";
     case "unavailable":
-      return "Non disponible";
+      return "—";
   }
 }
 

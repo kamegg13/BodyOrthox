@@ -1,6 +1,6 @@
 import { Analysis } from "../../capture/domain/analysis";
 import { hkaLabel } from "../../capture/data/angle-calculator";
-import { Patient } from "../../patients/domain/patient";
+import { Patient, patientDisplayName } from "../../patients/domain/patient";
 import { LEGAL_CONSTANTS } from "../../../core/legal/legal-constants";
 
 // ─── Types ────────────────────────────────────────────────────
@@ -46,7 +46,7 @@ export function buildProgressionReportData(
   );
 
   return {
-    patientName: patient.name,
+    patientName: patientDisplayName(patient),
     analyses: sorted,
     disclaimer: LEGAL_CONSTANTS.mdrDisclaimer,
   };
@@ -215,7 +215,7 @@ export function generateHkaSvgChart(
   const gridAndAxes = buildGridAndAxes(cfg, 5);
 
   const normalRect = `<rect x="${PAD_LEFT}" y="${normalRectY}" width="${chartW}" height="${normalRectH}" fill="#d1fae5" stroke="#34d399" stroke-width="0.5" opacity="0.7"/>
-  <text x="${PAD_LEFT + chartW - 4}" y="${(Number(normalRectY) + 10).toFixed(1)}" text-anchor="end" font-size="8" fill="#059669" opacity="0.8">Zone normale</text>`;
+  <text x="${PAD_LEFT + chartW - 4}" y="${(Number(normalRectY) + 10).toFixed(1)}" text-anchor="end" font-size="8" fill="#059669" opacity="0.8">Plage de référence</text>`;
 
   const leftPolyline = buildPolyline(leftValues, cfg, "#2563eb");
   const rightPolyline = buildPolyline(rightValues, cfg, "#d97706");
@@ -227,7 +227,7 @@ export function generateHkaSvgChart(
   <rect x="${PAD_LEFT + 90}" y="${legendY - 6}" width="10" height="10" fill="#d97706" rx="2"/>
   <text x="${PAD_LEFT + 104}" y="${legendY + 2}" font-size="9" fill="#374151">HKA Droite</text>
   <rect x="${PAD_LEFT + 180}" y="${legendY - 6}" width="10" height="10" fill="#d1fae5" stroke="#34d399" stroke-width="0.8" rx="2"/>
-  <text x="${PAD_LEFT + 194}" y="${legendY + 2}" font-size="9" fill="#374151">Zone normale (175–180°)</text>`;
+  <text x="${PAD_LEFT + 194}" y="${legendY + 2}" font-size="9" fill="#374151">Plage de référence (175–180°)</text>`;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
   ${normalRect}
@@ -296,36 +296,24 @@ function generateKneeSvgChart(
 
 // ─── Trend & synthesis section ─────────────────────────────────
 
-function distanceFromNormal(v: number): number {
-  if (v < 175) return 175 - v;
-  if (v > 180) return v - 180;
-  return 0;
-}
-
+/**
+ * Neutral, factual variation between the first and last measurement.
+ * Reports the signed delta and the first → last values, with a
+ * directional arrow only. No clinical appreciation (no improvement /
+ * worsening judgement).
+ */
 function generateTrendText(first: number, last: number): string {
   const delta = last - first;
   const abs = Math.abs(delta);
-  const sign = delta > 0 ? "+" : "";
+  const sign = delta > 0 ? "+" : delta < 0 ? "−" : "";
 
   if (abs < 0.5) {
-    return `Stable (variation de ${sign}${delta.toFixed(1)}°)`;
+    return `Stable (${sign}${abs.toFixed(1)}° ; ${first.toFixed(1)}° → ${last.toFixed(1)}°)`;
   }
 
-  const distFirst = distanceFromNormal(first);
-  const distLast = distanceFromNormal(last);
+  const arrow = delta > 0 ? "↗" : "↘";
 
-  let appreciation: string;
-  if (distLast < distFirst) {
-    appreciation = "Amélioration";
-  } else if (distLast > distFirst) {
-    appreciation = "Dégradation";
-  } else {
-    appreciation = delta > 0 ? "Augmentation" : "Diminution";
-  }
-
-  const arrow = appreciation === "Amélioration" ? "↗" : appreciation === "Dégradation" ? "↘" : "→";
-
-  return `${appreciation} ${arrow} de ${abs.toFixed(1)}° (${first.toFixed(1)}° → ${last.toFixed(1)}°)`;
+  return `Variation ${arrow} ${sign}${abs.toFixed(1)}° (${first.toFixed(1)}° → ${last.toFixed(1)}°)`;
 }
 
 function buildSynthesisSection(analyses: ReadonlyArray<Analysis>): string {
@@ -350,9 +338,7 @@ function buildSynthesisSection(analyses: ReadonlyArray<Analysis>): string {
     const trend = generateTrendText(firstLeft, lastLeft);
     const deltaVal = lastLeft - firstLeft;
     const sign = deltaVal >= 0 ? "+" : "";
-    const trendColor =
-      trend.startsWith("Amélioration") ? "#059669" :
-      trend.startsWith("Dégradation") ? "#dc2626" : "#374151";
+    const trendColor = "#374151";
     rows.push(`<tr>
         <td><strong>HKA Gauche</strong></td>
         <td>${fmt(firstLeft)}</td>
@@ -366,9 +352,7 @@ function buildSynthesisSection(analyses: ReadonlyArray<Analysis>): string {
     const trend = generateTrendText(firstRight, lastRight);
     const deltaVal = lastRight - firstRight;
     const sign = deltaVal >= 0 ? "+" : "";
-    const trendColor =
-      trend.startsWith("Amélioration") ? "#059669" :
-      trend.startsWith("Dégradation") ? "#dc2626" : "#374151";
+    const trendColor = "#374151";
     rows.push(`<tr>
         <td><strong>HKA Droite</strong></td>
         <td>${fmt(firstRight)}</td>
@@ -424,9 +408,9 @@ function buildHkaTable(analyses: ReadonlyArray<Analysis>): string {
         <tr>
           <th>Date</th>
           <th>HKA G</th>
-          <th>Classif. G</th>
+          <th>Écart G</th>
           <th>HKA D</th>
-          <th>Classif. D</th>
+          <th>Écart D</th>
         </tr>
       </thead>
       <tbody>

@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Patient, patientAge } from "../domain/patient";
+import { Patient, patientAge, patientDisplayName } from "../domain/patient";
 import { Colors } from "../../../shared/design-system/colors";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
 import {
@@ -58,7 +58,9 @@ export function PatientListTile({
   testID,
 }: PatientListTileProps) {
   const age = patientAge(patient);
-  const initials = patient.name
+  const ageLabel = age != null ? `${age} ans` : "Âge non renseigné";
+  const displayName = patientDisplayName(patient);
+  const initials = displayName
     .split(" ")
     .map((w) => w[0]?.toUpperCase() ?? "")
     .slice(0, 2)
@@ -75,7 +77,7 @@ export function PatientListTile({
       style={styles.container}
       onPress={() => onPress(patient)}
       accessibilityRole="button"
-      accessibilityLabel={`Patient ${patient.name}, ${age} ans`}
+      accessibilityLabel={`Patient ${displayName}, ${ageLabel}`}
       testID={testID ?? `patient-tile-${patient.id}`}
     >
       {/* Barre d'accent gauche */}
@@ -88,7 +90,7 @@ export function PatientListTile({
       <View style={styles.info}>
         <View style={styles.nameRow}>
           <Text style={[Typography.bodyLarge, styles.name]} numberOfLines={1}>
-            {patient.name}
+            {displayName}
           </Text>
           {badgeInfo != null && (
             <View style={[styles.badge, { backgroundColor: badgeInfo.bg }]}>
@@ -99,7 +101,7 @@ export function PatientListTile({
         <Text style={[Typography.bodySmall, styles.meta]} numberOfLines={1}>
           {lastAnalysisDate != null
             ? `${lastAnalysisType} · ${formatRelativeShort(lastAnalysisDate)}`
-            : `${age} ans`}
+            : ageLabel}
         </Text>
       </View>
 

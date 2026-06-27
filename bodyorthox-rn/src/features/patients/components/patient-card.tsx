@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Patient } from "../domain/patient";
+import { Patient, patientDisplayName } from "../domain/patient";
 import { Colors } from "../../../shared/design-system/colors";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
 import { FontSize, FontWeight } from "../../../shared/design-system/typography";
@@ -70,8 +70,9 @@ export function PatientCard({
   onPress,
   testID,
 }: PatientCardProps) {
-  const initials = getInitials(patient.name);
-  const avatarColor = getAvatarColor(patient.name);
+  const displayName = patientDisplayName(patient);
+  const initials = getInitials(displayName);
+  const avatarColor = getAvatarColor(displayName);
   const statusConfig = status ? STATUS_CONFIG[status] : null;
 
   return (
@@ -79,7 +80,7 @@ export function PatientCard({
       style={styles.container}
       onPress={() => onPress(patient)}
       accessibilityRole="button"
-      accessibilityLabel={`Patient ${patient.name}`}
+      accessibilityLabel={`Patient ${displayName}`}
       testID={testID ?? `patient-card-${patient.id}`}
       activeOpacity={0.7}
     >
@@ -90,7 +91,7 @@ export function PatientCard({
       <View style={styles.content}>
         <View style={styles.nameRow}>
           <Text style={styles.name} numberOfLines={1}>
-            {patient.name}
+            {displayName}
           </Text>
           {statusConfig && (
             <View

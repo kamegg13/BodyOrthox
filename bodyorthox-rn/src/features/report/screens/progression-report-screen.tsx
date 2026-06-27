@@ -9,6 +9,7 @@ import { BorderRadius, Spacing } from "../../../shared/design-system/spacing";
 import { LoadingSpinner } from "../../../shared/components/loading-spinner";
 import { ExportButton } from "../components/export-button";
 import { LEGAL_CONSTANTS } from "../../../core/legal/legal-constants";
+import { patientDisplayName } from "../../patients/domain/patient";
 import {
   buildProgressionReportData,
   generateProgressionReportFileName,
@@ -32,7 +33,9 @@ export function ProgressionReportScreen() {
     try {
       const data = buildProgressionReportData(patient, [...analyses]);
       const html = generateProgressionReportHtml(data);
-      const name = generateProgressionReportFileName(patient.name);
+      const name = generateProgressionReportFileName(
+        patientDisplayName(patient),
+      );
       setReportHtml(html);
       setFileName(name);
       setStatus("ready");

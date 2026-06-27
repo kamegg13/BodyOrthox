@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { Analysis } from "../../capture/domain/analysis";
-import { Patient } from "../../patients/domain/patient";
+import { Patient, patientDisplayName } from "../../patients/domain/patient";
 import {
   buildReportData,
   generateReportHtml,
@@ -50,7 +50,10 @@ export const useReportStore = create<ReportState & ReportActions>()(
       try {
         const data = buildReportData(analysis, patient, options);
         const html = generateReportHtml(data);
-        const fileName = generateReportFileName(patient.name, analysis.createdAt);
+        const fileName = generateReportFileName(
+          patientDisplayName(patient),
+          analysis.createdAt,
+        );
 
         set((state) => {
           state.status = "ready";
