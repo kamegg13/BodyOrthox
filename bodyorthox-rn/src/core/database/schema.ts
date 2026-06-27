@@ -35,6 +35,28 @@ export const ADD_CAPTURED_IMAGE_URL_COLUMN = `
   ALTER TABLE analyses ADD COLUMN captured_image_url TEXT;
 `;
 
+// --- Minimisation des données (RGPD / privacy by design) ---
+// Identité optionnelle + alternatives minimisées + consentement.
+export const ADD_PATIENT_DISPLAY_LABEL_COLUMN = `
+  ALTER TABLE patients ADD COLUMN display_label TEXT;
+`;
+
+export const ADD_PATIENT_BIRTH_YEAR_COLUMN = `
+  ALTER TABLE patients ADD COLUMN birth_year INTEGER;
+`;
+
+export const ADD_PATIENT_ARCHIVED_AT_COLUMN = `
+  ALTER TABLE patients ADD COLUMN archived_at TEXT;
+`;
+
+export const ADD_PATIENT_CONSENT_GIVEN_COLUMN = `
+  ALTER TABLE patients ADD COLUMN consent_given INTEGER;
+`;
+
+export const ADD_PATIENT_CONSENT_DATE_COLUMN = `
+  ALTER TABLE patients ADD COLUMN consent_date TEXT;
+`;
+
 export const CREATE_IDX_PATIENTS_NAME = `
   CREATE INDEX IF NOT EXISTS idx_patients_name ON patients(name);
 `;
@@ -51,4 +73,9 @@ export const ALL_MIGRATIONS = [
   CREATE_IDX_ANALYSES_PATIENT,
   ADD_LANDMARKS_JSON_COLUMN,
   ADD_CAPTURED_IMAGE_URL_COLUMN,
+  ADD_PATIENT_DISPLAY_LABEL_COLUMN,
+  ADD_PATIENT_BIRTH_YEAR_COLUMN,
+  ADD_PATIENT_ARCHIVED_AT_COLUMN,
+  ADD_PATIENT_CONSENT_GIVEN_COLUMN,
+  ADD_PATIENT_CONSENT_DATE_COLUMN,
 ];

@@ -5,8 +5,12 @@ import { apiRequest } from '../../../core/api/api-client';
 interface ApiPatient {
   id: string;
   userId: string;
-  name: string;
-  dateOfBirth: string;
+  name?: string;
+  displayLabel?: string;
+  dateOfBirth?: string;
+  birthYear?: number;
+  consentGiven?: boolean;
+  consentDate?: string;
   heightCm?: number;
   weightKg?: number;
   bmi?: number;
@@ -36,8 +40,12 @@ function toPatient(p: ApiPatient): Patient {
 
   return {
     id: p.id,
-    name: p.name,
-    dateOfBirth: p.dateOfBirth,
+    ...(p.name ? { name: p.name } : {}),
+    ...(p.displayLabel ? { displayLabel: p.displayLabel } : {}),
+    ...(p.dateOfBirth ? { dateOfBirth: p.dateOfBirth } : {}),
+    ...(p.birthYear != null ? { birthYear: p.birthYear } : {}),
+    ...(p.consentGiven != null ? { consentGiven: p.consentGiven } : {}),
+    ...(p.consentDate ? { consentDate: p.consentDate } : {}),
     morphologicalProfile: hasMorpho ? {
       heightCm: p.heightCm,
       weightKg: p.weightKg,
@@ -98,7 +106,11 @@ export class ApiPatientRepository implements IPatientRepository {
       method: 'POST',
       body: JSON.stringify({
         name: input.name,
+        displayLabel: input.displayLabel,
         dateOfBirth: input.dateOfBirth,
+        birthYear: input.birthYear,
+        consentGiven: input.consentGiven,
+        consentDate: input.consentDate,
         ...morphoToBody(input.morphologicalProfile ?? null),
       }),
     }));
@@ -109,7 +121,11 @@ export class ApiPatientRepository implements IPatientRepository {
       method: 'PUT',
       body: JSON.stringify({
         name: input.name,
+        displayLabel: input.displayLabel,
         dateOfBirth: input.dateOfBirth,
+        birthYear: input.birthYear,
+        consentGiven: input.consentGiven,
+        consentDate: input.consentDate,
         ...morphoToBody(input.morphologicalProfile ?? null),
       }),
     }));

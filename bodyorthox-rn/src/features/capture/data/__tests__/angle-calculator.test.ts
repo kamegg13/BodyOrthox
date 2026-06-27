@@ -308,7 +308,7 @@ describe("calculateBilateralAngles", () => {
     expect(result.right.ankleAngle).toBeGreaterThan(0);
   });
 
-  it("detects genu varum in bow-legged landmarks", () => {
+  it("detects below-range HKA in bow-legged landmarks", () => {
     // Simulate bow legs: knees deviate outward
     const bowLegged: PoseLandmarks = {
       11: { x: 0.4, y: 0.2, visibility: 0.95 },
@@ -331,20 +331,20 @@ describe("calculateBilateralAngles", () => {
 });
 
 describe("classifyHKA", () => {
-  it("classifies varum for angle < 175", () => {
-    expect(classifyHKA(170)).toBe("varum");
-    expect(classifyHKA(174.9)).toBe("varum");
+  it("classifies below for angle < 175", () => {
+    expect(classifyHKA(170)).toBe("below");
+    expect(classifyHKA(174.9)).toBe("below");
   });
 
-  it("classifies normal for 175-180", () => {
-    expect(classifyHKA(175)).toBe("normal");
-    expect(classifyHKA(177)).toBe("normal");
-    expect(classifyHKA(180)).toBe("normal");
+  it("classifies in_range for 175-180", () => {
+    expect(classifyHKA(175)).toBe("in_range");
+    expect(classifyHKA(177)).toBe("in_range");
+    expect(classifyHKA(180)).toBe("in_range");
   });
 
-  it("classifies valgum for angle > 180", () => {
-    expect(classifyHKA(180.1)).toBe("valgum");
-    expect(classifyHKA(190)).toBe("valgum");
+  it("classifies above for angle > 180", () => {
+    expect(classifyHKA(180.1)).toBe("above");
+    expect(classifyHKA(190)).toBe("above");
   });
 
   it("classifies unavailable for 0", () => {
@@ -353,10 +353,10 @@ describe("classifyHKA", () => {
 });
 
 describe("hkaLabel", () => {
-  it("returns French labels", () => {
-    expect(hkaLabel(170)).toBe("Genu varum");
-    expect(hkaLabel(177)).toBe("Normal");
-    expect(hkaLabel(190)).toBe("Genu valgum");
-    expect(hkaLabel(0)).toBe("Non disponible");
+  it("returns neutral geometric labels", () => {
+    expect(hkaLabel(177)).toBe("Dans la plage de référence");
+    expect(hkaLabel(0)).toBe("—");
+    expect(hkaLabel(170)).toBe("Sous la plage (−5.0°)");
+    expect(hkaLabel(190)).toBe("Au-dessus de la plage (+10.0°)");
   });
 });

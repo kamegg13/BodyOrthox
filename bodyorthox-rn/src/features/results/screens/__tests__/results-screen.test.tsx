@@ -479,8 +479,10 @@ describe("ResultsScreen", () => {
         expect(screen.getByTestId("results-screen")).toBeTruthy();
       });
 
-      // Both HKA values (175.8 and 176.2) are in normal range (175-180)
-      expect(screen.getAllByText("Normal").length).toBeGreaterThanOrEqual(2);
+      // Both HKA values (175.8 and 176.2) are within the reference range (175-180)
+      expect(
+        screen.getAllByText("Dans la plage de référence").length,
+      ).toBeGreaterThanOrEqual(2);
     });
 
     it("shows dash for unavailable angles", async () => {

@@ -18,22 +18,22 @@ interface NormRow {
 
 const NORM_ROWS: readonly NormRow[] = [
   {
-    label: "Neutre",
+    label: "Dans la plage",
     range: "175–180°",
     color: Colors.success,
-    status: "neutre",
+    status: "in_range",
   },
   {
-    label: "Genu varum",
+    label: "Sous la plage",
     range: "< 175°",
     color: Colors.warning,
-    status: "genu_varum",
+    status: "below",
   },
   {
-    label: "Genu valgum",
+    label: "Au-dessus de la plage",
     range: "> 180°",
     color: Colors.info,
-    status: "genu_valgum",
+    status: "above",
   },
 ];
 
@@ -57,18 +57,6 @@ export function NormsReferenceCard({
                   {row.label} : {row.range}
                 </Text>
               </View>
-              {isActive && (
-                <View
-                  style={[
-                    styles.patientBadge,
-                    { backgroundColor: `${row.color}20` },
-                  ]}
-                >
-                  <Text style={[styles.patientBadgeText, { color: row.color }]}>
-                    Patient
-                  </Text>
-                </View>
-              )}
             </View>
           );
         })}
@@ -119,15 +107,6 @@ const styles = StyleSheet.create({
   },
   rowLabelActive: {
     color: Colors.textPrimary,
-    fontWeight: "600",
-  },
-  patientBadge: {
-    borderRadius: BorderRadius.full,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
-  },
-  patientBadgeText: {
-    fontSize: 12,
     fontWeight: "600",
   },
 });

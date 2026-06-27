@@ -26,6 +26,7 @@ import { ErrorWidget } from "../../../shared/components/error-widget";
 import { Colors } from "../../../shared/design-system/colors";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
 import { Typography } from "../../../shared/design-system/typography";
+import { LEGAL_CONSTANTS } from "../../../core/legal/legal-constants";
 import { formatDisplayDateTime } from "../../../shared/utils/date-utils";
 import { useAnalysisRepository } from "../../../shared/hooks/use-analysis-repository";
 import { useAsyncData } from "../../../shared/hooks/use-async-data";
@@ -350,6 +351,11 @@ export function ResultsScreen() {
           <Text style={[styles.actionButtonText, { color: Colors.primary }]}>Générer le rapport PDF</Text>
         </TouchableOpacity>
       )}
+
+      {/* Non-DM legal disclaimer */}
+      <Text style={styles.disclaimer} testID="results-disclaimer">
+        {LEGAL_CONSTANTS.mdrDisclaimer}
+      </Text>
     </ScrollView>
   );
 }
@@ -678,5 +684,12 @@ const styles = StyleSheet.create({
     shadowColor: Colors.black,
     shadowOpacity: 0.06,
     elevation: 2,
+  },
+  disclaimer: {
+    fontSize: 11,
+    color: Colors.textDisabled,
+    textAlign: "center",
+    lineHeight: 15,
+    marginTop: Spacing.md,
   },
 });

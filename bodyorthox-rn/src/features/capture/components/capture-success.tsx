@@ -26,6 +26,7 @@ import {
   type DisplayedImageLayout,
 } from "../../../shared/utils/image-dimensions";
 import type { AnatomicalValidation } from "../data/anatomical-validation";
+import { LEGAL_CONSTANTS } from "../../../core/legal/legal-constants";
 
 interface CaptureSuccessProps {
   capturedImageUrl: string | null;
@@ -355,6 +356,11 @@ export function CaptureSuccess({
           </TouchableOpacity>
         </>
       )}
+
+      {/* Non-DM legal disclaimer */}
+      <Text style={styles.disclaimer} testID="capture-success-disclaimer">
+        {LEGAL_CONSTANTS.mdrDisclaimer}
+      </Text>
     </View>
   );
 }
@@ -525,4 +531,11 @@ const styles = StyleSheet.create({
   saveButtonText: { color: Colors.white, fontWeight: "700", fontSize: 16 },
   discardButton: { paddingVertical: Spacing.md },
   discardButtonText: { color: Colors.textSecondary, fontSize: 15 },
+  disclaimer: {
+    color: Colors.textSecondary,
+    fontSize: 11,
+    textAlign: "center",
+    lineHeight: 15,
+    marginTop: Spacing.md,
+  },
 });

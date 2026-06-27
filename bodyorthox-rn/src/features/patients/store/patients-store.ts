@@ -1,7 +1,12 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { enableMapSet } from "immer";
-import { Patient, CreatePatientInput, UpdatePatientInput } from "../domain/patient";
+import {
+  Patient,
+  CreatePatientInput,
+  UpdatePatientInput,
+  patientDisplayName,
+} from "../domain/patient";
 import { IPatientRepository } from "../data/patient-repository";
 
 // Required for Immer to handle Set and Map types
@@ -40,14 +45,16 @@ function computeFiltered(
 
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      if (!p.name.toLowerCase().includes(q)) return false;
+      if (!patientDisplayName(p).toLowerCase().includes(q)) return false;
     }
 
     return true;
   });
 
   if (sortBy === "alpha") {
-    result = [...result].sort((a, b) => a.name.localeCompare(b.name, "fr"));
+    result = [...result].sort((a, b) =>
+      patientDisplayName(a).localeCompare(patientDisplayName(b), "fr"),
+    );
   } else if (sortBy === "recent") {
     result = [...result].sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),

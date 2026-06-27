@@ -4,7 +4,7 @@ import { Colors } from "../../../shared/design-system/colors";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
 import { Shadows } from "../../../shared/design-system/card-styles";
 
-export type HkaStatus = "neutre" | "genu_varum" | "genu_valgum";
+export type HkaStatus = "in_range" | "below" | "above";
 
 export interface HkaAngleCardProps {
   readonly angleValue: number;
@@ -18,29 +18,29 @@ const HKA_NORM_MIN = 175;
 const HKA_NORM_MAX = 180;
 
 export function classifyHka(angle: number): HkaStatus {
-  if (angle < HKA_NORM_MIN) return "genu_varum";
-  if (angle > HKA_NORM_MAX) return "genu_valgum";
-  return "neutre";
+  if (angle < HKA_NORM_MIN) return "below";
+  if (angle > HKA_NORM_MAX) return "above";
+  return "in_range";
 }
 
 function statusLabel(status: HkaStatus): string {
   switch (status) {
-    case "neutre":
-      return "Neutre";
-    case "genu_varum":
-      return "Genu varum";
-    case "genu_valgum":
-      return "Genu valgum";
+    case "in_range":
+      return "Dans la plage";
+    case "below":
+      return "Sous la plage";
+    case "above":
+      return "Au-dessus de la plage";
   }
 }
 
 function statusColor(status: HkaStatus): string {
   switch (status) {
-    case "neutre":
+    case "in_range":
       return Colors.success;
-    case "genu_varum":
+    case "below":
       return Colors.warning;
-    case "genu_valgum":
+    case "above":
       return Colors.info;
   }
 }
