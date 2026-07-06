@@ -39,7 +39,7 @@ export function ListRow({
   testID,
 }: ListRowProps) {
   const labelColor = destructive ? colors.red : colors.textPrimary;
-  const iconColor = destructive ? colors.red : colors.navyMid;
+  const iconColor = destructive ? colors.red : colors.textSecond;
   const inert = disabled || onPress === undefined;
   return (
     <Pressable
@@ -96,7 +96,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.iconSm,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.navyLight,
+    backgroundColor: colors.bgSubtle,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
   },
   label: {
     flex: 1,

@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
-import { colors, fonts, fontSize, fontWeight } from "../theme/tokens";
+import { colors, fonts, fontSize, fontWeight, letterSpacing } from "../theme/tokens";
 
 interface SectionLabelProps {
   readonly children: React.ReactNode;
@@ -27,9 +27,9 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: fonts.sans,
     fontSize: fontSize.eyebrow,
-    fontWeight: fontWeight.bold,
+    fontWeight: fontWeight.semiBold,
     color: colors.textMuted,
-    letterSpacing: 0.08 * fontSize.eyebrow,
+    letterSpacing: letterSpacing.eyebrow,
     textTransform: "uppercase",
   },
 });

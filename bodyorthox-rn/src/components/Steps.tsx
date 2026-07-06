@@ -13,8 +13,9 @@ export function Steps({ total, current, testID }: StepsProps) {
   return (
     <View style={styles.row} testID={testID}>
       {Array.from({ length: total }, (_, i) => {
+        // Graduation : franchis = accent, actif = encre, à venir = hairline.
         const bg =
-          i < current ? colors.teal : i === current ? colors.navyMid : colors.bgSubtle;
+          i < current ? colors.accent : i === current ? colors.ink : colors.border;
         return (
           <View
             key={i}
@@ -35,6 +36,5 @@ const styles = StyleSheet.create({
   pill: {
     flex: 1,
     height: 3,
-    borderRadius: 2,
   },
 });

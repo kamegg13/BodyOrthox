@@ -23,7 +23,7 @@ export function NavBar({
   light = false,
 }: NavBarProps) {
   const fg = light ? colors.textInverse : colors.textPrimary;
-  const actionFg = light ? colors.textInverse : colors.navyMid;
+  const actionFg = light ? colors.textInverse : colors.accent;
   return (
     <View style={[styles.bar, light ? styles.barLight : styles.barDefault]}>
       <View style={styles.side}>
@@ -96,10 +96,10 @@ const styles = StyleSheet.create({
   title: {
     flex: 1,
     textAlign: "center",
-    fontFamily: fonts.sans,
+    fontFamily: fonts.display,
     fontSize: fontSize.navTitle,
-    fontWeight: fontWeight.bold,
-    letterSpacing: -0.3,
+    fontWeight: fontWeight.medium,
+    letterSpacing: -0.2,
   },
   actionText: {
     fontFamily: fonts.sans,

@@ -17,6 +17,7 @@ import {
   fonts,
   fontSize,
   fontWeight,
+  letterSpacing,
   radius,
   sizes,
   spacing,
@@ -54,6 +55,7 @@ export function Field({
   testID,
 }: FieldProps) {
   const [hidden, setHidden] = useState(type === "password");
+  const [focused, setFocused] = useState(false);
   const isPwd = type === "password";
   const keyboardType: KeyboardTypeOptions =
     type === "email" ? "email-address" : type === "number" ? "numeric" : "default";
@@ -66,6 +68,7 @@ export function Field({
       <View
         style={[
           styles.input,
+          focused && styles.inputFocused,
           hasError && styles.inputError,
           disabled && styles.inputDisabled,
         ]}
@@ -82,6 +85,8 @@ export function Field({
           onChangeText={onChangeText}
           secureTextEntry={isPwd && hidden}
           editable={!disabled}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize ?? (type === "email" ? "none" : undefined)}
           autoCorrect={type !== "email" && type !== "password"}
@@ -114,8 +119,8 @@ const styles = StyleSheet.create({
     fontFamily: fonts.sans,
     fontSize: fontSize.eyebrow,
     fontWeight: fontWeight.semiBold,
-    color: colors.textSecond,
-    letterSpacing: 0.07 * fontSize.eyebrow,
+    color: colors.textMuted,
+    letterSpacing: letterSpacing.eyebrow,
     textTransform: "uppercase",
   },
   input: {
@@ -125,12 +130,15 @@ const styles = StyleSheet.create({
     height: sizes.field,
     paddingHorizontal: spacing.s12,
     borderRadius: radius.field,
-    borderWidth: 1.5,
-    borderColor: colors.borderMid,
-    backgroundColor: colors.bgCard,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.bgSubtle,
     width: "100%",
     minWidth: 0,
     overflow: "hidden",
+  },
+  inputFocused: {
+    borderColor: colors.accent,
   },
   inputError: {
     borderColor: colors.red,

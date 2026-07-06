@@ -45,8 +45,8 @@ export function EmptyState({
   testID,
 }: EmptyStateProps) {
   const isDanger = tone === "danger";
-  const badgeBg = isDanger ? colors.redLight : colors.navyLight;
-  const iconColor = isDanger ? colors.red : colors.navyMid;
+  const badgeBg = isDanger ? colors.redLight : colors.bgSubtle;
+  const iconColor = isDanger ? colors.red : colors.ink;
   const showAction = actionLabel !== undefined && onAction !== undefined;
   return (
     <View style={[styles.container, style]} testID={testID}>
@@ -82,14 +82,16 @@ const styles = StyleSheet.create({
   badge: {
     width: 56,
     height: 56,
-    borderRadius: radius.pill,
+    borderRadius: radius.cardLg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
   title: {
-    fontFamily: fonts.sans,
+    fontFamily: fonts.display,
     fontSize: fontSize.hero,
-    fontWeight: fontWeight.bold,
+    fontWeight: fontWeight.medium,
     color: colors.textPrimary,
     textAlign: "center",
     letterSpacing: -0.3,

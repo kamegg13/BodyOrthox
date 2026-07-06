@@ -22,7 +22,7 @@ export function LoadingState({
       style={[styles.container, fullScreen && styles.fullScreen]}
       testID={testID}
     >
-      <ActivityIndicator size={size} color={colors.navyMid} />
+      <ActivityIndicator size={size} color={colors.ink} />
       {message ? <Text style={styles.message}>{message}</Text> : null}
     </View>
   );

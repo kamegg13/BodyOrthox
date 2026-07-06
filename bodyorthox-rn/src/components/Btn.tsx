@@ -7,16 +7,13 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
-import { Gradient } from "./gradient";
 import { Icon, type IconName } from "./icons";
 import {
   colors,
   fonts,
   fontSize,
   fontWeight,
-  gradients,
   radius,
-  shadows,
   sizes,
   spacing,
 } from "../theme/tokens";
@@ -35,6 +32,15 @@ interface BtnProps {
   readonly testID?: string;
 }
 
+/**
+ * Bouton « Instrument » — plat et tracé.
+ * - primaire : encre pleine, texte blanc ;
+ * - secondaire : hairline sur blanc, texte encre ;
+ * - destructive (`danger`) : hairline rouge, texte rouge ;
+ * - ghost : transparent, texte encre.
+ * Le cyan (`accent`) n'est jamais une couleur de bouton (réservé aux états
+ * actifs/liens) ; la variante `teal` legacy rend désormais l'encre pleine.
+ */
 export function Btn({
   label,
   variant = "primary",
@@ -50,8 +56,8 @@ export function Btn({
   const fontSizePx = small ? 13 : fontSize.bodyLg;
   const paddingH = small ? spacing.s16 : spacing.s20;
 
-  const isGradient = variant === "primary" || variant === "teal";
-  const gradient = variant === "teal" ? gradients.tealBtn : gradients.primaryBtn;
+  // `teal` legacy → rendu encre plein (le cyan n'est pas une couleur de bouton).
+  const isFilled = variant === "primary" || variant === "teal";
 
   const textColor = (() => {
     switch (variant) {
@@ -60,7 +66,7 @@ export function Btn({
         return colors.textInverse;
       case "secondary":
       case "ghost":
-        return colors.navyMid;
+        return colors.textPrimary;
       case "danger":
         return colors.red;
     }
@@ -74,42 +80,13 @@ export function Btn({
       paddingHorizontal: full ? 0 : paddingH,
       alignSelf: full ? "stretch" : "flex-start",
     },
+    isFilled && styles.filled,
     variant === "secondary" && styles.secondary,
     variant === "ghost" && styles.ghost,
     variant === "danger" && styles.danger,
-    variant === "primary" && shadows.primary,
-    variant === "teal" && shadows.teal,
-    variant === "secondary" && shadows.sm,
     disabled && styles.disabled,
     style,
   ];
-
-  const inner = (
-    <View style={styles.row}>
-      {icon ? <Icon name={icon} size={small ? 14 : 16} color={textColor} /> : null}
-      <Text style={[styles.label, { color: textColor, fontSize: fontSizePx }]} numberOfLines={1}>
-        {label}
-      </Text>
-    </View>
-  );
-
-  if (isGradient) {
-    return (
-      <Pressable
-        accessibilityRole="button"
-        accessibilityState={{ disabled }}
-        disabled={disabled}
-        onPress={onPress}
-        testID={testID}
-        style={({ pressed }) => [containerStyle, pressed && styles.pressed]}
-      >
-        <Gradient gradient={gradient} radius={radius.button} style={StyleSheet.absoluteFill}>
-          <View />
-        </Gradient>
-        {inner}
-      </Pressable>
-    );
-  }
 
   return (
     <Pressable
@@ -120,7 +97,15 @@ export function Btn({
       testID={testID}
       style={({ pressed }) => [containerStyle, pressed && styles.pressed]}
     >
-      {inner}
+      <View style={styles.row}>
+        {icon ? <Icon name={icon} size={small ? 14 : 16} color={textColor} /> : null}
+        <Text
+          style={[styles.label, { color: textColor, fontSize: fontSizePx }]}
+          numberOfLines={1}
+        >
+          {label}
+        </Text>
+      </View>
     </Pressable>
   );
 }
@@ -131,24 +116,27 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     overflow: "hidden",
   },
+  filled: {
+    backgroundColor: colors.ink,
+  },
   secondary: {
     backgroundColor: colors.bgCard,
-    borderWidth: 1.5,
-    borderColor: colors.navySoft,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   ghost: {
     backgroundColor: "transparent",
   },
   danger: {
-    backgroundColor: colors.redLight,
-    borderWidth: 1.5,
-    borderColor: "rgba(185,28,28,0.2)",
+    backgroundColor: colors.bgCard,
+    borderWidth: 1,
+    borderColor: colors.red,
   },
   disabled: {
     opacity: 0.55,
   },
   pressed: {
-    opacity: 0.9,
+    opacity: 0.85,
   },
   row: {
     flexDirection: "row",

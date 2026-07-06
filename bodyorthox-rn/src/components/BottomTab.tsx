@@ -1,7 +1,7 @@
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Icon, type IconName } from "./icons";
-import { colors, fonts, fontWeight, sizes, spacing } from "../theme/tokens";
+import { colors, fonts, fontSize, fontWeight, sizes, spacing } from "../theme/tokens";
 
 export type TabKey = "home" | "patients" | "reports" | "settings";
 
@@ -28,7 +28,7 @@ export function BottomTab({ active, onPress }: BottomTabProps) {
     <View style={styles.bar}>
       {TABS.map((tab) => {
         const focused = tab.key === active;
-        const tint = focused ? colors.navyMid : colors.textMuted;
+        const tint = focused ? colors.ink : colors.textMuted;
         return (
           <Pressable
             key={tab.key}
@@ -38,11 +38,18 @@ export function BottomTab({ active, onPress }: BottomTabProps) {
             accessibilityState={{ selected: focused }}
             accessibilityLabel={tab.label}
           >
+            <View style={styles.tickSlot}>
+              {focused ? <View style={styles.tick} /> : null}
+            </View>
             <Icon name={tab.icon} size={20} color={tint} strokeWidth={1.75} />
-            <Text style={[styles.label, { color: tint, fontWeight: focused ? fontWeight.bold : fontWeight.medium }]}>
+            <Text
+              style={[
+                styles.label,
+                { color: tint, fontWeight: focused ? fontWeight.semiBold : fontWeight.medium },
+              ]}
+            >
               {tab.label}
             </Text>
-            {focused ? <View style={styles.dot} /> : null}
           </Pressable>
         );
       })}
@@ -55,7 +62,7 @@ const styles = StyleSheet.create({
     height: sizes.bottomTab,
     flexDirection: "row",
     alignItems: "flex-start",
-    paddingTop: 8,
+    paddingTop: 6,
     paddingBottom: sizes.bottomTabSafePad,
     paddingHorizontal: spacing.s8,
     backgroundColor: colors.bgCard,
@@ -68,18 +75,20 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
     gap: 3,
   },
+  // Signature « graduation » : trait accent au-dessus de l'onglet actif.
+  tickSlot: {
+    height: 4,
+    justifyContent: "center",
+  },
+  tick: {
+    width: 16,
+    height: 2,
+    backgroundColor: colors.accent,
+  },
   label: {
     fontFamily: fonts.sans,
-    fontSize: 10,
+    fontSize: fontSize.captionXs,
     letterSpacing: 0.2,
-  },
-  dot: {
-    position: "absolute",
-    bottom: 2,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.navyMid,
   },
 });
 
