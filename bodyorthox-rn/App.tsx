@@ -6,6 +6,7 @@ import {
   StatusBar,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
@@ -39,9 +40,9 @@ const previewScreen =
     : null;
 
 /**
- * Global error boundary — catches JS errors and displays them
- * on screen instead of crashing the app. This helps debug on
- * devices where we can't access adb logcat.
+ * Global error boundary — catches JS errors and lets the user recover
+ * via "Recharger" instead of leaving the app stuck. Technical details
+ * (stack traces) are only rendered in development builds.
  */
 class ErrorBoundary extends Component<
   { children: React.ReactNode },
@@ -60,24 +61,42 @@ class ErrorBoundary extends Component<
     this.setState({ error, errorInfo });
   }
 
+  handleReset = () => {
+    this.setState({ error: null, errorInfo: null });
+  };
+
   render() {
     if (this.state.error) {
       return (
         <View style={errorStyles.container}>
-          <Text style={errorStyles.title}>Erreur détectée</Text>
-          <ScrollView style={errorStyles.scroll}>
-            <Text style={errorStyles.errorName}>
-              {this.state.error.name}: {this.state.error.message}
-            </Text>
-            <Text style={errorStyles.stack}>
-              {this.state.error.stack?.substring(0, 2000)}
-            </Text>
-            {this.state.errorInfo && (
-              <Text style={errorStyles.componentStack}>
-                {this.state.errorInfo.componentStack?.substring(0, 1000)}
+          <Text style={errorStyles.title}>Une erreur est survenue</Text>
+          <Text style={errorStyles.subtitle}>
+            L'application a rencontré un problème inattendu. Vos données ne
+            sont pas affectées.
+          </Text>
+          <TouchableOpacity
+            style={errorStyles.resetButton}
+            onPress={this.handleReset}
+            accessibilityRole="button"
+            testID="error-boundary-reset"
+          >
+            <Text style={errorStyles.resetButtonText}>Recharger</Text>
+          </TouchableOpacity>
+          {__DEV__ && (
+            <ScrollView style={errorStyles.scroll}>
+              <Text style={errorStyles.errorName}>
+                {this.state.error.name}: {this.state.error.message}
               </Text>
-            )}
-          </ScrollView>
+              <Text style={errorStyles.stack}>
+                {this.state.error.stack?.substring(0, 2000)}
+              </Text>
+              {this.state.errorInfo && (
+                <Text style={errorStyles.componentStack}>
+                  {this.state.errorInfo.componentStack?.substring(0, 1000)}
+                </Text>
+              )}
+            </ScrollView>
+          )}
         </View>
       );
     }
@@ -88,31 +107,50 @@ class ErrorBoundary extends Component<
 const errorStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#1a0000",
-    padding: 20,
-    paddingTop: 60,
+    backgroundColor: Colors.background,
+    padding: 24,
+    paddingTop: 80,
   },
   title: {
-    color: "#ff4444",
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 16,
+    color: Colors.textPrimary,
+    fontSize: 22,
+    fontWeight: "700",
+    marginBottom: 8,
+  },
+  subtitle: {
+    color: Colors.textSecondary,
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  resetButton: {
+    backgroundColor: Colors.primary,
+    borderRadius: 13,
+    minHeight: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 24,
+  },
+  resetButtonText: {
+    color: Colors.textOnPrimary,
+    fontSize: 16,
+    fontWeight: "600",
   },
   scroll: { flex: 1 },
   errorName: {
-    color: "#ff8888",
-    fontSize: 16,
+    color: Colors.error,
+    fontSize: 14,
     fontWeight: "600",
     marginBottom: 12,
   },
   stack: {
-    color: "#cccccc",
+    color: Colors.textSecondary,
     fontSize: 11,
     fontFamily: "monospace",
     marginBottom: 12,
   },
   componentStack: {
-    color: "#888888",
+    color: Colors.textDisabled,
     fontSize: 10,
     fontFamily: "monospace",
   },

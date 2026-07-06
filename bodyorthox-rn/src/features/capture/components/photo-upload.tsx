@@ -2,6 +2,7 @@ import React, { useCallback, useRef, useEffect } from "react";
 import { Platform, StyleSheet, Text, TouchableOpacity } from "react-native";
 import { Colors } from "../../../shared/design-system/colors";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
+import { validateImageFile } from "../domain/validate-image-file";
 
 interface PhotoUploadProps {
   onPhotoSelected: (dataUrl: string) => void;
@@ -22,7 +23,25 @@ export function PhotoUpload({ onPhotoSelected }: PhotoUploadProps) {
 
     const handleChange = () => {
       const file = input.files?.[0];
-      if (!file) return;
+      // Toujours vider l'input, même en cas de rejet, pour permettre de
+      // resélectionner le même fichier après correction.
+      const reset = () => {
+        input.value = "";
+      };
+
+      if (!file) {
+        reset();
+        return;
+      }
+
+      // `accept="image/*"` n'est qu'indicatif : on valide type + taille avant
+      // toute lecture pour éviter qu'une data URL non-image fige l'écran.
+      const validation = validateImageFile(file);
+      if (!validation.ok) {
+        reset();
+        window.alert(validation.message);
+        return;
+      }
 
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -31,8 +50,11 @@ export function PhotoUpload({ onPhotoSelected }: PhotoUploadProps) {
           onPhotoSelected(result);
         }
       };
+      reader.onerror = () => {
+        window.alert("Impossible de lire l'image. Réessayez avec une autre photo.");
+      };
       reader.readAsDataURL(file);
-      input.value = "";
+      reset();
     };
 
     input.addEventListener("change", handleChange);
