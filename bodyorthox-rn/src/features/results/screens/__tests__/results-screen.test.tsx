@@ -28,18 +28,13 @@ jest.mock("@react-navigation/native", () => ({
 }));
 
 // ---------------------------------------------------------------------------
-// Mock database & repository
+// Mock analysis repository hook
 // ---------------------------------------------------------------------------
 const mockGetById = jest.fn();
+const mockRepo = { getById: mockGetById };
 
-jest.mock("../../../../core/database/init", () => ({
-  getDatabase: () => ({}),
-}));
-
-jest.mock("../../../capture/data/sqlite-analysis-repository", () => ({
-  SqliteAnalysisRepository: jest.fn().mockImplementation(() => ({
-    getById: mockGetById,
-  })),
+jest.mock("../../../../shared/hooks/use-analysis-repository", () => ({
+  useAnalysisRepository: () => mockRepo,
 }));
 
 // ---------------------------------------------------------------------------
@@ -176,7 +171,7 @@ describe("ResultsScreen", () => {
   // AC1: Data loaded and displayed correctly
   // -------------------------------------------------------------------------
   describe("AC1 — data loading from repository", () => {
-    it("calls SqliteAnalysisRepository.getById with the analysisId from route params", async () => {
+    it("calls the repository getById with the analysisId from route params", async () => {
       renderScreen();
 
       await waitFor(() => {

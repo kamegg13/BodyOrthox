@@ -28,20 +28,14 @@ jest.mock("@react-navigation/native", () => ({
 }));
 
 // ---------------------------------------------------------------------------
-// Mock database & repository
+// Mock analysis repository hook
 // ---------------------------------------------------------------------------
 const mockGetById = jest.fn();
 const mockUpdate = jest.fn().mockResolvedValue(undefined);
+const mockRepo = { getById: mockGetById, update: mockUpdate };
 
-jest.mock("../../../../core/database/init", () => ({
-  getDatabase: () => ({}),
-}));
-
-jest.mock("../../../capture/data/sqlite-analysis-repository", () => ({
-  SqliteAnalysisRepository: jest.fn().mockImplementation(() => ({
-    getById: mockGetById,
-    update: mockUpdate,
-  })),
+jest.mock("../../../../shared/hooks/use-analysis-repository", () => ({
+  useAnalysisRepository: () => mockRepo,
 }));
 
 // ---------------------------------------------------------------------------
