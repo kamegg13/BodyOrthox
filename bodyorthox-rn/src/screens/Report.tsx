@@ -9,7 +9,7 @@ export interface ReportRow {
   readonly value: string;
   readonly norm: string;
   readonly delta: string;
-  readonly severity: "normal" | "moderate" | "severe";
+  readonly severity: "normal" | "moderate" | "severe" | "unavailable";
 }
 
 export interface ReportData {
@@ -20,7 +20,7 @@ export interface ReportData {
   readonly practitioner: string;
   readonly practitionerId: string;
   readonly severityLabel: string;
-  readonly severityColor: "green" | "amber" | "red";
+  readonly severityColor: "green" | "amber" | "red" | "navy";
   readonly rows: readonly ReportRow[];
   readonly capturedImageUrl?: string;
 }
@@ -147,9 +147,17 @@ export function Report({ data, onBack, onShare, onDownload, onSend }: ReportProp
 
 function ReportRowView({ row }: { row: ReportRow }) {
   const sevColor =
-    row.severity === "normal" ? colors.green : row.severity === "moderate" ? colors.amber : colors.red;
+    row.severity === "unavailable"
+      ? colors.textMuted
+      : row.severity === "normal"
+      ? colors.green
+      : row.severity === "moderate"
+      ? colors.amber
+      : colors.red;
   const sevBg =
-    row.severity === "normal"
+    row.severity === "unavailable"
+      ? colors.bgSubtle
+      : row.severity === "normal"
       ? colors.greenLight
       : row.severity === "moderate"
       ? colors.amberLight

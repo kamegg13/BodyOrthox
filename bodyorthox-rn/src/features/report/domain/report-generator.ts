@@ -64,16 +64,16 @@ export function buildReportData(
 
 // ─── Helpers ──────────────────────────────────────────────────
 
-/** Print-safe color: in-range green, ≤5° off orange, >5° off red, zero grey */
+/** Print-safe color: in-range green, ≤5° off orange, >5° off red, unmeasured grey */
 function angleColor(value: number, min: number, max: number): string {
-  if (value === 0) return "#888888";
+  if (!Number.isFinite(value) || value === 0) return "#888888";
   if (value >= min && value <= max) return "#1a7f37";
   const dev = value < min ? min - value : value - max;
   return dev <= 5 ? "#b45309" : "#c0392b";
 }
 
 function fmt(v: number): string {
-  return v === 0 ? "—" : `${v.toFixed(1)}°`;
+  return !Number.isFinite(v) || v === 0 ? "—" : `${v.toFixed(1)}°`;
 }
 
 // ─── Factual geometric statement ──────────────────────

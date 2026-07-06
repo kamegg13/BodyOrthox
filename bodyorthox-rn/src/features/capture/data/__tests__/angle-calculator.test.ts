@@ -66,6 +66,15 @@ describe("angleBetweenThreePoints", () => {
     const a = { x: 1, y: 1 };
     expect(angleBetweenThreePoints(a, a, a)).toBe(0);
   });
+
+  it("returns a finite value (0) for non-finite input coordinates", () => {
+    const nan = { x: NaN, y: NaN };
+    const b = { x: 0.5, y: 0 };
+    const c = { x: 1, y: 0 };
+    const angle = angleBetweenThreePoints(nan, b, c);
+    expect(Number.isFinite(angle)).toBe(true);
+    expect(angle).toBe(0);
+  });
 });
 
 describe("isFootLandmarkUsable", () => {
@@ -349,6 +358,12 @@ describe("classifyHKA", () => {
 
   it("classifies unavailable for 0", () => {
     expect(classifyHKA(0)).toBe("unavailable");
+  });
+
+  it("classifies unavailable for non-finite angles (NaN, Infinity)", () => {
+    expect(classifyHKA(NaN)).toBe("unavailable");
+    expect(classifyHKA(Infinity)).toBe("unavailable");
+    expect(classifyHKA(-Infinity)).toBe("unavailable");
   });
 });
 

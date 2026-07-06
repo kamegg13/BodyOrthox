@@ -61,7 +61,10 @@ export function angleBetweenThreePoints(
 
   const cosAngle = dot / (magBa * magBc);
   const clampedCos = Math.max(-1, Math.min(1, cosAngle));
-  return (Math.acos(clampedCos) * 180) / Math.PI;
+  const angle = (Math.acos(clampedCos) * 180) / Math.PI;
+  // Guard against NaN/Infinity (e.g. non-finite input coordinates) —
+  // fall back to the same sentinel used for degenerate geometry.
+  return Number.isFinite(angle) ? angle : 0;
 }
 
 export function calculateKneeAngle(landmarks: PoseLandmarks): number {
@@ -174,7 +177,7 @@ export interface BilateralAngles {
 export function classifyHKA(
   hkaAngle: number,
 ): "below" | "in_range" | "above" | "unavailable" {
-  if (hkaAngle === 0) return "unavailable";
+  if (!Number.isFinite(hkaAngle) || hkaAngle === 0) return "unavailable";
   if (hkaAngle < 175) return "below";
   if (hkaAngle > 180) return "above";
   return "in_range";

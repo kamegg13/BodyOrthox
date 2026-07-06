@@ -19,21 +19,9 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 /** Low confidence threshold — warn the user below this */
 const LOW_CONFIDENCE_THRESHOLD = 0.6;
 
-/**
- * Simulated landmarks for native (iOS/Android) — kept until
- * react-native-vision-camera frame processor integration.
- */
-const NATIVE_SIMULATED_LANDMARKS = {
-  11: { x: 0.4, y: 0.2, visibility: 0.95 },
-  12: { x: 0.6, y: 0.2, visibility: 0.95 },
-  23: { x: 0.42, y: 0.5, visibility: 0.9 },
-  24: { x: 0.58, y: 0.5, visibility: 0.9 },
-  25: { x: 0.42, y: 0.72, visibility: 0.88 },
-  26: { x: 0.58, y: 0.72, visibility: 0.88 },
-  27: { x: 0.42, y: 0.92, visibility: 0.85 },
-  28: { x: 0.58, y: 0.92, visibility: 0.85 },
-  30: { x: 0.6, y: 0.96, visibility: 0.8 },
-};
+/** Honest message shown when no real pose detector is available (native). */
+const NO_DETECTOR_MESSAGE =
+  "L'analyse automatique n'est pas encore disponible sur cette plateforme.";
 
 export function useCaptureLogic(patientId: string) {
   const navigation = useNavigation<Nav>();
@@ -69,6 +57,10 @@ export function useCaptureLogic(patientId: string) {
   } | null>(null);
 
   useEffect(() => {
+    // Clear any state left over from a previous patient/session before starting.
+    // This also bumps the session token, invalidating any in-flight callback.
+    reset();
+
     // Lazy-load pose detector on web
     if (Platform.OS === "web") {
       const detector = getPoseDetector();
@@ -124,25 +116,16 @@ export function useCaptureLogic(patientId: string) {
 
     const detector = poseDetectorRef.current;
 
-    // On native (Android/iOS), ML detection is not available.
-    // Save the photo directly without pose analysis.
+    // No real pose detector (native without frame processor, or web ML failed
+    // to load): block honestly instead of fabricating landmarks. We must never
+    // present or persist a simulated analysis as a real measurement.
     if (Platform.OS !== "web" || !detector || !detector.isReady()) {
-      // Use simulated landmarks for basic angle display
-      const NATIVE_LANDMARKS: PoseLandmarks = {
-        11: { x: 0.4, y: 0.2, visibility: 0.95 },
-        12: { x: 0.6, y: 0.2, visibility: 0.95 },
-        23: { x: 0.42, y: 0.5, visibility: 0.9 },
-        24: { x: 0.58, y: 0.5, visibility: 0.9 },
-        25: { x: 0.42, y: 0.72, visibility: 0.88 },
-        26: { x: 0.58, y: 0.72, visibility: 0.88 },
-        27: { x: 0.42, y: 0.92, visibility: 0.85 },
-        28: { x: 0.58, y: 0.92, visibility: 0.85 },
-      };
-      processFrames(NATIVE_LANDMARKS);
+      setDetectionError(NO_DETECTOR_MESSAGE);
       return;
     }
 
     startRecording();
+    const token = useCaptureStore.getState().sessionToken();
 
     try {
       const result = await detector.detect(previewUrl);
@@ -159,6 +142,7 @@ export function useCaptureLogic(patientId: string) {
               result.landmarks,
               result.allLandmarks,
               result.anatomicalValidation,
+              token,
             );
           },
         });
@@ -169,6 +153,7 @@ export function useCaptureLogic(patientId: string) {
         result.landmarks,
         result.allLandmarks,
         result.anatomicalValidation,
+        token,
       );
     } catch (error) {
       // Set phase back to 'ready' so UI shows error instead of spinner
@@ -218,11 +203,10 @@ export function useCaptureLogic(patientId: string) {
       return;
     }
 
-    startRecording();
-
-    // WARN: Simulated ML on native — real frame processor not yet integrated
-    processFrames(NATIVE_SIMULATED_LANDMARKS);
-  }, [phase, startRecording, processFrames, handleTakeWebPhoto]);
+    // Native has no real pose detector yet — block honestly rather than
+    // fabricating a "straight legs" analysis from simulated landmarks.
+    setDetectionError(NO_DETECTOR_MESSAGE);
+  }, [phase, handleTakeWebPhoto]);
 
   const handleSave = useCallback(
     async (correctedLandmarks?: PoseLandmarks) => {
@@ -250,7 +234,11 @@ export function useCaptureLogic(patientId: string) {
           ],
         });
       } else {
-        setError("Impossible de sauvegarder l'analyse.");
+        // saveAnalysis may already have set a cause-aware error phase
+        // (network/auth). Only fall back to a generic message otherwise.
+        if (useCaptureStore.getState().phase.type !== "error") {
+          setError("Impossible de sauvegarder l'analyse.");
+        }
       }
     },
     [phase, patientId, saveAnalysis, navigation, setError],

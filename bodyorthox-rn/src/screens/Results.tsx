@@ -22,7 +22,8 @@ import { colors, fonts, fontSize, fontWeight, radius, shadows, spacing } from ".
 export interface AngleMeasurement {
   readonly key: string;
   readonly label: string;
-  readonly value: number;
+  /** Measured value, or null when the angle could not be measured. */
+  readonly value: number | null;
   readonly norm: number;
   readonly unit: "°" | "mm";
 }
@@ -31,7 +32,7 @@ export interface ResultsData {
   readonly patientName: string;
   readonly date: string;
   readonly type: string;
-  readonly severity: "normal" | "moderate" | "severe";
+  readonly severity: "normal" | "moderate" | "severe" | "unavailable";
   readonly hka: { readonly left: AngleMeasurement; readonly right: AngleMeasurement };
   readonly postural: readonly AngleMeasurement[];
   readonly capturedImageUrl?: string;
@@ -46,9 +47,21 @@ interface ResultsProps {
 
 export function Results({ data, onBack, onShare, onGenerateReport }: ResultsProps) {
   const sevColor: BadgeColor =
-    data.severity === "normal" ? "green" : data.severity === "moderate" ? "amber" : "red";
+    data.severity === "unavailable"
+      ? "navy"
+      : data.severity === "normal"
+      ? "green"
+      : data.severity === "moderate"
+      ? "amber"
+      : "red";
   const sevLabel =
-    data.severity === "normal" ? "Normal" : data.severity === "moderate" ? "Modéré" : "Sévère";
+    data.severity === "unavailable"
+      ? "Indisponible"
+      : data.severity === "normal"
+      ? "Normal"
+      : data.severity === "moderate"
+      ? "Modéré"
+      : "Sévère";
 
   // Mesure la photo pour adapter dynamiquement l'aspect ratio du conteneur,
   // sinon une photo verticale (3:4) est croppée dans un cadre 4:3.
@@ -167,6 +180,33 @@ function severity(delta: number): "normal" | "moderate" | "severe" {
 }
 
 function AngleRow({ m }: { m: AngleMeasurement }) {
+  if (m.value === null) {
+    return (
+      <View style={angleStyles.card}>
+        <View style={angleStyles.topRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={angleStyles.eyebrow}>{m.label}</Text>
+            <View style={angleStyles.valueRow}>
+              <Text style={angleStyles.value}>—</Text>
+            </View>
+          </View>
+          <View style={{ alignItems: "flex-end", gap: 4 }}>
+            <Text style={angleStyles.norm}>
+              norme {m.norm}
+              {m.unit}
+            </Text>
+            <View style={[angleStyles.deltaPill, { backgroundColor: colors.bgSubtle }]}>
+              <Text style={[angleStyles.deltaText, { color: colors.textMuted }]}>
+                indisponible
+              </Text>
+            </View>
+          </View>
+        </View>
+        <View style={angleStyles.bar} />
+      </View>
+    );
+  }
+
   const delta = +(m.value - m.norm).toFixed(1);
   const sev = severity(delta);
   const sevColor =
