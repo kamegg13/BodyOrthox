@@ -20,6 +20,21 @@ interface PatientRow {
   consent_date: string | null;
 }
 
+/**
+ * Parse le profil morphologique stocké en JSON. Une ligne corrompue ne doit
+ * jamais faire planter le rendu de la liste patients : on retombe sur `null`.
+ */
+function parseMorphologicalProfile(
+  json: string | null,
+): Patient["morphologicalProfile"] {
+  if (!json) return null;
+  try {
+    return JSON.parse(json) as Patient["morphologicalProfile"];
+  } catch {
+    return null;
+  }
+}
+
 function rowToPatient(row: Record<string, unknown>): Patient {
   const r = row as unknown as PatientRow;
   return {
@@ -29,9 +44,7 @@ function rowToPatient(row: Record<string, unknown>): Patient {
     ...(r.display_label ? { displayLabel: r.display_label } : {}),
     ...(r.date_of_birth ? { dateOfBirth: r.date_of_birth } : {}),
     ...(r.birth_year != null ? { birthYear: Number(r.birth_year) } : {}),
-    morphologicalProfile: r.morphological_profile
-      ? JSON.parse(r.morphological_profile)
-      : null,
+    morphologicalProfile: parseMorphologicalProfile(r.morphological_profile),
     createdAt: r.created_at,
     ...(r.archived_at ? { archivedAt: r.archived_at } : {}),
     ...(r.consent_given != null

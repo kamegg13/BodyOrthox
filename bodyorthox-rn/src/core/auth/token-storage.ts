@@ -19,7 +19,11 @@ export async function saveTokens(tokens: StoredTokens): Promise<void> {
   }
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const Keychain = require('react-native-keychain');
-  await Keychain.setGenericPassword('token', JSON.stringify(tokens), { service: SERVICE });
+  try {
+    await Keychain.setGenericPassword('token', JSON.stringify(tokens), { service: SERVICE });
+  } catch {
+    throw new Error("Impossible d'enregistrer la session de manière sécurisée.");
+  }
 }
 
 export async function loadTokens(): Promise<StoredTokens | null> {
@@ -33,7 +37,13 @@ export async function loadTokens(): Promise<StoredTokens | null> {
   }
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const Keychain = require('react-native-keychain');
-  const result = await Keychain.getGenericPassword({ service: SERVICE });
+  let result;
+  try {
+    result = await Keychain.getGenericPassword({ service: SERVICE });
+  } catch {
+    // Keychain indisponible/verrouillé — traiter comme non authentifié.
+    return null;
+  }
   if (!result) return null;
   try {
     return JSON.parse(result.password) as StoredTokens;
@@ -53,5 +63,9 @@ export async function clearTokens(): Promise<void> {
   }
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const Keychain = require('react-native-keychain');
-  await Keychain.resetGenericPassword({ service: SERVICE });
+  try {
+    await Keychain.resetGenericPassword({ service: SERVICE });
+  } catch {
+    throw new Error("Impossible d'effacer la session sécurisée.");
+  }
 }

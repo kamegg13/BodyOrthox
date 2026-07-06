@@ -4,13 +4,14 @@
  * The model fitted in the calibration screen is persisted here and read back by
  * the capture pipeline (`capture-store`) to correct HKA on every saved analysis.
  *
- * Mirrors the storage strategy of `onboarding-store`: localStorage on web with
- * an in-memory fallback for Android/Hermes where localStorage is absent.
+ * Uses the shared `key-value-storage` seam: localStorage on web with an
+ * in-memory fallback for Android/Hermes where localStorage is absent.
  */
 
 import { create } from "zustand";
 import type { CalibrationModel } from "./calibration-types";
 import { parseModel, serializeModel } from "./calibration-dataset";
+import { getKeyValueStorage } from "../../../core/storage/key-value-storage";
 
 const STORAGE_KEY = "hka_calibration_model";
 
@@ -19,26 +20,18 @@ let loaded = false;
 
 function readFromStorage(): CalibrationModel | null {
   try {
-    if (typeof localStorage !== "undefined") {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) return parseModel(raw);
-    }
+    const raw = getKeyValueStorage().getItem(STORAGE_KEY);
+    if (raw) return parseModel(raw);
   } catch {
-    // localStorage unavailable or corrupt JSON — fall back to in-memory.
+    // Stockage indisponible ou JSON corrompu — repli sur l'état mémoire.
   }
   return inMemoryModel;
 }
 
 function writeToStorage(model: CalibrationModel | null): void {
   inMemoryModel = model;
-  try {
-    if (typeof localStorage !== "undefined") {
-      if (model) localStorage.setItem(STORAGE_KEY, serializeModel(model));
-      else localStorage.removeItem(STORAGE_KEY);
-    }
-  } catch {
-    // localStorage unavailable — in-memory only.
-  }
+  if (model) getKeyValueStorage().setItem(STORAGE_KEY, serializeModel(model));
+  else getKeyValueStorage().removeItem(STORAGE_KEY);
 }
 
 /**

@@ -1,9 +1,7 @@
 import { create } from "zustand";
+import { getKeyValueStorage } from "../../../core/storage/key-value-storage";
 
 const STORAGE_KEY = "onboarding_completed";
-
-/** In-memory fallback when localStorage is unavailable (Android Hermes). */
-let inMemoryCompleted = false;
 
 interface OnboardingState {
   isCompleted: boolean;
@@ -16,25 +14,11 @@ interface OnboardingActions {
 }
 
 function readFromStorage(): boolean {
-  try {
-    if (typeof localStorage !== "undefined") {
-      return localStorage.getItem(STORAGE_KEY) === "true";
-    }
-  } catch {
-    // localStorage not available on Android — in-memory only
-  }
-  return inMemoryCompleted;
+  return getKeyValueStorage().getItem(STORAGE_KEY) === "true";
 }
 
 function writeToStorage(value: boolean): void {
-  inMemoryCompleted = value;
-  try {
-    if (typeof localStorage !== "undefined") {
-      localStorage.setItem(STORAGE_KEY, String(value));
-    }
-  } catch {
-    // localStorage not available on Android — in-memory only
-  }
+  getKeyValueStorage().setItem(STORAGE_KEY, String(value));
 }
 
 export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(

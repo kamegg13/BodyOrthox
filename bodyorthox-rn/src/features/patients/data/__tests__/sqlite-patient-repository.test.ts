@@ -72,6 +72,21 @@ describe("SqlitePatientRepository", () => {
         weightKg: 70,
       });
     });
+
+    it("renders a patient with null profile when the JSON is corrupted (no crash)", async () => {
+      const corruptedRow = {
+        ...mockPatientRow,
+        morphological_profile: "{not-valid-json",
+      };
+      const db = createMockDb([corruptedRow]);
+      const repo = new SqlitePatientRepository(db);
+
+      const patients = await repo.getAll();
+
+      expect(patients).toHaveLength(1);
+      expect(patients[0].id).toBe("test-patient-id");
+      expect(patients[0].morphologicalProfile).toBeNull();
+    });
   });
 
   describe("getById", () => {

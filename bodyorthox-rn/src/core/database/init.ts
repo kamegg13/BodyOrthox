@@ -41,13 +41,20 @@ export async function initializeDatabase(): Promise<IDatabase> {
       ? require('./database.web')
       : require('./database.native');
 
-  _db = createDatabase(AppConfiguration.databaseName) as IDatabase;
-  await _db.initialize();
+  const db = createDatabase(AppConfiguration.databaseName) as IDatabase;
 
+  // Les repositories API ne dépendent pas du shim on-device : on les câble
+  // d'abord pour qu'un échec d'`initialize()` (shim indisponible) ne laisse pas
+  // les écrans sans repository — sinon écrans vides silencieux.
   usePatientsStore.getState().setRepository(new ApiPatientRepository());
   useCaptureStore.getState().setRepository(new ApiAnalysisRepository());
   useFeedbackStore.getState().setRepository(new ApiFeedbackRepository());
 
+  // On propage proprement l'erreur d'init sans mettre en cache un shim non
+  // initialisé : un appel ultérieur pourra retenter.
+  await db.initialize();
+
+  _db = db;
   return _db;
 }
 
