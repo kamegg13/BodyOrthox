@@ -3,8 +3,9 @@
  * (`database.native.ts` / `database.web.ts`).
  *
  * Supports the subset of SQL the repositories actually emit: `col = ?` and
- * `col LIKE ?` predicates combined with AND / OR, no parentheses, evaluated
- * left to right. Placeholders are bound positionally, once, up front — the
+ * `col LIKE ?` predicates combined with a single connector kind (all AND or
+ * all OR — mixing both throws, as operator precedence is not implemented),
+ * no parentheses. Placeholders are bound positionally, once, up front — the
  * returned predicate is then applied to every candidate row.
  */
 
@@ -54,6 +55,15 @@ export function matchesWhere(
       operators.push(token.toUpperCase());
     }
   });
+
+  // Sans gestion de la précédence SQL (AND avant OR), un mélange des deux
+  // produirait des résultats silencieusement faux : on échoue bruyamment.
+  const uniqueOps = new Set(operators);
+  if (uniqueOps.size > 1) {
+    throw new Error(
+      `matchesWhere: mélange AND/OR non supporté (précédence non gérée) : "${condition}"`,
+    );
+  }
 
   return (row) => {
     let acc = predicates[0](row);

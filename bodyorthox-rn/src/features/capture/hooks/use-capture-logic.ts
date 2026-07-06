@@ -164,7 +164,7 @@ export function useCaptureLogic(patientId: string) {
           : "Erreur lors de l'analyse de la photo.";
       setDetectionError(message);
     }
-  }, [previewUrl, startRecording, processFrames, setError]);
+  }, [previewUrl, startRecording, processFrames]);
 
   const handleRetake = useCallback(() => {
     setPreviewUrl(null);

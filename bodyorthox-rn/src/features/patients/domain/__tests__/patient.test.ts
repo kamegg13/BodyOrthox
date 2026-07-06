@@ -117,6 +117,32 @@ describe("createPatient", () => {
     ).toThrow();
   });
 
+  it("throws for a birthYear before 1900", () => {
+    expect(() =>
+      createPatient({ ...validInput, birthYear: 1200 }),
+    ).toThrow(/1900/);
+  });
+
+  it("throws for a birthYear in the future", () => {
+    expect(() =>
+      createPatient({
+        ...validInput,
+        birthYear: new Date().getFullYear() + 1,
+      }),
+    ).toThrow(/futur/);
+  });
+
+  it("throws for a non-integer birthYear", () => {
+    expect(() =>
+      createPatient({ ...validInput, birthYear: 1985.5 }),
+    ).toThrow(/invalide/);
+  });
+
+  it("accepts a plausible birthYear", () => {
+    const patient = createPatient({ ...validInput, birthYear: 1985 });
+    expect(patient.birthYear).toBe(1985);
+  });
+
   it("stores morphological profile when provided", () => {
     const patient = createPatient({
       ...validInput,

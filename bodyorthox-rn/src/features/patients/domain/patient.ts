@@ -102,11 +102,35 @@ function assertValidDateOfBirth(dateOfBirth: string): void {
   }
 }
 
+/** Validate an optional birth year. Same bounds as the full date path. */
+function assertValidBirthYear(birthYear: number): void {
+  if (!Number.isInteger(birthYear)) {
+    throw new Error("L'année de naissance est invalide.");
+  }
+  const currentYear = new Date().getFullYear();
+  if (birthYear > currentYear) {
+    throw new Error(
+      "L'année de naissance ne peut pas être dans le futur.",
+    );
+  }
+  if (birthYear < MIN_BIRTH_YEAR) {
+    throw new Error(
+      `L'année de naissance doit être postérieure à ${MIN_BIRTH_YEAR}.`,
+    );
+  }
+  if (currentYear - birthYear > MAX_AGE_YEARS) {
+    throw new Error(`L'âge ne peut pas dépasser ${MAX_AGE_YEARS} ans.`);
+  }
+}
+
 export function createPatient(input: CreatePatientInput): Patient {
   // Minimisation : on ne lève PLUS d'erreur sur l'absence de name / dateOfBirth.
   // On valide uniquement le format de la date si elle est fournie.
   if (input.dateOfBirth) {
     assertValidDateOfBirth(input.dateOfBirth);
+  }
+  if (input.birthYear !== undefined) {
+    assertValidBirthYear(input.birthYear);
   }
 
   const id = generateId();
@@ -139,6 +163,9 @@ export function updatePatient(
 ): Patient {
   if (input.dateOfBirth !== undefined && input.dateOfBirth) {
     assertValidDateOfBirth(input.dateOfBirth);
+  }
+  if (input.birthYear !== undefined) {
+    assertValidBirthYear(input.birthYear);
   }
 
   return {
