@@ -5,8 +5,10 @@
  */
 import { IDatabase, QueryResult } from "./database";
 
+// Active only in local development. Disabled in test and production so that
+// patient data (query params, rows) is never written to logs (RGPD).
 const DEBUG_DB =
-  typeof process !== "undefined" ? process.env.NODE_ENV !== "test" : true;
+  typeof process !== "undefined" && process.env.NODE_ENV === "development";
 
 function dbLog(...args: unknown[]): void {
   if (DEBUG_DB) {
