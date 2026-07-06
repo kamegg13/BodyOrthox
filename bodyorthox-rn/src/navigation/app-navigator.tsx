@@ -34,6 +34,7 @@ import {
   ProcessingRoute,
   V2TabBar,
 } from "./screens-v2";
+import { whenStorageReady } from "../core/storage/key-value-storage";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<BottomTabParamList>();
@@ -235,7 +236,9 @@ export function AppNavigator() {
   useEffect(() => {
     if (isDevMode()) return;
     initialize();
-    checkOnboarding();
+    // L'onboarding lit le stockage persistant : attendre l'hydratation du
+    // backend natif pour ne pas re-proposer l'onboarding déjà complété.
+    whenStorageReady().then(checkOnboarding);
   }, [initialize, checkOnboarding]);
 
   if (isAuthLoading || isOnboardingLoading) {

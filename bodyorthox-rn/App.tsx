@@ -27,10 +27,18 @@ import { Results, SAMPLE_RESULTS } from "./src/screens/Results";
 import { Report, SAMPLE_REPORT } from "./src/screens/Report";
 import { PreviewGallery } from "./src/screens/PreviewGallery";
 import { bootDevMode, isDevMode } from "./src/dev/dev-mode";
+import { installAsyncStorageBackend } from "./src/core/storage/async-storage-backend";
 
 // Top-level boot: doit se faire AVANT que React monte AppContent, sinon
 // `initialize()` du auth-store resetterait l'etat seedé.
 bootDevMode();
+
+// Persistance clé/valeur native (onboarding, calibration HKA) : hydratation
+// AsyncStorage lancée dès le boot ; les consommateurs attendent
+// `whenStorageReady()`. Sur web, localStorage est déjà synchrone.
+if (Platform.OS !== "web") {
+  installAsyncStorageBackend();
+}
 
 // Preview mode (web only) — ouvrir avec ?preview=<screen> pour visualiser
 // les nouveaux écrans v2 sans passer par l'auth. Aucun impact mobile.

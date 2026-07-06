@@ -1,12 +1,11 @@
 /**
  * Seam de stockage clé/valeur synchrone, injectable.
  *
- * Sur le web, `localStorage` fournit la persistance. Sur natif (Hermes) il n'y a
- * pas de stockage synchrone et AsyncStorage n'est pas câblé : le backend par
- * défaut retombe alors en mémoire uniquement — les données NE survivent PAS à un
- * redémarrage de l'app. Cette limitation est centralisée ici derrière une seule
- * interface pour qu'un vrai backend natif (AsyncStorage/MMKV) puisse être injecté
- * plus tard via `setKeyValueStorage`, sans toucher aux stores qui l'utilisent.
+ * Sur le web, `localStorage` fournit la persistance. Sur natif, le backend
+ * AsyncStorage hydraté (`async-storage-backend.ts`) est installé au boot via
+ * `setKeyValueStorage` ; avant son installation (ou si elle échoue), le backend
+ * par défaut retombe en mémoire. Les consommateurs qui dépendent de valeurs
+ * persistées attendent `whenStorageReady()` avant leur première lecture.
  */
 
 export interface KeyValueStorage {
@@ -59,6 +58,7 @@ function createDefaultStorage(): KeyValueStorage {
 }
 
 let storage: KeyValueStorage = createDefaultStorage();
+let ready: Promise<void> = Promise.resolve();
 
 export function getKeyValueStorage(): KeyValueStorage {
   return storage;
@@ -69,7 +69,21 @@ export function setKeyValueStorage(next: KeyValueStorage): void {
   storage = next;
 }
 
+/**
+ * Signale qu'un backend s'installe de façon asynchrone : `whenStorageReady`
+ * ne se résout qu'une fois l'hydratation terminée.
+ */
+export function setStorageReady(promise: Promise<void>): void {
+  ready = promise;
+}
+
+/** Résolu quand le backend actif a fini de s'hydrater (immédiat sur web). */
+export function whenStorageReady(): Promise<void> {
+  return ready;
+}
+
 /** Réinitialise le backend par défaut — test seam. */
 export function __resetKeyValueStorage(): void {
   storage = createDefaultStorage();
+  ready = Promise.resolve();
 }
