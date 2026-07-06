@@ -63,6 +63,25 @@ describe("SqliteAnalysisRepository", () => {
       const analyses = await repo.getForPatient("p1");
       expect(analyses).toHaveLength(0);
     });
+
+    it("orders analyses by created_at descending (newest first)", async () => {
+      // Rows returned unsorted by the shim (it ignores ORDER BY).
+      const older = {
+        ...mockRow,
+        id: "older",
+        created_at: "2024-01-01T00:00:00Z",
+      };
+      const newer = {
+        ...mockRow,
+        id: "newer",
+        created_at: "2024-06-01T00:00:00Z",
+      };
+      const db = createMockDb([older, newer]);
+      const repo = new SqliteAnalysisRepository(db);
+
+      const analyses = await repo.getForPatient("p1");
+      expect(analyses.map((a) => a.id)).toEqual(["newer", "older"]);
+    });
   });
 
   describe("getById", () => {

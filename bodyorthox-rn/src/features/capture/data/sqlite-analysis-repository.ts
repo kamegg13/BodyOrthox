@@ -65,7 +65,10 @@ export class SqliteAnalysisRepository implements IAnalysisRepository {
       `SELECT * FROM analyses WHERE patient_id = ? ORDER BY created_at DESC`,
       [patientId],
     );
-    return result.rows.map(rowToAnalysis);
+    // Le shim DB local ignore ORDER BY : le tri est garanti côté repo.
+    return result.rows
+      .map(rowToAnalysis)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
 
   async getById(id: string): Promise<Analysis | null> {

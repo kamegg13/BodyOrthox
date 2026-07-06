@@ -4,6 +4,7 @@
  * Data is persisted to localStorage between sessions.
  */
 import { IDatabase, QueryResult } from "./database";
+import { matchesWhere } from "./sql-where";
 
 // Active only in local development. Disabled in test and production so that
 // patient data (query params, rows) is never written to logs (RGPD).
@@ -141,44 +142,13 @@ class WebDatabase implements IDatabase {
 
     dbLog("SELECT", tableName, "totalRows:", rows.length, "params:", params);
 
-    // Parse WHERE clause — supports multiple AND conditions
+    // Parse WHERE clause — supports AND / OR combinations of `col = ?` and
+    // `col LIKE ?` predicates (no parentheses; evaluated left to right).
     const whereMatch = sql.match(/WHERE\s+(.+?)(?:\s+ORDER|\s+LIMIT|$)/i);
     if (whereMatch) {
-      const condition = whereMatch[1].trim();
-      // Split on AND to support compound conditions
-      const clauses = condition.split(/\s+AND\s+/i);
-      let filtered = [...rows];
-      let paramIndex = 0;
-
-      for (const clause of clauses) {
-        const trimmedClause = clause.trim();
-
-        // Match column_name = ? (use full word boundary to avoid partial matches)
-        const eqMatch = trimmedClause.match(/^(\w+)\s*=\s*\?$/i);
-        if (eqMatch) {
-          const col = eqMatch[1];
-          const val = params[paramIndex++];
-          filtered = filtered.filter((r) => r[col] === val);
-          continue;
-        }
-
-        // Match column_name LIKE ?
-        const likeMatch = trimmedClause.match(/^(\w+)\s+LIKE\s+\?$/i);
-        if (likeMatch) {
-          const col = likeMatch[1];
-          const pattern = String(params[paramIndex++]).replace(/%/g, "");
-          filtered = filtered.filter((r) =>
-            String(r[col]).toLowerCase().includes(pattern.toLowerCase()),
-          );
-          continue;
-        }
-
-        // Unrecognized clause — skip param placeholder if present
-        if (trimmedClause.includes("?")) {
-          paramIndex++;
-        }
-      }
-
+      const filtered = rows.filter(
+        matchesWhere(whereMatch[1].trim(), params),
+      );
       dbLog(
         "SELECT WHERE result:",
         filtered.length,
@@ -264,11 +234,19 @@ class WebDatabase implements IDatabase {
 
     const tableName = tableMatch[1].toLowerCase();
     const rows = this.tables.get(tableName) ?? [];
-    const idParam = params[0];
     const initial = rows.length;
+
+    // Delete the rows matching the WHERE clause. The column is parsed from the
+    // query (e.g. `patient_id = ?`), not assumed to be `id` — otherwise the
+    // RGPD cascade `DELETE FROM analyses WHERE patient_id = ?` would delete
+    // nothing and leave orphaned health data behind.
+    const whereMatch = sql.match(/WHERE\s+(.+?)(?:\s+ORDER|\s+LIMIT|$)/i);
+    const matches = whereMatch
+      ? matchesWhere(whereMatch[1].trim(), params)
+      : () => true;
     this.tables.set(
       tableName,
-      rows.filter((r) => r["id"] !== idParam),
+      rows.filter((r) => !matches(r)),
     );
     this.persist();
 
