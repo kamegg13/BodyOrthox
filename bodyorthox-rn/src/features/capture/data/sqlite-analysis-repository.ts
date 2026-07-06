@@ -113,10 +113,16 @@ export class SqliteAnalysisRepository implements IAnalysisRepository {
     partial: Partial<
       Pick<
         Analysis,
-        "angles" | "manualCorrectionApplied" | "manualCorrectionJoint"
+        | "angles"
+        | "bilateralAngles"
+        | "manualCorrectionApplied"
+        | "manualCorrectionJoint"
       >
     >,
   ): Promise<void> {
+    // NB: bilateralAngles is not stored as a column here — this repository
+    // derives it from `landmarks_json` on read (see rowToAnalysis). It is part
+    // of the signature for interface parity with the API repository.
     const setClauses: string[] = [];
     const params: unknown[] = [];
 

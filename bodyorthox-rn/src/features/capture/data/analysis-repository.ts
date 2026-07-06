@@ -9,7 +9,10 @@ export interface IAnalysisRepository {
     partial: Partial<
       Pick<
         Analysis,
-        "angles" | "manualCorrectionApplied" | "manualCorrectionJoint"
+        | "angles"
+        | "bilateralAngles"
+        | "manualCorrectionApplied"
+        | "manualCorrectionJoint"
       >
     >,
   ): Promise<void>;

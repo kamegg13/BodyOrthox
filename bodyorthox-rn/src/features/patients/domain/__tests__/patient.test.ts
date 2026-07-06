@@ -100,6 +100,23 @@ describe("createPatient", () => {
     ).toThrow();
   });
 
+  it("throws for an implausibly old year (before 1900)", () => {
+    expect(() =>
+      createPatient({ ...validInput, dateOfBirth: "1200-01-01" }),
+    ).toThrow(/1900/);
+  });
+
+  it("throws for an implausibly old date of birth (age > 130 years)", () => {
+    const tooOld = new Date();
+    tooOld.setFullYear(tooOld.getFullYear() - 131);
+    expect(() =>
+      createPatient({
+        ...validInput,
+        dateOfBirth: tooOld.toISOString().split("T")[0],
+      }),
+    ).toThrow();
+  });
+
   it("stores morphological profile when provided", () => {
     const patient = createPatient({
       ...validInput,

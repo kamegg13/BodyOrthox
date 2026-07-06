@@ -58,6 +58,15 @@ export function PatientsScreen() {
     loadPatients();
   }, []);
 
+  // Clear any pending debounce timer on unmount to avoid updating state after
+  // the screen is gone.
+  useEffect(
+    () => () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    },
+    [],
+  );
+
   const handleSearch = useCallback(
     (text: string) => {
       if (debounceRef.current) clearTimeout(debounceRef.current);

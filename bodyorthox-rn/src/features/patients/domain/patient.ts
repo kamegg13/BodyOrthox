@@ -77,14 +77,28 @@ export interface UpdatePatientInput {
   consentDate?: string;
 }
 
+/** Plancher plausible pour une année de naissance. */
+export const MIN_BIRTH_YEAR = 1900;
+/** Âge maximum plausible (années). */
+export const MAX_AGE_YEARS = 130;
+
 /** Validate an optional date-of-birth string. Never throws for absence. */
 function assertValidDateOfBirth(dateOfBirth: string): void {
   const dob = new Date(dateOfBirth);
   if (isNaN(dob.getTime())) {
     throw new Error("La date de naissance est invalide.");
   }
-  if (dob > new Date()) {
+  const now = new Date();
+  if (dob > now) {
     throw new Error("La date de naissance ne peut pas être dans le futur.");
+  }
+  if (dob.getFullYear() < MIN_BIRTH_YEAR) {
+    throw new Error(
+      `L'année de naissance doit être postérieure à ${MIN_BIRTH_YEAR}.`,
+    );
+  }
+  if (now.getFullYear() - dob.getFullYear() > MAX_AGE_YEARS) {
+    throw new Error(`L'âge ne peut pas dépasser ${MAX_AGE_YEARS} ans.`);
   }
 }
 

@@ -158,7 +158,13 @@ export class ApiAnalysisRepository implements IAnalysisRepository {
   async update(
     id: string,
     partial: Partial<
-      Pick<Analysis, "angles" | "manualCorrectionApplied" | "manualCorrectionJoint">
+      Pick<
+        Analysis,
+        | "angles"
+        | "bilateralAngles"
+        | "manualCorrectionApplied"
+        | "manualCorrectionJoint"
+      >
     >,
   ): Promise<void> {
     const body: Record<string, unknown> = {};
@@ -166,6 +172,11 @@ export class ApiAnalysisRepository implements IAnalysisRepository {
       body.kneeAngle = partial.angles.kneeAngle;
       body.hipAngle = partial.angles.hipAngle;
       body.ankleAngle = partial.angles.ankleAngle;
+    }
+    if (partial.bilateralAngles) {
+      body.bilateralAnglesJson = JSON.stringify(partial.bilateralAngles);
+      body.hkaLeft = partial.bilateralAngles.leftHKA;
+      body.hkaRight = partial.bilateralAngles.rightHKA;
     }
     if (partial.manualCorrectionApplied !== undefined) {
       body.mlCorrected = partial.manualCorrectionApplied;

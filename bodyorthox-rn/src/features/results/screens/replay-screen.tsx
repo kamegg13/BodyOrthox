@@ -17,6 +17,7 @@ import {
   validateCorrectionAngle,
   isLowConfidence,
 } from "../domain/manual-correction";
+import { bilateralWithCorrection } from "../domain/corrected-bilateral";
 import { LoadingSpinner } from "../../../shared/components/loading-spinner";
 import { ErrorWidget } from "../../../shared/components/error-widget";
 import { Colors } from "../../../shared/design-system/colors";
@@ -101,13 +102,27 @@ export function ReplayScreen() {
         parsed,
       );
 
+      // Keep the HKA card and the PDF consistent with the correction: recompute
+      // the bilateral angles from the corrected value so results screens don't
+      // keep displaying the pre-correction HKA. `undefined` when there is no
+      // measurement basis — we never persist a fabricated angle.
+      const bilateralAngles = bilateralWithCorrection(
+        analysis,
+        selectedJoint,
+        corrected.angles[`${selectedJoint}Angle`],
+      );
+      const persisted: Analysis = bilateralAngles
+        ? { ...corrected, bilateralAngles }
+        : corrected;
+
       await repo.update(analysisId, {
-        angles: corrected.angles,
-        manualCorrectionApplied: corrected.manualCorrectionApplied,
-        manualCorrectionJoint: corrected.manualCorrectionJoint,
+        angles: persisted.angles,
+        manualCorrectionApplied: persisted.manualCorrectionApplied,
+        manualCorrectionJoint: persisted.manualCorrectionJoint,
+        ...(bilateralAngles ? { bilateralAngles } : {}),
       });
 
-      setAnalysis(corrected);
+      setAnalysis(persisted);
       setCorrectionError(null);
       setCorrectionSuccess("Correction enregistrée");
       setDisclaimerText(correctionDisclaimer(selectedJoint));

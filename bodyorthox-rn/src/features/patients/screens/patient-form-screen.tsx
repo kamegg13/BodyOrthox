@@ -19,6 +19,8 @@ import {
   PainEntry,
   CreatePatientInput,
   UpdatePatientInput,
+  MIN_BIRTH_YEAR,
+  MAX_AGE_YEARS,
 } from "../domain/patient";
 import { DatePicker } from "../components/date-picker";
 import { PainEditor } from "../components/pain-editor";
@@ -194,10 +196,15 @@ export function PatientFormScreen({
       e.dateOfBirth = "La date de naissance est obligatoire.";
     } else {
       const d = new Date(dateOfBirth);
+      const now = new Date();
       if (isNaN(d.getTime())) {
         e.dateOfBirth = "Date invalide.";
-      } else if (d > new Date()) {
+      } else if (d > now) {
         e.dateOfBirth = "Ne peut pas être dans le futur.";
+      } else if (d.getFullYear() < MIN_BIRTH_YEAR) {
+        e.dateOfBirth = `L'année doit être postérieure à ${MIN_BIRTH_YEAR}.`;
+      } else if (now.getFullYear() - d.getFullYear() > MAX_AGE_YEARS) {
+        e.dateOfBirth = `L'âge ne peut pas dépasser ${MAX_AGE_YEARS} ans.`;
       }
     }
 

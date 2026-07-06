@@ -107,7 +107,13 @@ class InMemoryAnalysisRepo implements IAnalysisRepository {
   async update(
     id: string,
     partial: Partial<
-      Pick<Analysis, "angles" | "manualCorrectionApplied" | "manualCorrectionJoint">
+      Pick<
+        Analysis,
+        | "angles"
+        | "bilateralAngles"
+        | "manualCorrectionApplied"
+        | "manualCorrectionJoint"
+      >
     >,
   ): Promise<void> {
     const idx = this.store.findIndex((a) => a.id === id);

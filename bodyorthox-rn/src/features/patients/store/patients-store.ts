@@ -91,6 +91,11 @@ interface PatientsActions {
 // Module-level (non-reactive) — this doesn't trigger re-renders and is
 // intentionally outside the Zustand store to avoid serialization issues.
 let _repository: IPatientRepository | null = null;
+// Monotonic token guarding against out-of-order search responses: a slow
+// response for "ab" must never overwrite the newer response for "abc". Each
+// loadPatients captures the token it started with and drops its result if a
+// newer load has been issued since.
+let _loadSeq = 0;
 
 export const usePatientsStore = create<PatientsState & PatientsActions>()(
   immer((set, get) => ({
@@ -108,12 +113,16 @@ export const usePatientsStore = create<PatientsState & PatientsActions>()(
 
     async loadPatients() {
       if (!_repository) return;
+      const seq = ++_loadSeq;
       set((state) => {
         state.isLoading = true;
         state.error = null;
       });
       try {
         const patients = await _repository.getAll(get().searchQuery || undefined);
+        // A newer load was issued while this one was in flight — drop this
+        // (possibly stale) result so it can't overwrite the fresher response.
+        if (seq !== _loadSeq) return;
         set((state) => {
           state.patients = patients;
           state.isLoading = false;
@@ -125,6 +134,7 @@ export const usePatientsStore = create<PatientsState & PatientsActions>()(
           );
         });
       } catch (error) {
+        if (seq !== _loadSeq) return;
         set((state) => {
           state.error = error instanceof Error ? error.message : "Erreur de chargement";
           state.isLoading = false;
