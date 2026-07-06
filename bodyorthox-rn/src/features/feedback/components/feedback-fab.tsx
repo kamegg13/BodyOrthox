@@ -30,7 +30,9 @@ export function FeedbackFab() {
 const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
-    bottom: 24,
+    // Au-dessus de la tab bar (~72px) : à 24px le FAB recouvrait l'onglet
+    // « Réglages » et intercepait ses clics.
+    bottom: 96,
     right: 24,
     width: 48,
     height: 48,
