@@ -6,15 +6,22 @@ import {
   StyleSheet,
   Switch,
   Text,
-  TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { Colors } from "../../../shared/design-system/colors";
-import { Spacing } from "../../../shared/design-system/spacing";
-import { FontSize, FontWeight } from "../../../shared/design-system/typography";
-import { CardShadow } from "../../../shared/design-system/card-styles";
+import { Screen } from "../../../components/Screen";
+import { SectionLabel } from "../../../components/SectionLabel";
+import { ListRow } from "../../../components/ListRow";
+import { Field } from "../../../components/Field";
+import { Card } from "../../../components/Card";
+import {
+  colors,
+  fonts,
+  fontSize,
+  fontWeight,
+  sizes,
+  spacing,
+} from "../../../theme/tokens";
 import { useAuthStore } from "../../../core/auth/auth-store";
 
 // ---------------------------------------------------------------------------
@@ -63,27 +70,14 @@ function showConfirm(title: string, message: string, onConfirm: () => void) {
 }
 
 // ---------------------------------------------------------------------------
-// Section components
+// Local building blocks
 // ---------------------------------------------------------------------------
-function SectionHeader({ title }: { readonly title: string }) {
-  return <Text style={styles.sectionHeader}>{title}</Text>;
+/** Séparateur fin entre deux `ListRow` d'un même groupe. */
+function RowDivider() {
+  return <View style={styles.divider} />;
 }
 
-function SettingsRow({
-  label,
-  children,
-}: {
-  readonly label: string;
-  readonly children: React.ReactNode;
-}) {
-  return (
-    <View style={styles.row}>
-      <Text style={styles.rowLabel}>{label}</Text>
-      {children}
-    </View>
-  );
-}
-
+/** Champ profil praticien persisté dans le localStorage (web-safe). */
 function ProfileInput({
   label,
   storageKey,
@@ -108,15 +102,41 @@ function ProfileInput({
   );
 
   return (
-    <View style={styles.row}>
-      <Text style={styles.rowLabel}>{label}</Text>
-      <TextInput
-        style={styles.rowInput}
+    <Field
+      label={label}
+      value={value}
+      onChangeText={handleChange}
+      placeholder={placeholder}
+      testID={`input-${storageKey}`}
+    />
+  );
+}
+
+/** Ligne à interrupteur (Face ID / Touch ID). */
+function SwitchRow({
+  label,
+  subtitle,
+  value,
+  onValueChange,
+  testID,
+}: {
+  readonly label: string;
+  readonly subtitle?: string;
+  readonly value: boolean;
+  readonly onValueChange: (v: boolean) => void;
+  readonly testID?: string;
+}) {
+  return (
+    <View style={styles.switchRow}>
+      <View style={styles.switchLabelGroup}>
+        <Text style={styles.switchLabel}>{label}</Text>
+        {subtitle ? <Text style={styles.switchSubtitle}>{subtitle}</Text> : null}
+      </View>
+      <Switch
         value={value}
-        onChangeText={handleChange}
-        placeholder={placeholder}
-        placeholderTextColor={Colors.textDisabled}
-        testID={`input-${storageKey}`}
+        onValueChange={onValueChange}
+        trackColor={{ false: colors.borderMid, true: colors.navyMid }}
+        testID={testID}
       />
     </View>
   );
@@ -174,324 +194,239 @@ export function AccountScreen() {
     );
   }
 
+  function handleLogout() {
+    showConfirm("Déconnexion", "Voulez-vous vous déconnecter ?", () => {
+      logout();
+    });
+  }
+
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      testID="account-screen"
-    >
-      <Text style={styles.headerTitle}>Compte</Text>
+    <Screen title="Compte">
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        testID="account-screen"
+      >
+        {/* SESSION */}
+        <SectionLabel>Session</SectionLabel>
+        <Card style={styles.group}>
+          <ListRow label="Email" value={user?.email ?? "—"} chevron={false} />
+          <RowDivider />
+          <ListRow
+            label="Rôle"
+            value={user?.role === "admin" ? "Administrateur" : "Praticien"}
+            chevron={false}
+          />
+          {user?.role === "admin" ? (
+            <>
+              <RowDivider />
+              <ListRow
+                label="Administration des comptes"
+                onPress={() => navigation.navigate("Admin")}
+                testID="admin-button"
+              />
+              <RowDivider />
+              <ListRow
+                label="Calibration HKA"
+                onPress={() => navigation.navigate("Calibration")}
+                testID="calibration-button"
+              />
+            </>
+          ) : null}
+          <RowDivider />
+          <ListRow
+            label="Se déconnecter"
+            destructive
+            onPress={handleLogout}
+            testID="logout-button"
+          />
+        </Card>
 
-      {/* SESSION */}
-      <SectionHeader title="SESSION" />
-      <View style={styles.card}>
-        <SettingsRow label="Email">
-          <Text style={styles.rowValue}>{user?.email ?? "—"}</Text>
-        </SettingsRow>
-        <View style={styles.separator} />
-        <SettingsRow label="Rôle">
-          <Text style={styles.rowValue}>
-            {user?.role === "admin" ? "Administrateur" : "Praticien"}
-          </Text>
-        </SettingsRow>
-        {user?.role === "admin" && (
-          <>
-            <View style={styles.separator} />
-            <TouchableOpacity
-              style={styles.row}
-              onPress={() => navigation.navigate("Admin")}
-              accessibilityRole="button"
-              testID="admin-button"
-            >
-              <Text style={styles.rowLabelLink}>Administration des comptes</Text>
-              <Text style={styles.chevron}>›</Text>
-            </TouchableOpacity>
-            <View style={styles.separator} />
-            <TouchableOpacity
-              style={styles.row}
-              onPress={() => navigation.navigate("Calibration")}
-              accessibilityRole="button"
-              testID="calibration-button"
-            >
-              <Text style={styles.rowLabelLink}>Calibration HKA</Text>
-              <Text style={styles.chevron}>›</Text>
-            </TouchableOpacity>
-          </>
-        )}
-        <View style={styles.separator} />
-        <TouchableOpacity
-          style={styles.row}
-          onPress={() => {
-            showConfirm(
-              "Déconnexion",
-              "Voulez-vous vous déconnecter ?",
-              () => { logout(); },
-            );
-          }}
-          accessibilityRole="button"
-          testID="logout-button"
-        >
-          <Text style={styles.rowLabelDestructive}>Se déconnecter</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* PROFIL PRATICIEN */}
-      <SectionHeader title="PROFIL PRATICIEN" />
-      <View style={styles.card}>
-        <ProfileInput
-          label="Nom"
-          storageKey="practitioner_name"
-          defaultValue=""
-          placeholder="Dr. Dupont"
-        />
-        <View style={styles.separator} />
-        <ProfileInput
-          label="Cabinet"
-          storageKey="practitioner_cabinet"
-          defaultValue=""
-          placeholder="Cabinet d'orthopédie"
-        />
-        <View style={styles.separator} />
-        <ProfileInput
-          label="Spécialité"
-          storageKey="practitioner_specialty"
-          defaultValue="Orthopédie"
-          placeholder="Orthopédie"
-        />
-      </View>
-
-      {/* ABONNEMENT */}
-      <SectionHeader title="ABONNEMENT" />
-      <View style={styles.card}>
-        <SettingsRow label="Plan actuel">
-          <Text style={styles.rowValue}>Freemium</Text>
-        </SettingsRow>
-        <View style={styles.separator} />
-        <SettingsRow label="Analyses restantes">
-          <Text style={styles.rowValue}>10/10 ce mois</Text>
-        </SettingsRow>
-        <View style={styles.separator} />
-        <TouchableOpacity
-          style={styles.row}
-          onPress={() =>
-            showAlert(
-              "Abonnement",
-              "La gestion d'abonnement sera bientôt disponible.",
-            )
-          }
-          accessibilityRole="button"
-          testID="manage-subscription-button"
-        >
-          <Text style={styles.rowLabelLink}>Gérer l'abonnement</Text>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* SECURITE */}
-      <SectionHeader title="SÉCURITÉ" />
-      <View style={styles.card}>
-        <View style={styles.row}>
-          <View style={styles.rowLabelGroup}>
-            <Text style={styles.rowLabel}>Face ID / Touch ID</Text>
-            <Text style={styles.rowSubtitle}>Verrouillage automatique</Text>
-          </View>
-          <Switch
-            value={faceIdEnabled}
-            onValueChange={setFaceIdEnabled}
-            trackColor={{
-              false: Colors.border,
-              true: Colors.primary,
-            }}
-            testID="faceid-toggle"
+        {/* PROFIL PRATICIEN */}
+        <SectionLabel>Profil praticien</SectionLabel>
+        <View style={styles.fields}>
+          <ProfileInput
+            label="Nom"
+            storageKey="practitioner_name"
+            defaultValue=""
+            placeholder="Dr. Dupont"
+          />
+          <ProfileInput
+            label="Cabinet"
+            storageKey="practitioner_cabinet"
+            defaultValue=""
+            placeholder="Cabinet d'orthopédie"
+          />
+          <ProfileInput
+            label="Spécialité"
+            storageKey="practitioner_specialty"
+            defaultValue="Orthopédie"
+            placeholder="Orthopédie"
           />
         </View>
-      </View>
 
-      {/* DONNEES */}
-      <SectionHeader title="DONNÉES" />
-      <View style={styles.card}>
-        <SettingsRow label="Patients">
-          <Text style={styles.rowValue}>{patientCount}</Text>
-        </SettingsRow>
-        <View style={styles.separator} />
-        <SettingsRow label="Analyses">
-          <Text style={styles.rowValue}>{analysisCount}</Text>
-        </SettingsRow>
-        <View style={styles.separator} />
-        <TouchableOpacity
-          style={styles.row}
-          onPress={() =>
-            showAlert(
-              "Exporter",
-              "L'export de données sera disponible prochainement.",
-            )
-          }
-          accessibilityRole="button"
-          testID="export-data-button"
-        >
-          <Text style={styles.rowLabelLink}>Exporter toutes les données</Text>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
-        <View style={styles.separator} />
-        <TouchableOpacity
-          style={styles.row}
-          onPress={handleDeleteAllData}
-          accessibilityRole="button"
-          testID="delete-data-button"
-        >
-          <Text style={styles.rowLabelDestructive}>
-            Supprimer toutes les données
-          </Text>
-        </TouchableOpacity>
-      </View>
+        {/* ABONNEMENT */}
+        <SectionLabel>Abonnement</SectionLabel>
+        <Card style={styles.group}>
+          <ListRow label="Plan actuel" value="Freemium" chevron={false} />
+          <RowDivider />
+          <ListRow
+            label="Analyses restantes"
+            value="10/10 ce mois"
+            chevron={false}
+          />
+          <RowDivider />
+          <ListRow
+            label="Gérer l'abonnement"
+            onPress={() =>
+              showAlert(
+                "Abonnement",
+                "La gestion d'abonnement sera bientôt disponible.",
+              )
+            }
+            testID="manage-subscription-button"
+          />
+        </Card>
 
-      {/* A PROPOS */}
-      <SectionHeader title="À PROPOS" />
-      <View style={styles.card}>
-        <SettingsRow label="Version">
-          <Text style={styles.rowValue}>1.0.0 (MVP)</Text>
-        </SettingsRow>
-        <View style={styles.separator} />
-        <TouchableOpacity
-          style={styles.row}
-          onPress={() =>
-            showAlert(
-              "Mentions légales",
-              "BodyOrthox est un outil d'aide à la décision clinique. " +
-                "Il ne constitue pas un dispositif médical certifié au sens du règlement EU MDR 2017/745. " +
-                "Les résultats doivent être validés par un professionnel de santé qualifié.",
-            )
-          }
-          accessibilityRole="button"
-          testID="legal-button"
-        >
-          <Text style={styles.rowLabelLink}>Mentions légales</Text>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
-        <View style={styles.separator} />
-        <TouchableOpacity
-          style={styles.row}
-          onPress={() =>
-            showAlert(
-              "Politique de confidentialité",
-              "BodyOrthox respecte le Règlement Général sur la Protection des Données (RGPD). " +
-                "Toutes les données patients sont stockées localement sur votre appareil. " +
-                "Aucune donnée personnelle n'est transmise à des serveurs externes. " +
-                "Vous pouvez exporter ou supprimer vos données à tout moment depuis les paramètres.",
-            )
-          }
-          accessibilityRole="button"
-          testID="privacy-button"
-        >
-          <Text style={styles.rowLabelLink}>Politique de confidentialité</Text>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
-        <View style={styles.separator} />
-        <TouchableOpacity
-          style={styles.row}
-          onPress={() =>
-            showAlert(
-              "Contact support",
-              "Pour toute question, contactez-nous à support@bodyorthox.com",
-            )
-          }
-          accessibilityRole="button"
-          testID="contact-button"
-        >
-          <Text style={styles.rowLabelLink}>Contact support</Text>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
-      </View>
+        {/* SÉCURITÉ */}
+        <SectionLabel>Sécurité</SectionLabel>
+        <Card style={styles.group}>
+          <SwitchRow
+            label="Face ID / Touch ID"
+            subtitle="Verrouillage automatique"
+            value={faceIdEnabled}
+            onValueChange={setFaceIdEnabled}
+            testID="faceid-toggle"
+          />
+        </Card>
 
-      <View style={styles.bottomSpacer} />
-    </ScrollView>
+        {/* DONNÉES */}
+        <SectionLabel>Données</SectionLabel>
+        <Card style={styles.group}>
+          <ListRow label="Patients" value={String(patientCount)} chevron={false} />
+          <RowDivider />
+          <ListRow
+            label="Analyses"
+            value={String(analysisCount)}
+            chevron={false}
+          />
+          <RowDivider />
+          <ListRow
+            label="Exporter toutes les données"
+            onPress={() =>
+              showAlert(
+                "Exporter",
+                "L'export de données sera disponible prochainement.",
+              )
+            }
+            testID="export-data-button"
+          />
+          <RowDivider />
+          <ListRow
+            label="Supprimer toutes les données"
+            destructive
+            onPress={handleDeleteAllData}
+            testID="delete-data-button"
+          />
+        </Card>
+
+        {/* À PROPOS */}
+        <SectionLabel>À propos</SectionLabel>
+        <Card style={styles.group}>
+          <ListRow label="Version" value="1.0.0 (MVP)" chevron={false} />
+          <RowDivider />
+          <ListRow
+            label="Mentions légales"
+            onPress={() =>
+              showAlert(
+                "Mentions légales",
+                "BodyOrthox est un outil d'aide à la décision clinique. " +
+                  "Il ne constitue pas un dispositif médical certifié au sens du règlement EU MDR 2017/745. " +
+                  "Les résultats doivent être validés par un professionnel de santé qualifié.",
+              )
+            }
+            testID="legal-button"
+          />
+          <RowDivider />
+          <ListRow
+            label="Politique de confidentialité"
+            onPress={() =>
+              showAlert(
+                "Politique de confidentialité",
+                "BodyOrthox respecte le Règlement Général sur la Protection des Données (RGPD). " +
+                  "Toutes les données patients sont stockées localement sur votre appareil. " +
+                  "Aucune donnée personnelle n'est transmise à des serveurs externes. " +
+                  "Vous pouvez exporter ou supprimer vos données à tout moment depuis les paramètres.",
+              )
+            }
+            testID="privacy-button"
+          />
+          <RowDivider />
+          <ListRow
+            label="Contact support"
+            onPress={() =>
+              showAlert(
+                "Contact support",
+                "Pour toute question, contactez-nous à support@bodyorthox.com",
+              )
+            }
+            testID="contact-button"
+          />
+        </Card>
+
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
   content: {
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.lg,
-    paddingBottom: Spacing.xxl,
+    paddingHorizontal: spacing.s16,
+    paddingTop: spacing.s16,
+    paddingBottom: spacing.s28,
+    gap: spacing.s10,
   },
-  headerTitle: {
-    fontSize: FontSize.xxl,
-    fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
-    marginBottom: Spacing.md,
-  },
-  sectionHeader: {
-    fontSize: FontSize.xs,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.textSecondary,
-    letterSpacing: 0.8,
-    marginTop: Spacing.lg,
-    marginBottom: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-  },
-  card: {
-    ...CardShadow,
+  group: {
     overflow: "hidden",
+    marginBottom: spacing.s8,
   },
-  row: {
+  fields: {
+    gap: spacing.s12,
+    marginBottom: spacing.s8,
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+    marginLeft: spacing.s16,
+  },
+  switchRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
-    minHeight: 44,
+    minHeight: sizes.tap,
+    paddingHorizontal: spacing.s16,
+    paddingVertical: spacing.s10,
+    gap: spacing.s12,
+    backgroundColor: colors.bgCard,
   },
-  rowLabel: {
-    fontSize: FontSize.md,
-    color: Colors.textPrimary,
+  switchLabelGroup: {
     flex: 1,
+    gap: 2,
   },
-  rowLabelGroup: {
-    flex: 1,
-    gap: Spacing.xxs,
+  switchLabel: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.listPrimary,
+    fontWeight: fontWeight.medium,
+    color: colors.textPrimary,
+    letterSpacing: -0.1,
   },
-  rowSubtitle: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-  },
-  rowLabelLink: {
-    fontSize: FontSize.md,
-    color: Colors.primary,
-    flex: 1,
-  },
-  rowLabelDestructive: {
-    fontSize: FontSize.md,
-    color: Colors.error,
-    flex: 1,
-  },
-  rowValue: {
-    fontSize: FontSize.md,
-    color: Colors.textSecondary,
-  },
-  rowInput: {
-    flex: 1,
-    fontSize: FontSize.md,
-    color: Colors.textPrimary,
-    textAlign: "right",
-    paddingVertical: 0,
-    minHeight: 22,
-  },
-  separator: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: Colors.border,
-    marginLeft: Spacing.md,
-  },
-  chevron: {
-    fontSize: 20,
-    color: Colors.textDisabled,
-    fontWeight: "300",
-    marginLeft: Spacing.sm,
+  switchSubtitle: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    color: colors.textMuted,
   },
   bottomSpacer: {
-    height: Spacing.xl,
+    height: spacing.s16,
   },
 });

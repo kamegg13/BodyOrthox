@@ -3,6 +3,18 @@ import { Text } from "react-native";
 import { render, fireEvent } from "@testing-library/react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Screen } from "../Screen";
+import { colors } from "../../theme/tokens";
+
+/** Aplati un style RN (objet ou tableau imbriqué) en un seul objet. */
+function flattenStyle(style: unknown): Record<string, unknown> {
+  if (Array.isArray(style)) {
+    return style.reduce(
+      (acc, s) => ({ ...acc, ...flattenStyle(s) }),
+      {} as Record<string, unknown>,
+    );
+  }
+  return (style as Record<string, unknown>) ?? {};
+}
 
 const metrics = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
@@ -42,5 +54,21 @@ describe("Screen", () => {
       <Screen testID="screen-root" title="X" />,
     );
     expect(getByTestId("screen-root")).toBeTruthy();
+  });
+
+  it("uses the light background by default", () => {
+    const { getByTestId } = renderInSafeArea(
+      <Screen testID="screen-root" title="X" />,
+    );
+    const style = flattenStyle(getByTestId("screen-root").props.style);
+    expect(style["backgroundColor"]).toBe(colors.bg);
+  });
+
+  it("uses the capture background in dark variant", () => {
+    const { getByTestId } = renderInSafeArea(
+      <Screen testID="screen-root" title="X" variant="dark" />,
+    );
+    const style = flattenStyle(getByTestId("screen-root").props.style);
+    expect(style["backgroundColor"]).toBe(colors.captureBg);
   });
 });

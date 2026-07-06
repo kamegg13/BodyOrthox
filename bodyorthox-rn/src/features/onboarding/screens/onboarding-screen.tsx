@@ -14,9 +14,13 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../../navigation/types";
 import { OnboardingPage } from "../components/onboarding-page";
 import { useOnboardingStore } from "../store/onboarding-store";
+import { Screen } from "../../../components/Screen";
+import { Steps } from "../../../components/Steps";
+import { Btn } from "../../../components/Btn";
 import { Colors } from "../../../shared/design-system/colors";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
-import { FontSize, FontWeight } from "../../../shared/design-system/typography";
+import { FontWeight } from "../../../shared/design-system/typography";
+import { colors, fonts, fontSize, fontWeight, spacing } from "../../../theme/tokens";
 
 type NavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -186,7 +190,7 @@ export function OnboardingScreen() {
   })();
 
   return (
-    <View style={styles.container} testID="onboarding-screen">
+    <Screen testID="onboarding-screen" style={styles.container}>
       {/* Skip button */}
       <TouchableOpacity
         style={styles.skipButton}
@@ -239,32 +243,24 @@ export function OnboardingScreen() {
 
       {/* Bottom controls */}
       <View style={styles.bottomControls}>
-        {/* Dot indicators */}
-        <View style={styles.dotsContainer} testID="onboarding-dots">
-          {Array.from({ length: TOTAL_PAGES }).map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.dot,
-                index === currentPage ? styles.dotActive : styles.dotInactive,
-              ]}
-              testID={`onboarding-dot-${index}`}
-            />
-          ))}
+        {/* Progress indicator */}
+        <View style={styles.stepsWrap}>
+          <Steps
+            total={TOTAL_PAGES}
+            current={currentPage}
+            testID="onboarding-dot"
+          />
         </View>
 
         {/* Action button */}
-        <TouchableOpacity
-          style={styles.actionButton}
+        <Btn
+          label={buttonLabel}
           onPress={isLastPage ? handleComplete : handleNext}
+          full
           testID={isLastPage ? "onboarding-complete" : "onboarding-next"}
-          accessibilityRole="button"
-          accessibilityLabel={buttonLabel}
-        >
-          <Text style={styles.actionButtonText}>{buttonLabel}</Text>
-        </TouchableOpacity>
+        />
       </View>
-    </View>
+    </Screen>
   );
 }
 
@@ -427,63 +423,34 @@ const illustrationStyles = StyleSheet.create({
 /* ------------------------------------------------------------------ */
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: Colors.background,
+    position: "relative",
   },
   skipButton: {
     position: "absolute",
-    top: Spacing.xxl,
-    right: Spacing.md,
+    top: spacing.s8,
+    right: spacing.s12,
     zIndex: 10,
     minHeight: 44,
     minWidth: 44,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: Spacing.sm,
+    paddingHorizontal: spacing.s8,
   },
   skipText: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.medium,
-    color: Colors.textSecondary,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.body,
+    fontWeight: fontWeight.medium,
+    color: colors.textMuted,
   },
   scrollView: {
     flex: 1,
   },
   bottomControls: {
-    paddingBottom: Spacing.xxl,
-    paddingHorizontal: Spacing.lg,
-    alignItems: "center",
+    paddingBottom: spacing.s24,
+    paddingHorizontal: spacing.s20,
+    gap: spacing.s16,
   },
-  dotsContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginBottom: Spacing.lg,
-  },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginHorizontal: Spacing.xs,
-  },
-  dotActive: {
-    backgroundColor: Colors.primary,
-  },
-  dotInactive: {
-    backgroundColor: Colors.surface,
-  },
-  actionButton: {
-    backgroundColor: Colors.primary,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.xxl,
-    borderRadius: 12,
-    minHeight: 48,
-    minWidth: 200,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  actionButtonText: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.textOnPrimary,
+  stepsWrap: {
+    paddingHorizontal: spacing.s24,
   },
 });

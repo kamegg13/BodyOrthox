@@ -16,6 +16,12 @@ interface ScreenProps {
   readonly onAction?: () => void;
   /** Bords protégés par la SafeArea (défaut : haut + bas). */
   readonly edges?: readonly Edge[];
+  /**
+   * Thème de fond. `light` (défaut) : fond `colors.bg`, NavBar claire.
+   * `dark` : fond `colors.captureBg` (écran capture), NavBar transparente
+   * à texte clair.
+   */
+  readonly variant?: "light" | "dark";
   readonly style?: StyleProp<ViewStyle>;
   readonly testID?: string;
 }
@@ -32,11 +38,17 @@ export function Screen({
   actionIcon,
   onAction,
   edges = ["top", "bottom"],
+  variant = "light",
   style,
   testID,
 }: ScreenProps) {
+  const isDark = variant === "dark";
   return (
-    <SafeAreaView edges={edges as Edge[]} style={styles.safe} testID={testID}>
+    <SafeAreaView
+      edges={edges as Edge[]}
+      style={[styles.safe, isDark && styles.safeDark]}
+      testID={testID}
+    >
       {title !== undefined ? (
         <NavBar
           title={title}
@@ -45,6 +57,7 @@ export function Screen({
           action={action}
           actionIcon={actionIcon}
           onAction={onAction}
+          light={isDark}
         />
       ) : null}
       <View style={[styles.body, style]}>{children}</View>
@@ -56,6 +69,9 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: colors.bg,
+  },
+  safeDark: {
+    backgroundColor: colors.captureBg,
   },
   body: {
     flex: 1,
