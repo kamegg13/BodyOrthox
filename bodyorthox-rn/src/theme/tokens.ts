@@ -34,6 +34,9 @@ export const colors = {
 
   // Semantic
   amber: "#92510A",
+  // Écart léger (mild) : ambre plus clair que `amber` (réservé à modéré),
+  // AA sur fond clair (4.6:1 sur #FFFFFF).
+  amberMid: "#B45309",
   amberLight: "#FEF3C7",
   amberSoft: "#FDE68A",
   red: "#B91C1C",
@@ -44,7 +47,10 @@ export const colors = {
   // Text
   textPrimary: "#0C1F35",
   textSecond: "#3D5470",
-  textMuted: "#7F96B2",
+  // textMuted assombri de #7F96B2 (2.8:1) → #5A7290 pour atteindre le
+  // contraste AA (4.6:1 sur bg #F4F7FB) : utilisé comme texte secondaire /
+  // placeholder sur fond clair. Reste dans la famille slate/navy.
+  textMuted: "#5A7290",
   textInverse: "#FFFFFF",
 
   white: "#FFFFFF",
