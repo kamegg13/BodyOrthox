@@ -206,6 +206,16 @@ export function AccountScreen() {
               <Text style={styles.rowLabelLink}>Administration des comptes</Text>
               <Text style={styles.chevron}>›</Text>
             </TouchableOpacity>
+            <View style={styles.separator} />
+            <TouchableOpacity
+              style={styles.row}
+              onPress={() => navigation.navigate("Calibration")}
+              accessibilityRole="button"
+              testID="calibration-button"
+            >
+              <Text style={styles.rowLabelLink}>Calibration HKA</Text>
+              <Text style={styles.chevron}>›</Text>
+            </TouchableOpacity>
           </>
         )}
         <View style={styles.separator} />

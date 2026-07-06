@@ -14,6 +14,19 @@ import {
 import type { BilateralAngles } from "../data/angle-calculator";
 import type { AnatomicalValidation } from "../data/anatomical-validation";
 import { INotificationService } from "../../../core/notifications/notification-types";
+import { getActiveCalibrationModel } from "../calibration/calibration-store";
+import { applyCalibrationToBilateral } from "../calibration/apply-calibration";
+
+/**
+ * Bilateral angles from landmarks, with the active HKA calibration applied
+ * (if any). Single source of truth so the live preview and the persisted
+ * analysis never disagree, and calibration is applied exactly once.
+ */
+function bilateralFrom(landmarks: PoseLandmarks): BilateralAngles {
+  const raw = calculateBilateralAngles(landmarks);
+  const model = getActiveCalibrationModel();
+  return model ? applyCalibrationToBilateral(raw, model) : raw;
+}
 
 interface CaptureState {
   phase: CapturePhase;
@@ -123,7 +136,7 @@ export const useCaptureStore = create<CaptureState & CaptureActions>()(
       const hipAngle = calculateHipAngle(landmarks);
       const ankleAngle = calculateAnkleAngle(landmarks);
       const confidenceScore = calculateConfidenceScore(landmarks);
-      const bilateralAngles = calculateBilateralAngles(landmarks);
+      const bilateralAngles = bilateralFrom(landmarks);
 
       _pendingAngles = { kneeAngle, hipAngle, ankleAngle };
       _pendingBilateralAngles = bilateralAngles;
@@ -166,7 +179,7 @@ export const useCaptureStore = create<CaptureState & CaptureActions>()(
           : _pendingAngles;
 
         const bilateralAngles = hasCorrectedLandmarks
-          ? calculateBilateralAngles(correctedLandmarks)
+          ? bilateralFrom(correctedLandmarks)
           : (_pendingBilateralAngles ?? undefined);
 
         const input: CreateAnalysisInput = {
