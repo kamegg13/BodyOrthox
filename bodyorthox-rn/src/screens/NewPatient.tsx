@@ -18,7 +18,16 @@ import {
   SectionLabel,
   SelectField,
 } from "../components";
-import { colors, fonts, fontSize, fontWeight, radius, shadows, spacing } from "../theme/tokens";
+import {
+  colors,
+  fonts,
+  fontSize,
+  fontWeight,
+  letterSpacing,
+  radius,
+  shadows,
+  spacing,
+} from "../theme/tokens";
 
 export interface NewPatientFormValues {
   readonly firstName: string;
@@ -432,7 +441,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.eyebrow,
     fontWeight: fontWeight.semiBold,
     color: colors.textSecond,
-    letterSpacing: 0.07 * fontSize.eyebrow,
+    letterSpacing: letterSpacing.eyebrow,
     textTransform: "uppercase",
     marginBottom: 6,
   },

@@ -17,7 +17,16 @@ import {
   NavBar,
   SectionLabel,
 } from "../components";
-import { colors, fonts, fontSize, fontWeight, radius, shadows, spacing } from "../theme/tokens";
+import {
+  colors,
+  fonts,
+  fontSize,
+  fontWeight,
+  letterSpacing,
+  radius,
+  shadows,
+  spacing,
+} from "../theme/tokens";
 
 export interface AngleMeasurement {
   readonly key: string;
@@ -380,7 +389,7 @@ const angleStyles = StyleSheet.create({
     fontSize: fontSize.eyebrow,
     fontWeight: fontWeight.bold,
     color: colors.textMuted,
-    letterSpacing: 0.07 * fontSize.eyebrow,
+    letterSpacing: letterSpacing.eyebrow,
     textTransform: "uppercase",
   },
   valueRow: {
@@ -404,7 +413,7 @@ const angleStyles = StyleSheet.create({
     marginLeft: 1,
   },
   norm: {
-    fontFamily: fonts.sans,
+    fontFamily: fonts.mono,
     fontSize: fontSize.eyebrow,
     color: colors.textMuted,
   },

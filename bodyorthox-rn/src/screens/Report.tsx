@@ -2,7 +2,15 @@ import React from "react";
 import { Image, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Badge, Btn, Icon, Logo, NavBar } from "../components";
-import { colors, fonts, fontSize, fontWeight, shadows, spacing } from "../theme/tokens";
+import {
+  colors,
+  fonts,
+  fontSize,
+  fontWeight,
+  letterSpacing,
+  shadows,
+  spacing,
+} from "../theme/tokens";
 
 export interface ReportRow {
   readonly label: string;
@@ -237,7 +245,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.eyebrow,
     fontWeight: fontWeight.bold,
     color: colors.textMuted,
-    letterSpacing: 0.07 * fontSize.eyebrow,
+    letterSpacing: letterSpacing.eyebrow,
     textTransform: "uppercase",
     marginBottom: 8,
   },
@@ -286,7 +294,7 @@ const styles = StyleSheet.create({
     fontSize: 9.5,
     fontWeight: fontWeight.bold,
     color: colors.textMuted,
-    letterSpacing: 0.5,
+    letterSpacing: letterSpacing.label,
     textTransform: "uppercase",
   },
   thNum: {
@@ -294,7 +302,7 @@ const styles = StyleSheet.create({
     fontSize: 9.5,
     fontWeight: fontWeight.bold,
     color: colors.textMuted,
-    letterSpacing: 0.5,
+    letterSpacing: letterSpacing.label,
     textTransform: "uppercase",
     textAlign: "right",
   },

@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.1,
   },
   rowMeta: {
-    fontFamily: fonts.sans,
+    fontFamily: fonts.mono,
     fontSize: fontSize.caption,
     color: colors.textMuted,
     marginTop: 2,
