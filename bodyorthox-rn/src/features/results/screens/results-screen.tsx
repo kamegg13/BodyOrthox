@@ -24,8 +24,9 @@ import { NormsReferenceCard } from "../components/norms-reference-card";
 import { LoadingSpinner } from "../../../shared/components/loading-spinner";
 import { ErrorWidget } from "../../../shared/components/error-widget";
 import { Colors } from "../../../shared/design-system/colors";
-import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
+import { Spacing } from "../../../shared/design-system/spacing";
 import { Typography } from "../../../shared/design-system/typography";
+import { colors, fonts, fontSize, letterSpacing, radius } from "../../../theme/tokens";
 import { LEGAL_CONSTANTS } from "../../../core/legal/legal-constants";
 import { formatDisplayDateTime } from "../../../shared/utils/date-utils";
 import { useAnalysisRepository } from "../../../shared/hooks/use-analysis-repository";
@@ -317,6 +318,7 @@ export function ResultsScreen() {
           <ExpertRow
             label="Score de confiance ML"
             value={`${(analysis.confidenceScore * 100).toFixed(1)}%`}
+            mono
           />
           <ExpertRow label="ID analyse" value={analysis.id} mono />
           <ExpertRow
@@ -347,8 +349,8 @@ export function ResultsScreen() {
           accessibilityRole="button"
           accessibilityLabel="Générer le rapport PDF"
         >
-          <Icon name="document" size={18} color={Colors.primary} />
-          <Text style={[styles.actionButtonText, { color: Colors.primary }]}>Générer le rapport PDF</Text>
+          <Icon name="document" size={18} color={Colors.textPrimary} />
+          <Text style={[styles.actionButtonText, { color: Colors.textPrimary }]}>Générer le rapport PDF</Text>
         </TouchableOpacity>
       )}
 
@@ -471,6 +473,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   headerTitle: {
+    fontFamily: fonts.display,
     fontSize: 28,
     fontWeight: "700",
     color: Colors.textPrimary,
@@ -497,17 +500,19 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xs,
   },
   patientInfoText: {
+    fontFamily: fonts.mono,
     color: Colors.textSecondary,
     fontSize: 14,
   },
   confidenceBadge: {
     alignSelf: "flex-start",
     borderWidth: 1,
-    borderRadius: BorderRadius.full,
+    borderRadius: radius.pill,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
   },
   confidenceText: {
+    fontFamily: fonts.mono,
     fontSize: 13,
     fontWeight: "600",
   },
@@ -525,22 +530,18 @@ const styles = StyleSheet.create({
   segmentedControl: {
     flexDirection: "row",
     backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.md,
+    borderRadius: radius.field,
     padding: 3,
   },
   segmentButton: {
     flex: 1,
     paddingVertical: Spacing.sm,
     alignItems: "center",
-    borderRadius: BorderRadius.md - 2,
+    borderRadius: radius.field - 2,
   },
   segmentButtonActive: {
     backgroundColor: Colors.backgroundCard,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
+    ...Shadows.sm,
   },
   segmentText: {
     color: Colors.textSecondary,
@@ -552,26 +553,25 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  // Section label
+  // Section label — eyebrow « Instrument »
   sectionLabel: {
-    fontSize: 13,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.eyebrow,
     fontWeight: "600",
-    color: Colors.textSecondary,
+    color: colors.textMuted,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: letterSpacing.eyebrow,
     marginTop: Spacing.sm,
   },
 
   // Bilateral detail card
   bilateralCard: {
     backgroundColor: Colors.backgroundCard,
-    borderRadius: BorderRadius.lg,
+    borderRadius: radius.cardLg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
     padding: Spacing.lg,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-    elevation: 1,
+    ...Shadows.sm,
   },
   bilateralRow: {
     flexDirection: "row",
@@ -607,6 +607,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   bilateralAngleValue: {
+    fontFamily: fonts.mono,
     fontSize: 15,
     fontWeight: "700",
     color: Colors.textPrimary,
@@ -617,6 +618,7 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
   bilateralNormText: {
+    fontFamily: fonts.mono,
     fontSize: 10,
     color: Colors.textDisabled,
     marginTop: 2,
@@ -625,14 +627,12 @@ const styles = StyleSheet.create({
   // Expert section
   expertSection: {
     backgroundColor: Colors.backgroundCard,
-    borderRadius: BorderRadius.lg,
+    borderRadius: radius.cardLg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
     padding: Spacing.md,
     gap: Spacing.sm,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-    elevation: 1,
+    ...Shadows.sm,
   },
   expertSectionTitle: {
     color: Colors.textPrimary,
@@ -643,8 +643,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingVertical: Spacing.xs,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   expertLabel: {
     color: Colors.textSecondary,
@@ -656,19 +656,18 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   mono: {
-    fontFamily: "monospace",
-    fontSize: 11,
+    fontFamily: fonts.mono,
   },
 
-  // Action button
+  // Action button — CTA primaire : encre pleine, jamais le cyan en fond.
   actionButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: Spacing.sm,
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.ink,
     paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.lg,
+    borderRadius: radius.button,
     minHeight: 44,
     ...Shadows.primary,
   },
@@ -677,13 +676,14 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 15,
   },
+  // CTA secondaire : hairline sur blanc, texte encre (le cyan n'est pas une
+  // couleur de bouton, même en bordure).
   reportButton: {
     backgroundColor: Colors.backgroundCard,
-    borderWidth: 1,
-    borderColor: Colors.primary,
-    shadowColor: Colors.black,
-    shadowOpacity: 0.06,
-    elevation: 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   disclaimer: {
     fontSize: 11,

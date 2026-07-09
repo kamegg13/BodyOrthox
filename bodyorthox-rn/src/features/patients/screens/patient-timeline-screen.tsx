@@ -18,6 +18,7 @@ import { Colors } from "../../../shared/design-system/colors";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
 import { Typography } from "../../../shared/design-system/typography";
 import { formatDisplayDateTime } from "../../../shared/utils/date-utils";
+import { fonts } from "../../../theme/tokens";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, "Timeline">;
@@ -134,8 +135,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 22,
   },
+  // CTA primaire — encre pleine (le cyan n'est jamais une couleur de bouton).
   captureButton: {
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.textPrimary,
     paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.lg,
@@ -144,11 +146,13 @@ const styles = StyleSheet.create({
   captureButtonText: { color: Colors.white, fontWeight: "700", fontSize: 15 },
   timelineItem: { flexDirection: "row", gap: Spacing.md },
   timelineIndicator: { alignItems: "center", width: 20 },
+  // Marqueur de point de mesure — encre (comme le curseur d'AngleScale),
+  // le cyan reste réservé aux éléments actifs/liens.
   timelineDot: {
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.textPrimary,
   },
   timelineLine: {
     flex: 1,
@@ -165,9 +169,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  timelineDate: { color: Colors.textSecondary, fontSize: 13 },
+  timelineDate: {
+    color: Colors.textSecondary,
+    fontFamily: fonts.mono,
+    fontSize: 13,
+  },
   timelineAngles: {
     color: Colors.textPrimary,
+    fontFamily: fonts.mono,
     fontSize: 14,
     fontWeight: "500",
   },

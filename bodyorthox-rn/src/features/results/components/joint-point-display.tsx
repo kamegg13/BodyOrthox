@@ -1,8 +1,9 @@
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Colors } from "../../../shared/design-system/colors";
-import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
+import { Spacing } from "../../../shared/design-system/spacing";
 import { Typography } from "../../../shared/design-system/typography";
+import { colors, fonts, radius } from "../../../theme/tokens";
 
 type JointKey = "knee" | "hip" | "ankle";
 
@@ -81,29 +82,33 @@ const styles = StyleSheet.create({
   jointButton: {
     flex: 1,
     backgroundColor: Colors.backgroundCard,
-    borderRadius: BorderRadius.lg,
+    borderRadius: radius.cardLg,
     padding: Spacing.md,
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
   },
+  // Onglet actif : indicateur accent (fond clair + hairline), jamais un
+  // remplissage plein cyan (le cyan n'est pas une couleur de bouton).
   jointButtonActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
+    backgroundColor: colors.accentLight,
+    borderColor: colors.accent,
+    borderWidth: 1.5,
   },
   jointButtonLowConfidence: {
     borderColor: Colors.confidenceLow,
     borderWidth: 2,
   },
   jointLabel: { color: Colors.textSecondary, fontSize: 13, fontWeight: "500" },
-  jointLabelActive: { color: Colors.textOnPrimary },
+  jointLabelActive: { color: colors.accentDeep },
   jointAngle: {
+    fontFamily: fonts.mono,
     color: Colors.textPrimary,
     fontSize: 20,
     fontWeight: "700",
     marginTop: 4,
   },
-  jointAngleActive: { color: Colors.textOnPrimary },
+  jointAngleActive: { color: colors.accentDeep },
   lowConfidenceLabel: {
     color: Colors.confidenceLow,
     fontSize: 11,

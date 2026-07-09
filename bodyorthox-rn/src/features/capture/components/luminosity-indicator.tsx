@@ -1,7 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { Colors } from '../../../shared/design-system/colors';
-import { Spacing, BorderRadius } from '../../../shared/design-system/spacing';
+import { colors, fontSize, fontWeight, radius, spacing } from '../../../theme/tokens';
 
 interface LuminosityIndicatorProps {
   value: number; // 0-255
@@ -12,10 +11,10 @@ function getLuminosityStatus(value: number): {
   color: string;
   icon: string;
 } {
-  if (value < 40) return { label: 'Trop sombre', color: Colors.error, icon: '🌑' };
-  if (value < 80) return { label: 'Faible', color: Colors.warning, icon: '🌗' };
-  if (value > 220) return { label: 'Trop lumineux', color: Colors.warning, icon: '☀️' };
-  return { label: 'Optimal', color: Colors.success, icon: '💡' };
+  if (value < 40) return { label: 'Trop sombre', color: colors.red, icon: '🌑' };
+  if (value < 80) return { label: 'Faible', color: colors.amberMid, icon: '🌗' };
+  if (value > 220) return { label: 'Trop lumineux', color: colors.amberMid, icon: '☀️' };
+  return { label: 'Optimal', color: colors.green, icon: '💡' };
 }
 
 export function LuminosityIndicator({ value }: LuminosityIndicatorProps) {
@@ -35,16 +34,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.7)',
     borderWidth: 1,
-    borderRadius: BorderRadius.full,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    gap: Spacing.xs,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.s16,
+    paddingVertical: spacing.s4,
+    gap: spacing.s4,
   },
   icon: {
     fontSize: 14,
   },
   label: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.semiBold,
   },
 });

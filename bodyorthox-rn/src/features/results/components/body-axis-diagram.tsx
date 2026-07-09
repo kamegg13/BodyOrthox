@@ -1,7 +1,9 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Colors } from "../../../shared/design-system/colors";
-import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
+import { Spacing } from "../../../shared/design-system/spacing";
+import { Shadows } from "../../../shared/design-system/card-styles";
+import { colors, fonts, fontSize, letterSpacing, radius } from "../../../theme/tokens";
 
 interface BodyAxisDiagramProps {
   readonly angleValue: number;
@@ -70,18 +72,19 @@ export function BodyAxisDiagram({ angleValue, testID }: BodyAxisDiagramProps) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.backgroundCard,
-    borderRadius: BorderRadius.lg,
+    borderRadius: radius.cardLg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
     padding: Spacing.lg,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+    ...Shadows.sm,
   },
   title: {
-    fontSize: 15,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.eyebrow,
     fontWeight: "600",
-    color: Colors.textPrimary,
+    color: colors.textMuted,
+    letterSpacing: letterSpacing.eyebrow,
+    textTransform: "uppercase",
     marginBottom: Spacing.md,
   },
   diagramContainer: {
@@ -92,24 +95,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 0,
   },
+  // Silhouette de contexte (non fonctionnelle) : encre neutre, jamais l'accent
+  // — l'accent reste réservé au tracé H-K-A mesuré (jambe droite ci-dessous).
   head: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: Colors.primary,
-    opacity: 0.25,
+    backgroundColor: colors.ink,
+    opacity: 0.16,
   },
   neck: {
     width: 8,
     height: 6,
-    backgroundColor: Colors.primary,
-    opacity: 0.2,
+    backgroundColor: colors.ink,
+    opacity: 0.14,
   },
   torso: {
     width: 40,
     height: 52,
-    backgroundColor: Colors.primary,
-    opacity: 0.15,
+    backgroundColor: colors.ink,
+    opacity: 0.1,
     borderRadius: 6,
     alignItems: "center",
     justifyContent: "flex-start",
@@ -125,16 +130,16 @@ const styles = StyleSheet.create({
   armLeft: {
     width: 2,
     height: 44,
-    backgroundColor: Colors.primary,
-    opacity: 0.3,
+    backgroundColor: colors.ink,
+    opacity: 0.2,
     borderRadius: 1,
     transform: [{ rotate: "12deg" }],
   },
   armRight: {
     width: 2,
     height: 44,
-    backgroundColor: Colors.primary,
-    opacity: 0.3,
+    backgroundColor: colors.ink,
+    opacity: 0.2,
     borderRadius: 1,
     transform: [{ rotate: "-12deg" }],
   },
@@ -147,17 +152,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 0,
   },
+  // Jambe gauche = référence (grise, hairline). Jambe droite = tracé H-K-A
+  // mesuré (accent) — distinction fonctionnelle référence/mesure.
   legLineUpper: {
     width: 2,
     height: 52,
-    backgroundColor: Colors.textDisabled,
-    opacity: 0.3,
+    backgroundColor: colors.borderMid,
   },
   legLineLower: {
     width: 2,
     height: 52,
-    backgroundColor: Colors.textDisabled,
-    opacity: 0.3,
+    backgroundColor: colors.borderMid,
   },
   pointRow: {
     flexDirection: "row",
@@ -168,25 +173,21 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.accent,
     borderWidth: 2,
     borderColor: Colors.white,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.3,
-    shadowRadius: 2,
-    elevation: 2,
   },
   pointLabelLarge: {
+    fontFamily: fonts.sans,
     fontSize: 14,
     fontWeight: "800",
-    color: Colors.primary,
+    color: colors.accent,
     minWidth: 14,
   },
   axisLine: {
     width: 3,
     height: 40,
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.accent,
     borderRadius: 1.5,
   },
   angleArc: {
@@ -194,7 +195,7 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: Colors.primary,
+    borderColor: colors.accent,
     borderTopColor: "transparent",
     borderRightColor: "transparent",
     opacity: 0.6,
@@ -202,15 +203,16 @@ const styles = StyleSheet.create({
     marginLeft: -2,
   },
   angleBadge: {
-    backgroundColor: Colors.primaryLight,
-    borderRadius: BorderRadius.sm,
+    backgroundColor: colors.accentLight,
+    borderRadius: radius.pill,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 2,
     marginLeft: Spacing.xs,
   },
   angleText: {
+    fontFamily: fonts.mono,
     fontSize: 14,
     fontWeight: "700",
-    color: Colors.primary,
+    color: colors.accent,
   },
 });

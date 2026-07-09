@@ -1,13 +1,14 @@
 import React from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { Colors } from "../../../shared/design-system/colors";
-import { Spacing } from "../../../shared/design-system/spacing";
 import {
-  FontSize,
-  FontWeight,
-  Typography,
-} from "../../../shared/design-system/typography";
-import { CardShadow } from "../../../shared/design-system/card-styles";
+  colors,
+  fonts,
+  fontSize,
+  fontWeight,
+  radius,
+  shadows,
+  spacing,
+} from "../../../theme/tokens";
 
 interface ProtocolCard {
   readonly icon: string;
@@ -53,7 +54,7 @@ export function ProtocolsScreen() {
       testID="protocols-screen"
     >
       <Text style={styles.headerTitle}>Protocoles de capture</Text>
-      <Text style={[Typography.body, styles.headerSubtitle]}>
+      <Text style={styles.headerSubtitle}>
         Guides de positionnement pour des mesures précises.
       </Text>
 
@@ -67,38 +68,49 @@ export function ProtocolsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.bg,
   },
   content: {
-    padding: Spacing.lg,
-    gap: Spacing.md,
+    padding: spacing.s20,
+    gap: spacing.s16,
   },
   headerTitle: {
-    fontSize: FontSize.xxl,
-    fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
-    marginBottom: Spacing.xs,
+    fontFamily: fonts.display,
+    fontSize: fontSize.h1,
+    fontWeight: fontWeight.bold,
+    color: colors.textPrimary,
+    marginBottom: spacing.s4,
   },
   headerSubtitle: {
-    color: Colors.textSecondary,
-    marginBottom: Spacing.sm,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.bodyLg,
+    fontWeight: fontWeight.regular,
+    color: colors.textSecond,
+    marginBottom: spacing.s8,
   },
   card: {
-    ...CardShadow,
-    padding: Spacing.lg,
-    gap: Spacing.sm,
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.cardLg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.sm,
+    padding: spacing.s16,
+    gap: spacing.s8,
   },
   cardIcon: {
     fontSize: 32,
   },
   cardTitle: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.bodyLg,
+    fontWeight: fontWeight.semiBold,
+    color: colors.textPrimary,
   },
   cardDescription: {
-    fontSize: FontSize.md,
-    color: Colors.textSecondary,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.body,
+    fontWeight: fontWeight.regular,
+    color: colors.textSecond,
     lineHeight: 22,
   },
 });

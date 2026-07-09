@@ -9,10 +9,16 @@ import {
   Platform,
   Alert,
 } from "react-native";
-import { Colors } from "../../../shared/design-system/colors";
-import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
-import { FontSize, FontWeight } from "../../../shared/design-system/typography";
-import { CardShadow } from "../../../shared/design-system/card-styles";
+import { Btn } from "../../../components/Btn";
+import {
+  colors,
+  fonts,
+  fontSize,
+  fontWeight,
+  letterSpacing,
+  radius,
+  spacing,
+} from "../../../theme/tokens";
 import {
   FormRow,
   createEmptyRow,
@@ -31,12 +37,6 @@ function showAlert(title: string, message: string): void {
   if (Platform.OS === "web") window.alert(`${title}\n\n${message}`);
   else Alert.alert(title, message);
 }
-
-const monospace = Platform.select({
-  ios: "Menlo",
-  android: "monospace",
-  default: "monospace",
-});
 
 export function CalibrationScreen() {
   const activeModel = useCalibrationStore((s) => s.activeModel);
@@ -117,13 +117,13 @@ export function CalibrationScreen() {
             <Text style={styles.statusMeta}>
               Ajusté le {activeModel.createdAt.slice(0, 10)}
             </Text>
-            <TouchableOpacity
-              style={[styles.button, styles.buttonDanger]}
+            <Btn
+              label="Désactiver"
+              variant="danger"
               onPress={deactivate}
               testID="calibration-deactivate"
-            >
-              <Text style={styles.buttonText}>Désactiver</Text>
-            </TouchableOpacity>
+              style={styles.buttonSpacing}
+            />
           </>
         ) : (
           <Text style={styles.statusInactive}>
@@ -156,7 +156,7 @@ export function CalibrationScreen() {
               onChangeText={(predicted) => updateRow(row.id, { predicted })}
               keyboardType="decimal-pad"
               placeholder="—"
-              placeholderTextColor={Colors.textDisabled}
+              placeholderTextColor={colors.textMuted}
               testID={`calibration-predicted-${row.id}`}
             />
             <TextInput
@@ -165,7 +165,7 @@ export function CalibrationScreen() {
               onChangeText={(groundTruth) => updateRow(row.id, { groundTruth })}
               keyboardType="decimal-pad"
               placeholder="—"
-              placeholderTextColor={Colors.textDisabled}
+              placeholderTextColor={colors.textMuted}
               testID={`calibration-radio-${row.id}`}
             />
             <TouchableOpacity
@@ -201,14 +201,13 @@ export function CalibrationScreen() {
         )}
       </View>
 
-      <TouchableOpacity
-        style={[styles.button, !canCompute && styles.buttonDisabled]}
+      <Btn
+        label="Calculer la calibration"
+        variant="primary"
         onPress={compute}
         disabled={!canCompute}
         testID="calibration-compute"
-      >
-        <Text style={styles.buttonText}>Calculer la calibration</Text>
-      </TouchableOpacity>
+      />
 
       {/* Rapport */}
       {report && (
@@ -221,13 +220,13 @@ export function CalibrationScreen() {
                 {formatCalibrationReport(report)}
               </Text>
             </View>
-            <TouchableOpacity
-              style={styles.button}
+            <Btn
+              label="Activer ce modèle"
+              variant="primary"
               onPress={activateModel}
               testID="calibration-activate"
-            >
-              <Text style={styles.buttonText}>Activer ce modèle</Text>
-            </TouchableOpacity>
+              style={styles.buttonSpacing}
+            />
           </View>
         </>
       )}
@@ -287,155 +286,181 @@ function GainSummary({ report }: { report: CalibrationReport }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  content: { padding: Spacing.md, paddingBottom: Spacing.xxl },
+  container: { flex: 1, backgroundColor: colors.bg },
+  content: { padding: spacing.s16, paddingBottom: 48 },
   title: {
-    fontSize: FontSize.xl,
-    fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
+    fontFamily: fonts.display,
+    fontSize: fontSize.h1,
+    fontWeight: fontWeight.bold,
+    color: colors.textPrimary,
   },
   subtitle: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    marginTop: Spacing.xs,
-    marginBottom: Spacing.sm,
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    color: colors.textSecond,
+    marginTop: spacing.s4,
+    marginBottom: spacing.s8,
     lineHeight: 19,
   },
+  // Label de section — eyebrow uppercase (plaque d'instrument).
   sectionTitle: {
-    fontSize: FontSize.xs,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.textSecondary,
-    letterSpacing: 0.8,
-    marginBottom: Spacing.xs,
-    marginTop: Spacing.md,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.eyebrow,
+    fontWeight: fontWeight.semiBold,
+    color: colors.textMuted,
+    letterSpacing: letterSpacing.eyebrow,
+    marginBottom: spacing.s4,
+    marginTop: spacing.s16,
   },
-  card: { ...CardShadow, padding: Spacing.md, marginBottom: Spacing.sm },
+  // Card plate : hairline + radius 10, quasi sans ombre.
+  card: {
+    backgroundColor: colors.bgCard,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.cardLg,
+    padding: spacing.s16,
+    marginBottom: spacing.s8,
+  },
   statusActive: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.success,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.bodyLg,
+    fontWeight: fontWeight.semiBold,
+    color: colors.green,
   },
-  statusInactive: { fontSize: FontSize.md, color: Colors.textSecondary },
+  statusInactive: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.bodyLg,
+    color: colors.textSecond,
+  },
+  // Compte (n=...) et date technique → mono.
   statusMeta: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    marginTop: Spacing.xxs,
+    fontFamily: fonts.mono,
+    fontSize: 13,
+    color: colors.textSecond,
+    marginTop: 2,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingBottom: Spacing.xs,
+    paddingBottom: spacing.s4,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: colors.border,
   },
   headerCell: {
-    fontSize: FontSize.xs,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.textSecondary,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.eyebrow,
+    fontWeight: fontWeight.semiBold,
+    color: colors.textMuted,
   },
   dataRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: Spacing.xs,
+    paddingVertical: spacing.s4,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: colors.border,
   },
   sideCol: { width: 84 },
   numCol: { flex: 1, textAlign: "center" },
   delCol: { width: 36, alignItems: "center", justifyContent: "center" },
+  // Saisie de valeurs d'angle → mono tabulaire.
   input: {
-    fontSize: FontSize.md,
-    color: Colors.textPrimary,
-    paddingVertical: Spacing.xs,
-    marginHorizontal: Spacing.xxs,
+    fontFamily: fonts.mono,
+    fontSize: fontSize.bodyLg,
+    color: colors.textPrimary,
+    paddingVertical: spacing.s4,
+    marginHorizontal: 2,
   },
-  delText: { color: Colors.error, fontSize: FontSize.md },
+  delText: { color: colors.red, fontSize: fontSize.bodyLg },
   rowActions: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: Spacing.sm,
+    marginTop: spacing.s8,
   },
+  // Lien — seul usage légitime de l'accent hors indicateur actif.
   linkText: {
-    color: Colors.primary,
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.semiBold,
+    fontFamily: fonts.sans,
+    color: colors.accent,
+    fontSize: 13,
+    fontWeight: fontWeight.semiBold,
   },
-  linkMuted: { color: Colors.textSecondary, fontSize: FontSize.sm },
+  linkMuted: {
+    fontFamily: fonts.sans,
+    color: colors.textSecond,
+    fontSize: 13,
+  },
+  // Compteur de paires → mono (donnée numérique).
   counter: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    marginTop: Spacing.sm,
+    fontFamily: fonts.mono,
+    fontSize: 13,
+    color: colors.textSecond,
+    marginTop: spacing.s8,
   },
   warn: {
-    fontSize: FontSize.sm,
-    color: Colors.warning,
-    marginTop: Spacing.xxs,
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    color: colors.amberMid,
+    marginTop: 2,
   },
   toggle: {
     flexDirection: "row",
     borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: BorderRadius.sm,
+    borderColor: colors.border,
+    borderRadius: 4,
     overflow: "hidden",
   },
   toggleBtn: { paddingVertical: 4, paddingHorizontal: 12 },
-  toggleBtnActive: { backgroundColor: Colors.primary },
+  // Côté actif du toggle G/D — onglet actif : seul usage légitime de l'accent.
+  toggleBtnActive: { backgroundColor: colors.accent },
   toggleText: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    fontWeight: FontWeight.semiBold,
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    color: colors.textSecond,
+    fontWeight: fontWeight.semiBold,
   },
-  toggleTextActive: { color: Colors.textOnPrimary },
-  button: {
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.md,
-    paddingVertical: Spacing.sm,
-    alignItems: "center",
-    marginTop: Spacing.sm,
-  },
-  buttonDanger: { backgroundColor: Colors.error },
-  buttonDisabled: { opacity: 0.4 },
-  buttonText: {
-    color: Colors.white,
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.semiBold,
-  },
+  toggleTextActive: { color: colors.textInverse },
+  buttonSpacing: { marginTop: spacing.s8 },
   gainGrid: {
     flexDirection: "row",
-    gap: Spacing.sm,
-    marginBottom: Spacing.sm,
+    gap: spacing.s8,
+    marginBottom: spacing.s8,
   },
+  // Panneau secondaire imbriqué dans la card — surface froide.
   gainCell: {
     flex: 1,
-    backgroundColor: Colors.backgroundElevated,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.sm,
+    backgroundColor: colors.bgSubtle,
+    borderRadius: radius.button,
+    padding: spacing.s8,
   },
   gainLabel: {
-    fontSize: FontSize.xs,
-    color: Colors.textSecondary,
-    fontWeight: FontWeight.semiBold,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.eyebrow,
+    color: colors.textMuted,
+    fontWeight: fontWeight.semiBold,
   },
+  // Gain de calibration (angle avant/après) → mono, donnée héro.
   gainValue: {
-    fontSize: FontSize.lg,
-    color: Colors.textPrimary,
-    fontWeight: FontWeight.bold,
-    marginTop: Spacing.xxs,
+    fontFamily: fonts.mono,
+    fontSize: 17,
+    color: colors.textPrimary,
+    fontWeight: fontWeight.bold,
+    marginTop: 2,
   },
   gainMeta: {
-    fontSize: FontSize.xs,
-    color: Colors.textSecondary,
-    marginTop: Spacing.xxs,
+    fontFamily: fonts.mono,
+    fontSize: fontSize.eyebrow,
+    color: colors.textSecond,
+    marginTop: 2,
   },
+  // Rapport texte type <pre> : fond noir instrument, texte mono.
   reportBox: {
-    backgroundColor: Colors.black,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.sm,
+    backgroundColor: colors.captureBg,
+    borderRadius: radius.button,
+    padding: spacing.s8,
   },
   reportText: {
-    fontFamily: monospace,
+    fontFamily: fonts.mono,
     fontSize: 11,
     lineHeight: 16,
-    color: Colors.white,
+    color: colors.white,
   },
 });

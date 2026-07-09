@@ -2,6 +2,7 @@ import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Colors } from "../../../shared/design-system/colors";
 import { FontSize } from "../../../shared/design-system/typography";
+import { fonts } from "../../../theme/tokens";
 
 interface DatePickerProps {
   value: string | null; // ISO YYYY-MM-DD ou null
@@ -30,7 +31,7 @@ export function DatePicker({ value, onChange, placeholder, maxDate }: DatePicker
           border: "none",
           outline: "none",
           padding: 0,
-          fontFamily: "inherit",
+          fontFamily: fonts.mono,
           cursor: "pointer",
           minHeight: 44,
         }}

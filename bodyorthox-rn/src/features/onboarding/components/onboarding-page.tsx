@@ -6,9 +6,7 @@ import {
   ScrollView,
   useWindowDimensions,
 } from "react-native";
-import { Colors } from "../../../shared/design-system/colors";
-import { Spacing } from "../../../shared/design-system/spacing";
-import { FontSize, FontWeight } from "../../../shared/design-system/typography";
+import { colors, fonts, fontSize, fontWeight, spacing } from "../../../theme/tokens";
 
 export interface OnboardingPageProps {
   icon?: string;
@@ -85,14 +83,14 @@ export function OnboardingPage({
 const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.bg,
   },
   scrollContent: {
     flexGrow: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.xl,
+    paddingHorizontal: spacing.s24,
+    paddingVertical: spacing.s28,
   },
   content: {
     alignItems: "center",
@@ -100,44 +98,47 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   title: {
-    fontSize: FontSize.xxxl,
-    fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
+    fontFamily: fonts.display,
+    fontSize: 28,
+    fontWeight: fontWeight.bold,
+    color: colors.textPrimary,
     textAlign: "center",
-    marginBottom: Spacing.sm,
-    lineHeight: 42,
+    marginBottom: spacing.s8,
+    lineHeight: 34,
   },
   subtitle: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.regular,
-    color: Colors.textSecondary,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.bodyLg,
+    fontWeight: fontWeight.regular,
+    color: colors.textSecond,
     textAlign: "center",
-    marginBottom: Spacing.lg,
-    lineHeight: 24,
+    marginBottom: spacing.s24,
+    lineHeight: 22,
   },
   icon: {
     fontSize: 80,
-    marginBottom: Spacing.xl,
+    marginBottom: spacing.s28,
   },
   illustrationWrapper: {
-    marginBottom: Spacing.lg,
+    marginBottom: spacing.s24,
     alignItems: "center",
   },
   description: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.regular,
-    color: Colors.textSecondary,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.bodyLg,
+    fontWeight: fontWeight.regular,
+    color: colors.textSecond,
     textAlign: "center",
-    lineHeight: 26,
-    paddingHorizontal: Spacing.md,
-    marginBottom: Spacing.md,
+    lineHeight: 24,
+    paddingHorizontal: spacing.s16,
+    marginBottom: spacing.s16,
   },
   featureRow: {
     flexDirection: "row",
     alignItems: "flex-start",
     width: "100%",
-    paddingVertical: Spacing.sm,
-    gap: Spacing.md,
+    paddingVertical: spacing.s8,
+    gap: spacing.s16,
   },
   featureIcon: {
     fontSize: 24,
@@ -148,15 +149,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   featureTitle: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.listPrimary,
+    fontWeight: fontWeight.semiBold,
+    color: colors.textPrimary,
     marginBottom: 2,
   },
   featureDescription: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.regular,
-    color: Colors.textSecondary,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.regular,
+    color: colors.textMuted,
     lineHeight: 18,
   },
 });

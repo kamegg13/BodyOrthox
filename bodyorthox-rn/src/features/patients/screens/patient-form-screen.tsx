@@ -27,6 +27,7 @@ import { PainEditor } from "../components/pain-editor";
 import { Colors } from "../../../shared/design-system/colors";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
 import { FontSize, FontWeight } from "../../../shared/design-system/typography";
+import { fonts, letterSpacing } from "../../../theme/tokens";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -555,11 +556,12 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xxl,
     gap: Spacing.xs,
   },
+  // Eyebrow — micro-label de section, façon plaque d'instrument.
   sectionLabel: {
     fontSize: FontSize.xs,
     fontWeight: FontWeight.medium,
-    color: Colors.textSecondary,
-    letterSpacing: 0.5,
+    color: Colors.textDisabled,
+    letterSpacing: letterSpacing.eyebrow,
     marginTop: Spacing.md,
     marginBottom: Spacing.sm,
     marginLeft: Spacing.md,
@@ -597,7 +599,8 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     paddingVertical: Spacing.sm,
   },
-  readOnly: { color: Colors.textSecondary },
+  // IMC — valeur numérique dérivée, mono tabulaire.
+  readOnly: { color: Colors.textSecondary, fontFamily: fonts.mono },
   multiline: {
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
@@ -614,8 +617,9 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xs,
     marginLeft: Spacing.md,
   },
+  // CTA primaire — encre pleine (le cyan n'est jamais une couleur de bouton).
   submitBtn: {
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.textPrimary,
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.lg,
     alignItems: "center",

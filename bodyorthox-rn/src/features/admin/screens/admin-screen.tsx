@@ -11,10 +11,16 @@ import {
   ScrollView,
 } from 'react-native';
 import { apiRequest } from '../../../core/api/api-client';
-import { Colors } from '../../../shared/design-system/colors';
-import { Spacing, BorderRadius } from '../../../shared/design-system/spacing';
-import { FontSize, FontWeight } from '../../../shared/design-system/typography';
-import { CardShadow } from '../../../shared/design-system/card-styles';
+import { Card } from '../../../components/Card';
+import { SectionLabel } from '../../../components/SectionLabel';
+import {
+  colors,
+  fonts,
+  fontSize,
+  fontWeight,
+  radius,
+  spacing,
+} from '../../../theme/tokens';
 
 interface UserItem {
   id: string;
@@ -82,7 +88,7 @@ export function AdminScreen() {
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color={Colors.primary} />
+        <ActivityIndicator size="large" color={colors.ink} />
       </View>
     );
   }
@@ -92,8 +98,8 @@ export function AdminScreen() {
       <Text style={styles.title}>Administration</Text>
 
       {/* Créer praticien */}
-      <Text style={styles.sectionTitle}>NOUVEAU PRATICIEN</Text>
-      <View style={styles.card}>
+      <SectionLabel>NOUVEAU PRATICIEN</SectionLabel>
+      <Card style={styles.card}>
         <TextInput
           style={styles.input}
           placeholder="Email"
@@ -101,7 +107,7 @@ export function AdminScreen() {
           onChangeText={setNewEmail}
           autoCapitalize="none"
           keyboardType="email-address"
-          placeholderTextColor={Colors.textSecondary}
+          placeholderTextColor={colors.textMuted}
           testID="admin-new-email"
         />
         <View style={styles.separator} />
@@ -111,7 +117,7 @@ export function AdminScreen() {
           value={newPassword}
           onChangeText={setNewPassword}
           secureTextEntry
-          placeholderTextColor={Colors.textSecondary}
+          placeholderTextColor={colors.textMuted}
           testID="admin-new-password"
         />
         <View style={styles.separator} />
@@ -125,16 +131,16 @@ export function AdminScreen() {
           testID="admin-create-button"
         >
           {isCreating ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={colors.white} />
           ) : (
             <Text style={styles.buttonText}>Créer le compte</Text>
           )}
         </TouchableOpacity>
-      </View>
+      </Card>
 
       {/* Liste comptes */}
-      <Text style={styles.sectionTitle}>COMPTES ({users.length})</Text>
-      <View style={styles.card}>
+      <SectionLabel>{`COMPTES (${users.length})`}</SectionLabel>
+      <Card style={styles.card}>
         {users.map((item, index) => (
           <React.Fragment key={item.id}>
             {index > 0 && <View style={styles.separator} />}
@@ -151,7 +157,7 @@ export function AdminScreen() {
         {users.length === 0 && (
           <Text style={styles.empty}>Aucun compte</Text>
         )}
-      </View>
+      </Card>
     </ScrollView>
   );
 }
@@ -161,76 +167,73 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.background,
+    backgroundColor: colors.bg,
   },
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.bg,
   },
   content: {
-    padding: Spacing.md,
-    paddingBottom: Spacing.xxl,
+    padding: spacing.s16,
+    paddingBottom: spacing.s28 * 2,
   },
   title: {
-    fontSize: FontSize.xl,
-    fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
-    marginBottom: Spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: FontSize.xs,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.textSecondary,
-    letterSpacing: 0.8,
-    marginBottom: Spacing.xs,
-    marginTop: Spacing.md,
+    fontFamily: fonts.display,
+    fontSize: fontSize.h1,
+    fontWeight: fontWeight.bold,
+    color: colors.textPrimary,
+    marginBottom: spacing.s24,
   },
   card: {
-    ...CardShadow,
-    padding: Spacing.md,
-    marginBottom: Spacing.sm,
+    padding: spacing.s16,
+    marginBottom: spacing.s16,
   },
   input: {
-    fontSize: FontSize.md,
-    color: Colors.textPrimary,
-    paddingVertical: Spacing.sm,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.bodyLg,
+    color: colors.textPrimary,
+    paddingVertical: spacing.s10,
   },
   separator: {
-    height: 1,
-    backgroundColor: Colors.border,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
   },
   button: {
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.md,
-    paddingVertical: Spacing.sm,
+    backgroundColor: colors.ink,
+    borderRadius: radius.button,
+    paddingVertical: spacing.s10,
     alignItems: 'center',
-    marginTop: Spacing.sm,
+    marginTop: spacing.s10,
   },
   buttonDisabled: {
     opacity: 0.4,
   },
   buttonText: {
-    color: '#fff',
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.semiBold,
+    fontFamily: fonts.sans,
+    color: colors.textInverse,
+    fontSize: fontSize.bodyLg,
+    fontWeight: fontWeight.semiBold,
   },
   userRow: {
-    paddingVertical: Spacing.sm,
+    paddingVertical: spacing.s10,
   },
   userEmail: {
-    fontSize: FontSize.md,
-    color: Colors.textPrimary,
-    fontWeight: FontWeight.medium,
+    fontFamily: fonts.mono,
+    fontSize: fontSize.bodyLg,
+    color: colors.textPrimary,
+    fontWeight: fontWeight.medium,
   },
   userMeta: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    marginTop: Spacing.xxs,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.body,
+    color: colors.textMuted,
+    marginTop: 2,
   },
   empty: {
-    fontSize: FontSize.md,
-    color: Colors.textDisabled,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.bodyLg,
+    color: colors.textMuted,
     textAlign: 'center',
-    paddingVertical: Spacing.md,
+    paddingVertical: spacing.s16,
   },
 });

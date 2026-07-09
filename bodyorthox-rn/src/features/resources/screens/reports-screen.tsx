@@ -5,18 +5,19 @@ import {
   Platform,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
-import { Colors } from "../../../shared/design-system/colors";
-import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
-import {
-  FontSize,
-  FontWeight,
-  Typography,
-} from "../../../shared/design-system/typography";
-import { CardShadow } from "../../../shared/design-system/card-styles";
+import { Btn } from "../../../components/Btn";
 import { LoadingSpinner } from "../../../shared/components/loading-spinner";
+import {
+  colors,
+  fonts,
+  fontSize,
+  fontWeight,
+  radius,
+  shadows,
+  spacing,
+} from "../../../theme/tokens";
 
 interface ReportRow {
   readonly id: string;
@@ -58,29 +59,28 @@ function ReportItem({ item }: { readonly item: ReportRow }) {
         </Text>
       </View>
       <View style={styles.actions}>
-        <TouchableOpacity
-          style={styles.actionButton}
+        <Btn
+          label="Générer PDF"
           onPress={() =>
             showAlert(
               "Générer PDF",
               "La génération de PDF sera disponible prochainement.",
             )
           }
-          accessibilityRole="button"
-          activeOpacity={0.7}
-        >
-          <Text style={styles.actionText}>Générer PDF</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.shareButton]}
+          small
+          full={false}
+          style={styles.actionButton}
+        />
+        <Btn
+          label="Partager"
+          variant="secondary"
           onPress={() =>
             showAlert("Partager", "Le partage sera disponible prochainement.")
           }
-          accessibilityRole="button"
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.actionText, styles.shareText]}>Partager</Text>
-        </TouchableOpacity>
+          small
+          full={false}
+          style={styles.actionButton}
+        />
       </View>
     </View>
   );
@@ -136,10 +136,8 @@ export function ReportsScreen() {
       {reports.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyIcon}>📄</Text>
-          <Text style={[Typography.h3, styles.emptyTitle]}>
-            Aucun rapport généré
-          </Text>
-          <Text style={[Typography.body, styles.emptySubtitle]}>
+          <Text style={styles.emptyTitle}>Aucun rapport généré</Text>
+          <Text style={styles.emptySubtitle}>
             Réalisez une analyse pour créer votre premier rapport.
           </Text>
         </View>
@@ -160,74 +158,71 @@ export function ReportsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
-    padding: Spacing.lg,
+    backgroundColor: colors.bg,
+    padding: spacing.s16,
   },
   headerTitle: {
-    fontSize: FontSize.xxl,
-    fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
-    marginBottom: Spacing.md,
+    fontFamily: fonts.display,
+    fontSize: fontSize.h1,
+    fontWeight: fontWeight.bold,
+    color: colors.textPrimary,
+    marginBottom: spacing.s16,
   },
   list: {
-    gap: Spacing.sm,
-    paddingBottom: Spacing.xl,
+    gap: spacing.s10,
+    paddingBottom: spacing.s28,
   },
   card: {
-    ...CardShadow,
-    padding: Spacing.md,
-    gap: Spacing.sm,
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.cardLg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.sm,
+    padding: spacing.s16,
+    gap: spacing.s10,
   },
   cardInfo: {
-    gap: Spacing.xxs,
+    gap: 2,
   },
   patientName: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.bodyLg,
+    fontWeight: fontWeight.semiBold,
+    color: colors.textPrimary,
   },
   meta: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
+    fontFamily: fonts.mono,
+    fontSize: fontSize.monoMd,
+    color: colors.textMuted,
   },
   actions: {
     flexDirection: "row",
-    gap: Spacing.sm,
+    gap: spacing.s10,
   },
   actionButton: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.md,
-  },
-  actionText: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.textOnPrimary,
-  },
-  shareButton: {
-    backgroundColor: Colors.backgroundCard,
-    borderWidth: 1,
-    borderColor: Colors.primary,
-  },
-  shareText: {
-    color: Colors.primary,
+    flexGrow: 0,
   },
   emptyState: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    gap: Spacing.md,
+    gap: spacing.s16,
   },
   emptyIcon: {
     fontSize: 64,
   },
   emptyTitle: {
-    color: Colors.textPrimary,
+    fontFamily: fonts.display,
+    fontSize: fontSize.h2,
+    fontWeight: fontWeight.semiBold,
+    color: colors.textPrimary,
     textAlign: "center",
   },
   emptySubtitle: {
-    color: Colors.textSecondary,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.bodyLg,
+    fontWeight: fontWeight.regular,
+    color: colors.textSecond,
     textAlign: "center",
   },
 });

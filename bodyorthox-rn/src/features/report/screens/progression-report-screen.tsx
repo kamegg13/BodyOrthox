@@ -3,9 +3,15 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRoute } from "@react-navigation/native";
 import type { RouteProp } from "@react-navigation/native";
 import type { RootStackParamList } from "../../../navigation/types";
-import { Colors } from "../../../shared/design-system/colors";
-import { Typography } from "../../../shared/design-system/typography";
-import { BorderRadius, Spacing } from "../../../shared/design-system/spacing";
+import {
+  colors,
+  fonts,
+  fontSize,
+  fontWeight,
+  letterSpacing,
+  radius,
+  spacing,
+} from "../../../theme/tokens";
 import { LoadingSpinner } from "../../../shared/components/loading-spinner";
 import { ExportButton } from "../components/export-button";
 import { LEGAL_CONSTANTS } from "../../../core/legal/legal-constants";
@@ -76,24 +82,26 @@ export function ProgressionReportScreen() {
       contentContainerStyle={styles.content}
       testID="progression-report-screen"
     >
-      <Text style={Typography.h2} testID="progression-report-title">
+      <Text style={styles.title} testID="progression-report-title">
         Rapport de Progression Clinique
       </Text>
 
       {/* Summary card */}
       <View style={styles.card} testID="progression-report-summary">
-        <Text style={Typography.label}>Résumé du rapport</Text>
+        <Text style={styles.cardLabel}>Résumé du rapport</Text>
         <View style={styles.metaRow}>
           <Text style={styles.metaLabel}>Patient</Text>
           <Text style={styles.metaValue}>{patient.name}</Text>
         </View>
         <View style={styles.metaRow}>
           <Text style={styles.metaLabel}>Nombre de séances</Text>
-          <Text style={styles.metaValue}>{analyses.length}</Text>
+          <Text style={[styles.metaValue, styles.metaValueMono]}>
+            {analyses.length}
+          </Text>
         </View>
         <View style={styles.metaRow}>
           <Text style={styles.metaLabel}>Période</Text>
-          <Text style={styles.metaValue}>
+          <Text style={[styles.metaValue, styles.metaValueMono]}>
             {firstDate} → {lastDate}
           </Text>
         </View>
@@ -101,7 +109,7 @@ export function ProgressionReportScreen() {
 
       {/* What's in the report */}
       <View style={styles.card}>
-        <Text style={Typography.label}>Contenu du rapport</Text>
+        <Text style={styles.cardLabel}>Contenu du rapport</Text>
         <Text style={styles.contentDesc}>
           • Tableau chronologique de toutes les analyses (HKA, Genou, Hanche,
           Cheville)
@@ -134,26 +142,41 @@ export function ProgressionReportScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.bg,
   },
   containerCentered: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.bg,
     justifyContent: "center",
     alignItems: "center",
   },
   content: {
-    padding: Spacing.md,
-    paddingBottom: Spacing.xxl,
-    gap: Spacing.md,
+    padding: spacing.s16,
+    paddingBottom: spacing.s28 * 2,
+    gap: spacing.s16,
+  },
+  title: {
+    fontFamily: fonts.display,
+    fontSize: fontSize.h2,
+    fontWeight: fontWeight.semiBold,
+    color: colors.textPrimary,
+    lineHeight: 32,
   },
   card: {
-    backgroundColor: Colors.backgroundCard,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
-    gap: Spacing.sm,
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.cardLg,
+    padding: spacing.s16,
+    gap: spacing.s10,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
+  },
+  cardLabel: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.eyebrow,
+    fontWeight: fontWeight.semiBold,
+    color: colors.textMuted,
+    letterSpacing: letterSpacing.eyebrow,
+    textTransform: "uppercase",
   },
   metaRow: {
     flexDirection: "row",
@@ -161,34 +184,42 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   metaLabel: {
-    color: Colors.textSecondary,
-    fontSize: 13,
+    fontFamily: fonts.sans,
+    color: colors.textSecond,
+    fontSize: fontSize.caption,
   },
   metaValue: {
-    color: Colors.textPrimary,
-    fontSize: 13,
-    fontWeight: "500",
+    fontFamily: fonts.sans,
+    color: colors.textPrimary,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.medium,
     flex: 1,
     textAlign: "right",
   },
+  metaValueMono: {
+    fontFamily: fonts.mono,
+  },
   contentDesc: {
-    color: Colors.textSecondary,
-    fontSize: 13,
+    fontFamily: fonts.sans,
+    color: colors.textSecond,
+    fontSize: fontSize.caption,
     lineHeight: 20,
   },
   disclaimer: {
-    color: Colors.textDisabled,
-    fontSize: 11,
+    fontFamily: fonts.sans,
+    color: colors.textMuted,
+    fontSize: fontSize.captionXs,
     textAlign: "center",
-    paddingHorizontal: Spacing.md,
+    paddingHorizontal: spacing.s16,
   },
   exportContainer: {
     alignItems: "center",
   },
   errorText: {
-    color: Colors.error,
-    fontSize: 15,
+    fontFamily: fonts.sans,
+    color: colors.red,
+    fontSize: fontSize.bodyLg,
     textAlign: "center",
-    padding: Spacing.md,
+    padding: spacing.s16,
   },
 });

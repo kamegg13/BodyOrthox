@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
-import { Colors } from "../../../shared/design-system/colors";
+import { colors, fonts, fontWeight } from "../../../theme/tokens";
 import type { PoseLandmarks, BilateralAngles } from "../data/angle-calculator";
 
 /**
@@ -113,24 +113,33 @@ function getConnectionRegion(from: number, to: number): BodyRegion {
   return "upperBody";
 }
 
-/** Color for each body region connection */
+/**
+ * Couleurs de tracé (visualisation pose-estimation), pas du chrome UI.
+ * `face` et `leftLeg` sont déjà des blancs-alpha : migrés vers les tokens
+ * `white50`/`white70`. `upperBody` (rose), `hand` (rouge vif) et `rightLeg`
+ * (bleu) sont volontairement CONSERVÉS hors tokens : ce sont les seules
+ * couleurs qui distinguent visuellement les régions anatomiques et surtout
+ * la jambe gauche (blanc) de la jambe droite (bleu) — une distinction
+ * fonctionnelle critique en lecture clinique. Les remplacer par de l'encre/
+ * accent/gris hairline ferait perdre cette lisibilité gauche/droite.
+ */
 const REGION_LINE_COLORS: Record<BodyRegion, string> = {
-  face: "rgba(255, 255, 255, 0.5)",
+  face: colors.white50,
   upperBody: "rgba(255, 150, 150, 0.8)",
   hand: "rgba(255, 50, 50, 0.9)",
-  leftLeg: "rgba(255, 255, 255, 0.7)",
+  leftLeg: colors.white70,
   rightLeg: "rgba(80, 120, 255, 0.8)",
 };
 
-/** Dot color based on landmark category */
+/** Dot color based on landmark category (mêmes règles que REGION_LINE_COLORS ci-dessus). */
 function getDotColor(index: number): string {
   if (WRIST_INDICES.has(index) || HAND_INDICES.has(index)) {
     return "rgba(255, 50, 50, 0.9)";
   }
   if (FACE_INDICES.has(index)) {
-    return "rgba(255, 255, 255, 0.9)";
+    return colors.white;
   }
-  return "rgba(255, 255, 255, 0.95)";
+  return colors.white;
 }
 
 /** Dot radius based on landmark category and interactive mode */
@@ -537,13 +546,15 @@ function DraggableJointDot({
           borderRadius: radius,
           left: x - radius,
           top: y - radius,
-          backgroundColor: Colors.primary,
-          shadowColor: Colors.primary,
+          // Point actuellement déplaçable : seul usage légitime de l'accent
+          // cyan dans ce composant (indicateur d'état actif/interactif).
+          backgroundColor: colors.accent,
+          shadowColor: colors.accent,
           shadowOffset: { width: 0, height: 0 },
           shadowOpacity: 0.9,
           shadowRadius: 6,
           borderWidth: 2,
-          borderColor: Colors.white,
+          borderColor: colors.white,
           zIndex: 10,
         },
       ]
@@ -638,8 +649,10 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   angleText: {
-    color: Colors.white,
+    // Valeur d'angle affichée sur l'image : donnée héro → mono tabulaire.
+    color: colors.white,
+    fontFamily: fonts.mono,
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: fontWeight.semiBold,
   },
 });

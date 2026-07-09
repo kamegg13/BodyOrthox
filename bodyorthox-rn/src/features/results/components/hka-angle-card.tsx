@@ -1,8 +1,9 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Colors } from "../../../shared/design-system/colors";
-import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
+import { Spacing } from "../../../shared/design-system/spacing";
 import { Shadows } from "../../../shared/design-system/card-styles";
+import { colors, fonts, fontSize, letterSpacing, radius } from "../../../theme/tokens";
 
 export type HkaStatus = "in_range" | "below" | "above";
 
@@ -45,6 +46,18 @@ function statusColor(status: HkaStatus): string {
   }
 }
 
+/** Fond clair du badge de statut — jamais un hack d'alpha sur hex. */
+function statusBg(status: HkaStatus): string {
+  switch (status) {
+    case "in_range":
+      return colors.greenLight;
+    case "below":
+      return colors.amberLight;
+    case "above":
+      return colors.accentLight;
+  }
+}
+
 function confidenceColor(score: number): string {
   if (score >= 0.85) return Colors.success;
   if (score >= 0.6) return Colors.warning;
@@ -75,7 +88,7 @@ function HkaSideColumn({
         {formatAngle(hkaAngle)}
       </Text>
       {status ? (
-        <View style={[styles.badge, { backgroundColor: `${badgeColor}18` }]}>
+        <View style={[styles.badge, { backgroundColor: statusBg(status) }]}>
           <Text style={[styles.badgeText, { color: badgeColor }]}>
             {statusLabel(status)}
           </Text>
@@ -134,7 +147,7 @@ export function HkaAngleCard({
         <Text style={[styles.angleValue, { color: badgeColor }]}>
           {formatAngle(angleValue)}
         </Text>
-        <View style={[styles.badge, { backgroundColor: `${badgeColor}18` }]}>
+        <View style={[styles.badge, { backgroundColor: statusBg(status) }]}>
           <Text style={[styles.badgeText, { color: badgeColor }]}>
             {statusLabel(status)}
           </Text>
@@ -154,9 +167,11 @@ export function HkaAngleCard({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.backgroundCard,
-    borderRadius: BorderRadius.lg,
+    borderRadius: radius.cardLg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
     overflow: "hidden",
-    ...Shadows.md,
+    ...Shadows.sm,
   },
   topAccent: {
     height: 5,
@@ -167,20 +182,22 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   label: {
-    fontSize: 13,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.eyebrow,
     fontWeight: "600",
-    color: Colors.primary,
-    letterSpacing: 1,
+    color: colors.textMuted,
+    letterSpacing: letterSpacing.eyebrow,
     textTransform: "uppercase",
   },
   angleValue: {
+    fontFamily: fonts.mono,
     fontSize: 40,
     fontWeight: "700",
     color: Colors.textPrimary,
     lineHeight: 48,
   },
   badge: {
-    borderRadius: BorderRadius.full,
+    borderRadius: radius.pill,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
   },
@@ -189,6 +206,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   normSubtitle: {
+    fontFamily: fonts.mono,
     fontSize: 13,
     color: Colors.textSecondary,
     textAlign: "center",
@@ -223,13 +241,15 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
   },
   sideLabel: {
-    fontSize: 13,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.eyebrow,
     fontWeight: "600",
-    color: Colors.textSecondary,
+    color: colors.textMuted,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: letterSpacing.eyebrow,
   },
   sideAngleValue: {
+    fontFamily: fonts.mono,
     fontSize: 36,
     fontWeight: "700",
     lineHeight: 42,

@@ -135,7 +135,7 @@ function SwitchRow({
       <Switch
         value={value}
         onValueChange={onValueChange}
-        trackColor={{ false: colors.borderMid, true: colors.navyMid }}
+        trackColor={{ false: colors.borderMid, true: colors.accent }}
         testID={testID}
       />
     </View>

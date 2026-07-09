@@ -1,8 +1,7 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { CapturePhase } from "../domain/capture-state";
-import { Colors } from "../../../shared/design-system/colors";
-import { Spacing } from "../../../shared/design-system/spacing";
+import { colors, fonts, fontSize, fontWeight, radius, spacing } from "../../../theme/tokens";
 
 interface GuidedCameraOverlayProps {
   phase: CapturePhase;
@@ -67,78 +66,87 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   rgpdBanner: {
+    // Chrome overlay sur flux caméra live : pas d'équivalent token noir-alpha
+    // (tokens.ts n'expose que des blancs-alpha) — conservé tel quel.
     backgroundColor: "rgba(0,0,0,0.6)",
-    paddingVertical: Spacing.xs + 2,
-    paddingHorizontal: Spacing.md,
+    paddingVertical: spacing.s6 + 2,
+    paddingHorizontal: spacing.s16,
     alignItems: "center",
   },
   rgpdText: {
-    color: "rgba(255,255,255,0.85)",
-    fontSize: 12,
+    color: colors.white70,
+    fontSize: fontSize.caption,
     textAlign: "center",
-    fontWeight: "500",
+    fontWeight: fontWeight.medium,
+    fontFamily: fonts.sans,
   },
   topBar: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: Spacing.md,
+    padding: spacing.s16,
   },
   recordingIndicator: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "rgba(0,0,0,0.6)",
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    borderRadius: 20,
-    gap: Spacing.xs,
+    paddingHorizontal: spacing.s16,
+    paddingVertical: spacing.s4,
+    borderRadius: radius.pill,
+    gap: spacing.s4,
   },
   recordingDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: Colors.error,
+    backgroundColor: colors.red,
   },
   recordingText: {
-    color: Colors.white,
-    fontSize: 13,
-    fontWeight: "600",
+    color: colors.white,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.semiBold,
+    fontFamily: fonts.mono,
   },
   instructionArea: {
     alignItems: "center",
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: spacing.s24,
   },
   instructionText: {
     fontSize: 18,
-    fontWeight: "700",
-    color: Colors.white,
+    fontWeight: fontWeight.bold,
+    color: colors.white,
     textAlign: "center",
+    fontFamily: fonts.sans,
     textShadowColor: "rgba(0,0,0,0.8)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
   },
   instructionSubText: {
-    fontSize: 14,
-    color: "rgba(255,255,255,0.7)",
+    fontSize: fontSize.body,
+    color: colors.white70,
     textAlign: "center",
     marginTop: 4,
+    fontFamily: fonts.sans,
     textShadowColor: "rgba(0,0,0,0.6)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
   bottomBar: {
-    padding: Spacing.md,
-    gap: Spacing.xs,
+    padding: spacing.s16,
+    gap: spacing.s4,
   },
   processingText: {
-    color: Colors.primary,
-    fontSize: 14,
-    fontWeight: "600",
+    // Statut « en cours » actif — seul usage légitime de l'accent cyan ici.
+    color: colors.accent,
+    fontSize: fontSize.body,
+    fontWeight: fontWeight.semiBold,
+    fontFamily: fonts.sans,
     textAlign: "center",
   },
   errorText: {
-    color: Colors.error,
-    fontSize: 13,
+    color: colors.red,
+    fontSize: fontSize.caption,
+    fontFamily: fonts.sans,
     textAlign: "center",
   },
 });

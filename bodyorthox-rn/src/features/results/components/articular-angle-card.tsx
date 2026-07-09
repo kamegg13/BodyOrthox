@@ -1,9 +1,14 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { AngleAssessment, deviationColor } from "../domain/reference-norms";
+import {
+  AngleAssessment,
+  DeviationLevel,
+  deviationColor,
+} from "../domain/reference-norms";
 import { Colors } from "../../../shared/design-system/colors";
-import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
+import { Spacing } from "../../../shared/design-system/spacing";
 import { Typography } from "../../../shared/design-system/typography";
+import { colors, fonts, radius, shadows } from "../../../theme/tokens";
 
 interface ArticularAngleCardProps {
   assessment: AngleAssessment;
@@ -21,6 +26,14 @@ const JOINT_ICONS: Record<string, string> = {
   knee: "\uD83E\uDDB5",
   hip: "\uD83E\uDDB4",
   ankle: "\uD83E\uDDB6",
+};
+
+/** Fond clair par s\u00E9v\u00E9rit\u00E9 (jamais la couleur seule : le badge garde son texte). */
+const LEVEL_BG: Record<DeviationLevel, string> = {
+  normal: colors.greenLight,
+  mild: colors.amberLight,
+  moderate: colors.amberLight,
+  severe: colors.redLight,
 };
 
 export function ArticularAngleCard({
@@ -44,7 +57,10 @@ export function ArticularAngleCard({
           <View
             style={[
               styles.badge,
-              { backgroundColor: `${color}15`, borderColor: color },
+              {
+                backgroundColor: LEVEL_BG[assessment.level],
+                borderColor: color,
+              },
             ]}
           >
             <Text style={[styles.badgeText, { color }]}>
@@ -96,15 +112,13 @@ export function ArticularAngleCard({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.backgroundCard,
-    borderRadius: BorderRadius.lg,
+    borderRadius: radius.cardLg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
     borderLeftWidth: 4,
     padding: Spacing.md,
     gap: Spacing.sm,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-    elevation: 1,
+    ...shadows.sm,
   },
   header: {
     flexDirection: "row",
@@ -125,7 +139,7 @@ const styles = StyleSheet.create({
   badge: {
     alignSelf: "flex-start",
     borderWidth: 1,
-    borderRadius: BorderRadius.full,
+    borderRadius: radius.pill,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 2,
   },
@@ -134,6 +148,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   angleValue: {
+    fontFamily: fonts.mono,
     fontSize: 28,
     fontWeight: "700",
   },
@@ -151,7 +166,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 0,
     bottom: 0,
-    backgroundColor: `${Colors.success}44`,
+    backgroundColor: colors.greenLight,
     borderRadius: 4,
   },
   normBarMarker: {
@@ -167,10 +182,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   normLabelText: {
+    fontFamily: fonts.mono,
     color: Colors.textDisabled,
     fontSize: 11,
   },
   deviationText: {
+    fontFamily: fonts.mono,
     fontSize: 11,
     fontWeight: "600",
   },

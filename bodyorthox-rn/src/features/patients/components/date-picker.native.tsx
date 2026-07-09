@@ -4,6 +4,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { Colors } from "../../../shared/design-system/colors";
 import { Spacing } from "../../../shared/design-system/spacing";
 import { FontSize } from "../../../shared/design-system/typography";
+import { fonts } from "../../../theme/tokens";
 
 interface DatePickerProps {
   value: string | null; // ISO YYYY-MM-DD ou null
@@ -66,6 +67,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
   },
   text: {
+    fontFamily: fonts.mono,
     fontSize: FontSize.md,
     color: Colors.textPrimary,
     flex: 1,

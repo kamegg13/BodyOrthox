@@ -7,8 +7,9 @@ import {
   View,
 } from "react-native";
 import { Colors } from "../../../shared/design-system/colors";
-import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
+import { Spacing } from "../../../shared/design-system/spacing";
 import { Typography } from "../../../shared/design-system/typography";
+import { colors, fonts, radius } from "../../../theme/tokens";
 
 type JointKey = "knee" | "hip" | "ankle";
 
@@ -52,10 +53,11 @@ export function CorrectionPanel({
   return (
     <View style={styles.detailCard} testID="joint-detail">
       <Text style={[Typography.h3, styles.detailTitle]}>{joint?.label}</Text>
-      <DetailRow label="Angle mesuré" value={`${joint?.angle.toFixed(1)}°`} />
+      <DetailRow label="Angle mesuré" value={`${joint?.angle.toFixed(1)}°`} mono />
       <DetailRow
         label="Score de confiance"
         value={`${(confidenceScore * 100).toFixed(1)}%`}
+        mono
       />
       {manualCorrectionApplied && manualCorrectionJoint === selectedJoint && (
         <DetailRow label="Correction manuelle" value="Oui" />
@@ -101,11 +103,19 @@ export function CorrectionPanel({
   );
 }
 
-function DetailRow({ label, value }: { label: string; value: string }) {
+function DetailRow({
+  label,
+  value,
+  mono,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+}) {
   return (
     <View style={styles.detailRow}>
       <Text style={styles.detailLabel}>{label}</Text>
-      <Text style={styles.detailValue}>{value}</Text>
+      <Text style={[styles.detailValue, mono && styles.mono]}>{value}</Text>
     </View>
   );
 }
@@ -113,11 +123,11 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 const styles = StyleSheet.create({
   detailCard: {
     backgroundColor: Colors.backgroundCard,
-    borderRadius: BorderRadius.lg,
+    borderRadius: radius.cardLg,
     padding: Spacing.md,
     gap: Spacing.sm,
-    borderWidth: 1,
-    borderColor: Colors.primary,
+    borderWidth: 1.5,
+    borderColor: colors.accent,
   },
   detailTitle: { color: Colors.textPrimary, marginBottom: Spacing.xs },
   detailRow: {
@@ -128,11 +138,12 @@ const styles = StyleSheet.create({
   },
   detailLabel: { color: Colors.textSecondary, fontSize: 13 },
   detailValue: { color: Colors.textPrimary, fontSize: 13, fontWeight: "500" },
+  mono: { fontFamily: fonts.mono },
   correctionSection: {
     marginTop: Spacing.sm,
     gap: Spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
     paddingTop: Spacing.sm,
   },
   correctionTitle: {
@@ -149,18 +160,20 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.surface,
     color: Colors.textPrimary,
-    borderRadius: BorderRadius.md,
+    fontFamily: fonts.mono,
+    borderRadius: radius.field,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     fontSize: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
   },
+  // CTA primaire : encre pleine — le cyan n'est jamais un fond de bouton.
   correctionButton: {
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.ink,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.md,
+    borderRadius: radius.button,
   },
   correctionButtonText: {
     color: Colors.textOnPrimary,

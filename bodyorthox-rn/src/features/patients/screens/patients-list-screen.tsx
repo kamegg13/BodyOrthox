@@ -172,11 +172,12 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.bold,
     color: Colors.textPrimary,
   },
+  // CTA primaire — encre pleine (le cyan n'est jamais une couleur de bouton).
   addButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.textPrimary,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -193,11 +194,12 @@ const styles = StyleSheet.create({
   searchContainerTablet: {
     paddingHorizontal: Spacing.xl,
   },
+  // Input — fond bgSubtle, hairline, radius field (grammaire Instrument).
   searchInput: {
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.border,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.md,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm + 2,
     color: Colors.textPrimary,

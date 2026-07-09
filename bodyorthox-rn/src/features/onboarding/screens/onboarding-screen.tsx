@@ -17,10 +17,15 @@ import { useOnboardingStore } from "../store/onboarding-store";
 import { Screen } from "../../../components/Screen";
 import { Steps } from "../../../components/Steps";
 import { Btn } from "../../../components/Btn";
-import { Colors } from "../../../shared/design-system/colors";
-import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
-import { FontWeight } from "../../../shared/design-system/typography";
-import { colors, fonts, fontSize, fontWeight, spacing } from "../../../theme/tokens";
+import {
+  colors,
+  fonts,
+  fontSize,
+  fontWeight,
+  radius,
+  shadows,
+  spacing,
+} from "../../../theme/tokens";
 
 type NavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -53,7 +58,7 @@ function HkaPhoneIllustration() {
           <View
             style={[
               illustrationStyles.jointDot,
-              { backgroundColor: Colors.primary },
+              { backgroundColor: colors.accent },
             ]}
           />
           {/* Shin line */}
@@ -273,9 +278,9 @@ const illustrationStyles = StyleSheet.create({
     width: 180,
     height: 300,
     borderRadius: 24,
-    borderWidth: 3,
-    borderColor: Colors.primary,
-    backgroundColor: Colors.backgroundCard,
+    borderWidth: 2,
+    borderColor: colors.borderMid,
+    backgroundColor: colors.bgCard,
     overflow: "hidden",
     alignItems: "center",
   },
@@ -283,7 +288,7 @@ const illustrationStyles = StyleSheet.create({
     width: 60,
     height: 6,
     borderRadius: 3,
-    backgroundColor: Colors.border,
+    backgroundColor: colors.border,
     marginTop: 8,
   },
   phoneScreen: {
@@ -291,7 +296,7 @@ const illustrationStyles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: Spacing.md,
+    paddingVertical: spacing.s16,
   },
   silhouette: {
     alignItems: "center",
@@ -301,48 +306,50 @@ const illustrationStyles = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: Colors.textSecondary,
+    backgroundColor: colors.textSecond,
     marginBottom: 4,
   },
   torsoLine: {
     width: 2,
     height: 40,
-    backgroundColor: Colors.textSecondary,
+    backgroundColor: colors.textSecond,
   },
   jointDot: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: Colors.textSecondary,
+    backgroundColor: colors.textSecond,
   },
   thighLine: {
     width: 2,
     height: 36,
-    backgroundColor: Colors.textSecondary,
+    backgroundColor: colors.textSecond,
   },
   shinLine: {
     width: 2,
     height: 36,
-    backgroundColor: Colors.textSecondary,
+    backgroundColor: colors.textSecond,
   },
   angleLabel: {
     position: "absolute",
     right: 16,
     top: "45%",
-    backgroundColor: Colors.warning,
-    borderRadius: BorderRadius.sm,
+    backgroundColor: colors.amberMid,
+    borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
   angleDegree: {
-    fontSize: 12,
-    fontWeight: FontWeight.bold,
-    color: Colors.white,
+    fontFamily: fonts.mono,
+    fontSize: fontSize.monoMd,
+    fontWeight: fontWeight.bold,
+    color: colors.white,
     textAlign: "center",
   },
   angleType: {
+    fontFamily: fonts.sans,
     fontSize: 8,
-    color: Colors.white,
+    color: colors.white,
     textAlign: "center",
   },
   axisLine: {
@@ -351,65 +358,64 @@ const illustrationStyles = StyleSheet.create({
     top: 30,
     bottom: 20,
     width: 1,
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.accent,
     opacity: 0.4,
   },
 
   // PDF mockup
   pdfContainer: {
     alignItems: "center",
-    gap: Spacing.md,
+    gap: spacing.s16,
   },
   pdfDoc: {
     width: 200,
     height: 240,
-    backgroundColor: Colors.backgroundCard,
-    borderRadius: BorderRadius.lg,
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.cardLg,
     borderWidth: 1,
-    borderColor: Colors.border,
-    padding: Spacing.md,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    borderColor: colors.border,
+    padding: spacing.s16,
+    ...shadows.sm,
   },
   pdfHeader: {
     flexDirection: "row",
-    marginBottom: Spacing.sm,
+    marginBottom: spacing.s10,
   },
   pdfIcon: {
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.sm,
+    backgroundColor: colors.ink,
+    borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
   pdfIconText: {
-    color: Colors.white,
+    color: colors.white,
     fontSize: 10,
-    fontWeight: FontWeight.bold,
+    fontWeight: fontWeight.bold,
   },
   pdfFilename: {
+    fontFamily: fonts.mono,
     fontSize: 9,
-    color: Colors.textSecondary,
-    marginBottom: Spacing.md,
+    color: colors.textSecond,
+    marginBottom: spacing.s16,
   },
   pdfLine: {
     width: "100%",
     height: 6,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.bgSubtle,
     borderRadius: 3,
-    marginBottom: Spacing.sm,
+    marginBottom: spacing.s10,
   },
   shareRow: {
     flexDirection: "row",
-    gap: Spacing.md,
+    gap: spacing.s16,
   },
   shareIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: colors.bgSubtle,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
   },

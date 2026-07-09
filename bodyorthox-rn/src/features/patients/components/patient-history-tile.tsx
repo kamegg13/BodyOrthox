@@ -4,6 +4,7 @@ import { Analysis, confidenceLabel } from "../../capture/domain/analysis";
 import { Colors } from "../../../shared/design-system/colors";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
 import { formatDisplayDateTime } from "../../../shared/utils/date-utils";
+import { fonts, letterSpacing } from "../../../theme/tokens";
 
 interface PatientHistoryTileProps {
   readonly analysis: Analysis;
@@ -86,6 +87,7 @@ const styles = StyleSheet.create({
   },
   date: {
     color: Colors.textSecondary,
+    fontFamily: fonts.mono,
     fontSize: 13,
   },
   badge: {
@@ -110,9 +112,12 @@ const styles = StyleSheet.create({
   angleLabel: {
     color: Colors.textSecondary,
     fontSize: 11,
+    letterSpacing: letterSpacing.label,
+    textTransform: "uppercase",
   },
   angleValue: {
     color: Colors.textPrimary,
+    fontFamily: fonts.mono,
     fontSize: 15,
     fontWeight: "600",
   },

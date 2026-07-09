@@ -12,6 +12,7 @@ import { generateId } from "../../../shared/utils/generate-id";
 import { Colors } from "../../../shared/design-system/colors";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
 import { FontSize, FontWeight } from "../../../shared/design-system/typography";
+import { letterSpacing } from "../../../theme/tokens";
 
 interface PainEditorProps {
   pains: PainEntry[];
@@ -289,6 +290,8 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     paddingHorizontal: Spacing.xs,
   },
+  // Bouton secondaire — hairline sur blanc, texte encre (le cyan n'est
+  // jamais une couleur de bouton).
   addButton: {
     borderWidth: 1,
     borderColor: Colors.border,
@@ -300,7 +303,7 @@ const styles = StyleSheet.create({
   addButtonText: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.medium,
-    color: Colors.primary,
+    color: Colors.textPrimary,
   },
   form: {
     backgroundColor: Colors.backgroundCard,
@@ -310,10 +313,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
   },
+  // Eyebrow — micro-label de groupe de champ (façon plaque d'instrument).
   formTitle: {
-    fontSize: FontSize.sm,
+    fontSize: FontSize.xs,
     fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
+    color: Colors.textDisabled,
+    letterSpacing: letterSpacing.eyebrow,
+    textTransform: "uppercase",
     marginTop: Spacing.xs,
   },
   optionsRow: {
@@ -393,11 +399,12 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     fontWeight: FontWeight.medium,
   },
+  // CTA primaire — encre pleine (le cyan n'est jamais une couleur de bouton).
   confirmBtn: {
     paddingVertical: Spacing.sm,
     paddingHorizontal: Spacing.md,
     borderRadius: BorderRadius.md,
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.textPrimary,
   },
   confirmBtnText: {
     fontSize: FontSize.sm,
