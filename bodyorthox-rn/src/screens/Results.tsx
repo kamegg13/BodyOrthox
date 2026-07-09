@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
+  AngleScale,
   Badge,
   type BadgeColor,
   Btn,
@@ -148,8 +149,8 @@ export function Results({ data, onBack, onShare, onGenerateReport }: ResultsProp
 
         <SectionLabel>Angles HKA</SectionLabel>
         <View style={styles.grid2}>
-          <AngleRow m={data.hka.left} />
-          <AngleRow m={data.hka.right} />
+          <AngleRow m={data.hka.left} showScale />
+          <AngleRow m={data.hka.right} showScale />
         </View>
 
         <SectionLabel style={{ marginTop: spacing.s14 }}>Angles posturaux</SectionLabel>
@@ -188,7 +189,13 @@ function severity(delta: number): "normal" | "moderate" | "severe" {
   return "severe";
 }
 
-function AngleRow({ m }: { m: AngleMeasurement }) {
+// Plage de référence HKA (175°–180°), cf. classifyHKA dans
+// src/features/capture/data/angle-calculator.ts — reprise ici telle quelle,
+// aucune valeur n'est inventée.
+const HKA_REF_MIN = 175;
+const HKA_REF_MAX = 180;
+
+function AngleRow({ m, showScale }: { m: AngleMeasurement; showScale?: boolean }) {
   if (m.value === null) {
     return (
       <View style={angleStyles.card}>
@@ -212,6 +219,16 @@ function AngleRow({ m }: { m: AngleMeasurement }) {
           </View>
         </View>
         <View style={angleStyles.bar} />
+        {showScale ? (
+          <AngleScale
+            value={null}
+            refMin={HKA_REF_MIN}
+            refMax={HKA_REF_MAX}
+            compact
+            style={angleStyles.scale}
+            testID={`angle-scale-${m.key}`}
+          />
+        ) : null}
       </View>
     );
   }
@@ -259,6 +276,16 @@ function AngleRow({ m }: { m: AngleMeasurement }) {
           ]}
         />
       </View>
+      {showScale ? (
+        <AngleScale
+          value={m.value}
+          refMin={HKA_REF_MIN}
+          refMax={HKA_REF_MAX}
+          compact
+          style={angleStyles.scale}
+          testID={`angle-scale-${m.key}`}
+        />
+      ) : null}
     </View>
   );
 }
@@ -436,6 +463,9 @@ const angleStyles = StyleSheet.create({
   barFill: {
     height: "100%",
     borderRadius: 3,
+  },
+  scale: {
+    marginTop: 4,
   },
 });
 

@@ -176,12 +176,32 @@ function buildRow(label: string, value: number, norm: number, unit: "°" | "mm")
   };
 }
 
+// Plage de référence HKA (175°–180°), cf. classifyHKA dans
+// src/features/capture/data/angle-calculator.ts — reprise ici telle quelle,
+// aucune valeur n'est inventée.
+const HKA_REF_MIN = 175;
+const HKA_REF_MAX = 180;
+
 /** HKA row that shows "—" instead of a fabricated value when unmeasured. */
 function buildHkaRow(label: string, value: number | null): ReportRow {
   if (value === null) {
-    return { label, value: "—", norm: "180°", delta: "—", severity: "unavailable" };
+    return {
+      label,
+      value: "—",
+      norm: "180°",
+      delta: "—",
+      severity: "unavailable",
+      angleValue: null,
+      angleRefMin: HKA_REF_MIN,
+      angleRefMax: HKA_REF_MAX,
+    };
   }
-  return buildRow(label, value, 180, "°");
+  return {
+    ...buildRow(label, value, 180, "°"),
+    angleValue: value,
+    angleRefMin: HKA_REF_MIN,
+    angleRefMax: HKA_REF_MAX,
+  };
 }
 
 /** Rounded HKA value, or null when the angle could not be measured (0 / non-finite). */
