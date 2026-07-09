@@ -218,7 +218,7 @@ function AngleRow({ m, showScale }: { m: AngleMeasurement; showScale?: boolean }
             </View>
           </View>
         </View>
-        <View style={angleStyles.bar} />
+        {!showScale && <View style={angleStyles.bar} />}
         {showScale ? (
           <AngleScale
             value={null}
@@ -268,14 +268,18 @@ function AngleRow({ m, showScale }: { m: AngleMeasurement; showScale?: boolean }
           </View>
         </View>
       </View>
-      <View style={angleStyles.bar}>
-        <View
-          style={[
-            angleStyles.barFill,
-            { width: `${fillRatio * 100}%`, backgroundColor: sevColor },
-          ]}
-        />
-      </View>
+      {/* La règle graduée remplace la barre de sévérité (redondante) sur les
+          cards HKA ; la barre reste pour les angles posturaux sans échelle. */}
+      {!showScale && (
+        <View style={angleStyles.bar}>
+          <View
+            style={[
+              angleStyles.barFill,
+              { width: `${fillRatio * 100}%`, backgroundColor: sevColor },
+            ]}
+          />
+        </View>
+      )}
       {showScale ? (
         <AngleScale
           value={m.value}

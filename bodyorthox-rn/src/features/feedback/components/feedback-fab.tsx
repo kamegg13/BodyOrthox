@@ -37,14 +37,16 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: Colors.primary,
+    // Encre : le cyan est réservé aux actifs/liens (DESIGN_DIRECTION.md),
+    // pas aux fonds de bouton.
+    backgroundColor: Colors.textPrimary,
     alignItems: 'center',
     justifyContent: 'center',
     ...Shadows.lg,
     zIndex: 999,
   },
   fabPressed: {
-    backgroundColor: Colors.primaryDark,
+    opacity: 0.85,
     shadowOpacity: 0.15,
   },
   icon: {

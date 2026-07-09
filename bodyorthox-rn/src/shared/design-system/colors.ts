@@ -15,8 +15,8 @@ import { colors as v2 } from "../../theme/tokens";
 
 export const Colors = {
   // Brand — navy/blue v2 (CTAs, liens, accents)
-  primary: v2.navyMid, // #1A4FD6
-  primaryDark: "#1240B8", // fin du gradient primaryBtn v2
+  primary: v2.navyMid, // accent Instrument (#0891B2) — liens/actifs
+  primaryDark: v2.accentDeep, // accent pressed (#0E7490)
   primaryLight: v2.navyLight, // #EAF0FE — fond cards résultat
 
   // Semantic — palette clinique v2 (handoff)
