@@ -1,17 +1,6 @@
 // Increase default timeout for React 19 async batching
 jest.setTimeout(15000);
 
-// Mock react-native-sqlite-storage
-jest.mock("react-native-sqlite-storage", () => ({
-  openDatabase: jest.fn(() => ({
-    transaction: jest.fn(),
-    executeSql: jest.fn(),
-    close: jest.fn(),
-  })),
-  enablePromise: jest.fn(),
-  DEBUG: jest.fn(),
-}));
-
 // Mock react-native-keychain
 jest.mock("react-native-keychain", () => ({
   setGenericPassword: jest.fn().mockResolvedValue(true),
@@ -87,11 +76,6 @@ jest.mock("@notifee/react-native", () => ({
 jest.mock("react-native-image-picker", () => ({
   launchCamera: jest.fn(),
   launchImageLibrary: jest.fn(),
-}));
-
-// Mock uuid
-jest.mock("uuid", () => ({
-  v4: jest.fn(() => "test-uuid-1234"),
 }));
 
 // Mock @react-navigation/bottom-tabs
