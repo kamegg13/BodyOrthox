@@ -355,7 +355,7 @@ function PickerModal({ visible, title, options, selectedValue, onSelect, onClose
                   {opt.label}
                 </Text>
                 {selected ? (
-                  <Icon name="check" size={14} color={colors.navyMid} strokeWidth={2.25} />
+                  <Icon name="check" size={14} color={colors.accent} strokeWidth={2.25} />
                 ) : null}
               </Pressable>
             );
@@ -484,8 +484,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bgCard,
   },
   checkboxChecked: {
-    backgroundColor: colors.navyMid,
-    borderColor: colors.navyMid,
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
   },
   consentLabel: {
     flex: 1,
@@ -522,7 +522,7 @@ const styles = StyleSheet.create({
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: "rgba(12,31,53,0.5)",
+    backgroundColor: "rgba(16,16,18,0.5)",
     alignItems: "center",
     justifyContent: "center",
     padding: spacing.s24,
@@ -561,7 +561,7 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   modalRowLabelSelected: {
-    color: colors.navyMid,
+    color: colors.accent,
     fontWeight: fontWeight.bold,
   },
 });

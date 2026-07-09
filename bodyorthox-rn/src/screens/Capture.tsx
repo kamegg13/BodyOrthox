@@ -57,8 +57,8 @@ export function Capture({
         <Svg width="100%" height="100%" viewBox="0 0 360 540" preserveAspectRatio="xMidYMid slice">
           <Defs>
             <SvgLinearGradient id="vfBg" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0" stopColor="#0E1C2F" />
-              <Stop offset="1" stopColor="#162840" />
+              <Stop offset="0" stopColor={colors.captureViewfinderFrom} />
+              <Stop offset="1" stopColor={colors.captureViewfinderTo} />
             </SvgLinearGradient>
           </Defs>
           <Rect x={0} y={0} width={360} height={540} fill="url(#vfBg)" />
@@ -166,7 +166,7 @@ export function Capture({
           <Path
             d="M 175 35 L 180 25 L 185 35"
             fill="none"
-            stroke={colors.teal}
+            stroke={colors.accent}
             strokeOpacity={0.85}
             strokeWidth={2}
             strokeLinecap="round"
@@ -175,7 +175,7 @@ export function Capture({
           <Path
             d="M 175 505 L 180 515 L 185 505"
             fill="none"
-            stroke={colors.teal}
+            stroke={colors.accent}
             strokeOpacity={0.85}
             strokeWidth={2}
             strokeLinecap="round"
@@ -246,14 +246,13 @@ function renderCornerBrackets() {
     { x: 330, y: 510, rotate: 180 },
     { x: 30, y: 510, rotate: 270 },
   ];
-  const tealStroke = "#0D9080";
   return corners.map((c, i) => (
     <Path
       key={i}
       d={`M 0 30 L 0 0 L 30 0`}
       transform={`translate(${c.x},${c.y}) rotate(${c.rotate})`}
       fill="none"
-      stroke={tealStroke}
+      stroke={colors.accent}
       strokeOpacity={0.95}
       strokeWidth={2.5}
       strokeLinecap="round"

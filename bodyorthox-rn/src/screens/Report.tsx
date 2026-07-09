@@ -1,8 +1,8 @@
 import React from "react";
 import { Image, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Badge, Btn, Gradient, Icon, Logo, NavBar } from "../components";
-import { colors, fonts, fontSize, fontWeight, gradients, shadows, spacing } from "../theme/tokens";
+import { Badge, Btn, Icon, Logo, NavBar } from "../components";
+import { colors, fonts, fontSize, fontWeight, shadows, spacing } from "../theme/tokens";
 
 export interface ReportRow {
   readonly label: string;
@@ -54,12 +54,12 @@ export function Report({ data, onBack, onShare, onDownload, onSend }: ReportProp
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.card}>
-          <Gradient gradient={gradients.reportHeader} style={styles.cardHeader}>
+          <View style={styles.cardHeader}>
             <View style={styles.cardHeaderInner}>
               <Logo size={20} light />
               <Text style={styles.reportNumber}>{data.number}</Text>
             </View>
-          </Gradient>
+          </View>
 
           <View style={styles.section}>
             <View style={styles.patientRow}>
@@ -121,7 +121,7 @@ export function Report({ data, onBack, onShare, onDownload, onSend }: ReportProp
             <View style={styles.footer}>
               <View style={styles.footerLeft}>
                 <View style={styles.footerAvatar}>
-                  <Icon name="user" size={12} color={colors.navyMid} />
+                  <Icon name="user" size={12} color={colors.textSecond} />
                 </View>
                 <Text style={styles.footerName}>{data.practitioner}</Text>
               </View>
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     ...shadows.md,
   },
-  cardHeader: { paddingVertical: 0 },
+  cardHeader: { paddingVertical: 0, backgroundColor: colors.ink },
   cardHeaderInner: {
     flexDirection: "row",
     alignItems: "center",
@@ -221,9 +221,9 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   title: {
-    fontFamily: fonts.sans,
+    fontFamily: fonts.display,
     fontSize: fontSize.body,
-    fontWeight: fontWeight.extraBold,
+    fontWeight: fontWeight.bold,
     color: colors.textPrimary,
   },
   subline: {
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     paddingHorizontal: spacing.s12,
     paddingVertical: 6,
-    backgroundColor: "rgba(12,31,53,0.55)",
+    backgroundColor: "rgba(16,16,18,0.55)",
   },
   captureCaptionLight: {
     fontFamily: fonts.sans,
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: colors.navyLight,
+    backgroundColor: colors.bgSubtle,
     alignItems: "center",
     justifyContent: "center",
   },

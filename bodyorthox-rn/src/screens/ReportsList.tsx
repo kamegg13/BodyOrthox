@@ -131,9 +131,9 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.s12,
   },
   title: {
-    fontFamily: fonts.sans,
+    fontFamily: fonts.display,
     fontSize: fontSize.h1,
-    fontWeight: fontWeight.extraBold,
+    fontWeight: fontWeight.bold,
     color: colors.textPrimary,
     letterSpacing: -0.5,
   },

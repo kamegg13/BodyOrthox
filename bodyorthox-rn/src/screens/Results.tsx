@@ -276,9 +276,9 @@ const styles = StyleSheet.create({
     gap: spacing.s10,
   },
   patientName: {
-    fontFamily: fonts.sans,
+    fontFamily: fonts.display,
     fontSize: fontSize.navTitle,
-    fontWeight: fontWeight.extraBold,
+    fontWeight: fontWeight.bold,
     color: colors.textPrimary,
     letterSpacing: -0.3,
   },
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     paddingHorizontal: spacing.s12,
     paddingVertical: spacing.s10,
-    backgroundColor: "rgba(12,31,53,0.55)",
+    backgroundColor: "rgba(16,16,18,0.55)",
   },
   heroCaptionLight: {
     fontFamily: fonts.sans,

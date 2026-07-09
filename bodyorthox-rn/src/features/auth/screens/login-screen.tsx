@@ -11,14 +11,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../../core/auth/auth-store';
 import { Btn } from '../../../components/Btn';
 import { Field } from '../../../components/Field';
-import { Gradient } from '../../../components/gradient';
 import { Logo } from '../../../components/Logo';
 import {
   colors,
   fonts,
   fontSize,
   fontWeight,
-  gradients,
+  letterSpacing,
   radius,
   spacing,
 } from '../../../theme/tokens';
@@ -59,9 +58,8 @@ export function LoginScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* HERO */}
-          <Gradient gradient={gradients.hero} radius={radius.cardXl} style={styles.hero}>
+          <View style={styles.hero}>
             <SafeAreaView edges={['top']} style={styles.heroSafe}>
-              <View style={styles.heroDecor} pointerEvents="none" />
               <View style={styles.heroInner}>
                 <Logo size={34} light />
                 <Text style={styles.tagline}>
@@ -69,7 +67,7 @@ export function LoginScreen() {
                 </Text>
               </View>
             </SafeAreaView>
-          </Gradient>
+          </View>
 
           {/* FORM */}
           <View style={styles.form}>
@@ -129,34 +127,27 @@ const styles = StyleSheet.create({
   },
   hero: {
     overflow: 'hidden',
+    backgroundColor: colors.ink,
+    borderRadius: radius.cardXl,
   },
   heroSafe: {
     width: '100%',
   },
-  heroDecor: {
-    position: 'absolute',
-    top: -40,
-    right: -40,
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    borderWidth: 24,
-    borderColor: colors.white06,
-  },
   heroInner: {
     alignItems: 'center',
-    gap: spacing.s10,
+    gap: spacing.s12,
     paddingHorizontal: spacing.heroPadH,
     paddingTop: spacing.s28,
     paddingBottom: spacing.s28,
   },
   tagline: {
     fontFamily: fonts.sans,
-    fontSize: fontSize.caption,
+    fontSize: fontSize.eyebrow,
     fontWeight: fontWeight.medium,
     color: colors.white60,
     textAlign: 'center',
-    letterSpacing: 0.2,
+    textTransform: 'uppercase',
+    letterSpacing: letterSpacing.eyebrow,
   },
   form: {
     gap: spacing.s16,
