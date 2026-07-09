@@ -1,6 +1,7 @@
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Patient } from "../domain/patient";
+import { Patient, patientDisplayName } from "../domain/patient";
+import { Badge, type BadgeColor } from "../../../components/Badge";
 import { Colors } from "../../../shared/design-system/colors";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
 import { FontSize, FontWeight } from "../../../shared/design-system/typography";
@@ -17,43 +18,12 @@ interface PatientCardProps {
 
 const STATUS_CONFIG: Record<
   NonNullable<PatientStatus>,
-  { label: string; backgroundColor: string; textColor: string }
+  { label: string; badgeColor: BadgeColor }
 > = {
-  NORMAL: {
-    label: "NORMAL",
-    backgroundColor: "#E8F8EF",
-    textColor: Colors.success,
-  },
-  A_SURVEILLER: {
-    label: "À SURVEILLER",
-    backgroundColor: "#FFF3E0",
-    textColor: Colors.warning,
-  },
-  HORS_NORME: {
-    label: "HORS NORME",
-    backgroundColor: "#FDECEA",
-    textColor: Colors.error,
-  },
+  NORMAL: { label: "NORMAL", badgeColor: "green" },
+  A_SURVEILLER: { label: "À SURVEILLER", badgeColor: "amber" },
+  HORS_NORME: { label: "HORS NORME", badgeColor: "red" },
 };
-
-const AVATAR_COLORS = [
-  "#1B6FBF",
-  "#34C759",
-  "#FF9500",
-  "#AF52DE",
-  "#FF2D55",
-  "#5AC8FA",
-  "#FF3B30",
-  "#5856D6",
-] as const;
-
-function getAvatarColor(name: string): string {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
-}
 
 function getInitials(name: string): string {
   return name
@@ -70,8 +40,8 @@ export function PatientCard({
   onPress,
   testID,
 }: PatientCardProps) {
-  const initials = getInitials(patient.name);
-  const avatarColor = getAvatarColor(patient.name);
+  const displayName = patientDisplayName(patient);
+  const initials = getInitials(displayName);
   const statusConfig = status ? STATUS_CONFIG[status] : null;
 
   return (
@@ -79,32 +49,21 @@ export function PatientCard({
       style={styles.container}
       onPress={() => onPress(patient)}
       accessibilityRole="button"
-      accessibilityLabel={`Patient ${patient.name}`}
+      accessibilityLabel={`Patient ${displayName}`}
       testID={testID ?? `patient-card-${patient.id}`}
       activeOpacity={0.7}
     >
-      <View style={[styles.avatar, { backgroundColor: avatarColor }]}>
+      <View style={styles.avatar}>
         <Text style={styles.avatarText}>{initials}</Text>
       </View>
 
       <View style={styles.content}>
         <View style={styles.nameRow}>
           <Text style={styles.name} numberOfLines={1}>
-            {patient.name}
+            {displayName}
           </Text>
           {statusConfig && (
-            <View
-              style={[
-                styles.badge,
-                { backgroundColor: statusConfig.backgroundColor },
-              ]}
-            >
-              <Text
-                style={[styles.badgeText, { color: statusConfig.textColor }]}
-              >
-                {statusConfig.label}
-              </Text>
-            </View>
+            <Badge label={statusConfig.label} color={statusConfig.badgeColor} />
           )}
         </View>
         {lastAnalysisLabel && (
@@ -128,21 +87,23 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
     marginBottom: Spacing.sm,
     gap: Spacing.md,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
+  // Avatar neutre encre — la couleur ne code pas le statut clinique (porté
+  // par le Badge à côté du nom), pas de teinte décorative par patient.
   avatar: {
     width: 44,
     height: 44,
     borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   avatarText: {
-    color: Colors.textOnPrimary,
+    color: Colors.textPrimary,
     fontWeight: FontWeight.bold,
     fontSize: FontSize.md,
   },
@@ -160,16 +121,6 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.semiBold,
     color: Colors.textPrimary,
     flexShrink: 1,
-  },
-  badge: {
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xxs,
-    borderRadius: BorderRadius.full,
-  },
-  badgeText: {
-    fontSize: FontSize.xs,
-    fontWeight: FontWeight.semiBold,
-    letterSpacing: 0.3,
   },
   subtitle: {
     fontSize: FontSize.sm,

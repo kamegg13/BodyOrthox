@@ -11,7 +11,15 @@ import Svg, {
   Stop,
 } from "react-native-svg";
 import { Icon } from "../components";
-import { colors, fonts, fontSize, fontWeight, radius, spacing } from "../theme/tokens";
+import {
+  colors,
+  fonts,
+  fontSize,
+  fontWeight,
+  letterSpacing,
+  radius,
+  spacing,
+} from "../theme/tokens";
 
 interface CaptureProps {
   readonly patientName?: string;
@@ -57,8 +65,8 @@ export function Capture({
         <Svg width="100%" height="100%" viewBox="0 0 360 540" preserveAspectRatio="xMidYMid slice">
           <Defs>
             <SvgLinearGradient id="vfBg" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0" stopColor="#0E1C2F" />
-              <Stop offset="1" stopColor="#162840" />
+              <Stop offset="0" stopColor={colors.captureViewfinderFrom} />
+              <Stop offset="1" stopColor={colors.captureViewfinderTo} />
             </SvgLinearGradient>
           </Defs>
           <Rect x={0} y={0} width={360} height={540} fill="url(#vfBg)" />
@@ -71,7 +79,7 @@ export function Capture({
               y1={0}
               x2={(i * 360) / 3}
               y2={540}
-              stroke="#FFFFFF"
+              stroke={colors.white}
               strokeOpacity={0.06}
               strokeWidth={1}
             />
@@ -83,7 +91,7 @@ export function Capture({
               y1={(i * 540) / 3}
               x2={360}
               y2={(i * 540) / 3}
-              stroke="#FFFFFF"
+              stroke={colors.white}
               strokeOpacity={0.06}
               strokeWidth={1}
             />
@@ -95,7 +103,7 @@ export function Capture({
             y1={20}
             x2={180}
             y2={520}
-            stroke="#FFFFFF"
+            stroke={colors.white}
             strokeOpacity={0.08}
             strokeWidth={1}
             strokeDasharray="8 5"
@@ -108,7 +116,7 @@ export function Capture({
             rx={32}
             ry={36}
             fill="none"
-            stroke="#FFFFFF"
+            stroke={colors.white}
             strokeOpacity={0.15}
             strokeWidth={1.5}
             strokeDasharray="6 3"
@@ -116,7 +124,7 @@ export function Capture({
           <Path
             d="M 130 170 Q 180 145 232 170"
             fill="none"
-            stroke="#FFFFFF"
+            stroke={colors.white}
             strokeOpacity={0.12}
             strokeWidth={1.5}
             strokeDasharray="6 3"
@@ -124,7 +132,7 @@ export function Capture({
           <Path
             d="M 140 170 L 132 320 Q 132 348 142 360 L 222 360 Q 232 348 232 320 L 222 170"
             fill="none"
-            stroke="#FFFFFF"
+            stroke={colors.white}
             strokeOpacity={0.12}
             strokeWidth={1.5}
             strokeDasharray="6 3"
@@ -132,7 +140,7 @@ export function Capture({
           <Path
             d="M 132 175 L 92 290"
             fill="none"
-            stroke="#FFFFFF"
+            stroke={colors.white}
             strokeOpacity={0.1}
             strokeWidth={1.5}
             strokeDasharray="5 4"
@@ -140,7 +148,7 @@ export function Capture({
           <Path
             d="M 232 175 L 272 290"
             fill="none"
-            stroke="#FFFFFF"
+            stroke={colors.white}
             strokeOpacity={0.1}
             strokeWidth={1.5}
             strokeDasharray="5 4"
@@ -148,7 +156,7 @@ export function Capture({
           <Path
             d="M 152 360 L 138 510"
             fill="none"
-            stroke="#FFFFFF"
+            stroke={colors.white}
             strokeOpacity={0.12}
             strokeWidth={1.5}
             strokeDasharray="6 3"
@@ -156,7 +164,7 @@ export function Capture({
           <Path
             d="M 212 360 L 226 510"
             fill="none"
-            stroke="#FFFFFF"
+            stroke={colors.white}
             strokeOpacity={0.12}
             strokeWidth={1.5}
             strokeDasharray="6 3"
@@ -166,7 +174,7 @@ export function Capture({
           <Path
             d="M 175 35 L 180 25 L 185 35"
             fill="none"
-            stroke={colors.teal}
+            stroke={colors.accent}
             strokeOpacity={0.85}
             strokeWidth={2}
             strokeLinecap="round"
@@ -175,7 +183,7 @@ export function Capture({
           <Path
             d="M 175 505 L 180 515 L 185 505"
             fill="none"
-            stroke={colors.teal}
+            stroke={colors.accent}
             strokeOpacity={0.85}
             strokeWidth={2}
             strokeLinecap="round"
@@ -246,14 +254,13 @@ function renderCornerBrackets() {
     { x: 330, y: 510, rotate: 180 },
     { x: 30, y: 510, rotate: 270 },
   ];
-  const tealStroke = "#0D9080";
   return corners.map((c, i) => (
     <Path
       key={i}
       d={`M 0 30 L 0 0 L 30 0`}
       transform={`translate(${c.x},${c.y}) rotate(${c.rotate})`}
       fill="none"
-      stroke={tealStroke}
+      stroke={colors.accent}
       strokeOpacity={0.95}
       strokeWidth={2.5}
       strokeLinecap="round"
@@ -304,7 +311,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "rgba(13,144,128,0.9)",
+    backgroundColor: "rgba(16,16,18,0.75)",
     paddingHorizontal: 16,
     paddingVertical: 6,
     borderRadius: 24,
@@ -313,7 +320,7 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 3.5,
-    backgroundColor: "#5EFBF5",
+    backgroundColor: colors.accent,
   },
   statusText: {
     fontFamily: fonts.sans,
@@ -325,7 +332,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 12,
     right: 14,
-    backgroundColor: "rgba(12,35,64,0.75)",
+    backgroundColor: "rgba(16,16,18,0.75)",
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: radius.iconSm - 2,
@@ -333,10 +340,10 @@ const styles = StyleSheet.create({
   },
   hkaEyebrow: {
     fontFamily: fonts.sans,
-    fontSize: 9,
+    fontSize: fontSize.eyebrow,
     fontWeight: fontWeight.bold,
     color: colors.white60,
-    letterSpacing: 0.5,
+    letterSpacing: letterSpacing.eyebrow,
     textTransform: "uppercase",
   },
   hkaValue: {

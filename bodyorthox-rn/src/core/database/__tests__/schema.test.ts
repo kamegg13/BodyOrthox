@@ -66,7 +66,7 @@ describe("Database Schema", () => {
 
   describe("ALL_MIGRATIONS", () => {
     it("contains all migration statements", () => {
-      expect(ALL_MIGRATIONS).toHaveLength(6);
+      expect(ALL_MIGRATIONS).toHaveLength(11);
       expect(ALL_MIGRATIONS).toContain(CREATE_PATIENTS_TABLE);
       expect(ALL_MIGRATIONS).toContain(CREATE_ANALYSES_TABLE);
       expect(ALL_MIGRATIONS).toContain(CREATE_IDX_PATIENTS_NAME);

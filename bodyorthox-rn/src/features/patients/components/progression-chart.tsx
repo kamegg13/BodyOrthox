@@ -11,6 +11,7 @@ import { Analysis } from "../../capture/domain/analysis";
 import { Colors } from "../../../shared/design-system/colors";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
 import { formatDisplayDate } from "../../../shared/utils/date-utils";
+import { colors as tokenColors, fonts } from "../../../theme/tokens";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -48,19 +49,24 @@ const DOT_SIZE = 10;
 const LINE_WIDTH = 3;
 const HKA_NORMAL_MIN = 175;
 const HKA_NORMAL_MAX = 180;
-const NORMAL_ZONE_COLOR = "rgba(52, 199, 89, 0.1)";
-const NORMAL_ZONE_BORDER_COLOR = "rgba(52, 199, 89, 0.25)";
+// Zone « dans la plage » — fond/hairline sémantiques tokens (pas de rgba
+// ad hoc) : mêmes couleurs que le Badge « green ».
+const NORMAL_ZONE_COLOR = tokenColors.greenLight;
+const NORMAL_ZONE_BORDER_COLOR = tokenColors.green;
 const TREND_OPACITY = 0.3;
 const TREND_DASH_LENGTH = 6;
 
+// Tracés « Instrument » : encre/accent (jamais plusieurs teintes en
+// concurrence) — les 3 séries se distinguent par nuance d'encre plutôt que
+// par des teintes décoratives non alignées sur la palette à accent unique.
 const SERIES: ReadonlyArray<{
   key: "kneeAngle" | "hipAngle" | "ankleAngle";
   color: string;
   label: string;
 }> = [
-  { key: "kneeAngle", color: Colors.chartKnee, label: "Genou" },
-  { key: "hipAngle", color: Colors.chartHip, label: "Hanche" },
-  { key: "ankleAngle", color: Colors.chartAnkle, label: "Cheville" },
+  { key: "kneeAngle", color: Colors.textPrimary, label: "Genou" },
+  { key: "hipAngle", color: Colors.primary, label: "Hanche" },
+  { key: "ankleAngle", color: Colors.textSecondary, label: "Cheville" },
 ];
 
 // ---------------------------------------------------------------------------
@@ -700,6 +706,7 @@ const styles = StyleSheet.create({
   },
   axisLabel: {
     color: Colors.textSecondary,
+    fontFamily: fonts.mono,
     fontSize: 10,
   },
   chartArea: {
@@ -734,6 +741,7 @@ const styles = StyleSheet.create({
   },
   xLabel: {
     color: Colors.textSecondary,
+    fontFamily: fonts.mono,
     fontSize: 9,
     textAlign: "center",
   },
@@ -750,13 +758,14 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs + 2,
     borderRadius: BorderRadius.md - 2,
   },
+  // Ombre quasi nulle — la hiérarchie vient du trait, pas de l'ombre.
   segmentButtonActive: {
     backgroundColor: Colors.backgroundCard,
     shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.04,
     shadowRadius: 2,
-    elevation: 2,
+    elevation: 1,
   },
   segmentText: {
     fontSize: 12,
@@ -767,7 +776,7 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontWeight: "600",
   },
-  // Tooltip
+  // Tooltip — ombre quasi nulle, hairline pour le détachement du fond.
   tooltip: {
     position: "absolute",
     backgroundColor: Colors.backgroundCard,
@@ -775,9 +784,9 @@ const styles = StyleSheet.create({
     padding: Spacing.sm,
     shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.04,
     shadowRadius: 6,
-    elevation: 4,
+    elevation: 2,
     zIndex: 10,
     alignItems: "center",
     borderWidth: 1,
@@ -793,6 +802,7 @@ const styles = StyleSheet.create({
     borderStyle: "solid",
   },
   tooltipDate: {
+    fontFamily: fonts.mono,
     fontSize: 10,
     color: Colors.textSecondary,
   },
@@ -802,6 +812,7 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   tooltipAngle: {
+    fontFamily: fonts.mono,
     fontSize: 14,
     fontWeight: "700",
     color: Colors.textPrimary,

@@ -18,6 +18,7 @@ import { ReplayScreen } from "../features/results/screens/replay-screen";
 import { PatientTimelineScreen } from "../features/patients/screens/patient-timeline-screen";
 import { AccountScreen } from "../features/account/screens/account-screen";
 import { AdminScreen } from "../features/admin/screens/admin-screen";
+import { CalibrationScreen } from "../features/capture/calibration/calibration-screen";
 import { ProtocolsScreen } from "../features/resources/screens/protocols-screen";
 import { ReportsScreen } from "../features/resources/screens/reports-screen";
 import { ProgressionReportScreen } from "../features/report/screens/progression-report-screen";
@@ -33,6 +34,7 @@ import {
   ProcessingRoute,
   V2TabBar,
 } from "./screens-v2";
+import { whenStorageReady } from "../core/storage/key-value-storage";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<BottomTabParamList>();
@@ -193,6 +195,11 @@ function CompteStackScreen() {
         component={AdminScreen}
         options={{ title: 'Administration' }}
       />
+      <CompteStack.Screen
+        name="Calibration"
+        component={CalibrationScreen}
+        options={{ title: 'Calibration HKA' }}
+      />
     </CompteStack.Navigator>
   );
 }
@@ -229,7 +236,9 @@ export function AppNavigator() {
   useEffect(() => {
     if (isDevMode()) return;
     initialize();
-    checkOnboarding();
+    // L'onboarding lit le stockage persistant : attendre l'hydratation du
+    // backend natif pour ne pas re-proposer l'onboarding déjà complété.
+    whenStorageReady().then(checkOnboarding);
   }, [initialize, checkOnboarding]);
 
   if (isAuthLoading || isOnboardingLoading) {

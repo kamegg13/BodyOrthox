@@ -130,20 +130,48 @@ describe("generateInterpretation", () => {
     expect(result).toContain("Aucune donnée angulaire");
   });
 
-  it("should mention normal alignment for HKA in range", () => {
+  it("should report a factual in-range statement for HKA within reference range", () => {
     const result = generateInterpretation(mockBilateral);
-    expect(result).toContain("limites physiologiques");
+    // Factual geometric statement: angle value + reference range, no clinical wording
+    expect(result).toContain("176.2°");
+    expect(result).toContain("177.5°");
+    expect(result).toContain("dans la plage de référence");
+    expect(result).toContain("(175–180°)");
   });
 
-  it("should detect genu varum for HKA < 175", () => {
-    const abnormal: BilateralAngles = {
+  it("should report a factual below-range deviation for HKA < 175", () => {
+    const belowRange: BilateralAngles = {
       leftHKA: 170,
       rightHKA: 172,
       left: { kneeAngle: 170, hipAngle: 170, ankleAngle: 170 },
       right: { kneeAngle: 172, hipAngle: 172, ankleAngle: 172 },
     };
-    const result = generateInterpretation(abnormal);
-    expect(result.toLowerCase()).toContain("genu varum");
+    const result = generateInterpretation(belowRange);
+    expect(result).toContain("170.0°");
+    expect(result).toContain("sous la plage de référence");
+    // Signed deviation from the lower bound (175°)
+    expect(result).toContain("−5.0°");
+  });
+
+  it("should report a factual above-range deviation for HKA > 180", () => {
+    const aboveRange: BilateralAngles = {
+      leftHKA: 182,
+      rightHKA: 181.5,
+      left: { kneeAngle: 182, hipAngle: 182, ankleAngle: 182 },
+      right: { kneeAngle: 181.5, hipAngle: 181.5, ankleAngle: 181.5 },
+    };
+    const result = generateInterpretation(aboveRange);
+    expect(result).toContain("182.0°");
+    expect(result).toContain("au-dessus de la plage de référence");
+    expect(result).toContain("+2.0°");
+  });
+
+  it("should NOT contain clinical judgement wording", () => {
+    const result = generateInterpretation(mockBilateral);
+    expect(result.toLowerCase()).not.toContain("anomalie");
+    expect(result.toLowerCase()).not.toContain("genu varum");
+    expect(result.toLowerCase()).not.toContain("genu valgum");
+    expect(result.toLowerCase()).not.toContain("recommand");
   });
 });
 

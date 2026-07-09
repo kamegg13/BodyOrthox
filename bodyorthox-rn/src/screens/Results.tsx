@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
+  AngleScale,
   Badge,
   type BadgeColor,
   Btn,
@@ -17,12 +18,22 @@ import {
   NavBar,
   SectionLabel,
 } from "../components";
-import { colors, fonts, fontSize, fontWeight, radius, shadows, spacing } from "../theme/tokens";
+import {
+  colors,
+  fonts,
+  fontSize,
+  fontWeight,
+  letterSpacing,
+  radius,
+  shadows,
+  spacing,
+} from "../theme/tokens";
 
 export interface AngleMeasurement {
   readonly key: string;
   readonly label: string;
-  readonly value: number;
+  /** Measured value, or null when the angle could not be measured. */
+  readonly value: number | null;
   readonly norm: number;
   readonly unit: "°" | "mm";
 }
@@ -31,7 +42,7 @@ export interface ResultsData {
   readonly patientName: string;
   readonly date: string;
   readonly type: string;
-  readonly severity: "normal" | "moderate" | "severe";
+  readonly severity: "normal" | "moderate" | "severe" | "unavailable";
   readonly hka: { readonly left: AngleMeasurement; readonly right: AngleMeasurement };
   readonly postural: readonly AngleMeasurement[];
   readonly capturedImageUrl?: string;
@@ -46,9 +57,21 @@ interface ResultsProps {
 
 export function Results({ data, onBack, onShare, onGenerateReport }: ResultsProps) {
   const sevColor: BadgeColor =
-    data.severity === "normal" ? "green" : data.severity === "moderate" ? "amber" : "red";
+    data.severity === "unavailable"
+      ? "navy"
+      : data.severity === "normal"
+      ? "green"
+      : data.severity === "moderate"
+      ? "amber"
+      : "red";
   const sevLabel =
-    data.severity === "normal" ? "Normal" : data.severity === "moderate" ? "Modéré" : "Sévère";
+    data.severity === "unavailable"
+      ? "Indisponible"
+      : data.severity === "normal"
+      ? "Normal"
+      : data.severity === "moderate"
+      ? "Modéré"
+      : "Sévère";
 
   // Mesure la photo pour adapter dynamiquement l'aspect ratio du conteneur,
   // sinon une photo verticale (3:4) est croppée dans un cadre 4:3.
@@ -126,8 +149,8 @@ export function Results({ data, onBack, onShare, onGenerateReport }: ResultsProp
 
         <SectionLabel>Angles HKA</SectionLabel>
         <View style={styles.grid2}>
-          <AngleRow m={data.hka.left} />
-          <AngleRow m={data.hka.right} />
+          <AngleRow m={data.hka.left} showScale />
+          <AngleRow m={data.hka.right} showScale />
         </View>
 
         <SectionLabel style={{ marginTop: spacing.s14 }}>Angles posturaux</SectionLabel>
@@ -166,7 +189,50 @@ function severity(delta: number): "normal" | "moderate" | "severe" {
   return "severe";
 }
 
-function AngleRow({ m }: { m: AngleMeasurement }) {
+// Plage de référence HKA (175°–180°), cf. classifyHKA dans
+// src/features/capture/data/angle-calculator.ts — reprise ici telle quelle,
+// aucune valeur n'est inventée.
+const HKA_REF_MIN = 175;
+const HKA_REF_MAX = 180;
+
+function AngleRow({ m, showScale }: { m: AngleMeasurement; showScale?: boolean }) {
+  if (m.value === null) {
+    return (
+      <View style={angleStyles.card}>
+        <View style={angleStyles.topRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={angleStyles.eyebrow}>{m.label}</Text>
+            <View style={angleStyles.valueRow}>
+              <Text style={angleStyles.value}>—</Text>
+            </View>
+          </View>
+          <View style={{ alignItems: "flex-end", gap: 4 }}>
+            <Text style={angleStyles.norm}>
+              norme {m.norm}
+              {m.unit}
+            </Text>
+            <View style={[angleStyles.deltaPill, { backgroundColor: colors.bgSubtle }]}>
+              <Text style={[angleStyles.deltaText, { color: colors.textMuted }]}>
+                indisponible
+              </Text>
+            </View>
+          </View>
+        </View>
+        {!showScale && <View style={angleStyles.bar} />}
+        {showScale ? (
+          <AngleScale
+            value={null}
+            refMin={HKA_REF_MIN}
+            refMax={HKA_REF_MAX}
+            compact
+            style={angleStyles.scale}
+            testID={`angle-scale-${m.key}`}
+          />
+        ) : null}
+      </View>
+    );
+  }
+
   const delta = +(m.value - m.norm).toFixed(1);
   const sev = severity(delta);
   const sevColor =
@@ -202,14 +268,28 @@ function AngleRow({ m }: { m: AngleMeasurement }) {
           </View>
         </View>
       </View>
-      <View style={angleStyles.bar}>
-        <View
-          style={[
-            angleStyles.barFill,
-            { width: `${fillRatio * 100}%`, backgroundColor: sevColor },
-          ]}
+      {/* La règle graduée remplace la barre de sévérité (redondante) sur les
+          cards HKA ; la barre reste pour les angles posturaux sans échelle. */}
+      {!showScale && (
+        <View style={angleStyles.bar}>
+          <View
+            style={[
+              angleStyles.barFill,
+              { width: `${fillRatio * 100}%`, backgroundColor: sevColor },
+            ]}
+          />
+        </View>
+      )}
+      {showScale ? (
+        <AngleScale
+          value={m.value}
+          refMin={HKA_REF_MIN}
+          refMax={HKA_REF_MAX}
+          compact
+          style={angleStyles.scale}
+          testID={`angle-scale-${m.key}`}
         />
-      </View>
+      ) : null}
     </View>
   );
 }
@@ -236,9 +316,9 @@ const styles = StyleSheet.create({
     gap: spacing.s10,
   },
   patientName: {
-    fontFamily: fonts.sans,
+    fontFamily: fonts.display,
     fontSize: fontSize.navTitle,
-    fontWeight: fontWeight.extraBold,
+    fontWeight: fontWeight.bold,
     color: colors.textPrimary,
     letterSpacing: -0.3,
   },
@@ -270,7 +350,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     paddingHorizontal: spacing.s12,
     paddingVertical: spacing.s10,
-    backgroundColor: "rgba(12,31,53,0.55)",
+    backgroundColor: "rgba(16,16,18,0.55)",
   },
   heroCaptionLight: {
     fontFamily: fonts.sans,
@@ -340,7 +420,7 @@ const angleStyles = StyleSheet.create({
     fontSize: fontSize.eyebrow,
     fontWeight: fontWeight.bold,
     color: colors.textMuted,
-    letterSpacing: 0.07 * fontSize.eyebrow,
+    letterSpacing: letterSpacing.eyebrow,
     textTransform: "uppercase",
   },
   valueRow: {
@@ -364,7 +444,7 @@ const angleStyles = StyleSheet.create({
     marginLeft: 1,
   },
   norm: {
-    fontFamily: fonts.sans,
+    fontFamily: fonts.mono,
     fontSize: fontSize.eyebrow,
     color: colors.textMuted,
   },
@@ -387,6 +467,9 @@ const angleStyles = StyleSheet.create({
   barFill: {
     height: "100%",
     borderRadius: 3,
+  },
+  scale: {
+    marginTop: 4,
   },
 });
 

@@ -1,6 +1,7 @@
 import { API_BASE, apiRequest } from '../api/api-client';
 import { saveTokens, clearTokens } from './token-storage';
 import type { IAuthService, AuthUser } from './auth-service';
+import { parseAuthUser, parseLoginResponse } from './auth-response-guards';
 
 export class ApiAuthService implements IAuthService {
   async login(email: string, password: string): Promise<{ user: AuthUser }> {
@@ -13,9 +14,9 @@ export class ApiAuthService implements IAuthService {
       const body = await res.json().catch(() => ({}));
       throw new Error((body as any).error ?? 'Login failed');
     }
-    const data = await res.json();
-    await saveTokens({ jwt: data.jwt, refreshToken: data.refreshToken });
-    return { user: data.user as AuthUser };
+    const parsed = parseLoginResponse(await res.json());
+    await saveTokens({ jwt: parsed.jwt, refreshToken: parsed.refreshToken });
+    return { user: parsed.user };
   }
 
   async logout(): Promise<void> {
@@ -24,6 +25,6 @@ export class ApiAuthService implements IAuthService {
   }
 
   async getMe(): Promise<AuthUser> {
-    return apiRequest<AuthUser>('/users/me');
+    return parseAuthUser(await apiRequest<unknown>('/users/me'));
   }
 }

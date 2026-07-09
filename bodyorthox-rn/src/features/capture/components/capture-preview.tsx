@@ -1,8 +1,7 @@
 import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { LoadingSpinner } from "../../../shared/components/loading-spinner";
-import { Colors } from "../../../shared/design-system/colors";
-import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
+import { colors, fonts, fontWeight, radius, spacing } from "../../../theme/tokens";
 
 interface CapturePreviewProps {
   previewUrl: string;
@@ -108,7 +107,7 @@ export function CapturePreview({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.black },
+  container: { flex: 1, backgroundColor: colors.captureBg },
   controls: {
     position: "absolute",
     bottom: 48,
@@ -121,57 +120,72 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    paddingTop: Spacing.xl + 20,
+    paddingTop: spacing.s28 + 20,
     alignItems: "center",
+    // Chrome overlay sur photo : pas d'équivalent token noir-alpha, conservé.
     backgroundColor: "rgba(0,0,0,0.4)",
   },
   previewTitle: {
-    color: Colors.white,
+    color: colors.white,
     fontSize: 20,
-    fontWeight: "700",
-    paddingVertical: Spacing.md,
+    fontWeight: fontWeight.bold,
+    fontFamily: fonts.sans,
+    paddingVertical: spacing.s16,
   },
+  // CTA primaire : encre pleine, jamais l'accent cyan.
   analyzeButton: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.lg,
+    backgroundColor: colors.ink,
+    paddingHorizontal: spacing.s28,
+    paddingVertical: spacing.s16,
+    borderRadius: radius.button,
     minWidth: 200,
     alignItems: "center",
   },
-  analyzeButtonText: { color: Colors.white, fontWeight: "700", fontSize: 18 },
-  retakeButton: { marginTop: Spacing.md, paddingVertical: Spacing.sm },
+  analyzeButtonText: {
+    color: colors.white,
+    fontWeight: fontWeight.bold,
+    fontFamily: fonts.sans,
+    fontSize: 18,
+  },
+  retakeButton: { marginTop: spacing.s16, paddingVertical: spacing.s8 },
   retakeButtonText: {
-    color: Colors.textSecondary,
+    // Texte secondaire sur fond sombre : blanc atténué, pas le gris encre
+    // (illisible sur `captureBg`).
+    color: colors.white70,
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: fontWeight.semiBold,
+    fontFamily: fonts.sans,
   },
   errorContainer: {
     alignItems: "center",
     backgroundColor: "rgba(0,0,0,0.7)",
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.lg,
-    marginHorizontal: Spacing.lg,
+    padding: spacing.s24,
+    borderRadius: radius.cardLg,
+    marginHorizontal: spacing.s24,
   },
   errorText: {
-    color: Colors.error,
+    color: colors.red,
     fontSize: 16,
     textAlign: "center",
-    marginBottom: Spacing.md,
-    fontWeight: "600",
+    marginBottom: spacing.s16,
+    fontWeight: fontWeight.semiBold,
+    fontFamily: fonts.sans,
   },
   warningContainer: {
     alignItems: "center",
     backgroundColor: "rgba(0,0,0,0.7)",
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.lg,
-    marginHorizontal: Spacing.lg,
+    padding: spacing.s24,
+    borderRadius: radius.cardLg,
+    marginHorizontal: spacing.s24,
   },
   warningText: {
-    color: Colors.warningAmber,
+    // Ambre le plus clair disponible : reste le meilleur compromis de lisibilité
+    // sur fond sombre (aucun token ambre "sur sombre" n'existe dans tokens.ts).
+    color: colors.amberMid,
     fontSize: 15,
     textAlign: "center",
-    marginBottom: Spacing.md,
-    fontWeight: "500",
+    marginBottom: spacing.s16,
+    fontWeight: fontWeight.medium,
+    fontFamily: fonts.sans,
   },
 });

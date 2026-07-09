@@ -13,7 +13,6 @@ import {
   type BadgeColor,
   BottomTab,
   Card,
-  Gradient,
   Icon,
   type IconName,
   SectionLabel,
@@ -23,7 +22,7 @@ import {
   fonts,
   fontSize,
   fontWeight,
-  gradients,
+  letterSpacing,
   radius,
   shadows,
   spacing,
@@ -62,38 +61,35 @@ export function Dashboard({
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="light-content" />
-      {/* HERO */}
-      <SafeAreaView edges={["top"]} style={styles.heroSafe}>
-        <Gradient gradient={gradients.hero} style={styles.heroGradient}>
-          <View style={styles.heroDecor} pointerEvents="none" />
-          <View style={styles.heroInner}>
-            <View style={styles.heroTopRow}>
-              <View>
-                <Text style={styles.greeting}>{greeting()},</Text>
-                <Text style={styles.practitioner}>{practitionerName}</Text>
-              </View>
-              <Pressable
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel="Notifications"
-                style={styles.bellBtn}
-              >
-                <Icon name="bell" size={18} color={colors.textInverse} />
-              </Pressable>
+      <StatusBar barStyle="dark-content" />
+      {/* HEADER — papier */}
+      <SafeAreaView edges={["top"]} style={styles.headerSafe}>
+        <View style={styles.headerInner}>
+          <View style={styles.headerTopRow}>
+            <View>
+              <Text style={styles.greeting}>{greeting()}</Text>
+              <Text style={styles.practitioner}>{practitionerName}</Text>
             </View>
-
-            <View style={styles.statsRow}>
-              <StatCard
-                value={String(stats.total)}
-                label="Patients"
-                sub={stats.thisWeek > 0 ? `+${stats.thisWeek} cette semaine` : "—"}
-              />
-              <StatCard value={String(stats.today)} label="Aujourd’hui" sub="Sessions" />
-              <StatCard value={String(stats.reports)} label="Rapports" sub="Générés" />
-            </View>
+            <Pressable
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Notifications"
+              style={styles.bellBtn}
+            >
+              <Icon name="bell" size={18} color={colors.ink} />
+            </Pressable>
           </View>
-        </Gradient>
+
+          <View style={styles.statsRow}>
+            <StatCard
+              value={String(stats.total)}
+              label="Patients"
+              sub={stats.thisWeek > 0 ? `+${stats.thisWeek} cette semaine` : "—"}
+            />
+            <StatCard value={String(stats.today)} label="Aujourd’hui" sub="Sessions" />
+            <StatCard value={String(stats.reports)} label="Rapports" sub="Générés" />
+          </View>
+        </View>
       </SafeAreaView>
 
       {/* BODY */}
@@ -107,51 +103,38 @@ export function Dashboard({
           <ActionCard
             icon="plus"
             label="Nouveau patient"
-            tint={colors.navyMid}
-            bg={colors.navyLight}
             onPress={() => onQuickAction?.("new-patient")}
           />
           <ActionCard
             icon="camera"
             label="Capture"
-            tint={colors.teal}
-            bg={colors.tealLight}
             onPress={() => onQuickAction?.("capture")}
           />
           <ActionCard
             icon="chart"
             label="Analyse"
-            tint={colors.amber}
-            bg={colors.amberLight}
             onPress={() => onQuickAction?.("analysis")}
           />
           <ActionCard
             icon="file"
             label="Rapport"
-            tint={colors.green}
-            bg={colors.greenLight}
             onPress={() => onQuickAction?.("report")}
           />
         </View>
 
         {nextAppointment ? (
           <View style={styles.tipWrap}>
-            <Gradient gradient={gradients.tipBanner} radius={radius.cardLg} style={styles.tipBg}>
-              <View />
-            </Gradient>
-            <View style={styles.tipInner}>
-              <View style={styles.tipIcon}>
-                <Icon name="calendar" size={18} color={colors.textInverse} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.tipTitle}>
-                  Prochain : {nextAppointment.patientName}
-                </Text>
-                <Text style={styles.tipSub}>
-                  {nextAppointment.whenLabel}
-                  {nextAppointment.subtitle ? ` · ${nextAppointment.subtitle}` : ""}
-                </Text>
-              </View>
+            <View style={styles.tipIcon}>
+              <Icon name="calendar" size={18} color={colors.ink} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.tipTitle}>
+                Prochain : {nextAppointment.patientName}
+              </Text>
+              <Text style={styles.tipSub}>
+                {nextAppointment.whenLabel}
+                {nextAppointment.subtitle ? ` · ${nextAppointment.subtitle}` : ""}
+              </Text>
             </View>
           </View>
         ) : null}
@@ -175,13 +158,8 @@ export function Dashboard({
               </Text>
             </Card>
           ) : (
-            recent.map((p, idx) => (
-              <PatientRow
-                key={p.id}
-                patient={p}
-                tone={idx % 2 === 0 ? "navy" : "teal"}
-                onPress={() => onPatientPress?.(p)}
-              />
+            recent.map((p) => (
+              <PatientRow key={p.id} patient={p} onPress={() => onPatientPress?.(p)} />
             ))
           )}
         </View>
@@ -218,11 +196,9 @@ function StatCard({ value, label, sub }: StatCardProps) {
 interface ActionCardProps {
   readonly icon: IconName;
   readonly label: string;
-  readonly tint: string;
-  readonly bg: string;
   readonly onPress?: () => void;
 }
-function ActionCard({ icon, label, tint, bg, onPress }: ActionCardProps) {
+function ActionCard({ icon, label, onPress }: ActionCardProps) {
   return (
     <Pressable
       onPress={onPress}
@@ -230,8 +206,8 @@ function ActionCard({ icon, label, tint, bg, onPress }: ActionCardProps) {
       accessibilityRole="button"
       accessibilityLabel={label}
     >
-      <View style={[styles.actionIcon, { backgroundColor: bg }]}>
-        <Icon name={icon} size={20} color={tint} strokeWidth={1.75} />
+      <View style={styles.actionIcon}>
+        <Icon name={icon} size={20} color={colors.ink} strokeWidth={1.75} />
       </View>
       <Text style={styles.actionLabel}>{label}</Text>
     </Pressable>
@@ -240,15 +216,11 @@ function ActionCard({ icon, label, tint, bg, onPress }: ActionCardProps) {
 
 interface PatientRowProps {
   readonly patient: Patient;
-  readonly tone: "navy" | "teal";
   readonly onPress?: () => void;
 }
-function PatientRow({ patient, tone, onPress }: PatientRowProps) {
+function PatientRow({ patient, onPress }: PatientRowProps) {
   const meta = buildPatientMeta(patient);
   const status = derivePatientStatus(patient);
-
-  const avatarBg = tone === "navy" ? colors.navyLight : colors.tealLight;
-  const avatarFg = tone === "navy" ? colors.navyMid : colors.teal;
 
   return (
     <Pressable
@@ -257,8 +229,8 @@ function PatientRow({ patient, tone, onPress }: PatientRowProps) {
       accessibilityRole="button"
       accessibilityLabel={patient.name}
     >
-      <View style={[styles.avatar, { backgroundColor: avatarBg }]}>
-        <Icon name="user" size={18} color={avatarFg} strokeWidth={1.75} />
+      <View style={styles.avatar}>
+        <Icon name="user" size={18} color={colors.textSecond} strokeWidth={1.75} />
       </View>
       <View style={styles.patientMid}>
         <Text style={styles.patientName} numberOfLines={1}>
@@ -347,52 +319,45 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.bg,
   },
-  heroSafe: {
-    backgroundColor: colors.navy,
+  headerSafe: {
+    backgroundColor: colors.bg,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
-  heroGradient: {
-    paddingHorizontal: 0,
-  },
-  heroDecor: {
-    position: "absolute",
-    top: -40,
-    right: -40,
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    borderWidth: 24,
-    borderColor: colors.white06,
-  },
-  heroInner: {
+  headerInner: {
     paddingHorizontal: spacing.heroPadH,
     paddingTop: spacing.s14,
-    paddingBottom: spacing.s22,
+    paddingBottom: spacing.s18,
     gap: spacing.s16,
   },
-  heroTopRow: {
+  headerTopRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
   greeting: {
     fontFamily: fonts.sans,
-    fontSize: fontSize.caption,
-    color: colors.white50,
-    fontWeight: fontWeight.medium,
+    fontSize: fontSize.eyebrow,
+    color: colors.textMuted,
+    fontWeight: fontWeight.semiBold,
+    letterSpacing: letterSpacing.eyebrow,
+    textTransform: "uppercase",
   },
   practitioner: {
-    fontFamily: fonts.sans,
+    fontFamily: fonts.display,
     fontSize: fontSize.hero,
-    fontWeight: fontWeight.extraBold,
-    color: colors.textInverse,
+    fontWeight: fontWeight.bold,
+    color: colors.ink,
     letterSpacing: -0.4,
-    marginTop: 2,
+    marginTop: 4,
   },
   bellBtn: {
     width: 42,
     height: 42,
-    borderRadius: 14,
-    backgroundColor: colors.white12,
+    borderRadius: radius.iconSm,
+    backgroundColor: colors.bgCard,
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -402,31 +367,36 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: colors.white08,
-    borderRadius: 14,
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.cardSm,
+    borderWidth: 1,
+    borderColor: colors.border,
     paddingHorizontal: 10,
     paddingVertical: 12,
     gap: 2,
   },
   statValue: {
     fontFamily: fonts.mono,
-    fontSize: fontSize.statMd,
-    fontWeight: fontWeight.extraBold,
-    color: colors.textInverse,
-    lineHeight: fontSize.statMd,
+    fontSize: fontSize.statLg,
+    fontWeight: fontWeight.bold,
+    color: colors.ink,
+    lineHeight: fontSize.statLg,
     letterSpacing: -0.5,
   },
   statLabel: {
     fontFamily: fonts.sans,
-    fontSize: fontSize.caption,
+    fontSize: fontSize.eyebrow,
     fontWeight: fontWeight.semiBold,
-    color: colors.white70,
-    marginTop: 4,
+    color: colors.textMuted,
+    letterSpacing: letterSpacing.eyebrow,
+    textTransform: "uppercase",
+    marginTop: 6,
   },
   statSub: {
     fontFamily: fonts.sans,
     fontSize: fontSize.monoSm,
-    color: colors.white35,
+    color: colors.textMuted,
+    marginTop: 2,
   },
   body: {
     flex: 1,
@@ -457,6 +427,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: radius.iconSm,
+    backgroundColor: colors.bgSubtle,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -468,25 +439,21 @@ const styles = StyleSheet.create({
     letterSpacing: -0.1,
   },
   tipWrap: {
-    borderRadius: radius.cardLg,
-    borderWidth: 1,
-    borderColor: colors.navySoft,
-    overflow: "hidden",
-  },
-  tipBg: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  tipInner: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.s12,
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.cardLg,
+    borderWidth: 1,
+    borderColor: colors.border,
     padding: spacing.s14,
+    ...shadows.sm,
   },
   tipIcon: {
     width: 40,
     height: 40,
     borderRadius: radius.iconSm,
-    backgroundColor: colors.navyMid,
+    backgroundColor: colors.bgSubtle,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -506,7 +473,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.sans,
     fontSize: fontSize.caption,
     fontWeight: fontWeight.bold,
-    color: colors.navyMid,
+    color: colors.accent,
   },
   patientRow: {
     flexDirection: "row",
@@ -527,6 +494,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: radius.iconSm,
+    backgroundColor: colors.bgSubtle,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -551,8 +519,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   patientDate: {
-    fontFamily: fonts.sans,
-    fontSize: fontSize.eyebrow,
+    fontFamily: fonts.mono,
+    fontSize: fontSize.monoSm,
     color: colors.textMuted,
   },
   emptyCard: {

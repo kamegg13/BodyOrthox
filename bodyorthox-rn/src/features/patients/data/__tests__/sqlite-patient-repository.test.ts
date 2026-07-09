@@ -44,9 +44,10 @@ describe("SqlitePatientRepository", () => {
 
       await repo.getAll("Jean");
 
-      expect(db.execute).toHaveBeenCalledWith(expect.stringContaining("LIKE"), [
-        "%Jean%",
-      ]);
+      expect(db.execute).toHaveBeenCalledWith(
+        expect.stringContaining("LIKE"),
+        ["%Jean%", "%Jean%"],
+      );
     });
 
     it("returns empty list when no patients", async () => {
@@ -70,6 +71,21 @@ describe("SqlitePatientRepository", () => {
         heightCm: 175,
         weightKg: 70,
       });
+    });
+
+    it("renders a patient with null profile when the JSON is corrupted (no crash)", async () => {
+      const corruptedRow = {
+        ...mockPatientRow,
+        morphological_profile: "{not-valid-json",
+      };
+      const db = createMockDb([corruptedRow]);
+      const repo = new SqlitePatientRepository(db);
+
+      const patients = await repo.getAll();
+
+      expect(patients).toHaveLength(1);
+      expect(patients[0].id).toBe("test-patient-id");
+      expect(patients[0].morphologicalProfile).toBeNull();
     });
   });
 
@@ -115,11 +131,30 @@ describe("SqlitePatientRepository", () => {
       );
     });
 
-    it("throws for invalid patient data", async () => {
+    it("creates a minimised patient with only a displayLabel (no name)", async () => {
+      const db = createMockDb();
+      (db.execute as jest.Mock).mockResolvedValueOnce({
+        rows: [],
+        rowsAffected: 1,
+      });
+      const repo = new SqlitePatientRepository(db);
+
+      const patient = await repo.create({ displayLabel: "PAT-0427" });
+
+      expect(patient.displayLabel).toBe("PAT-0427");
+      expect(patient.name).toBeUndefined();
+      // name column receives '' (NOT NULL legacy column), not null.
+      expect(db.execute).toHaveBeenCalledWith(
+        expect.stringContaining("INSERT"),
+        expect.arrayContaining(["test-patient-id", "", "PAT-0427"]),
+      );
+    });
+
+    it("throws if dateOfBirth is invalid (when provided)", async () => {
       const db = createMockDb();
       const repo = new SqlitePatientRepository(db);
       await expect(
-        repo.create({ name: "", dateOfBirth: "1990-05-15" }),
+        repo.create({ name: "Jean", dateOfBirth: "not-a-date" }),
       ).rejects.toThrow();
     });
   });
@@ -149,14 +184,26 @@ describe("SqlitePatientRepository", () => {
   });
 
   describe("delete", () => {
-    it("executes DELETE query with correct id", async () => {
+    it("executes DELETE query with correct id (hard delete)", async () => {
       const db = createMockDb();
       const repo = new SqlitePatientRepository(db);
 
       await repo.delete("test-id");
 
       expect(db.execute).toHaveBeenCalledWith(
-        expect.stringContaining("DELETE"),
+        expect.stringContaining("DELETE FROM patients"),
+        ["test-id"],
+      );
+    });
+
+    it("also deletes associated analyses on-device (right to erasure)", async () => {
+      const db = createMockDb();
+      const repo = new SqlitePatientRepository(db);
+
+      await repo.delete("test-id");
+
+      expect(db.execute).toHaveBeenCalledWith(
+        expect.stringContaining("DELETE FROM analyses WHERE patient_id"),
         ["test-id"],
       );
     });

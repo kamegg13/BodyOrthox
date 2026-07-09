@@ -30,6 +30,7 @@ import {
 import { usePlatform } from "../../../shared/hooks/use-platform";
 import { LOGO_DATA_URI } from "../../../assets/logo";
 import { Icon } from "../../../shared/components/icon";
+import { colors as tokenColors, fonts, letterSpacing } from "../../../theme/tokens";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 const DEBOUNCE_MS = 200;
@@ -57,6 +58,15 @@ export function PatientsScreen() {
   useEffect(() => {
     loadPatients();
   }, []);
+
+  // Clear any pending debounce timer on unmount to avoid updating state after
+  // the screen is gone.
+  useEffect(
+    () => () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    },
+    [],
+  );
 
   const handleSearch = useCallback(
     (text: string) => {
@@ -281,7 +291,7 @@ function ClinicalResourcesSection() {
           testID="resource-protocoles"
           onPress={() => navigation.navigate("Protocols")}
         >
-          <View style={[styles.resourceIconWrap, { backgroundColor: `${Colors.primary}15` }]}>
+          <View style={styles.resourceIconWrap}>
             <Icon name="clipboard" size={22} color={Colors.primary} />
           </View>
           <Text style={styles.resourceTitle}>Protocoles</Text>
@@ -293,7 +303,7 @@ function ClinicalResourcesSection() {
           testID="resource-rapports"
           onPress={() => navigation.navigate("Reports")}
         >
-          <View style={[styles.resourceIconWrap, { backgroundColor: `${Colors.primary}15` }]}>
+          <View style={styles.resourceIconWrap}>
             <Icon name="document" size={22} color={Colors.primary} />
           </View>
           <Text style={styles.resourceTitle}>Rapports PDF</Text>
@@ -308,9 +318,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  // ── Header zone bleue ──────────────────────────
+  // ── Header zone — bloc encre (ancre de marque, façon hero Instrument) ──
   headerZone: {
-    backgroundColor: Colors.primaryDark,
+    backgroundColor: tokenColors.ink,
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.lg,
     paddingBottom: Spacing.lg,
@@ -339,7 +349,7 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: FontSize.xs,
-    color: "rgba(255,255,255,0.65)",
+    color: tokenColors.white70,
     letterSpacing: 0.3,
     marginTop: 1,
   },
@@ -347,9 +357,9 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    backgroundColor: tokenColors.white20,
     borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.4)",
+    borderColor: tokenColors.white40,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -369,10 +379,12 @@ const styles = StyleSheet.create({
   },
   freemiumText: {
     fontSize: FontSize.sm,
-    color: "rgba(255,255,255,0.80)",
+    color: tokenColors.white70,
     flex: 1,
   },
+  // Compteur — valeur numérique, mono tabulaire.
   freemiumCount: {
+    fontFamily: fonts.mono,
     fontSize: FontSize.sm,
     fontWeight: FontWeight.semiBold,
     color: Colors.white,
@@ -381,15 +393,15 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 4,
     borderRadius: 2,
-    backgroundColor: "rgba(255,255,255,0.20)",
+    backgroundColor: tokenColors.white20,
     overflow: "hidden",
   },
   freemiumProgressFill: {
     height: 4,
     borderRadius: 2,
-    backgroundColor: "rgba(255,255,255,0.80)",
+    backgroundColor: tokenColors.white70,
   },
-  // ── CTA ──────────────────────────────────────
+  // ── CTA — encre pleine (le cyan n'est jamais une couleur de bouton) ──
   ctaButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -398,7 +410,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
     marginBottom: Spacing.sm,
     paddingVertical: Spacing.md + 2,
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.textPrimary,
     borderRadius: BorderRadius.lg,
     gap: Spacing.sm,
     ...Shadows.primary,
@@ -415,11 +427,12 @@ const styles = StyleSheet.create({
   searchContainerTablet: {
     paddingHorizontal: Spacing.xl,
   },
+  // Input — fond bgSubtle, hairline, radius field (grammaire Instrument).
   searchInput: {
-    backgroundColor: Colors.backgroundCard,
+    backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.border,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.md,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm + 2,
     color: Colors.textPrimary,
@@ -433,11 +446,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing.sm,
   },
+  // Eyebrow — micro-label de section, façon plaque d'instrument.
   sectionTitle: {
     fontSize: FontSize.xs,
     fontWeight: FontWeight.semiBold,
-    color: Colors.textSecondary,
-    letterSpacing: 0.8,
+    color: Colors.textDisabled,
+    letterSpacing: letterSpacing.eyebrow,
   },
   sectionLink: {
     fontSize: FontSize.sm,
@@ -480,8 +494,8 @@ const styles = StyleSheet.create({
   resourcesSectionTitle: {
     fontSize: FontSize.xs,
     fontWeight: FontWeight.semiBold,
-    color: Colors.textSecondary,
-    letterSpacing: 0.8,
+    color: Colors.textDisabled,
+    letterSpacing: letterSpacing.eyebrow,
     marginBottom: Spacing.sm,
   },
   resourcesRow: {
@@ -504,6 +518,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: tokenColors.accentLight,
   },
   resourceTitle: {
     fontSize: FontSize.sm,

@@ -61,7 +61,10 @@ const imageLoaderConfiguration = {
   type: "asset",
 };
 
-module.exports = {
+module.exports = (env, argv = {}) => {
+  const isProduction = argv.mode === "production";
+
+  return {
   entry: path.resolve(appDirectory, "index.js"),
   output: {
     filename: "bundle.web.js",
@@ -96,7 +99,7 @@ module.exports = {
   },
   plugins: [
     new webpack.DefinePlugin({
-      __DEV__: JSON.stringify(true),
+      __DEV__: JSON.stringify(!isProduction),
       process: { env: { EXPO_PUBLIC_API_URL: JSON.stringify('/api') } },
     }),
     new HtmlWebpackPlugin({
@@ -124,5 +127,6 @@ module.exports = {
       },
     ],
   },
-  mode: "development",
+  mode: isProduction ? "production" : "development",
+  };
 };

@@ -17,11 +17,13 @@ import {
   validateCorrectionAngle,
   isLowConfidence,
 } from "../domain/manual-correction";
+import { bilateralWithCorrection } from "../domain/corrected-bilateral";
 import { LoadingSpinner } from "../../../shared/components/loading-spinner";
 import { ErrorWidget } from "../../../shared/components/error-widget";
 import { Colors } from "../../../shared/design-system/colors";
-import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
+import { Spacing } from "../../../shared/design-system/spacing";
 import { Typography } from "../../../shared/design-system/typography";
+import { colors, fonts, radius } from "../../../theme/tokens";
 import { formatDisplayDateTime } from "../../../shared/utils/date-utils";
 import { useAnalysisRepository } from "../../../shared/hooks/use-analysis-repository";
 import { JointPointDisplay } from "../components/joint-point-display";
@@ -101,13 +103,27 @@ export function ReplayScreen() {
         parsed,
       );
 
+      // Keep the HKA card and the PDF consistent with the correction: recompute
+      // the bilateral angles from the corrected value so results screens don't
+      // keep displaying the pre-correction HKA. `undefined` when there is no
+      // measurement basis — we never persist a fabricated angle.
+      const bilateralAngles = bilateralWithCorrection(
+        analysis,
+        selectedJoint,
+        corrected.angles[`${selectedJoint}Angle`],
+      );
+      const persisted: Analysis = bilateralAngles
+        ? { ...corrected, bilateralAngles }
+        : corrected;
+
       await repo.update(analysisId, {
-        angles: corrected.angles,
-        manualCorrectionApplied: corrected.manualCorrectionApplied,
-        manualCorrectionJoint: corrected.manualCorrectionJoint,
+        angles: persisted.angles,
+        manualCorrectionApplied: persisted.manualCorrectionApplied,
+        manualCorrectionJoint: persisted.manualCorrectionJoint,
+        ...(bilateralAngles ? { bilateralAngles } : {}),
       });
 
-      setAnalysis(corrected);
+      setAnalysis(persisted);
       setCorrectionError(null);
       setCorrectionSuccess("Correction enregistrée");
       setDisclaimerText(correctionDisclaimer(selectedJoint));
@@ -218,7 +234,7 @@ export function ReplayScreen() {
             label="Confiance ML"
             value={`${(analysis.confidenceScore * 100).toFixed(1)}%`}
           />
-          <RawRow label="ID analyse" value={analysis.id} mono />
+          <RawRow label="ID analyse" value={analysis.id} />
         </View>
       </View>
 
@@ -237,19 +253,11 @@ export function ReplayScreen() {
   );
 }
 
-function RawRow({
-  label,
-  value,
-  mono,
-}: {
-  label: string;
-  value: string;
-  mono?: boolean;
-}) {
+function RawRow({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.rawRow}>
       <Text style={styles.rawLabel}>{label}</Text>
-      <Text style={[styles.rawValue, mono && styles.mono]}>{value}</Text>
+      <Text style={styles.rawValue}>{value}</Text>
     </View>
   );
 }
@@ -271,46 +279,50 @@ const styles = StyleSheet.create({
   headerTitle: { color: Colors.textPrimary },
   metaCard: {
     backgroundColor: Colors.backgroundCard,
-    borderRadius: BorderRadius.lg,
+    borderRadius: radius.cardLg,
     padding: Spacing.md,
     gap: Spacing.sm,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
   },
-  metaDate: { color: Colors.textSecondary, fontSize: 14 },
+  metaDate: { fontFamily: fonts.mono, color: Colors.textSecondary, fontSize: 14 },
   confidenceBadge: {
     alignSelf: "flex-start",
     borderWidth: 1,
-    borderRadius: BorderRadius.full,
+    borderRadius: radius.pill,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
   },
-  confidenceText: { fontSize: 13, fontWeight: "600" },
+  confidenceText: { fontFamily: fonts.mono, fontSize: 13, fontWeight: "600" },
   section: { gap: Spacing.sm },
   sectionTitle: { color: Colors.textPrimary },
   rawDataCard: {
     backgroundColor: Colors.backgroundCard,
-    borderRadius: BorderRadius.lg,
+    borderRadius: radius.cardLg,
     padding: Spacing.md,
     gap: Spacing.xs,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
   },
   rawRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingVertical: Spacing.xs,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
-  rawLabel: { color: Colors.textSecondary, fontSize: 13 },
-  rawValue: { color: Colors.textPrimary, fontSize: 13, fontWeight: "500" },
-  mono: { fontFamily: "monospace", fontSize: 11 },
+  rawLabel: {
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+  rawValue: { fontFamily: fonts.mono, color: Colors.textPrimary, fontSize: 13, fontWeight: "500" },
+  // CTA primaire : encre pleine — le cyan n'est jamais un fond de bouton.
   actionButton: {
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.ink,
     paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.lg,
+    borderRadius: radius.button,
     alignItems: "center",
   },
   actionButtonText: {

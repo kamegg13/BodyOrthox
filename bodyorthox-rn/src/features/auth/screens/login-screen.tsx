@@ -1,19 +1,26 @@
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../../core/auth/auth-store';
-import { Colors } from '../../../shared/design-system/colors';
-import { Spacing, BorderRadius } from '../../../shared/design-system/spacing';
-import { FontSize, FontWeight } from '../../../shared/design-system/typography';
+import { Btn } from '../../../components/Btn';
+import { Field } from '../../../components/Field';
+import { Logo } from '../../../components/Logo';
+import {
+  colors,
+  fonts,
+  fontSize,
+  fontWeight,
+  letterSpacing,
+  radius,
+  spacing,
+} from '../../../theme/tokens';
 
 export function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -40,154 +47,125 @@ export function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
+    <View style={styles.root}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={styles.header}>
-          <Text style={styles.title}>Antidote Sport</Text>
-          <Text style={styles.subtitle}>Orthopédie · Performance · Réathlétisation</Text>
-        </View>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* HERO */}
+          <View style={styles.hero}>
+            <SafeAreaView edges={['top']} style={styles.heroSafe}>
+              <View style={styles.heroInner}>
+                <Logo size={34} light />
+                <Text style={styles.tagline}>
+                  Orthopédie · Performance · Réathlétisation
+                </Text>
+              </View>
+            </SafeAreaView>
+          </View>
 
-        <View style={styles.form}>
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={styles.input}
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            autoCorrect={false}
-            placeholder="votre@email.com"
-            placeholderTextColor={Colors.textSecondary}
-            accessibilityLabel="Adresse email"
-          />
+          {/* FORM */}
+          <View style={styles.form}>
+            <Field
+              label="Email"
+              type="email"
+              icon="mail"
+              value={email}
+              onChangeText={setEmail}
+              placeholder="votre@email.com"
+              testID="login-email"
+            />
+            <Field
+              label="Mot de passe"
+              type="password"
+              icon="lock"
+              value={password}
+              onChangeText={setPassword}
+              placeholder="••••••••"
+              testID="login-password"
+            />
 
-          <Text style={styles.label}>Mot de passe</Text>
-          <TextInput
-            style={styles.input}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            placeholder="••••••••"
-            placeholderTextColor={Colors.textSecondary}
-            accessibilityLabel="Mot de passe"
-          />
+            {error ? (
+              <View style={styles.errorBanner} accessibilityRole="alert">
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            ) : null}
 
-          {error ? (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{error}</Text>
-            </View>
-          ) : null}
-
-          <TouchableOpacity
-            style={[styles.button, isLoading && styles.buttonDisabled]}
-            onPress={handleLogin}
-            disabled={isLoading}
-            accessibilityRole="button"
-            accessibilityLabel="Se connecter"
-          >
-            {isLoading ? (
-              <ActivityIndicator color={Colors.textOnPrimary} />
-            ) : (
-              <Text style={styles.buttonText}>Se connecter</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            <Btn
+              label={isLoading ? 'Connexion…' : 'Se connecter'}
+              onPress={handleLogin}
+              disabled={isLoading}
+              full
+              style={styles.submit}
+              testID="login-submit"
+            />
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.bg,
+  },
+  flex: {
+    flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.xxl,
+    padding: spacing.s20,
+    gap: spacing.s24,
   },
-  header: {
+  hero: {
+    overflow: 'hidden',
+    backgroundColor: colors.ink,
+    borderRadius: radius.cardXl,
+  },
+  heroSafe: {
+    width: '100%',
+  },
+  heroInner: {
     alignItems: 'center',
-    marginBottom: Spacing.xxl,
+    gap: spacing.s12,
+    paddingHorizontal: spacing.heroPadH,
+    paddingTop: spacing.s28,
+    paddingBottom: spacing.s28,
   },
-  title: {
-    fontSize: FontSize.xxxl,
-    fontWeight: FontWeight.bold,
-    color: Colors.primary,
-    letterSpacing: -0.5,
-    marginBottom: Spacing.xs,
-  },
-  subtitle: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.regular,
-    color: Colors.textSecondary,
+  tagline: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.eyebrow,
+    fontWeight: fontWeight.medium,
+    color: colors.white60,
     textAlign: 'center',
+    textTransform: 'uppercase',
+    letterSpacing: letterSpacing.eyebrow,
   },
   form: {
-    backgroundColor: Colors.backgroundCard,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.lg,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    gap: spacing.s16,
   },
-  label: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.medium,
-    color: Colors.textSecondary,
-    marginBottom: Spacing.xs,
-    marginTop: Spacing.sm,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  input: {
-    backgroundColor: Colors.background,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm + 4,
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.regular,
-    color: Colors.textPrimary,
-  },
-  errorContainer: {
-    backgroundColor: `${Colors.error}15`,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.sm,
-    marginTop: Spacing.md,
+  errorBanner: {
+    backgroundColor: colors.redLight,
+    borderRadius: radius.field,
+    paddingHorizontal: spacing.s12,
+    paddingVertical: spacing.s10,
   },
   errorText: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.regular,
-    color: Colors.error,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.medium,
+    color: colors.red,
     textAlign: 'center',
   },
-  button: {
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.button,
-    paddingVertical: Spacing.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: Spacing.lg,
-    minHeight: 50,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.textOnPrimary,
+  submit: {
+    marginTop: spacing.s4,
   },
 });

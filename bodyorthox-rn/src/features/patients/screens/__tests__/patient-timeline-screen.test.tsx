@@ -52,15 +52,10 @@ jest.mock("@react-navigation/native", () => ({
 }));
 
 const mockGetForPatient = jest.fn();
+const mockRepo = { getForPatient: mockGetForPatient };
 
-jest.mock("../../../capture/data/sqlite-analysis-repository", () => ({
-  SqliteAnalysisRepository: jest.fn().mockImplementation(() => ({
-    getForPatient: mockGetForPatient,
-  })),
-}));
-
-jest.mock("../../../../core/database/init", () => ({
-  getDatabase: () => ({}),
+jest.mock("../../../../shared/hooks/use-analysis-repository", () => ({
+  useAnalysisRepository: () => mockRepo,
 }));
 
 // --- Tests ---

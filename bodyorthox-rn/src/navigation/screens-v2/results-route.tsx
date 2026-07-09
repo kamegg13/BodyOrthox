@@ -9,7 +9,8 @@ import { ErrorWidget } from "../../shared/components/error-widget";
 import { useAnalysisRepository } from "../../shared/hooks/use-analysis-repository";
 import { useAsyncData } from "../../shared/hooks/use-async-data";
 import { usePatientsStore } from "../../features/patients/store/patients-store";
-import { calculateBilateralAngles } from "../../features/capture/data/angle-calculator";
+import { patientDisplayName } from "../../features/patients/domain/patient";
+import { calculateBilateralAngles, classifyHKA } from "../../features/capture/data/angle-calculator";
 import type { PoseLandmarks, BilateralAngles } from "../../features/capture/data/angle-calculator";
 import { composeSkeletonImage } from "../../features/capture/data/skeleton-canvas";
 import type { Analysis } from "../../features/capture/domain/analysis";
@@ -59,7 +60,7 @@ export function ResultsRoute() {
 
   const data = useMemo<ResultsData | null>(() => {
     if (!analysis || !patient) return null;
-    return buildResultsData(analysis, patient.name, effectiveLandmarks, composedImage);
+    return buildResultsData(analysis, patientDisplayName(patient), effectiveLandmarks, composedImage);
   }, [analysis, patient, effectiveLandmarks, composedImage]);
 
   const handleBack = useCallback(() => {
@@ -128,8 +129,9 @@ function buildResultsData(
     analysis.bilateralAngles ??
     (fallbackLandmarks ? calculateBilateralAngles(fallbackLandmarks) : null);
 
-  const leftHKA = round(bilateral?.leftHKA ?? 180);
-  const rightHKA = round(bilateral?.rightHKA ?? 180);
+  // null = angle non mesurable (jamais présenté comme une valeur normale)
+  const leftHKA = hkaValueOrNull(bilateral?.leftHKA);
+  const rightHKA = hkaValueOrNull(bilateral?.rightHKA);
   const norms = { hka: 180, shoulder: 0, pelvis: 5, head: 0, spine: 10 };
 
   const hka = {
@@ -165,15 +167,28 @@ function buildResultsData(
 function measure(
   key: string,
   label: string,
-  value: number,
+  value: number | null,
   norm: number,
   unit: "°" | "mm",
 ): AngleMeasurement {
   return { key, label, value, norm, unit };
 }
 
-function severityFromAnalysis(leftHKA: number, rightHKA: number): "normal" | "moderate" | "severe" {
-  const worst = Math.max(Math.abs(180 - leftHKA), Math.abs(180 - rightHKA));
+/** Rounded HKA value, or null when the angle could not be measured (0 / non-finite). */
+function hkaValueOrNull(value: number | undefined): number | null {
+  if (value === undefined || classifyHKA(value) === "unavailable") return null;
+  return round(value);
+}
+
+function severityFromAnalysis(
+  leftHKA: number | null,
+  rightHKA: number | null,
+): "normal" | "moderate" | "severe" | "unavailable" {
+  const deltas = [leftHKA, rightHKA]
+    .filter((v): v is number => v !== null)
+    .map((v) => Math.abs(180 - v));
+  if (deltas.length === 0) return "unavailable";
+  const worst = Math.max(...deltas);
   if (worst < 2) return "normal";
   if (worst < 6) return "moderate";
   return "severe";
@@ -184,14 +199,16 @@ function round(value: number): number {
 }
 
 function formatShareText(d: ResultsData): string {
+  const fmt = (m: AngleMeasurement): string =>
+    m.value === null ? "—" : `${m.value}${m.unit}`;
   const lines = [
     `Patient : ${d.patientName}`,
     `Date : ${d.date}`,
     `Severite : ${d.severity}`,
-    `HKA gauche : ${d.hka.left.value}°  (norme ${d.hka.left.norm}°)`,
-    `HKA droit : ${d.hka.right.value}°  (norme ${d.hka.right.norm}°)`,
+    `HKA gauche : ${fmt(d.hka.left)}  (norme ${d.hka.left.norm}°)`,
+    `HKA droit : ${fmt(d.hka.right)}  (norme ${d.hka.right.norm}°)`,
     "",
-    ...d.postural.map((m) => `${m.label} : ${m.value}${m.unit}  (norme ${m.norm}${m.unit})`),
+    ...d.postural.map((m) => `${m.label} : ${fmt(m)}  (norme ${m.norm}${m.unit})`),
   ];
   return lines.join("\n");
 }

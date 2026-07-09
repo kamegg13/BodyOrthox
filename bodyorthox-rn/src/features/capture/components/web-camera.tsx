@@ -6,9 +6,9 @@ import React, {
   forwardRef,
   useCallback,
 } from "react";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
-import { Colors } from "../../../shared/design-system/colors";
-import { Spacing } from "../../../shared/design-system/spacing";
+import { Platform, StyleSheet, Text, View } from "react-native";
+import { Btn } from "../../../components/Btn";
+import { colors, fonts, spacing } from "../../../theme/tokens";
 
 export interface WebCameraRef {
   takePhoto: () => string | null;
@@ -124,9 +124,12 @@ export const WebCamera = forwardRef<WebCameraRef, WebCameraProps>(
         <View style={[StyleSheet.absoluteFill, styles.errorContainer]}>
           <Text style={styles.errorIcon}>🚫</Text>
           <Text style={styles.errorText}>{error}</Text>
-          <Pressable onPress={handleRetry} style={styles.retryButton}>
-            <Text style={styles.retryText}>Réessayer</Text>
-          </Pressable>
+          <Btn
+            label="Réessayer"
+            onPress={handleRetry}
+            full={false}
+            style={styles.retryButton}
+          />
         </View>
       );
     }
@@ -142,32 +145,25 @@ export const WebCamera = forwardRef<WebCameraRef, WebCameraProps>(
 );
 
 const styles = StyleSheet.create({
+  // Noir instrument (cohérent avec l'écran de capture), pas un gris ad hoc.
   errorContainer: {
-    backgroundColor: Colors.darkGrey,
+    backgroundColor: colors.captureBg,
     alignItems: "center",
     justifyContent: "center",
-    padding: Spacing.xl,
+    padding: spacing.s28,
   },
   errorIcon: {
     fontSize: 48,
-    marginBottom: Spacing.md,
+    marginBottom: spacing.s16,
   },
   errorText: {
-    color: Colors.error,
+    color: colors.red,
+    fontFamily: fonts.sans,
     fontSize: 16,
     textAlign: "center",
     lineHeight: 24,
   },
   retryButton: {
-    marginTop: Spacing.lg,
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.sm,
-    borderRadius: 8,
-    backgroundColor: Colors.primary,
-  },
-  retryText: {
-    color: Colors.white,
-    fontSize: 15,
-    fontWeight: "600",
+    marginTop: spacing.s24,
   },
 });

@@ -2,8 +2,18 @@ import { useCaptureStore } from "../capture-store";
 import { IAnalysisRepository } from "../../data/analysis-repository";
 import { Analysis } from "../../domain/analysis";
 import { INotificationService } from "../../../../core/notifications/notification-types";
+import { ApiError } from "../../../../core/api/api-client";
 
 jest.mock("uuid", () => ({ v4: () => "analysis-id-1" }));
+
+const sampleLandmarks = {
+  24: { x: 0.5, y: 0.3, visibility: 0.95 },
+  26: { x: 0.5, y: 0.6, visibility: 0.9 },
+  28: { x: 0.5, y: 0.9, visibility: 0.88 },
+  12: { x: 0.6, y: 0.2, visibility: 0.95 },
+  11: { x: 0.4, y: 0.2, visibility: 0.95 },
+  30: { x: 0.52, y: 0.93, visibility: 0.8 },
+};
 
 function createMockNotificationService(): INotificationService & {
   requestPermission: jest.Mock;

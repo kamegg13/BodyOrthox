@@ -1,4 +1,5 @@
 import { loadTokens, saveTokens } from '../auth/token-storage';
+import { parseRefreshedJwt } from '../auth/auth-response-guards';
 
 export const API_BASE =
   (process.env as any).EXPO_PUBLIC_API_URL ?? 'https://orthogenai.inconnu-elevator.ts.net/api';
@@ -16,8 +17,7 @@ async function doRefresh(refreshToken: string): Promise<string> {
     body: JSON.stringify({ refreshToken }),
   });
   if (!res.ok) throw new ApiError(res.status, 'Session expired');
-  const data = await res.json();
-  return data.jwt as string;
+  return parseRefreshedJwt(await res.json());
 }
 
 export async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {

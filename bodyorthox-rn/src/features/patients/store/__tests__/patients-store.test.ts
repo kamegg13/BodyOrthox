@@ -71,6 +71,32 @@ describe('usePatientsStore', () => {
       expect(usePatientsStore.getState().isLoading).toBe(false);
     });
 
+    it('ignores an out-of-order (stale) response from an earlier load', async () => {
+      // First load resolves LAST (slow "ab"), second load resolves FIRST
+      // (fast "abc"). The fresher second result must win.
+      let resolveSlow!: (v: Patient[]) => void;
+      const slow = new Promise<Patient[]>((r) => {
+        resolveSlow = r;
+      });
+      const getAll = jest
+        .fn()
+        .mockReturnValueOnce(slow)
+        .mockResolvedValueOnce([mockPatient2]);
+      const repo = createMockRepo({ getAll });
+      usePatientsStore.getState().setRepository(repo);
+
+      const first = usePatientsStore.getState().loadPatients();
+      const second = usePatientsStore.getState().loadPatients();
+      await second;
+      // Now let the earlier, slower request resolve out of order.
+      resolveSlow([mockPatient]);
+      await first;
+
+      const patients = usePatientsStore.getState().patients;
+      expect(patients).toHaveLength(1);
+      expect(patients[0].id).toBe('p2');
+    });
+
     it('does nothing when no repository set', async () => {
       // Reset repository by calling setRepository with null-like
       usePatientsStore.getState().setRepository(null as unknown as IPatientRepository);

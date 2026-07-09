@@ -56,12 +56,15 @@ export async function migrateLocalPatients(): Promise<void> {
         method: 'POST',
         body: JSON.stringify({ patients: payload }),
       });
-      console.log(`Migration: ${payload.length} patients transférés vers l'API`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Migration: ${payload.length} patients transférés vers l'API`);
+      }
     }
 
     localStorage.setItem(MIGRATION_KEY, 'true');
   } catch (e) {
-    // Silent — will retry on next login
-    console.warn('Migration silently failed:', e);
+    // Silent — will retry on next login. Log only the error message (never the
+    // patient payload) so no personal data leaks into logs (RGPD).
+    console.warn('Migration silently failed:', e instanceof Error ? e.message : 'unknown error');
   }
 }

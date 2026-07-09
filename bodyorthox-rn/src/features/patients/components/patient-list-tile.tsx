@@ -1,13 +1,10 @@
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Patient, patientAge } from "../domain/patient";
+import { Patient, patientAge, patientDisplayName } from "../domain/patient";
+import { Badge, type BadgeColor } from "../../../components/Badge";
 import { Colors } from "../../../shared/design-system/colors";
-import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
-import {
-  Typography,
-  FontSize,
-  FontWeight,
-} from "../../../shared/design-system/typography";
+import { Spacing } from "../../../shared/design-system/spacing";
+import { Typography } from "../../../shared/design-system/typography";
 import { CardShadow } from "../../../shared/design-system/card-styles";
 
 export type StatusBadge = "NORMAL" | "A_SURVEILLER" | "HORS_NORME" | null;
@@ -25,15 +22,23 @@ interface PatientListTileProps {
 function getBadgeStyle(badge: StatusBadge) {
   switch (badge) {
     case "NORMAL":
-      return { bg: Colors.success, label: "NORMAL" };
+      return { color: "green" as BadgeColor, label: "NORMAL" };
     case "A_SURVEILLER":
-      return { bg: Colors.warning, label: "A SURVEILLER" };
+      return { color: "amber" as BadgeColor, label: "A SURVEILLER" };
     case "HORS_NORME":
-      return { bg: Colors.error, label: "HORS NORME" };
+      return { color: "red" as BadgeColor, label: "HORS NORME" };
     default:
       return null;
   }
 }
+
+const ACCENT_BAR_COLOR: Record<BadgeColor, string> = {
+  navy: Colors.primary,
+  teal: Colors.primary,
+  green: Colors.success,
+  amber: Colors.warning,
+  red: Colors.error,
+};
 
 function formatRelativeShort(dateStr: string): string {
   const now = new Date();
@@ -58,7 +63,9 @@ export function PatientListTile({
   testID,
 }: PatientListTileProps) {
   const age = patientAge(patient);
-  const initials = patient.name
+  const ageLabel = age != null ? `${age} ans` : "Âge non renseigné";
+  const displayName = patientDisplayName(patient);
+  const initials = displayName
     .split(" ")
     .map((w) => w[0]?.toUpperCase() ?? "")
     .slice(0, 2)
@@ -66,40 +73,41 @@ export function PatientListTile({
 
   const badgeInfo = getBadgeStyle(statusBadge);
 
-  const accentColor = badgeInfo
-    ? badgeInfo.bg
-    : Colors.primary;
+  // Barre d'accent gauche : reprend la couleur sémantique du statut clinique
+  // (redondante avec le Badge, jamais seul porteur du sens) ; hairline neutre
+  // en l'absence de statut — le cyan n'est jamais une teinte décorative.
+  const accentBarColor = badgeInfo
+    ? ACCENT_BAR_COLOR[badgeInfo.color]
+    : Colors.border;
 
   return (
     <TouchableOpacity
       style={styles.container}
       onPress={() => onPress(patient)}
       accessibilityRole="button"
-      accessibilityLabel={`Patient ${patient.name}, ${age} ans`}
+      accessibilityLabel={`Patient ${displayName}, ${ageLabel}`}
       testID={testID ?? `patient-tile-${patient.id}`}
     >
       {/* Barre d'accent gauche */}
-      <View style={[styles.accentBar, { backgroundColor: accentColor }]} />
+      <View style={[styles.accentBar, { backgroundColor: accentBarColor }]} />
 
-      <View style={[styles.avatar, { backgroundColor: `${accentColor}20` }]}>
-        <Text style={[styles.avatarText, { color: accentColor }]}>{initials}</Text>
+      <View style={styles.avatar}>
+        <Text style={styles.avatarText}>{initials}</Text>
       </View>
 
       <View style={styles.info}>
         <View style={styles.nameRow}>
           <Text style={[Typography.bodyLarge, styles.name]} numberOfLines={1}>
-            {patient.name}
+            {displayName}
           </Text>
           {badgeInfo != null && (
-            <View style={[styles.badge, { backgroundColor: badgeInfo.bg }]}>
-              <Text style={styles.badgeText}>{badgeInfo.label}</Text>
-            </View>
+            <Badge label={badgeInfo.label} color={badgeInfo.color} />
           )}
         </View>
         <Text style={[Typography.bodySmall, styles.meta]} numberOfLines={1}>
           {lastAnalysisDate != null
             ? `${lastAnalysisType} · ${formatRelativeShort(lastAnalysisDate)}`
-            : `${age} ans`}
+            : ageLabel}
         </Text>
       </View>
 
@@ -125,14 +133,20 @@ const styles = StyleSheet.create({
     alignSelf: "stretch",
     borderRadius: 2,
   },
+  // Avatar neutre encre — la couleur ne code pas le statut clinique (porté
+  // par le Badge à côté du nom).
   avatar: {
     width: 46,
     height: 46,
     borderRadius: 23,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   avatarText: {
+    color: Colors.textPrimary,
     fontWeight: "700",
     fontSize: 17,
   },
@@ -149,17 +163,6 @@ const styles = StyleSheet.create({
   name: {
     color: Colors.textPrimary,
     fontWeight: "600",
-  },
-  badge: {
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
-    borderRadius: BorderRadius.sm,
-  },
-  badgeText: {
-    color: Colors.textOnPrimary,
-    fontSize: FontSize.xs,
-    fontWeight: FontWeight.bold,
-    letterSpacing: 0.3,
   },
   meta: {
     color: Colors.textSecondary,

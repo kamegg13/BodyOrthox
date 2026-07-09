@@ -1,4 +1,12 @@
-import { createPatient, updatePatient, patientAge, Patient, PainEntry } from "../patient";
+import {
+  createPatient,
+  updatePatient,
+  patientAge,
+  patientDisplayName,
+  patientBirthYear,
+  Patient,
+  PainEntry,
+} from "../patient";
 
 jest.mock("../../../../shared/utils/generate-id", () => ({
   generateId: () => "mock-uuid-1234",
@@ -24,25 +32,64 @@ describe("createPatient", () => {
     expect(patient.name).toBe("Jean Dupont");
   });
 
-  it("throws if name is empty", () => {
-    expect(() => createPatient({ ...validInput, name: "" })).toThrow();
+  // --- Minimisation RGPD : identité optionnelle ---
+
+  it("does NOT throw when name is missing (minimisation)", () => {
+    expect(() => createPatient({ dateOfBirth: "1990-05-15" })).not.toThrow();
   });
 
-  it("throws if name is only whitespace", () => {
-    expect(() => createPatient({ ...validInput, name: "   " })).toThrow();
+  it("does NOT throw when dateOfBirth is missing (minimisation)", () => {
+    expect(() => createPatient({ name: "Jean Dupont" })).not.toThrow();
   });
 
-  it("throws if dateOfBirth is missing", () => {
-    expect(() => createPatient({ ...validInput, dateOfBirth: "" })).toThrow();
+  it("does NOT throw when both name and dateOfBirth are missing", () => {
+    expect(() => createPatient({})).not.toThrow();
   });
 
-  it("throws if dateOfBirth is invalid", () => {
+  it("generates a default displayLabel from id when no name/displayLabel given", () => {
+    const patient = createPatient({});
+    // id = "mock-uuid-1234" → slice(0,6) = "mock-u"
+    expect(patient.displayLabel).toBe("Patient mock-u");
+    expect(patient.name).toBeUndefined();
+  });
+
+  it("keeps a provided displayLabel without requiring a name", () => {
+    const patient = createPatient({ displayLabel: "PAT-0427" });
+    expect(patient.displayLabel).toBe("PAT-0427");
+    expect(patient.name).toBeUndefined();
+  });
+
+  it("does not overwrite displayLabel when only a name is provided", () => {
+    const patient = createPatient({ name: "Jean Dupont" });
+    expect(patient.displayLabel).toBeUndefined();
+    expect(patient.name).toBe("Jean Dupont");
+  });
+
+  it("stores birthYear when provided", () => {
+    const patient = createPatient({ birthYear: 1990 });
+    expect(patient.birthYear).toBe(1990);
+    expect(patient.dateOfBirth).toBeUndefined();
+  });
+
+  it("stores consent fields when provided", () => {
+    const patient = createPatient({
+      name: "Jean",
+      consentGiven: true,
+      consentDate: "2026-01-01T00:00:00Z",
+    });
+    expect(patient.consentGiven).toBe(true);
+    expect(patient.consentDate).toBe("2026-01-01T00:00:00Z");
+  });
+
+  // --- Validation conservée uniquement quand la donnée est présente ---
+
+  it("throws if dateOfBirth is invalid (when provided)", () => {
     expect(() =>
       createPatient({ ...validInput, dateOfBirth: "not-a-date" }),
     ).toThrow();
   });
 
-  it("throws if dateOfBirth is in the future", () => {
+  it("throws if dateOfBirth is in the future (when provided)", () => {
     const future = new Date();
     future.setFullYear(future.getFullYear() + 1);
     expect(() =>
@@ -51,6 +98,49 @@ describe("createPatient", () => {
         dateOfBirth: future.toISOString().split("T")[0],
       }),
     ).toThrow();
+  });
+
+  it("throws for an implausibly old year (before 1900)", () => {
+    expect(() =>
+      createPatient({ ...validInput, dateOfBirth: "1200-01-01" }),
+    ).toThrow(/1900/);
+  });
+
+  it("throws for an implausibly old date of birth (age > 130 years)", () => {
+    const tooOld = new Date();
+    tooOld.setFullYear(tooOld.getFullYear() - 131);
+    expect(() =>
+      createPatient({
+        ...validInput,
+        dateOfBirth: tooOld.toISOString().split("T")[0],
+      }),
+    ).toThrow();
+  });
+
+  it("throws for a birthYear before 1900", () => {
+    expect(() =>
+      createPatient({ ...validInput, birthYear: 1200 }),
+    ).toThrow(/1900/);
+  });
+
+  it("throws for a birthYear in the future", () => {
+    expect(() =>
+      createPatient({
+        ...validInput,
+        birthYear: new Date().getFullYear() + 1,
+      }),
+    ).toThrow(/futur/);
+  });
+
+  it("throws for a non-integer birthYear", () => {
+    expect(() =>
+      createPatient({ ...validInput, birthYear: 1985.5 }),
+    ).toThrow(/invalide/);
+  });
+
+  it("accepts a plausible birthYear", () => {
+    const patient = createPatient({ ...validInput, birthYear: 1985 });
+    expect(patient.birthYear).toBe(1985);
   });
 
   it("stores morphological profile when provided", () => {
@@ -69,8 +159,52 @@ describe("createPatient", () => {
   });
 });
 
+describe("patientDisplayName", () => {
+  const base: Patient = {
+    id: "abcdef123456",
+    morphologicalProfile: null,
+    createdAt: "2024-01-01T00:00:00Z",
+  };
+
+  it("prefers displayLabel", () => {
+    expect(
+      patientDisplayName({ ...base, displayLabel: "PAT-0427", name: "Jean" }),
+    ).toBe("PAT-0427");
+  });
+
+  it("falls back to name when no displayLabel", () => {
+    expect(patientDisplayName({ ...base, name: "Jean Dupont" })).toBe(
+      "Jean Dupont",
+    );
+  });
+
+  it("falls back to a label derived from id when nothing else", () => {
+    expect(patientDisplayName(base)).toBe("Patient abcdef");
+  });
+});
+
+describe("patientBirthYear", () => {
+  const base: Patient = {
+    id: "p1",
+    morphologicalProfile: null,
+    createdAt: "2024-01-01T00:00:00Z",
+  };
+
+  it("prefers explicit birthYear", () => {
+    expect(patientBirthYear({ ...base, birthYear: 1990 })).toBe(1990);
+  });
+
+  it("derives year from dateOfBirth when no birthYear", () => {
+    expect(patientBirthYear({ ...base, dateOfBirth: "1985-06-15" })).toBe(1985);
+  });
+
+  it("returns undefined when neither is present", () => {
+    expect(patientBirthYear(base)).toBeUndefined();
+  });
+});
+
 describe("patientAge", () => {
-  it("calculates correct age", () => {
+  it("calculates correct age from dateOfBirth", () => {
     const today = new Date();
     const dob = new Date(
       today.getFullYear() - 35,
@@ -87,9 +221,28 @@ describe("patientAge", () => {
     expect(patientAge(patient)).toBe(35);
   });
 
+  it("approximates age from birthYear when no dateOfBirth", () => {
+    const year = new Date().getFullYear();
+    const patient: Patient = {
+      id: "1",
+      birthYear: year - 40,
+      morphologicalProfile: null,
+      createdAt: new Date().toISOString(),
+    };
+    expect(patientAge(patient)).toBe(40);
+  });
+
+  it("returns undefined when no birth information at all", () => {
+    const patient: Patient = {
+      id: "1",
+      morphologicalProfile: null,
+      createdAt: new Date().toISOString(),
+    };
+    expect(patientAge(patient)).toBeUndefined();
+  });
+
   it("handles birthday not yet this year", () => {
     const today = new Date();
-    // Birthday is tomorrow → not yet reached this year → age = years - 1
     const dob = new Date(
       today.getFullYear() - 40,
       today.getMonth(),
@@ -102,8 +255,6 @@ describe("patientAge", () => {
       morphologicalProfile: null,
       createdAt: new Date().toISOString(),
     };
-    // If today.getDate() + 1 overflows the month, Date auto-adjusts to next month
-    // so the birthday may have already passed. Calculate expected age dynamically.
     const dobDate = new Date(dob.toISOString().split("T")[0]);
     const ageYear = today.getFullYear() - dobDate.getFullYear();
     const birthdayThisYear = new Date(
@@ -137,6 +288,25 @@ describe("updatePatient", () => {
     expect(updated.name).toBe("Marie Dupont");
   });
 
+  it("updates displayLabel", () => {
+    const updated = updatePatient(base, { displayLabel: "PAT-0001" });
+    expect(updated.displayLabel).toBe("PAT-0001");
+  });
+
+  it("updates birthYear", () => {
+    const updated = updatePatient(base, { birthYear: 1988 });
+    expect(updated.birthYear).toBe(1988);
+  });
+
+  it("updates consent fields", () => {
+    const updated = updatePatient(base, {
+      consentGiven: true,
+      consentDate: "2026-01-01T00:00:00Z",
+    });
+    expect(updated.consentGiven).toBe(true);
+    expect(updated.consentDate).toBe("2026-01-01T00:00:00Z");
+  });
+
   it("updates dateOfBirth", () => {
     const updated = updatePatient(base, { dateOfBirth: "1985-06-15" });
     expect(updated.dateOfBirth).toBe("1985-06-15");
@@ -168,15 +338,11 @@ describe("updatePatient", () => {
     expect(updated.morphologicalProfile?.pains?.[0].location).toBe("knee");
   });
 
-  it("throws if name is empty string", () => {
-    expect(() => updatePatient(base, { name: "" })).toThrow();
-  });
-
   it("throws if dateOfBirth is in the future", () => {
     const future = new Date();
     future.setFullYear(future.getFullYear() + 1);
     expect(() =>
-      updatePatient(base, { dateOfBirth: future.toISOString().split("T")[0] })
+      updatePatient(base, { dateOfBirth: future.toISOString().split("T")[0] }),
     ).toThrow();
   });
 

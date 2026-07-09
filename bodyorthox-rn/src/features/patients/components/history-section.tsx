@@ -3,9 +3,9 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Analysis } from "../../capture/domain/analysis";
 import { PatientHistoryTile } from "./patient-history-tile";
 import { LoadingSpinner } from "../../../shared/components/loading-spinner";
+import { SectionLabel } from "../../../components/SectionLabel";
 import { Colors } from "../../../shared/design-system/colors";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
-import { Typography } from "../../../shared/design-system/typography";
 
 interface HistorySectionProps {
   analysesLoading: boolean;
@@ -25,9 +25,9 @@ export function HistorySection({
 }: HistorySectionProps) {
   return (
     <>
-      <Text style={[Typography.label, styles.sectionTitle]}>
+      <SectionLabel style={styles.sectionTitle}>
         Historique des analyses
-      </Text>
+      </SectionLabel>
 
       {analysesLoading && (
         <LoadingSpinner message="Chargement des analyses..." />
@@ -73,8 +73,9 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.lg,
   },
   emptyText: { color: Colors.textSecondary, fontSize: 15 },
+  // CTA primaire — encre pleine (le cyan n'est jamais une couleur de bouton).
   startAnalysisButton: {
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.textPrimary,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.md,

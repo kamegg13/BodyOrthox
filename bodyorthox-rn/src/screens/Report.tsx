@@ -1,15 +1,31 @@
 import React from "react";
 import { Image, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Badge, Btn, Gradient, Icon, Logo, NavBar } from "../components";
-import { colors, fonts, fontSize, fontWeight, gradients, shadows, spacing } from "../theme/tokens";
+import { AngleScale, Badge, Btn, Icon, Logo, NavBar } from "../components";
+import {
+  colors,
+  fonts,
+  fontSize,
+  fontWeight,
+  letterSpacing,
+  shadows,
+  spacing,
+} from "../theme/tokens";
 
 export interface ReportRow {
   readonly label: string;
   readonly value: string;
   readonly norm: string;
   readonly delta: string;
-  readonly severity: "normal" | "moderate" | "severe";
+  readonly severity: "normal" | "moderate" | "severe" | "unavailable";
+  /**
+   * Mesure brute (non formatée) et plage de référence pour le rendu d'un
+   * `AngleScale` sous la ligne. Réservé aux lignes HKA — absent pour les
+   * autres angles. `angleValue` null ⇒ pas de curseur (mesure indisponible).
+   */
+  readonly angleValue?: number | null;
+  readonly angleRefMin?: number;
+  readonly angleRefMax?: number;
 }
 
 export interface ReportData {
@@ -20,7 +36,7 @@ export interface ReportData {
   readonly practitioner: string;
   readonly practitionerId: string;
   readonly severityLabel: string;
-  readonly severityColor: "green" | "amber" | "red";
+  readonly severityColor: "green" | "amber" | "red" | "navy";
   readonly rows: readonly ReportRow[];
   readonly capturedImageUrl?: string;
 }
@@ -54,12 +70,12 @@ export function Report({ data, onBack, onShare, onDownload, onSend }: ReportProp
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.card}>
-          <Gradient gradient={gradients.reportHeader} style={styles.cardHeader}>
+          <View style={styles.cardHeader}>
             <View style={styles.cardHeaderInner}>
               <Logo size={20} light />
               <Text style={styles.reportNumber}>{data.number}</Text>
             </View>
-          </Gradient>
+          </View>
 
           <View style={styles.section}>
             <View style={styles.patientRow}>
@@ -110,7 +126,7 @@ export function Report({ data, onBack, onShare, onDownload, onSend }: ReportProp
               <Text style={[styles.thNum, { width: 56 }]}>Δ</Text>
             </View>
             {data.rows.map((row, i) => (
-              <ReportRowView key={i} row={row} />
+              <ReportRowView key={i} row={row} index={i} />
             ))}
           </View>
 
@@ -121,7 +137,7 @@ export function Report({ data, onBack, onShare, onDownload, onSend }: ReportProp
             <View style={styles.footer}>
               <View style={styles.footerLeft}>
                 <View style={styles.footerAvatar}>
-                  <Icon name="user" size={12} color={colors.navyMid} />
+                  <Icon name="user" size={12} color={colors.textSecond} />
                 </View>
                 <Text style={styles.footerName}>{data.practitioner}</Text>
               </View>
@@ -145,25 +161,46 @@ export function Report({ data, onBack, onShare, onDownload, onSend }: ReportProp
   );
 }
 
-function ReportRowView({ row }: { row: ReportRow }) {
+function ReportRowView({ row, index }: { row: ReportRow; index: number }) {
   const sevColor =
-    row.severity === "normal" ? colors.green : row.severity === "moderate" ? colors.amber : colors.red;
+    row.severity === "unavailable"
+      ? colors.textMuted
+      : row.severity === "normal"
+      ? colors.green
+      : row.severity === "moderate"
+      ? colors.amber
+      : colors.red;
   const sevBg =
-    row.severity === "normal"
+    row.severity === "unavailable"
+      ? colors.bgSubtle
+      : row.severity === "normal"
       ? colors.greenLight
       : row.severity === "moderate"
       ? colors.amberLight
       : colors.redLight;
+  const hasScale = row.angleRefMin !== undefined && row.angleRefMax !== undefined;
   return (
-    <View style={styles.tableRow}>
-      <Text style={[styles.tdLabel, { flex: 1 }]} numberOfLines={1}>
-        {row.label}
-      </Text>
-      <Text style={[styles.tdValue, { width: 52 }]}>{row.value}</Text>
-      <Text style={[styles.tdNorm, { width: 52 }]}>{row.norm}</Text>
-      <View style={[styles.deltaPill, { width: 56, backgroundColor: sevBg }]}>
-        <Text style={[styles.deltaText, { color: sevColor }]}>{row.delta}</Text>
+    <View style={styles.tableRowGroup}>
+      <View style={styles.tableRow}>
+        <Text style={[styles.tdLabel, { flex: 1 }]} numberOfLines={1}>
+          {row.label}
+        </Text>
+        <Text style={[styles.tdValue, { width: 52 }]}>{row.value}</Text>
+        <Text style={[styles.tdNorm, { width: 52 }]}>{row.norm}</Text>
+        <View style={[styles.deltaPill, { width: 56, backgroundColor: sevBg }]}>
+          <Text style={[styles.deltaText, { color: sevColor }]}>{row.delta}</Text>
+        </View>
       </View>
+      {hasScale ? (
+        <AngleScale
+          value={row.angleValue ?? null}
+          refMin={row.angleRefMin}
+          refMax={row.angleRefMax}
+          compact
+          style={styles.rowScale}
+          testID={`angle-scale-report-row-${index}`}
+        />
+      ) : null}
     </View>
   );
 }
@@ -186,7 +223,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     ...shadows.md,
   },
-  cardHeader: { paddingVertical: 0 },
+  cardHeader: { paddingVertical: 0, backgroundColor: colors.ink },
   cardHeaderInner: {
     flexDirection: "row",
     alignItems: "center",
@@ -213,9 +250,9 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   title: {
-    fontFamily: fonts.sans,
+    fontFamily: fonts.display,
     fontSize: fontSize.body,
-    fontWeight: fontWeight.extraBold,
+    fontWeight: fontWeight.bold,
     color: colors.textPrimary,
   },
   subline: {
@@ -229,7 +266,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.eyebrow,
     fontWeight: fontWeight.bold,
     color: colors.textMuted,
-    letterSpacing: 0.07 * fontSize.eyebrow,
+    letterSpacing: letterSpacing.eyebrow,
     textTransform: "uppercase",
     marginBottom: 8,
   },
@@ -252,7 +289,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     paddingHorizontal: spacing.s12,
     paddingVertical: 6,
-    backgroundColor: "rgba(12,31,53,0.55)",
+    backgroundColor: "rgba(16,16,18,0.55)",
   },
   captureCaptionLight: {
     fontFamily: fonts.sans,
@@ -278,7 +315,7 @@ const styles = StyleSheet.create({
     fontSize: 9.5,
     fontWeight: fontWeight.bold,
     color: colors.textMuted,
-    letterSpacing: 0.5,
+    letterSpacing: letterSpacing.label,
     textTransform: "uppercase",
   },
   thNum: {
@@ -286,17 +323,23 @@ const styles = StyleSheet.create({
     fontSize: 9.5,
     fontWeight: fontWeight.bold,
     color: colors.textMuted,
-    letterSpacing: 0.5,
+    letterSpacing: letterSpacing.label,
     textTransform: "uppercase",
     textAlign: "right",
+  },
+  tableRowGroup: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.bgSubtle,
   },
   tableRow: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 8,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.bgSubtle,
     gap: 4,
+  },
+  rowScale: {
+    marginTop: -2,
+    marginBottom: 6,
   },
   tdLabel: {
     fontFamily: fonts.sans,
@@ -352,7 +395,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: colors.navyLight,
+    backgroundColor: colors.bgSubtle,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -393,8 +436,26 @@ export const SAMPLE_REPORT: ReportData = {
   severityLabel: "Modéré",
   severityColor: "amber",
   rows: [
-    { label: "HKA gauche", value: "173°", norm: "180°", delta: "−7°", severity: "severe" },
-    { label: "HKA droit",  value: "177°", norm: "180°", delta: "−3°", severity: "moderate" },
+    {
+      label: "HKA gauche",
+      value: "173°",
+      norm: "180°",
+      delta: "−7°",
+      severity: "severe",
+      angleValue: 173,
+      angleRefMin: 175,
+      angleRefMax: 180,
+    },
+    {
+      label: "HKA droit",
+      value: "177°",
+      norm: "180°",
+      delta: "−3°",
+      severity: "moderate",
+      angleValue: 177,
+      angleRefMin: 175,
+      angleRefMax: 180,
+    },
     { label: "Inclin. épaules", value: "4°", norm: "0°", delta: "+4°", severity: "moderate" },
     { label: "Inclin. bassin",  value: "9°", norm: "5°", delta: "+4°", severity: "moderate" },
     { label: "Cobb rachis",     value: "18°", norm: "10°", delta: "+8°", severity: "severe" },

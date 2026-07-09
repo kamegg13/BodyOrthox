@@ -4,7 +4,7 @@ import {
   classifyHKA,
   hkaLabel,
 } from "../../capture/data/angle-calculator";
-import { Patient } from "../../patients/domain/patient";
+import { Patient, patientDisplayName } from "../../patients/domain/patient";
 import { LEGAL_CONSTANTS } from "../../../core/legal/legal-constants";
 
 // ─── HTML escaping ────────────────────────────────────────────
@@ -53,7 +53,7 @@ export function buildReportData(
   options: ReportOptions = {},
 ): ReportData {
   return {
-    patientName: patient.name,
+    patientName: patientDisplayName(patient),
     analysisDate: analysis.createdAt,
     photoBase64: options.photoBase64,
     bilateral: analysis.bilateralAngles,
@@ -64,109 +64,64 @@ export function buildReportData(
 
 // ─── Helpers ──────────────────────────────────────────────────
 
-/** Print-safe color: in-range green, ≤5° off orange, >5° off red, zero grey */
+/** Print-safe color: in-range green, ≤5° off orange, >5° off red, unmeasured grey */
 function angleColor(value: number, min: number, max: number): string {
-  if (value === 0) return "#888888";
+  if (!Number.isFinite(value) || value === 0) return "#888888";
   if (value >= min && value <= max) return "#1a7f37";
   const dev = value < min ? min - value : value - max;
   return dev <= 5 ? "#b45309" : "#c0392b";
 }
 
 function fmt(v: number): string {
-  return v === 0 ? "—" : `${v.toFixed(1)}°`;
+  return !Number.isFinite(v) || v === 0 ? "—" : `${v.toFixed(1)}°`;
 }
 
-// ─── Clinical interpretation ──────────────────────────────────
+// ─── Factual geometric statement ──────────────────────
+
+const REFERENCE_RANGE = "175–180°";
+
+/**
+ * Build a purely factual, geometric statement for one HKA side:
+ * reports the measured angle and its signed deviation from the
+ * 175°–180° reference range. No clinical judgement.
+ */
+function describeHkaSide(side: string, hka: number): string {
+  const klass = classifyHKA(hka);
+
+  if (klass === "unavailable") {
+    return `${side}\u00a0: donnée non disponible (angle non mesurable).`;
+  }
+
+  if (klass === "in_range") {
+    return `${side}\u00a0: ${hka.toFixed(1)}° — dans la plage de référence (${REFERENCE_RANGE}).`;
+  }
+
+  const deviation = klass === "below" ? hka - 175 : hka - 180;
+  const position =
+    klass === "below"
+      ? "sous la plage de référence"
+      : "au-dessus de la plage de référence";
+  const sign = deviation >= 0 ? "+" : "−";
+  return `${side}\u00a0: ${hka.toFixed(1)}° — ${position} (${REFERENCE_RANGE}), écart ${sign}${Math.abs(deviation).toFixed(1)}°.`;
+}
 
 export function generateInterpretation(bilateral?: BilateralAngles): string {
   if (!bilateral) {
-    return "Aucune donnée angulaire disponible pour l'interprétation.";
+    return "Aucune donnée angulaire disponible.";
   }
 
   const { leftHKA, rightHKA } = bilateral;
   const leftClass = classifyHKA(leftHKA);
   const rightClass = classifyHKA(rightHKA);
 
-  const lines: string[] = [];
-
-  // Per-side description
   if (leftClass === "unavailable" && rightClass === "unavailable") {
-    return "Les angles HKA n'ont pas pu être calculés pour les deux membres inférieurs.";
+    return "Les angles HKA n'ont pas pu être mesurés pour les deux membres inférieurs.";
   }
 
-  if (leftClass !== "unavailable") {
-    if (leftClass === "normal") {
-      lines.push(
-        `Côté gauche\u00a0: alignement mécanique dans les limites physiologiques (HKA\u00a0= ${leftHKA.toFixed(1)}°).`,
-      );
-    } else {
-      const label = hkaLabel(leftHKA);
-      const norm = leftHKA < 175 ? 175 : 180;
-      const deviation = Math.abs(leftHKA - norm).toFixed(1);
-      const direction = leftHKA < 175 ? "inférieure" : "supérieure";
-      lines.push(
-        `Côté gauche\u00a0: ${label} (HKA\u00a0= ${leftHKA.toFixed(1)}°, déviation de ${deviation}° par rapport à la limite ${direction} de la norme de ${norm}°).`,
-      );
-    }
-  } else {
-    lines.push("Côté gauche\u00a0: donnée non disponible.");
-  }
-
-  if (rightClass !== "unavailable") {
-    if (rightClass === "normal") {
-      lines.push(
-        `Côté droit\u00a0: alignement mécanique dans les limites physiologiques (HKA\u00a0= ${rightHKA.toFixed(1)}°).`,
-      );
-    } else {
-      const label = hkaLabel(rightHKA);
-      const norm = rightHKA < 175 ? 175 : 180;
-      const deviation = Math.abs(rightHKA - norm).toFixed(1);
-      const direction = rightHKA < 175 ? "inférieure" : "supérieure";
-      lines.push(
-        `Côté droit\u00a0: ${label} (HKA\u00a0= ${rightHKA.toFixed(1)}°, déviation de ${deviation}° par rapport à la limite ${direction} de la norme de ${norm}°).`,
-      );
-    }
-  } else {
-    lines.push("Côté droit\u00a0: donnée non disponible.");
-  }
-
-  // Global conclusion
-  const bothNormal = leftClass === "normal" && rightClass === "normal";
-  const bothAbnormal =
-    leftClass !== "normal" &&
-    leftClass !== "unavailable" &&
-    rightClass !== "normal" &&
-    rightClass !== "unavailable";
-  const leftAbnormal =
-    leftClass !== "normal" && leftClass !== "unavailable" && rightClass === "normal";
-  const rightAbnormal =
-    rightClass !== "normal" && rightClass !== "unavailable" && leftClass === "normal";
-
-  if (bothNormal) {
-    lines.push(
-      "Conclusion\u00a0: L'analyse ne révèle pas d'anomalie significative de l'axe mécanique des membres inférieurs.",
-    );
-  } else if (bothAbnormal) {
-    const leftLabel = hkaLabel(leftHKA);
-    const rightLabel = hkaLabel(rightHKA);
-    lines.push(
-      `Conclusion\u00a0: Des déviations bilatérales sont identifiées — ${leftLabel} à gauche, ${rightLabel} à droite. Une évaluation clinique approfondie est recommandée.`,
-    );
-  } else if (leftAbnormal) {
-    const label = hkaLabel(leftHKA);
-    lines.push(
-      `Conclusion\u00a0: Une déviation en ${label.toLowerCase()} est observée du côté gauche. Le côté droit présente un alignement normal.`,
-    );
-  } else if (rightAbnormal) {
-    const label = hkaLabel(rightHKA);
-    lines.push(
-      `Conclusion\u00a0: Une déviation en ${label.toLowerCase()} est observée du côté droit. Le côté gauche présente un alignement normal.`,
-    );
-  } else {
-    lines.push(
-      "Conclusion\u00a0: Données partielles — une évaluation complémentaire peut être nécessaire.",
-    );
-  }
+  const lines: string[] = [
+    describeHkaSide("HKA gauche", leftHKA),
+    describeHkaSide("HKA droit", rightHKA),
+  ];
 
   return lines.join(" ");
 }
@@ -237,7 +192,7 @@ export function generateReportHtml(data: ReportData): string {
             <td class="col-value" style="color:${hkaRightColor};font-weight:600">${fmt(b.rightHKA)}</td>
           </tr>
           <tr class="row-alt">
-            <td class="col-measure">Classification HKA</td>
+            <td class="col-measure">Écart à la plage de référence</td>
             <td class="col-value" style="color:${hkaLeftColor}">${leftClassLabel}</td>
             <td class="col-norm">—</td>
             <td class="col-value" style="color:${hkaRightColor}">${rightClassLabel}</td>
@@ -253,7 +208,7 @@ export function generateReportHtml(data: ReportData): string {
   // ── Clinical interpretation ──
   const interpretation = generateInterpretation(data.bilateral);
   const interpretationSection = `<div class="section" style="page-break-inside:avoid">
-    <h2 class="section-title">Interprétation clinique</h2>
+    <h2 class="section-title">Lecture des mesures</h2>
     <p class="interpretation-text">${escapeHtml(interpretation)}</p>
   </div>`;
 

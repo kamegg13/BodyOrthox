@@ -1,7 +1,9 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Colors } from "../../../shared/design-system/colors";
-import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
+import { Spacing } from "../../../shared/design-system/spacing";
+import { Shadows } from "../../../shared/design-system/card-styles";
+import { colors, fonts, fontSize, letterSpacing, radius } from "../../../theme/tokens";
 import type { HkaStatus } from "./hka-angle-card";
 
 interface NormsReferenceCardProps {
@@ -18,22 +20,22 @@ interface NormRow {
 
 const NORM_ROWS: readonly NormRow[] = [
   {
-    label: "Neutre",
+    label: "Dans la plage",
     range: "175–180°",
     color: Colors.success,
-    status: "neutre",
+    status: "in_range",
   },
   {
-    label: "Genu varum",
+    label: "Sous la plage",
     range: "< 175°",
     color: Colors.warning,
-    status: "genu_varum",
+    status: "below",
   },
   {
-    label: "Genu valgum",
+    label: "Au-dessus de la plage",
     range: "> 180°",
     color: Colors.info,
-    status: "genu_valgum",
+    status: "above",
   },
 ];
 
@@ -57,18 +59,6 @@ export function NormsReferenceCard({
                   {row.label} : {row.range}
                 </Text>
               </View>
-              {isActive && (
-                <View
-                  style={[
-                    styles.patientBadge,
-                    { backgroundColor: `${row.color}20` },
-                  ]}
-                >
-                  <Text style={[styles.patientBadgeText, { color: row.color }]}>
-                    Patient
-                  </Text>
-                </View>
-              )}
             </View>
           );
         })}
@@ -80,18 +70,19 @@ export function NormsReferenceCard({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.backgroundCard,
-    borderRadius: BorderRadius.lg,
+    borderRadius: radius.cardLg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
     padding: Spacing.lg,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+    ...Shadows.sm,
   },
   title: {
-    fontSize: 15,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.eyebrow,
     fontWeight: "600",
-    color: Colors.textPrimary,
+    color: colors.textMuted,
+    letterSpacing: letterSpacing.eyebrow,
+    textTransform: "uppercase",
     marginBottom: Spacing.md,
   },
   rows: {
@@ -114,20 +105,12 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   rowLabel: {
+    fontFamily: fonts.mono,
     fontSize: 14,
     color: Colors.textSecondary,
   },
   rowLabelActive: {
     color: Colors.textPrimary,
-    fontWeight: "600",
-  },
-  patientBadge: {
-    borderRadius: BorderRadius.full,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
-  },
-  patientBadgeText: {
-    fontSize: 12,
     fontWeight: "600",
   },
 });

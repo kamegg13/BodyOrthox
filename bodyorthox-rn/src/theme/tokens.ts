@@ -1,61 +1,85 @@
 /**
- * BodyOrthox – Design Tokens (v2)
- * Source : design_handoff_bodyorthox/README.md
+ * BodyOrthox – Design Tokens (v3 « Instrument »)
+ * Source : DESIGN_DIRECTION.md (direction artistique).
+ *
+ * Identité : instrument de mesure numérique — fond papier, encre, hairlines,
+ * un seul accent cyan chirurgical, données en monospace. Plat et tracé.
  *
  * Adaptation React Native :
- * - les gradients sont stockés sous forme de tuples [from, to, ...] et
- *   rendus via le composant <Gradient> (SVG) ou via une vue plate.
- * - les ombres CSS multi-couches sont décomposées en (iOS shadow*)
- *   + (Android elevation).
+ * - les gradients historiques sont conservés en API mais rendus quasi plats ;
+ * - les ombres sont réduites au minimum (hiérarchie par le trait, pas l'ombre).
+ *
+ * Clés legacy (navy, navyMid, teal…) : ALIAS vers les valeurs Instrument pour
+ * la rétro-compatibilité — ne pas les utiliser dans du code nouveau.
  */
 import { Platform, type ViewStyle, type TextStyle } from "react-native";
 
+// Valeurs canoniques « Instrument »
+const INK = "#101012";
+const INK_SOFT = "#16161B";
+const ACCENT = "#0891B2";
+const ACCENT_DEEP = "#0E7490";
+const ACCENT_LIGHT = "#E0F2F7";
+const ACCENT_SOFT = "#BAE6F0";
+
 export const colors = {
-  // Backgrounds
-  bg: "#F4F7FB",
+  // Backgrounds — papier chaud
+  bg: "#FAFAF8",
   bgCard: "#FFFFFF",
-  bgSubtle: "#EDF1F7",
-  bgHover: "#F0F4FA",
+  bgSubtle: "#F3F2EE",
+  bgHover: "#F0EFEA",
 
-  // Borders
-  border: "rgba(15,40,80,0.10)",
-  borderMid: "rgba(15,40,80,0.16)",
+  // Borders — hairlines encre
+  border: "rgba(16,16,18,0.14)",
+  borderMid: "rgba(16,16,18,0.26)",
 
-  // Brand — deep navy primary
-  navy: "#0C2340",
-  navyMid: "#1A4FD6",
-  navyLight: "#EAF0FE",
-  navySoft: "#D4E2FD",
+  // Encre & accent (canoniques)
+  ink: INK,
+  inkSoft: INK_SOFT,
+  accent: ACCENT,
+  accentDeep: ACCENT_DEEP,
+  accentLight: ACCENT_LIGHT,
+  accentSoft: ACCENT_SOFT,
 
-  // Accent — clinical teal
-  teal: "#0D9080",
-  tealLight: "#E0F5F3",
-  tealSoft: "#B2E8E2",
+  // Legacy « navy » → encre/accent (alias rétro-compat)
+  navy: INK,
+  navyMid: ACCENT,
+  navyLight: ACCENT_LIGHT,
+  navySoft: ACCENT_SOFT,
 
-  // Semantic
+  // Legacy « teal » → accent unique (alias rétro-compat)
+  teal: ACCENT,
+  tealLight: ACCENT_LIGHT,
+  tealSoft: ACCENT_SOFT,
+
+  // Semantic — mesures (jamais portées par la couleur seule)
   amber: "#92510A",
+  // Écart léger (mild) : ambre plus clair que `amber` (réservé à modéré),
+  // AA sur fond clair (4.6:1 sur #FFFFFF).
+  amberMid: "#B45309",
   amberLight: "#FEF3C7",
   amberSoft: "#FDE68A",
   red: "#B91C1C",
   redLight: "#FEE2E2",
-  green: "#0A6E52",
-  greenLight: "#DCFCE7",
+  green: "#047857",
+  greenLight: "#ECFDF5",
 
-  // Text
-  textPrimary: "#0C1F35",
-  textSecond: "#3D5470",
-  textMuted: "#7F96B2",
+  // Text — encre sur papier
+  textPrimary: INK,
+  textSecond: "#46464F",
+  // AA : 4.9:1 sur blanc, 4.7:1 sur bg #FAFAF8.
+  textMuted: "#6E6E78",
   textInverse: "#FFFFFF",
 
   white: "#FFFFFF",
   black: "#000000",
 
-  // Capture screen
-  captureBg: "#08111E",
-  captureViewfinderFrom: "#0E1C2F",
-  captureViewfinderTo: "#162840",
+  // Capture screen — noir instrument, hairlines blanches
+  captureBg: "#0C0C0E",
+  captureViewfinderFrom: "#101014",
+  captureViewfinderTo: "#16161B",
 
-  // Whites with alpha (for overlays on navy)
+  // Whites with alpha (overlays sur fonds sombres)
   white06: "rgba(255,255,255,0.06)",
   white07: "rgba(255,255,255,0.07)",
   white08: "rgba(255,255,255,0.08)",
@@ -70,8 +94,8 @@ export const colors = {
 } as const;
 
 /**
- * Gradients — stockés en tuples [angle, ...stops].
- * `<Gradient>` (composant) sait rendre cette structure via react-native-svg.
+ * Gradients — API conservée, rendu « Instrument » : surfaces quasi plates
+ * (duo très resserré), plus aucun dégradé décoratif marqué.
  */
 export type GradientStop = readonly [color: string, offset: number];
 export interface Gradient {
@@ -83,52 +107,50 @@ export const gradients = {
   primaryBtn: {
     angle: 135,
     stops: [
-      ["#1A4FD6", 0],
-      ["#1240B8", 1],
+      [INK_SOFT, 0],
+      [INK, 1],
     ],
   } satisfies Gradient,
   tealBtn: {
     angle: 135,
     stops: [
-      ["#0D9080", 0],
-      ["#0A7870", 1],
+      [ACCENT, 0],
+      [ACCENT_DEEP, 1],
     ],
   } satisfies Gradient,
   hero: {
     angle: 160,
     stops: [
-      ["#0C2340", 0],
-      ["#0A2550", 0.6],
-      ["#0B2E5E", 1],
+      [INK_SOFT, 0],
+      [INK, 1],
     ],
   } satisfies Gradient,
   tipBanner: {
     angle: 120,
     stops: [
-      ["#EAF0FE", 0],
-      ["#E0F5F3", 1],
+      ["#F3F2EE", 0],
+      [ACCENT_LIGHT, 1],
     ],
   } satisfies Gradient,
   reportHeader: {
     angle: 120,
     stops: [
-      ["#0C2340", 0],
-      ["#0A2550", 0.6],
-      ["#0B2E5E", 1],
+      [INK_SOFT, 0],
+      [INK, 1],
     ],
   } satisfies Gradient,
   viewfinder: {
     angle: 160,
     stops: [
-      ["#0E1C2F", 0],
-      ["#162840", 1],
+      ["#101014", 0],
+      ["#16161B", 1],
     ],
   } satisfies Gradient,
 } as const;
 
 /**
- * Shadows — décomposition iOS (shadow*) + Android (elevation).
- * Sur iOS on garde la couche la plus marquée des shadows multiples du mock.
+ * Shadows — quasi nulles : la hiérarchie vient des hairlines et de l'espace.
+ * On garde l'API (sm/md/lg/primary/teal/actionBar) avec des valeurs discrètes.
  */
 export const shadows: Record<
   "sm" | "md" | "lg" | "primary" | "teal" | "actionBar",
@@ -136,86 +158,93 @@ export const shadows: Record<
 > = {
   sm: Platform.select({
     ios: {
-      shadowColor: "#0C2340",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.06,
-      shadowRadius: 8,
+      shadowColor: INK,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.03,
+      shadowRadius: 4,
     },
-    android: { elevation: 2 },
+    android: { elevation: 1 },
     default: {},
   }) as ViewStyle,
   md: Platform.select({
     ios: {
-      shadowColor: "#0C2340",
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.1,
-      shadowRadius: 24,
+      shadowColor: INK,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 10,
     },
-    android: { elevation: 4 },
+    android: { elevation: 1 },
     default: {},
   }) as ViewStyle,
   lg: Platform.select({
     ios: {
-      shadowColor: "#0C2340",
-      shadowOffset: { width: 0, height: 16 },
-      shadowOpacity: 0.14,
-      shadowRadius: 40,
+      shadowColor: INK,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.05,
+      shadowRadius: 16,
     },
-    android: { elevation: 8 },
+    android: { elevation: 2 },
     default: {},
   }) as ViewStyle,
   primary: Platform.select({
     ios: {
-      shadowColor: "#1A4FD6",
+      shadowColor: INK,
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.35,
-      shadowRadius: 8,
+      shadowOpacity: 0.06,
+      shadowRadius: 6,
     },
-    android: { elevation: 4 },
+    android: { elevation: 2 },
     default: {},
   }) as ViewStyle,
   teal: Platform.select({
     ios: {
-      shadowColor: "#0D9080",
+      shadowColor: INK,
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.3,
-      shadowRadius: 8,
+      shadowOpacity: 0.06,
+      shadowRadius: 6,
     },
-    android: { elevation: 4 },
+    android: { elevation: 2 },
     default: {},
   }) as ViewStyle,
   actionBar: Platform.select({
     ios: {
-      shadowColor: "#0C2340",
-      shadowOffset: { width: 0, height: -4 },
-      shadowOpacity: 0.06,
-      shadowRadius: 16,
+      shadowColor: INK,
+      shadowOffset: { width: 0, height: -2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 10,
     },
-    android: { elevation: 6 },
+    android: { elevation: 3 },
     default: {},
   }) as ViewStyle,
 };
 
 /**
- * Typographie — DM Sans / DM Mono.
+ * Typographie — Space Grotesk (display) / système (corps) / IBM Plex Mono
+ * (toutes les données numériques : angles, écarts, IDs, dates techniques).
  *
- * Web : Google Fonts chargées via `<link>` dans `web/index.html`. On utilise
- *       les noms CSS standard, qui acceptent tous les poids sur une même
- *       famille (font-weight: 400/500/600/700/800).
- * Native : à embarquer dans `assets/fonts/` + `react-native.config.js`.
- *          En attendant, on retombe sur la police système.
+ * Web : Google Fonts chargées via `<link>` dans `web/index.html`.
+ * Native : fallback système assumé (pas de TTF bundlé pour l'instant).
  */
 export const fonts = {
-  sans: Platform.select({
-    web: '"DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-    ios: "DMSans-Regular",
-    android: "DMSans-Regular",
+  /** Titres, valeurs héro — Space Grotesk. */
+  display: Platform.select({
+    web: '"Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    ios: "SpaceGrotesk-Regular",
+    android: "SpaceGrotesk-Regular",
     default: "System",
   }) as string,
+  /** Corps de texte — pile système (lisibilité, zéro chargement). */
+  sans: Platform.select({
+    web: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    ios: "System",
+    android: "System",
+    default: "System",
+  }) as string,
+  /** Données chiffrées & techniques — IBM Plex Mono, tabulaire. */
   mono: Platform.select({
-    web: '"DM Mono", "SF Mono", Menlo, Consolas, monospace',
-    ios: "DMMono-Regular",
-    android: "DMMono-Regular",
+    web: '"IBM Plex Mono", "SF Mono", Menlo, Consolas, monospace',
+    ios: "IBMPlexMono",
+    android: "IBMPlexMono",
     default: "Menlo",
   }) as string,
 } as const;
@@ -225,10 +254,10 @@ export const fontWeight = {
   medium: "500",
   semiBold: "600",
   bold: "700",
-  extraBold: "800",
+  extraBold: "700",
 } as const satisfies Record<string, TextStyle["fontWeight"]>;
 
-/** Tailles de texte du handoff (rôles → px). */
+/** Tailles de texte par rôle. */
 export const fontSize = {
   // Page H1 (Patients title)
   h1: 22,
@@ -244,7 +273,7 @@ export const fontSize = {
   body: 14,
   bodyLg: 15,
   // Stat values
-  statLg: 30,
+  statLg: 32,
   statMd: 26,
   statSm: 14,
   // Caption / meta
@@ -257,7 +286,13 @@ export const fontSize = {
   monoMd: 12,
 } as const;
 
-/** Espacements ad-hoc utilisés par le handoff. */
+/** Lettrage des micro-labels uppercase (plaques d'instrument). */
+export const letterSpacing = {
+  eyebrow: 1.4,
+  label: 1.1,
+} as const;
+
+/** Espacements. */
 export const spacing = {
   s4: 4,
   s6: 6,
@@ -283,17 +318,17 @@ export const spacing = {
   heroPadV: 18,
 } as const;
 
-/** Border radius par rôle. */
+/** Border radius par rôle — plat et net. */
 export const radius = {
-  button: 13,
-  field: 12,
-  iconSm: 12,
-  cardSm: 14,
-  cardLg: 16,
-  cardXl: 18,
-  pill: 20,
-  chip: 20,
-  avatarLg: 18,
+  button: 8,
+  field: 8,
+  iconSm: 8,
+  cardSm: 10,
+  cardLg: 10,
+  cardXl: 12,
+  pill: 999,
+  chip: 999,
+  avatarLg: 10,
   shutterInner: 28,
   shutterOuter: 36,
 } as const;
@@ -318,6 +353,7 @@ export type Tokens = {
   fonts: typeof fonts;
   fontWeight: typeof fontWeight;
   fontSize: typeof fontSize;
+  letterSpacing: typeof letterSpacing;
   spacing: typeof spacing;
   radius: typeof radius;
   sizes: typeof sizes;
@@ -330,6 +366,7 @@ export const tokens: Tokens = {
   fonts,
   fontWeight,
   fontSize,
+  letterSpacing,
   spacing,
   radius,
   sizes,

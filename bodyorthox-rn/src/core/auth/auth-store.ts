@@ -41,10 +41,14 @@ export const useAuthStore = create<AuthState & AuthActions>()((set) => ({
   login: async (email, password) => {
     const { user } = await authService.login(email, password);
     set({ isAuthenticated: true, user });
-    // Fire-and-forget migration (ne bloque pas le login)
-    import('../../features/patients/data/migration').then(({ migrateLocalPatients }) => {
-      migrateLocalPatients();
-    }).catch(() => { /* ignore */ });
+    // Migration en arrière-plan (ne bloque pas le login). Une fois terminée, on
+    // rafraîchit la liste patients : sinon un chargement démarré avant la fin de
+    // la migration afficherait une liste incomplète (patients migrés manquants).
+    import('../../features/patients/data/migration')
+      .then(({ migrateLocalPatients }) => migrateLocalPatients())
+      .then(() => import('../../features/patients/store/patients-store'))
+      .then(({ usePatientsStore }) => usePatientsStore.getState().loadPatients())
+      .catch(() => { /* ignore — la migration réessaiera au prochain login */ });
   },
 
   logout: async () => {

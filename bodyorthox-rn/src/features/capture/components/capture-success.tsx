@@ -8,8 +8,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Colors } from "../../../shared/design-system/colors";
-import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
+import { Btn } from "../../../components/Btn";
+import { colors, fonts, fontWeight, radius, spacing } from "../../../theme/tokens";
 import { SkeletonOverlay } from "./skeleton-overlay";
 import type { PoseLandmarks, BilateralAngles } from "../data/angle-calculator";
 import {
@@ -26,6 +26,7 @@ import {
   type DisplayedImageLayout,
 } from "../../../shared/utils/image-dimensions";
 import type { AnatomicalValidation } from "../data/anatomical-validation";
+import { LEGAL_CONSTANTS } from "../../../core/legal/legal-constants";
 
 interface CaptureSuccessProps {
   capturedImageUrl: string | null;
@@ -303,15 +304,12 @@ export function CaptureSuccess({
       {/* Correction mode buttons */}
       {isCorrecting ? (
         <View style={styles.correctionButtons}>
-          <TouchableOpacity
-            style={styles.validateCorrectionButton}
+          <Btn
+            label="Valider les corrections"
+            variant="primary"
             onPress={handleValidateCorrection}
             testID="validate-correction-button"
-            accessibilityRole="button"
-            accessibilityLabel="Valider les corrections"
-          >
-            <Text style={styles.saveButtonText}>Valider les corrections</Text>
-          </TouchableOpacity>
+          />
           <TouchableOpacity
             style={styles.cancelCorrectionButton}
             onPress={handleCancelCorrection}
@@ -326,25 +324,20 @@ export function CaptureSuccess({
         <>
           {/* Correct points button — only on web where drag works */}
           {Platform.OS === "web" && (
-            <TouchableOpacity
-              style={styles.correctButton}
+            <Btn
+              label="Corriger les points"
+              variant="secondary"
               onPress={handleStartCorrection}
               testID="correct-points-button"
-              accessibilityRole="button"
-              accessibilityLabel="Corriger les points"
-            >
-              <Text style={styles.correctButtonText}>Corriger les points</Text>
-            </TouchableOpacity>
+            />
           )}
-          <TouchableOpacity
-            style={styles.saveButton}
+          <Btn
+            label="Sauvegarder l'analyse"
+            variant="primary"
             onPress={handleSave}
             testID="save-analysis-button"
-            accessibilityRole="button"
-            accessibilityLabel="Sauvegarder l'analyse"
-          >
-            <Text style={styles.saveButtonText}>Sauvegarder l'analyse</Text>
-          </TouchableOpacity>
+            style={styles.saveButton}
+          />
           <TouchableOpacity
             style={styles.discardButton}
             onPress={onDiscard}
@@ -355,174 +348,191 @@ export function CaptureSuccess({
           </TouchableOpacity>
         </>
       )}
+
+      {/* Non-DM legal disclaimer */}
+      <Text style={styles.disclaimer} testID="capture-success-disclaimer">
+        {LEGAL_CONSTANTS.mdrDisclaimer}
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.black },
+  // Noir instrument par défaut (avant que le fond clair de la carte résultat
+  // ne recouvre), cohérent avec le reste du flux capture.
+  container: { flex: 1, backgroundColor: colors.captureBg },
   successContainer: {
-    backgroundColor: Colors.background,
+    backgroundColor: colors.bg,
     alignItems: "center",
     justifyContent: "center",
-    padding: Spacing.xl,
-    gap: Spacing.md,
+    padding: 32,
+    gap: spacing.s16,
   },
   imageContainer: {
     width: "100%",
     maxWidth: 400,
     aspectRatio: 3 / 4,
-    marginBottom: Spacing.md,
+    marginBottom: spacing.s16,
     position: "relative",
   },
   previewImage: {
     width: "100%",
     height: "100%",
-    borderRadius: 12,
+    borderRadius: radius.cardXl,
   },
   correctionOverlay: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
-    backgroundColor: "rgba(27, 111, 191, 0.15)",
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+    // Mode édition actif : teinte de l'accent cyan (seul usage légitime,
+    // état actif), plus la navy résiduelle d'origine.
+    backgroundColor: `${colors.accent}26`,
+    paddingVertical: spacing.s8,
+    paddingHorizontal: spacing.s16,
+    borderTopLeftRadius: radius.cardXl,
+    borderTopRightRadius: radius.cardXl,
   },
   correctionHelpText: {
-    color: Colors.white,
+    color: colors.white,
+    fontFamily: fonts.sans,
     fontSize: 13,
     textAlign: "center",
-    fontWeight: "600",
+    fontWeight: fontWeight.semiBold,
     textShadowColor: "rgba(0,0,0,0.5)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
   correctionBadge: {
-    backgroundColor: `${Colors.primary}22`,
+    backgroundColor: `${colors.accent}22`,
     borderWidth: 1,
-    borderColor: Colors.primary,
-    borderRadius: BorderRadius.sm,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
+    borderColor: colors.accent,
+    borderRadius: 4,
+    paddingHorizontal: spacing.s16,
+    paddingVertical: spacing.s4,
   },
   correctionBadgeText: {
-    color: Colors.primary,
+    color: colors.accent,
+    fontFamily: fonts.sans,
     fontSize: 13,
-    fontWeight: "600",
+    fontWeight: fontWeight.semiBold,
   },
   anatomicalWarningBanner: {
-    backgroundColor: `${Colors.warning}22`,
+    backgroundColor: `${colors.amberMid}22`,
     borderWidth: 1,
-    borderColor: Colors.warning,
-    borderRadius: BorderRadius.sm,
-    padding: Spacing.md,
+    borderColor: colors.amberMid,
+    borderRadius: 4,
+    padding: spacing.s16,
     width: "100%",
   },
   anatomicalWarningText: {
-    color: Colors.warning,
+    color: colors.amberMid,
+    fontFamily: fonts.sans,
     fontSize: 13,
     lineHeight: 18,
     marginBottom: 4,
   },
   simulationWarning: {
-    backgroundColor: `${Colors.warning}33`,
+    backgroundColor: `${colors.amberMid}33`,
     borderWidth: 1,
-    borderColor: Colors.warning,
-    borderRadius: 8,
-    padding: Spacing.md,
-    marginBottom: Spacing.md,
+    borderColor: colors.amberMid,
+    borderRadius: radius.button,
+    padding: spacing.s16,
+    marginBottom: spacing.s16,
     width: "100%",
   },
   simulationWarningText: {
-    color: Colors.warning,
+    color: colors.amberMid,
+    fontFamily: fonts.sans,
     fontSize: 13,
     textAlign: "center",
     lineHeight: 18,
   },
-  successTitle: { color: Colors.success, fontSize: 24, fontWeight: "700" },
-  successScore: { color: Colors.textSecondary, fontSize: 16 },
+  successTitle: {
+    color: colors.green,
+    fontFamily: fonts.sans,
+    fontSize: 24,
+    fontWeight: fontWeight.bold,
+  },
+  // Donnée numérique (pourcentage de confiance) → mono tabulaire.
+  successScore: {
+    color: colors.textSecond,
+    fontFamily: fonts.mono,
+    fontSize: 16,
+  },
   bilateralSection: {
     flexDirection: "row" as const,
     width: "100%" as const,
     justifyContent: "space-around" as const,
-    marginVertical: Spacing.md,
-    paddingHorizontal: Spacing.md,
+    marginVertical: spacing.s16,
+    paddingHorizontal: spacing.s16,
   },
   legColumn: {
     alignItems: "center" as const,
     flex: 1,
   },
   legTitle: {
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
+    fontFamily: fonts.sans,
     fontSize: 16,
-    fontWeight: "700" as const,
-    marginBottom: Spacing.xs,
+    fontWeight: fontWeight.bold,
+    marginBottom: spacing.s4,
   },
+  // Angle HKA : la donnée héro → mono tabulaire, noir sur clair.
   hkaAngle: {
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
+    fontFamily: fonts.mono,
     fontSize: 18,
-    fontWeight: "500" as const,
+    fontWeight: fontWeight.medium,
   },
   hkaClassification: {
-    color: Colors.textSecondary,
+    color: colors.textSecond,
+    fontFamily: fonts.sans,
     fontSize: 14,
     marginTop: 2,
   },
   hkaUnavailable: {
-    color: Colors.textSecondary,
+    color: colors.textSecond,
+    fontFamily: fonts.sans,
     fontSize: 14,
     fontStyle: "italic" as const,
   },
-  angleLabel: { color: Colors.textPrimary, fontSize: 18, fontWeight: "500" },
-  correctButton: {
-    backgroundColor: Colors.white,
-    borderWidth: 1,
-    borderColor: Colors.primary,
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.lg,
-    width: "100%",
-    alignItems: "center",
-  },
-  correctButtonText: {
-    color: Colors.primary,
-    fontWeight: "600",
-    fontSize: 15,
+  // Angles genou/hanche/cheville : donnée héro → mono tabulaire.
+  angleLabel: {
+    color: colors.textPrimary,
+    fontFamily: fonts.mono,
+    fontSize: 18,
+    fontWeight: fontWeight.medium,
   },
   correctionButtons: {
     width: "100%",
     alignItems: "center",
-    gap: Spacing.sm,
-  },
-  validateCorrectionButton: {
-    backgroundColor: Colors.success,
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    width: "100%",
-    alignItems: "center",
+    gap: spacing.s8,
   },
   cancelCorrectionButton: {
-    paddingVertical: Spacing.sm,
+    paddingVertical: spacing.s8,
   },
   cancelCorrectionText: {
-    color: Colors.error,
+    color: colors.red,
+    fontFamily: fonts.sans,
     fontSize: 15,
-    fontWeight: "500",
+    fontWeight: fontWeight.medium,
   },
   saveButton: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    marginTop: Spacing.lg,
-    width: "100%",
-    alignItems: "center",
+    marginTop: spacing.s24,
   },
-  saveButtonText: { color: Colors.white, fontWeight: "700", fontSize: 16 },
-  discardButton: { paddingVertical: Spacing.md },
-  discardButtonText: { color: Colors.textSecondary, fontSize: 15 },
+  discardButton: { paddingVertical: spacing.s16 },
+  discardButtonText: {
+    color: colors.textSecond,
+    fontFamily: fonts.sans,
+    fontSize: 15,
+  },
+  disclaimer: {
+    color: colors.textSecond,
+    fontFamily: fonts.sans,
+    fontSize: 11,
+    textAlign: "center",
+    lineHeight: 15,
+    marginTop: spacing.s16,
+  },
 });

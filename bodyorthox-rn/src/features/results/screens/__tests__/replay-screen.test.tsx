@@ -7,6 +7,8 @@ import {
 } from "@testing-library/react-native";
 import { ReplayScreen } from "../replay-screen";
 import type { Analysis } from "../../../capture/domain/analysis";
+import type { PoseLandmarks } from "../../../capture/data/angle-calculator";
+import { __resetCalibrationStoreForTests } from "../../../capture/calibration/calibration-store";
 
 // ---------------------------------------------------------------------------
 // Mock navigation
@@ -28,20 +30,14 @@ jest.mock("@react-navigation/native", () => ({
 }));
 
 // ---------------------------------------------------------------------------
-// Mock database & repository
+// Mock analysis repository hook
 // ---------------------------------------------------------------------------
 const mockGetById = jest.fn();
 const mockUpdate = jest.fn().mockResolvedValue(undefined);
+const mockRepo = { getById: mockGetById, update: mockUpdate };
 
-jest.mock("../../../../core/database/init", () => ({
-  getDatabase: () => ({}),
-}));
-
-jest.mock("../../../capture/data/sqlite-analysis-repository", () => ({
-  SqliteAnalysisRepository: jest.fn().mockImplementation(() => ({
-    getById: mockGetById,
-    update: mockUpdate,
-  })),
+jest.mock("../../../../shared/hooks/use-analysis-repository", () => ({
+  useAnalysisRepository: () => mockRepo,
 }));
 
 // ---------------------------------------------------------------------------
@@ -285,6 +281,39 @@ describe("ReplayScreen", () => {
           manualCorrectionJoint: "knee",
         });
       });
+    });
+
+    it("persists recomputed bilateral angles so the HKA stays consistent", async () => {
+      __resetCalibrationStoreForTests();
+      const v = (x: number, y: number) => ({ x, y, visibility: 1 });
+      // Right leg reliable → right side is primary; knee angle drives right HKA.
+      const landmarks: PoseLandmarks = {
+        12: v(0, -1),
+        24: v(0, 0),
+        26: v(0, 1),
+        28: v(0.05, 2),
+        30: v(0.2, 2.1),
+      };
+      mockGetById.mockResolvedValue(
+        buildAnalysis({ confidenceScore: 0.45, allLandmarks: landmarks }),
+      );
+      renderScreen();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("joint-knee")).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId("joint-knee"));
+      fireEvent.changeText(screen.getByTestId("correction-input"), "176.4");
+      fireEvent.press(screen.getByTestId("save-correction-button"));
+
+      await waitFor(() => {
+        expect(mockUpdate).toHaveBeenCalled();
+      });
+      const payload = mockUpdate.mock.calls[0][1];
+      expect(payload.bilateralAngles).toBeDefined();
+      expect(payload.bilateralAngles.rightHKA).toBe(176.4);
+      expect(payload.bilateralAngles.right.kneeAngle).toBe(176.4);
     });
 
     it("shows success feedback after correction is saved", async () => {

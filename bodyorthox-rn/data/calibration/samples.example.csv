@@ -1,0 +1,31 @@
+# Dataset de calibration HKA — EXEMPLE (données synthétiques, à remplacer)
+# predictedHKA  = sortie du pipeline pose (photo 2D), en degrés
+# groundTruthHKA = HKA radiographique (EOS), en degrés
+# side = left|right (HKA gauche et droite séparées)
+# Colonnes optionnelles (tracées, non utilisées par le modèle linéaire à petit N) :
+#   kneeAngle, cameraTilt, femurTibiaRatio, confidence, capturedAt, notes
+sampleId,patientId,side,predictedHKA,groundTruthHKA,confidence,notes
+S001,P01,left,178.2,174.5,0.91,varum modéré
+S001,P01,right,179.0,176.1,0.89,
+S002,P02,left,181.4,178.9,0.93,
+S002,P02,right,182.0,179.4,0.88,
+S003,P03,left,176.5,172.0,0.85,genu varum marqué
+S003,P03,right,177.1,173.2,0.86,
+S004,P04,left,184.2,182.5,0.90,valgum
+S004,P04,right,185.0,183.8,0.92,valgum
+S005,P05,left,180.1,177.0,0.94,
+S005,P05,right,179.6,176.4,0.91,
+S006,P06,left,177.8,173.9,0.83,
+S006,P06,right,178.5,175.0,0.87,
+S007,P07,left,182.9,181.0,0.89,
+S007,P07,right,183.4,181.6,0.90,
+S008,P08,left,179.3,176.0,0.92,
+S008,P08,right,180.0,177.1,0.88,
+S009,P09,left,175.9,171.2,0.81,varum sévère post-trauma
+S009,P09,right,181.2,178.3,0.85,
+S010,P10,left,183.7,182.0,0.93,
+S010,P10,right,184.1,182.6,0.91,
+S011,P11,left,178.9,175.3,0.88,
+S011,P11,right,179.4,176.0,0.86,
+S012,P12,left,181.0,178.1,0.90,
+S012,P12,right,180.6,177.5,0.89,

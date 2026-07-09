@@ -1,56 +1,67 @@
 /**
- * BodyOrthox Design System – Color Palette
- * Clinical White theme – iOS-native aesthetic (accessibility AA).
+ * BodyOrthox Design System – Color Palette (v1 → v2 « Navy » alias)
+ *
+ * Ce module conserve exactement les mêmes clés publiques que la v1 legacy
+ * (rétro-compat totale pour les ~40 écrans qui l'importent), mais chaque
+ * valeur est désormais mappée sur les design tokens v2 « Navy »
+ * (`src/theme/tokens.ts`). Aucun écran n'a besoin d'être modifié : ils
+ * adoptent visuellement la palette navy en important les mêmes noms.
+ *
+ * NE PAS ré-introduire de valeurs hex ad hoc ici : toute couleur vient de
+ * `tokens` (les rares littéraux restants sont des dérivés directs des tokens
+ * v2 — fin de gradient, overlays navy — absents de la table de base).
  */
+import { colors as v2 } from "../../theme/tokens";
+
 export const Colors = {
-  // Brand — from mockups
-  primary: "#1B6FBF", // Blue médical (CTAs, liens, accents)
-  primaryDark: "#155a9c",
-  primaryLight: "#E8F1FB", // Background cards résultat
+  // Brand — navy/blue v2 (CTAs, liens, accents)
+  primary: v2.navyMid, // accent Instrument (#0891B2) — liens/actifs
+  primaryDark: v2.accentDeep, // accent pressed (#0E7490)
+  primaryLight: v2.navyLight, // #EAF0FE — fond cards résultat
 
-  // Semantic — iOS system colors
-  success: "#34C759", // Vert iOS (normal, dans la norme)
-  warning: "#FF9500", // Orange iOS (à surveiller)
-  error: "#FF3B30", // Rouge iOS (hors norme)
-  warningModerate: "#e67e22",
-  info: "#007AFF", // Bleu iOS
+  // Semantic — palette clinique v2 (handoff)
+  success: v2.green, // #0A6E52 (dans la norme)
+  warning: v2.amberMid, // #B45309 (écart léger)
+  error: v2.red, // #B91C1C (hors norme)
+  warningModerate: v2.amber, // #92510A (écart modéré)
+  info: v2.navyMid,
 
-  // Confidence
-  confidenceHigh: "#34C759",
-  confidenceMedium: "#FF9500",
-  confidenceLow: "#FF3B30",
+  // Confidence — alignée sur la palette sémantique v2
+  confidenceHigh: v2.green,
+  confidenceMedium: v2.amber,
+  confidenceLow: v2.red,
 
-  // Background — Clinical White
-  background: "#F2F2F7", // iOS systemGroupedBackground
-  backgroundCard: "#FFFFFF", // White cards
-  backgroundElevated: "#FFFFFF",
-  surface: "#F2F2F7",
+  // Background — Navy v2
+  background: v2.bg, // #F4F7FB
+  backgroundCard: v2.bgCard, // #FFFFFF
+  backgroundElevated: v2.bgCard,
+  surface: v2.bgSubtle, // #EDF1F7
 
-  // Text — dark on light
-  textPrimary: "#1C1C1E", // iOS label
-  textSecondary: "#8E8E93", // iOS secondaryLabel
-  textDisabled: "#C7C7CC",
-  textOnPrimary: "#FFFFFF", // White text on blue buttons
+  // Text — navy sur fond clair
+  textPrimary: v2.textPrimary, // #0C1F35
+  textSecondary: v2.textSecond, // #3D5470
+  textDisabled: v2.textMuted, // #5A7290 (AA)
+  textOnPrimary: v2.textInverse, // #FFFFFF
 
   // Border
-  border: "#E5E5EA", // iOS separator
-  borderFocus: "#1B6FBF",
+  border: v2.border, // rgba(15,40,80,0.10)
+  borderFocus: v2.navyMid,
 
   // Neutral
-  white: "#FFFFFF",
-  black: "#000000",
-  darkGrey: "#111111",
-  warningAmber: "#FF9500",
+  white: v2.white,
+  black: v2.black,
+  darkGrey: v2.textPrimary,
+  warningAmber: v2.amber,
 
-  // Overlay
-  overlay: "rgba(0,0,0,0.4)",
-  overlayLight: "rgba(0,0,0,0.2)",
+  // Overlay — navy plutôt que noir pur
+  overlay: "rgba(12,35,64,0.45)",
+  overlayLight: "rgba(12,35,64,0.20)",
 
-  // Chart
-  chartKnee: "#1B6FBF",
-  chartHip: "#FF3B30",
-  chartAnkle: "#34C759",
-  chartReference: "rgba(0,0,0,0.1)",
+  // Chart — mappé sur la palette v2
+  chartKnee: v2.navyMid,
+  chartHip: v2.red,
+  chartAnkle: v2.teal,
+  chartReference: v2.border,
 } as const;
 
 export type ColorKey = keyof typeof Colors;

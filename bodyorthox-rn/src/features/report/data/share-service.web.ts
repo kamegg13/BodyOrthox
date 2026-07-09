@@ -16,10 +16,26 @@ export async function shareReport(
           "Impossible d'ouvrir une fenêtre — autorisez les popups pour ce site.",
       };
     }
-    printWindow.addEventListener("load", () => {
-      printWindow.print();
-      URL.revokeObjectURL(url);
-    });
+
+    // `print()` + révocation ne doivent s'exécuter qu'une seule fois. Le `load`
+    // peut avoir déjà été émis avant l'attachement (race) : on couvre ce cas
+    // avec un timeout de secours. La révocation est ainsi toujours garantie.
+    let finished = false;
+    const finalize = () => {
+      if (finished) return;
+      finished = true;
+      try {
+        printWindow.print();
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    };
+
+    // Attaché de façon synchrone, immédiatement après l'ouverture.
+    printWindow.onload = finalize;
+    // Secours si `load` a déjà tiré ou ne se déclenche jamais.
+    setTimeout(finalize, 1500);
+
     return { kind: "shared" };
   } catch (err) {
     const message =

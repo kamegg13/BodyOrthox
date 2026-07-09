@@ -65,7 +65,10 @@ export class SqliteAnalysisRepository implements IAnalysisRepository {
       `SELECT * FROM analyses WHERE patient_id = ? ORDER BY created_at DESC`,
       [patientId],
     );
-    return result.rows.map(rowToAnalysis);
+    // Le shim DB local ignore ORDER BY : le tri est garanti côté repo.
+    return result.rows
+      .map(rowToAnalysis)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
 
   async getById(id: string): Promise<Analysis | null> {
@@ -110,10 +113,16 @@ export class SqliteAnalysisRepository implements IAnalysisRepository {
     partial: Partial<
       Pick<
         Analysis,
-        "angles" | "manualCorrectionApplied" | "manualCorrectionJoint"
+        | "angles"
+        | "bilateralAngles"
+        | "manualCorrectionApplied"
+        | "manualCorrectionJoint"
       >
     >,
   ): Promise<void> {
+    // NB: bilateralAngles is not stored as a column here — this repository
+    // derives it from `landmarks_json` on read (see rowToAnalysis). It is part
+    // of the signature for interface parity with the API repository.
     const setClauses: string[] = [];
     const params: unknown[] = [];
 

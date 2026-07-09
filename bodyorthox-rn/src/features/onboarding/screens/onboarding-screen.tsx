@@ -14,9 +14,18 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../../navigation/types";
 import { OnboardingPage } from "../components/onboarding-page";
 import { useOnboardingStore } from "../store/onboarding-store";
-import { Colors } from "../../../shared/design-system/colors";
-import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
-import { FontSize, FontWeight } from "../../../shared/design-system/typography";
+import { Screen } from "../../../components/Screen";
+import { Steps } from "../../../components/Steps";
+import { Btn } from "../../../components/Btn";
+import {
+  colors,
+  fonts,
+  fontSize,
+  fontWeight,
+  radius,
+  shadows,
+  spacing,
+} from "../../../theme/tokens";
 
 type NavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -49,7 +58,7 @@ function HkaPhoneIllustration() {
           <View
             style={[
               illustrationStyles.jointDot,
-              { backgroundColor: Colors.primary },
+              { backgroundColor: colors.accent },
             ]}
           />
           {/* Shin line */}
@@ -186,7 +195,7 @@ export function OnboardingScreen() {
   })();
 
   return (
-    <View style={styles.container} testID="onboarding-screen">
+    <Screen testID="onboarding-screen" style={styles.container}>
       {/* Skip button */}
       <TouchableOpacity
         style={styles.skipButton}
@@ -239,32 +248,24 @@ export function OnboardingScreen() {
 
       {/* Bottom controls */}
       <View style={styles.bottomControls}>
-        {/* Dot indicators */}
-        <View style={styles.dotsContainer} testID="onboarding-dots">
-          {Array.from({ length: TOTAL_PAGES }).map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.dot,
-                index === currentPage ? styles.dotActive : styles.dotInactive,
-              ]}
-              testID={`onboarding-dot-${index}`}
-            />
-          ))}
+        {/* Progress indicator */}
+        <View style={styles.stepsWrap}>
+          <Steps
+            total={TOTAL_PAGES}
+            current={currentPage}
+            testID="onboarding-dot"
+          />
         </View>
 
         {/* Action button */}
-        <TouchableOpacity
-          style={styles.actionButton}
+        <Btn
+          label={buttonLabel}
           onPress={isLastPage ? handleComplete : handleNext}
+          full
           testID={isLastPage ? "onboarding-complete" : "onboarding-next"}
-          accessibilityRole="button"
-          accessibilityLabel={buttonLabel}
-        >
-          <Text style={styles.actionButtonText}>{buttonLabel}</Text>
-        </TouchableOpacity>
+        />
       </View>
-    </View>
+    </Screen>
   );
 }
 
@@ -277,9 +278,9 @@ const illustrationStyles = StyleSheet.create({
     width: 180,
     height: 300,
     borderRadius: 24,
-    borderWidth: 3,
-    borderColor: Colors.primary,
-    backgroundColor: Colors.backgroundCard,
+    borderWidth: 2,
+    borderColor: colors.borderMid,
+    backgroundColor: colors.bgCard,
     overflow: "hidden",
     alignItems: "center",
   },
@@ -287,7 +288,7 @@ const illustrationStyles = StyleSheet.create({
     width: 60,
     height: 6,
     borderRadius: 3,
-    backgroundColor: Colors.border,
+    backgroundColor: colors.border,
     marginTop: 8,
   },
   phoneScreen: {
@@ -295,7 +296,7 @@ const illustrationStyles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: Spacing.md,
+    paddingVertical: spacing.s16,
   },
   silhouette: {
     alignItems: "center",
@@ -305,48 +306,50 @@ const illustrationStyles = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: Colors.textSecondary,
+    backgroundColor: colors.textSecond,
     marginBottom: 4,
   },
   torsoLine: {
     width: 2,
     height: 40,
-    backgroundColor: Colors.textSecondary,
+    backgroundColor: colors.textSecond,
   },
   jointDot: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: Colors.textSecondary,
+    backgroundColor: colors.textSecond,
   },
   thighLine: {
     width: 2,
     height: 36,
-    backgroundColor: Colors.textSecondary,
+    backgroundColor: colors.textSecond,
   },
   shinLine: {
     width: 2,
     height: 36,
-    backgroundColor: Colors.textSecondary,
+    backgroundColor: colors.textSecond,
   },
   angleLabel: {
     position: "absolute",
     right: 16,
     top: "45%",
-    backgroundColor: Colors.warning,
-    borderRadius: BorderRadius.sm,
+    backgroundColor: colors.amberMid,
+    borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
   angleDegree: {
-    fontSize: 12,
-    fontWeight: FontWeight.bold,
-    color: Colors.white,
+    fontFamily: fonts.mono,
+    fontSize: fontSize.monoMd,
+    fontWeight: fontWeight.bold,
+    color: colors.white,
     textAlign: "center",
   },
   angleType: {
+    fontFamily: fonts.sans,
     fontSize: 8,
-    color: Colors.white,
+    color: colors.white,
     textAlign: "center",
   },
   axisLine: {
@@ -355,65 +358,64 @@ const illustrationStyles = StyleSheet.create({
     top: 30,
     bottom: 20,
     width: 1,
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.accent,
     opacity: 0.4,
   },
 
   // PDF mockup
   pdfContainer: {
     alignItems: "center",
-    gap: Spacing.md,
+    gap: spacing.s16,
   },
   pdfDoc: {
     width: 200,
     height: 240,
-    backgroundColor: Colors.backgroundCard,
-    borderRadius: BorderRadius.lg,
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.cardLg,
     borderWidth: 1,
-    borderColor: Colors.border,
-    padding: Spacing.md,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    borderColor: colors.border,
+    padding: spacing.s16,
+    ...shadows.sm,
   },
   pdfHeader: {
     flexDirection: "row",
-    marginBottom: Spacing.sm,
+    marginBottom: spacing.s10,
   },
   pdfIcon: {
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.sm,
+    backgroundColor: colors.ink,
+    borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
   pdfIconText: {
-    color: Colors.white,
+    color: colors.white,
     fontSize: 10,
-    fontWeight: FontWeight.bold,
+    fontWeight: fontWeight.bold,
   },
   pdfFilename: {
+    fontFamily: fonts.mono,
     fontSize: 9,
-    color: Colors.textSecondary,
-    marginBottom: Spacing.md,
+    color: colors.textSecond,
+    marginBottom: spacing.s16,
   },
   pdfLine: {
     width: "100%",
     height: 6,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.bgSubtle,
     borderRadius: 3,
-    marginBottom: Spacing.sm,
+    marginBottom: spacing.s10,
   },
   shareRow: {
     flexDirection: "row",
-    gap: Spacing.md,
+    gap: spacing.s16,
   },
   shareIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: colors.bgSubtle,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -427,63 +429,34 @@ const illustrationStyles = StyleSheet.create({
 /* ------------------------------------------------------------------ */
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: Colors.background,
+    position: "relative",
   },
   skipButton: {
     position: "absolute",
-    top: Spacing.xxl,
-    right: Spacing.md,
+    top: spacing.s8,
+    right: spacing.s12,
     zIndex: 10,
     minHeight: 44,
     minWidth: 44,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: Spacing.sm,
+    paddingHorizontal: spacing.s8,
   },
   skipText: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.medium,
-    color: Colors.textSecondary,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.body,
+    fontWeight: fontWeight.medium,
+    color: colors.textMuted,
   },
   scrollView: {
     flex: 1,
   },
   bottomControls: {
-    paddingBottom: Spacing.xxl,
-    paddingHorizontal: Spacing.lg,
-    alignItems: "center",
+    paddingBottom: spacing.s24,
+    paddingHorizontal: spacing.s20,
+    gap: spacing.s16,
   },
-  dotsContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginBottom: Spacing.lg,
-  },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginHorizontal: Spacing.xs,
-  },
-  dotActive: {
-    backgroundColor: Colors.primary,
-  },
-  dotInactive: {
-    backgroundColor: Colors.surface,
-  },
-  actionButton: {
-    backgroundColor: Colors.primary,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.xxl,
-    borderRadius: 12,
-    minHeight: 48,
-    minWidth: 200,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  actionButtonText: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.textOnPrimary,
+  stepsWrap: {
+    paddingHorizontal: spacing.s24,
   },
 });

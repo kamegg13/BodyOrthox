@@ -1,24 +1,12 @@
 import { renderHook } from "@testing-library/react-native";
 
-const mockDb = { execute: jest.fn(), initialize: jest.fn() };
-
-jest.mock("../../../core/database/init", () => ({
-  getDatabase: () => mockDb,
-}));
-
-jest.mock("../../../features/capture/data/sqlite-analysis-repository", () => ({
-  SqliteAnalysisRepository: jest.fn().mockImplementation((db: unknown) => ({
-    _db: db,
-    getForPatient: jest.fn(),
-    getById: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-  })),
+jest.mock("../../../dev/dev-mode", () => ({
+  isDevMode: () => false,
+  getDevAnalysisRepo: () => null,
 }));
 
 import { useAnalysisRepository } from "../use-analysis-repository";
-import { SqliteAnalysisRepository } from "../../../features/capture/data/sqlite-analysis-repository";
+import { ApiAnalysisRepository } from "../../../features/capture/data/api-analysis-repository";
 
 describe("useAnalysisRepository", () => {
   beforeEach(() => {
@@ -35,9 +23,9 @@ describe("useAnalysisRepository", () => {
     expect(result.current.delete).toBeDefined();
   });
 
-  it("creates SqliteAnalysisRepository with the database instance", () => {
-    renderHook(() => useAnalysisRepository());
-    expect(SqliteAnalysisRepository).toHaveBeenCalledWith(mockDb);
+  it("returns an ApiAnalysisRepository instance outside dev mode", () => {
+    const { result } = renderHook(() => useAnalysisRepository());
+    expect(result.current).toBeInstanceOf(ApiAnalysisRepository);
   });
 
   it("returns the same instance on re-render (memoized)", () => {
@@ -47,10 +35,11 @@ describe("useAnalysisRepository", () => {
     expect(result.current).toBe(first);
   });
 
-  it("creates SqliteAnalysisRepository only once across re-renders", () => {
-    const { rerender } = renderHook(() => useAnalysisRepository());
+  it("does not recreate the repository across re-renders", () => {
+    const { result, rerender } = renderHook(() => useAnalysisRepository());
+    const first = result.current;
     rerender({});
     rerender({});
-    expect(SqliteAnalysisRepository).toHaveBeenCalledTimes(1);
+    expect(result.current).toBe(first);
   });
 });

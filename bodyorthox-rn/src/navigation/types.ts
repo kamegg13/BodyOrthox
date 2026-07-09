@@ -44,4 +44,5 @@ export type RootStackParamList = {
   Protocols: undefined;
   Reports: undefined;
   Admin: undefined;
+  Calibration: undefined;
 };

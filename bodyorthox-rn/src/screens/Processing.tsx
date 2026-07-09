@@ -77,11 +77,11 @@ export function Processing({
           <Animated.View style={[styles.spinnerArc, { transform: [{ rotate: spin }] }]} />
           <View style={styles.spinnerInner}>
             <Svg width={36} height={36} viewBox="0 0 32 32">
-              <Rect x={11} y={2} width={10} height={6} rx={2} fill={colors.navyMid} opacity={1} />
-              <Rect x={9} y={11} width={14} height={6} rx={2} fill={colors.navyMid} opacity={0.85} />
-              <Rect x={11} y={20} width={10} height={5} rx={2} fill={colors.navyMid} opacity={0.65} />
-              <Rect x={15} y={8} width={2} height={3} rx={1} fill={colors.teal} />
-              <Rect x={15} y={17} width={2} height={3} rx={1} fill={colors.teal} />
+              <Rect x={11} y={2} width={10} height={6} rx={2} fill={colors.ink} opacity={1} />
+              <Rect x={9} y={11} width={14} height={6} rx={2} fill={colors.ink} opacity={0.85} />
+              <Rect x={11} y={20} width={10} height={5} rx={2} fill={colors.ink} opacity={0.65} />
+              <Rect x={15} y={8} width={2} height={3} rx={1} fill={colors.accent} />
+              <Rect x={15} y={17} width={2} height={3} rx={1} fill={colors.accent} />
             </Svg>
           </View>
         </View>
@@ -162,14 +162,14 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     borderRadius: SPINNER_SIZE / 2,
     borderWidth: 3,
-    borderColor: colors.navySoft,
+    borderColor: colors.border,
   },
   spinnerArc: {
     ...StyleSheet.absoluteFillObject,
     borderRadius: SPINNER_SIZE / 2,
     borderWidth: 3,
-    borderTopColor: colors.navyMid,
-    borderRightColor: colors.navyMid,
+    borderTopColor: colors.accent,
+    borderRightColor: colors.accent,
     borderBottomColor: "transparent",
     borderLeftColor: "transparent",
   },
@@ -177,14 +177,14 @@ const styles = StyleSheet.create({
     width: SPINNER_SIZE - SPINNER_INSET * 2,
     height: SPINNER_SIZE - SPINNER_INSET * 2,
     borderRadius: (SPINNER_SIZE - SPINNER_INSET * 2) / 2,
-    backgroundColor: colors.navyLight,
+    backgroundColor: colors.bgSubtle,
     alignItems: "center",
     justifyContent: "center",
   },
   title: {
-    fontFamily: fonts.sans,
+    fontFamily: fonts.display,
     fontSize: fontSize.h2,
-    fontWeight: fontWeight.extraBold,
+    fontWeight: fontWeight.bold,
     color: colors.textPrimary,
     letterSpacing: -0.4,
     marginTop: spacing.s12,
@@ -214,8 +214,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   stepRowActive: {
-    backgroundColor: colors.navyLight,
-    borderColor: colors.navySoft,
+    backgroundColor: colors.accentLight,
+    borderColor: colors.accentSoft,
   },
   stepIndicator: {
     width: 28,
@@ -226,10 +226,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   stepIndicatorDone: {
-    backgroundColor: colors.teal,
+    backgroundColor: colors.ink,
   },
   stepIndicatorActive: {
-    backgroundColor: colors.navyMid,
+    backgroundColor: colors.accent,
   },
   stepActiveDot: {
     width: 6,
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   stepTitleActive: {
-    color: colors.navyMid,
+    color: colors.accentDeep,
     fontWeight: fontWeight.bold,
   },
   stepSub: {
@@ -260,12 +260,12 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   stepSubDone: {
-    color: colors.teal,
+    color: colors.textSecond,
   },
   stepDots: {
     fontFamily: fonts.sans,
     fontSize: fontSize.eyebrow,
     fontWeight: fontWeight.bold,
-    color: colors.navyMid,
+    color: colors.accent,
   },
 });

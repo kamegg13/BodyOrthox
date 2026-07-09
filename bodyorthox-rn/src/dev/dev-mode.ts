@@ -20,6 +20,7 @@ import type {
 import {
   createPatient as buildPatient,
   updatePatient as applyUpdate,
+  patientDisplayName,
 } from "../features/patients/domain/patient";
 import type { IPatientRepository } from "../features/patients/data/patient-repository";
 import { useCaptureStore } from "../features/capture/store/capture-store";
@@ -46,7 +47,9 @@ class InMemoryPatientRepo implements IPatientRepository {
   async getAll(nameFilter?: string): Promise<Patient[]> {
     if (!nameFilter) return [...this.store];
     const q = nameFilter.toLowerCase();
-    return this.store.filter((p) => p.name.toLowerCase().includes(q));
+    return this.store.filter((p) =>
+      patientDisplayName(p).toLowerCase().includes(q),
+    );
   }
 
   async getById(id: string): Promise<Patient | null> {
@@ -104,7 +107,13 @@ class InMemoryAnalysisRepo implements IAnalysisRepository {
   async update(
     id: string,
     partial: Partial<
-      Pick<Analysis, "angles" | "manualCorrectionApplied" | "manualCorrectionJoint">
+      Pick<
+        Analysis,
+        | "angles"
+        | "bilateralAngles"
+        | "manualCorrectionApplied"
+        | "manualCorrectionJoint"
+      >
     >,
   ): Promise<void> {
     const idx = this.store.findIndex((a) => a.id === id);
@@ -179,7 +188,7 @@ export function bootDevMode(): void {
     user: {
       id: "dev-user",
       email: "dev@bodyorthox.local",
-      role: "practitioner",
+      role: "admin",
       firstName: "Jean",
       lastName: "Martin",
     },

@@ -8,7 +8,15 @@ import { Capture } from "./Capture";
 import { Processing } from "./Processing";
 import { Results, SAMPLE_RESULTS } from "./Results";
 import { Report, SAMPLE_REPORT } from "./Report";
-import { colors, fonts, fontSize, fontWeight, shadows, spacing } from "../theme/tokens";
+import {
+  colors,
+  fonts,
+  fontSize,
+  fontWeight,
+  letterSpacing,
+  shadows,
+  spacing,
+} from "../theme/tokens";
 
 const FRAME_W = 390;
 const FRAME_H = 844;
@@ -66,7 +74,7 @@ export function PreviewGallery() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "#0C1F35",
+    backgroundColor: colors.ink,
   },
   content: {
     paddingHorizontal: 32,
@@ -83,7 +91,7 @@ const styles = StyleSheet.create({
   sub: {
     fontFamily: fonts.sans,
     fontSize: fontSize.body,
-    color: "rgba(255,255,255,0.55)",
+    color: colors.white55,
     marginBottom: spacing.s16,
   },
   grid: {
@@ -97,10 +105,10 @@ const styles = StyleSheet.create({
   },
   frameTitle: {
     fontFamily: fonts.sans,
-    fontSize: fontSize.caption,
+    fontSize: fontSize.eyebrow,
     fontWeight: fontWeight.bold,
-    color: "rgba(255,255,255,0.65)",
-    letterSpacing: 0.6,
+    color: colors.white70,
+    letterSpacing: letterSpacing.eyebrow,
     textTransform: "uppercase",
   },
   frame: {

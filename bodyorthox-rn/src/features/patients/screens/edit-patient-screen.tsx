@@ -19,7 +19,7 @@ export function EditPatientScreen() {
   const patient = usePatientsStore((s) => s.patients.find((p) => p.id === patientId));
   const updatePatient = usePatientsStore((s) => s.updatePatient);
 
-  const nameParts = patient?.name.trim().split(" ") ?? [];
+  const nameParts = patient?.name?.trim().split(" ") ?? [];
   const firstName = nameParts[0] ?? "";
   const lastName = nameParts.slice(1).join(" ");
 
@@ -27,7 +27,7 @@ export function EditPatientScreen() {
     ? {
         firstName,
         lastName,
-        dateOfBirth: patient.dateOfBirth,
+        dateOfBirth: patient.dateOfBirth ?? null,
         morphologicalProfile: patient.morphologicalProfile,
       }
     : undefined;

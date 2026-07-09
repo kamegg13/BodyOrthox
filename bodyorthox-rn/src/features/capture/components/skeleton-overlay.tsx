@@ -1,6 +1,6 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
-import { Colors } from "../../../shared/design-system/colors";
+import { colors, fonts, fontWeight } from "../../../theme/tokens";
 import type { PoseLandmarks, BilateralAngles } from "../data/angle-calculator";
 
 /**
@@ -113,24 +113,33 @@ function getConnectionRegion(from: number, to: number): BodyRegion {
   return "upperBody";
 }
 
-/** Color for each body region connection */
+/**
+ * Couleurs de tracé (visualisation pose-estimation), pas du chrome UI.
+ * `face` et `leftLeg` sont déjà des blancs-alpha : migrés vers les tokens
+ * `white50`/`white70`. `upperBody` (rose), `hand` (rouge vif) et `rightLeg`
+ * (bleu) sont volontairement CONSERVÉS hors tokens : ce sont les seules
+ * couleurs qui distinguent visuellement les régions anatomiques et surtout
+ * la jambe gauche (blanc) de la jambe droite (bleu) — une distinction
+ * fonctionnelle critique en lecture clinique. Les remplacer par de l'encre/
+ * accent/gris hairline ferait perdre cette lisibilité gauche/droite.
+ */
 const REGION_LINE_COLORS: Record<BodyRegion, string> = {
-  face: "rgba(255, 255, 255, 0.5)",
+  face: colors.white50,
   upperBody: "rgba(255, 150, 150, 0.8)",
   hand: "rgba(255, 50, 50, 0.9)",
-  leftLeg: "rgba(255, 255, 255, 0.7)",
+  leftLeg: colors.white70,
   rightLeg: "rgba(80, 120, 255, 0.8)",
 };
 
-/** Dot color based on landmark category */
+/** Dot color based on landmark category (mêmes règles que REGION_LINE_COLORS ci-dessus). */
 function getDotColor(index: number): string {
   if (WRIST_INDICES.has(index) || HAND_INDICES.has(index)) {
     return "rgba(255, 50, 50, 0.9)";
   }
   if (FACE_INDICES.has(index)) {
-    return "rgba(255, 255, 255, 0.9)";
+    return colors.white;
   }
-  return "rgba(255, 255, 255, 0.95)";
+  return colors.white;
 }
 
 /** Dot radius based on landmark category and interactive mode */
@@ -432,89 +441,101 @@ function DraggableJointDot({
   offsetY,
   onLandmarkMoved,
 }: DraggableJointDotProps) {
-  const attachDragListeners = useCallback(
-    (node: View | null) => {
-      // Only attach drag on web platform for draggable dots
-      if (Platform.OS !== "web" || !isDraggable || !node || !onLandmarkMoved)
-        return;
+  // Underlying DOM node (react-native-web renders View as a div on web).
+  const nodeRef = useRef<HTMLElement | null>(null);
+  const setNodeRef = useCallback((node: View | null) => {
+    nodeRef.current = node as unknown as HTMLElement | null;
+  }, []);
 
-      // Access the underlying DOM element via react-native-web
-      const domElement = node as unknown as HTMLElement;
-      if (!domElement.addEventListener) return;
+  // Attach the drag listeners in an effect with a real cleanup so re-renders
+  // never stack duplicate `mousedown` handlers, and an unmount during an
+  // in-progress drag also removes the `mousemove`/`mouseup` handlers left on
+  // `document`.
+  useEffect(() => {
+    if (Platform.OS !== "web" || !isDraggable || !onLandmarkMoved) return;
 
-      // Minimum touch area: 20px radius for grab
-      const touchAreaSize = Math.max(radius * 2, 20);
-      domElement.style.width = `${touchAreaSize}px`;
-      domElement.style.height = `${touchAreaSize}px`;
-      domElement.style.borderRadius = `${touchAreaSize / 2}px`;
-      domElement.style.marginLeft = `${-(touchAreaSize - radius * 2) / 2}px`;
-      domElement.style.marginTop = `${-(touchAreaSize - radius * 2) / 2}px`;
-      domElement.style.cursor = "grab";
+    const domElement = nodeRef.current;
+    if (!domElement || !domElement.addEventListener) return;
 
-      const handleMouseDown = (e: MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
+    // Minimum touch area: 20px for grab
+    const touchAreaSize = Math.max(radius * 2, 20);
+    domElement.style.width = `${touchAreaSize}px`;
+    domElement.style.height = `${touchAreaSize}px`;
+    domElement.style.borderRadius = `${touchAreaSize / 2}px`;
+    domElement.style.marginLeft = `${-(touchAreaSize - radius * 2) / 2}px`;
+    domElement.style.marginTop = `${-(touchAreaSize - radius * 2) / 2}px`;
+    domElement.style.cursor = "grab";
 
-        // Current pixel position of the landmark center
-        let currentPixelX = x;
-        let currentPixelY = y;
+    // Handlers of the drag currently in progress (if any), kept so cleanup can
+    // detach them even when the component unmounts mid-drag.
+    let activeMove: ((e: MouseEvent) => void) | null = null;
+    let activeUp: (() => void) | null = null;
 
-        const startMouseX = e.clientX;
-        const startMouseY = e.clientY;
+    const detachDocument = () => {
+      if (activeMove) document.removeEventListener("mousemove", activeMove);
+      if (activeUp) document.removeEventListener("mouseup", activeUp);
+      activeMove = null;
+      activeUp = null;
+    };
 
-        domElement.style.cursor = "grabbing";
+    const handleMouseDown = (e: MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-        const handleMouseMove = (moveE: MouseEvent) => {
-          moveE.preventDefault();
-          const dx = moveE.clientX - startMouseX;
-          const dy = moveE.clientY - startMouseY;
+      // Current pixel position of the landmark center
+      const currentPixelX = x;
+      const currentPixelY = y;
+      const startMouseX = e.clientX;
+      const startMouseY = e.clientY;
 
-          const newPixelX = currentPixelX + dx;
-          const newPixelY = currentPixelY + dy;
+      domElement.style.cursor = "grabbing";
 
-          // Convert pixel position back to normalized [0,1] coordinates
-          const newNormX = (newPixelX - offsetX) / displayedWidth;
-          const newNormY = (newPixelY - offsetY) / displayedHeight;
+      const handleMouseMove = (moveE: MouseEvent) => {
+        moveE.preventDefault();
+        const dx = moveE.clientX - startMouseX;
+        const dy = moveE.clientY - startMouseY;
 
-          // Clamp to valid range
-          const clampedX = Math.max(0, Math.min(1, newNormX));
-          const clampedY = Math.max(0, Math.min(1, newNormY));
+        // Convert pixel position back to normalized [0,1] coordinates
+        const newNormX = (currentPixelX + dx - offsetX) / displayedWidth;
+        const newNormY = (currentPixelY + dy - offsetY) / displayedHeight;
 
-          onLandmarkMoved(index, clampedX, clampedY);
-        };
+        // Clamp to valid range
+        const clampedX = Math.max(0, Math.min(1, newNormX));
+        const clampedY = Math.max(0, Math.min(1, newNormY));
 
-        const handleMouseUp = () => {
-          domElement.style.cursor = "grab";
-          document.removeEventListener("mousemove", handleMouseMove);
-          document.removeEventListener("mouseup", handleMouseUp);
-        };
-
-        document.addEventListener("mousemove", handleMouseMove);
-        document.addEventListener("mouseup", handleMouseUp);
+        onLandmarkMoved(index, clampedX, clampedY);
       };
 
-      // Clean up previous listener to avoid duplicates
+      const handleMouseUp = () => {
+        domElement.style.cursor = "grab";
+        detachDocument();
+      };
+
+      activeMove = handleMouseMove;
+      activeUp = handleMouseUp;
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+    };
+
+    domElement.addEventListener("mousedown", handleMouseDown);
+
+    return () => {
       domElement.removeEventListener("mousedown", handleMouseDown);
-      domElement.addEventListener("mousedown", handleMouseDown);
-
-      // Store for cleanup
-      (domElement as unknown as Record<string, unknown>).__cleanupDrag = () => {
-        domElement.removeEventListener("mousedown", handleMouseDown);
-      };
-    },
-    [
-      isDraggable,
-      x,
-      y,
-      radius,
-      displayedWidth,
-      displayedHeight,
-      offsetX,
-      offsetY,
-      onLandmarkMoved,
-      index,
-    ],
-  );
+      // Remove any listeners left on `document` by an in-progress drag.
+      detachDocument();
+    };
+  }, [
+    isDraggable,
+    x,
+    y,
+    radius,
+    displayedWidth,
+    displayedHeight,
+    offsetX,
+    offsetY,
+    onLandmarkMoved,
+    index,
+  ]);
 
   const dotStyle = isDraggable
     ? [
@@ -525,13 +546,15 @@ function DraggableJointDot({
           borderRadius: radius,
           left: x - radius,
           top: y - radius,
-          backgroundColor: Colors.primary,
-          shadowColor: Colors.primary,
+          // Point actuellement déplaçable : seul usage légitime de l'accent
+          // cyan dans ce composant (indicateur d'état actif/interactif).
+          backgroundColor: colors.accent,
+          shadowColor: colors.accent,
           shadowOffset: { width: 0, height: 0 },
           shadowOpacity: 0.9,
           shadowRadius: 6,
           borderWidth: 2,
-          borderColor: Colors.white,
+          borderColor: colors.white,
           zIndex: 10,
         },
       ]
@@ -553,7 +576,7 @@ function DraggableJointDot({
 
   return (
     <View
-      ref={attachDragListeners}
+      ref={setNodeRef}
       style={dotStyle}
       testID={isDraggable ? `draggable-dot-${index}` : `dot-${index}`}
     />
@@ -626,8 +649,10 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   angleText: {
-    color: Colors.white,
+    // Valeur d'angle affichée sur l'image : donnée héro → mono tabulaire.
+    color: colors.white,
+    fontFamily: fonts.mono,
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: fontWeight.semiBold,
   },
 });

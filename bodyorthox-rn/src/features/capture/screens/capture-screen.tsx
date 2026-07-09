@@ -1,9 +1,9 @@
 import React from "react";
 import {
   Platform,
+  Pressable,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { useRoute } from "@react-navigation/native";
@@ -14,9 +14,15 @@ import { CapturePreview } from "../components/capture-preview";
 import { CaptureSuccess } from "../components/capture-success";
 import { GuidedCameraOverlay } from "../components/guided-camera-overlay";
 import { LoadingSpinner } from "../../../shared/components/loading-spinner";
-import { Colors } from "../../../shared/design-system/colors";
-import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
-import { FontSize, FontWeight } from "../../../shared/design-system/typography";
+import { Btn } from "../../../components/Btn";
+import {
+  colors,
+  fonts,
+  fontSize,
+  fontWeight,
+  radius,
+  spacing,
+} from "../../../theme/tokens";
 import { WebCamera } from "../components/web-camera";
 import { PhotoUpload } from "../components/photo-upload";
 
@@ -128,34 +134,30 @@ export function CaptureScreen() {
           <View style={styles.controls} testID="capture-controls">
             {phase.type === "ready" ? (
               <>
-                <TouchableOpacity
-                  style={styles.captureButton}
+                <Btn
+                  label="Prendre une photo"
+                  icon="camera"
                   onPress={handleStartCapture}
+                  full
                   testID="start-capture-button"
-                  accessibilityRole="button"
-                  accessibilityLabel="Prendre une photo"
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.captureButtonIcon}>📷</Text>
-                  <Text style={styles.captureButtonText}>
-                    Prendre une photo
-                  </Text>
-                </TouchableOpacity>
+                />
                 <Text style={styles.captureHint}>
                   L'analyse HKA démarre automatiquement
                 </Text>
-                <TouchableOpacity
-                  style={styles.switchCameraButton}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.translucentButton,
+                    pressed && styles.pressed,
+                  ]}
                   onPress={() => webCameraRef.current?.switchCamera()}
                   testID="switch-camera-button"
                   accessibilityRole="button"
                   accessibilityLabel="Changer de caméra"
-                  activeOpacity={0.8}
                 >
-                  <Text style={styles.switchCameraText}>
+                  <Text style={styles.translucentButtonText}>
                     🔄 Changer de caméra
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
                 <PhotoUpload onPhotoSelected={handlePhotoUploaded} />
               </>
             ) : (
@@ -165,23 +167,27 @@ export function CaptureScreen() {
         )}
       {phase.type === "ready" && Platform.OS !== "web" && (
         <View style={styles.controls}>
-          <TouchableOpacity
-            style={styles.captureButton}
+          <Btn
+            label="Prendre une photo"
+            icon="camera"
             onPress={handleNativeCamera}
+            full
             testID="native-camera-button"
-          >
-            <Text style={styles.captureButtonIcon}>📷</Text>
-            <Text style={styles.captureButtonText}>Prendre une photo</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.galleryButton}
+          />
+          <Pressable
+            style={({ pressed }) => [
+              styles.translucentButton,
+              pressed && styles.pressed,
+            ]}
             onPress={handleNativeGallery}
             testID="native-gallery-button"
+            accessibilityRole="button"
+            accessibilityLabel="Choisir depuis la galerie"
           >
-            <Text style={styles.galleryButtonText}>
+            <Text style={styles.translucentButtonText}>
               📁 Choisir depuis la galerie
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       )}
     </View>
@@ -189,32 +195,33 @@ export function CaptureScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.black },
+  container: { flex: 1, backgroundColor: colors.captureBg },
   permissionContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: Spacing.xl,
-    gap: Spacing.md,
+    paddingHorizontal: spacing.s24,
+    gap: spacing.s16,
   },
   permissionIcon: {
     fontSize: 48,
   },
   permissionTitle: {
-    color: Colors.error,
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.semiBold,
+    color: colors.red,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.bodyLg,
+    fontWeight: fontWeight.semiBold,
     textAlign: "center",
   },
   permissionText: {
-    color: Colors.textOnPrimary,
+    color: colors.white70,
     textAlign: "center",
-    fontSize: FontSize.sm,
-    opacity: 0.75,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.body,
   },
   permissionActions: {
     width: "100%",
-    marginTop: Spacing.lg,
+    marginTop: spacing.s20,
   },
   controls: {
     position: "absolute",
@@ -222,76 +229,50 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     alignItems: "center",
-    paddingHorizontal: Spacing.lg,
-    gap: Spacing.sm,
-  },
-  captureButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.button,
-    height: 56,
-    width: "100%",
-    gap: Spacing.sm,
-  },
-  captureButtonIcon: {
-    fontSize: 20,
-  },
-  captureButtonText: {
-    color: Colors.textOnPrimary,
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.semiBold,
+    paddingHorizontal: spacing.s20,
+    gap: spacing.s10,
   },
   captureHint: {
-    color: Colors.textSecondary,
-    fontSize: FontSize.sm,
+    color: colors.white60,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
     textAlign: "center",
   },
   nativePlaceholder: {
-    backgroundColor: Colors.darkGrey,
+    backgroundColor: colors.captureViewfinderFrom,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: Spacing.xl,
+    paddingHorizontal: spacing.s24,
   },
   nativeInstructionTitle: {
     fontSize: 48,
-    marginBottom: Spacing.md,
+    marginBottom: spacing.s16,
   },
   nativeInstructionText: {
-    color: Colors.textSecondary,
-    fontSize: FontSize.md,
+    color: colors.white60,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.body,
     textAlign: "center",
   },
-  galleryButton: {
+  translucentButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: Colors.darkGrey,
-    borderRadius: BorderRadius.button,
-    height: 48,
-    width: "100%",
-  },
-  galleryButtonText: {
-    color: Colors.textOnPrimary,
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.medium,
-  },
-  switchCameraButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.12)",
-    borderColor: "rgba(255,255,255,0.25)",
+    backgroundColor: colors.white12,
+    borderColor: colors.white20,
     borderWidth: 1,
-    borderRadius: BorderRadius.button,
-    height: 44,
+    borderRadius: radius.button,
+    minHeight: 44,
     width: "100%",
-    marginTop: Spacing.sm,
+    paddingHorizontal: spacing.s16,
   },
-  switchCameraText: {
-    color: Colors.textOnPrimary,
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.medium,
+  translucentButtonText: {
+    color: colors.textInverse,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.body,
+    fontWeight: fontWeight.medium,
+  },
+  pressed: {
+    opacity: 0.85,
   },
 });

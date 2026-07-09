@@ -13,13 +13,14 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RouteProp } from "@react-navigation/native";
 import type { RootStackParamList } from "../../../navigation/types";
 import { usePatientsStore } from "../store/patients-store";
-import { Patient, patientAge } from "../domain/patient";
+import { Patient, patientAge, patientDisplayName } from "../domain/patient";
 import { Analysis } from "../../capture/domain/analysis";
 import { useAnalysisRepository } from "../../../shared/hooks/use-analysis-repository";
 import { PatientHistoryTile } from "../components/patient-history-tile";
 import { HistorySection } from "../components/history-section";
 import { LoadingSpinner } from "../../../shared/components/loading-spinner";
 import { ErrorWidget } from "../../../shared/components/error-widget";
+import { SectionLabel } from "../../../components/SectionLabel";
 import { Colors } from "../../../shared/design-system/colors";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
 import { Typography } from "../../../shared/design-system/typography";
@@ -28,6 +29,7 @@ import {
   formatDisplayDateTime,
 } from "../../../shared/utils/date-utils";
 import { usePlatform } from "../../../shared/hooks/use-platform";
+import { fonts } from "../../../theme/tokens";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, "PatientDetail">;
@@ -140,14 +142,22 @@ export function PatientDetailScreen() {
   if (!patient) return <ErrorWidget message="Patient introuvable." />;
 
   const age = patientAge(patient);
+  const displayName = patientDisplayName(patient);
   const profile = patient.morphologicalProfile;
+
+  const metaParts = [
+    age != null ? `${age} ans` : null,
+    patient.dateOfBirth
+      ? formatDisplayDate(new Date(patient.dateOfBirth))
+      : null,
+  ].filter((p): p is string => p != null);
 
   const infoSection = (
     <>
       <View style={styles.profileHeader}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>
-            {patient.name
+            {displayName
               .split(" ")
               .map((w: string) => w[0])
               .slice(0, 2)
@@ -155,22 +165,22 @@ export function PatientDetailScreen() {
               .toUpperCase()}
           </Text>
         </View>
-        <Text style={[Typography.h2, styles.name]}>{patient.name}</Text>
-        <Text style={styles.meta}>
-          {age} ans · {formatDisplayDate(new Date(patient.dateOfBirth))}
-        </Text>
+        <Text style={[Typography.h2, styles.name]}>{displayName}</Text>
+        {metaParts.length > 0 && (
+          <Text style={styles.meta}>{metaParts.join(" · ")}</Text>
+        )}
       </View>
 
       {profile && (profile.heightCm || profile.weightKg || profile.sex || profile.laterality || profile.activityLevel || profile.sport || profile.pathology || (profile.pains && profile.pains.length > 0)) && (
         <View style={styles.card}>
-          <Text style={[Typography.label, styles.cardTitle]}>
+          <SectionLabel style={styles.cardTitle}>
             Profil morphologique
-          </Text>
+          </SectionLabel>
           {profile.heightCm && (
-            <InfoRow label="Taille" value={`${profile.heightCm} cm`} />
+            <InfoRow label="Taille" value={`${profile.heightCm} cm`} mono />
           )}
           {profile.weightKg && (
-            <InfoRow label="Poids" value={`${profile.weightKg} kg`} />
+            <InfoRow label="Poids" value={`${profile.weightKg} kg`} mono />
           )}
           {profile.heightCm && profile.weightKg && (
             <InfoRow
@@ -178,6 +188,7 @@ export function PatientDetailScreen() {
               value={(profile.weightKg / (profile.heightCm / 100) ** 2).toFixed(
                 1,
               )}
+              mono
             />
           )}
           {profile.sex && (
@@ -207,10 +218,11 @@ export function PatientDetailScreen() {
       )}
 
       <View style={styles.card}>
-        <Text style={[Typography.label, styles.cardTitle]}>Informations</Text>
+        <SectionLabel style={styles.cardTitle}>Informations</SectionLabel>
         <InfoRow
           label="Créé le"
           value={formatDisplayDateTime(new Date(patient.createdAt))}
+          mono
         />
       </View>
 
@@ -404,15 +416,18 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     paddingVertical: Spacing.lg,
   },
+  // Avatar neutre encre — pas de teinte décorative par patient.
   avatar: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
-  avatarText: { color: Colors.white, fontSize: 28, fontWeight: "700" },
+  avatarText: { color: Colors.textPrimary, fontSize: 28, fontWeight: "700" },
   name: { color: Colors.textPrimary },
   meta: { color: Colors.textSecondary, fontSize: 15 },
   card: {
@@ -437,10 +452,11 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: "right",
   },
-  mono: { fontFamily: "monospace", fontSize: 11 },
+  mono: { fontFamily: fonts.mono, fontSize: 11 },
   actions: { gap: Spacing.sm },
+  // CTA primaire — encre pleine (le cyan n'est jamais une couleur de bouton).
   primaryAction: {
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.textPrimary,
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.lg,
     alignItems: "center",

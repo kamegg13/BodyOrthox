@@ -28,18 +28,13 @@ jest.mock("@react-navigation/native", () => ({
 }));
 
 // ---------------------------------------------------------------------------
-// Mock database & repository
+// Mock analysis repository hook
 // ---------------------------------------------------------------------------
 const mockGetById = jest.fn();
+const mockRepo = { getById: mockGetById };
 
-jest.mock("../../../../core/database/init", () => ({
-  getDatabase: () => ({}),
-}));
-
-jest.mock("../../../capture/data/sqlite-analysis-repository", () => ({
-  SqliteAnalysisRepository: jest.fn().mockImplementation(() => ({
-    getById: mockGetById,
-  })),
+jest.mock("../../../../shared/hooks/use-analysis-repository", () => ({
+  useAnalysisRepository: () => mockRepo,
 }));
 
 // ---------------------------------------------------------------------------
@@ -176,7 +171,7 @@ describe("ResultsScreen", () => {
   // AC1: Data loaded and displayed correctly
   // -------------------------------------------------------------------------
   describe("AC1 — data loading from repository", () => {
-    it("calls SqliteAnalysisRepository.getById with the analysisId from route params", async () => {
+    it("calls the repository getById with the analysisId from route params", async () => {
       renderScreen();
 
       await waitFor(() => {
@@ -479,8 +474,10 @@ describe("ResultsScreen", () => {
         expect(screen.getByTestId("results-screen")).toBeTruthy();
       });
 
-      // Both HKA values (175.8 and 176.2) are in normal range (175-180)
-      expect(screen.getAllByText("Normal").length).toBeGreaterThanOrEqual(2);
+      // Both HKA values (175.8 and 176.2) are within the reference range (175-180)
+      expect(
+        screen.getAllByText("Dans la plage de référence").length,
+      ).toBeGreaterThanOrEqual(2);
     });
 
     it("shows dash for unavailable angles", async () => {

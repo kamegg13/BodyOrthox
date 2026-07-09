@@ -5,7 +5,10 @@ import type { RootStackParamList } from "../types";
 import { ReportsList, type ReportListItem } from "../../screens/ReportsList";
 import { useAnalysisRepository } from "../../shared/hooks/use-analysis-repository";
 import { usePatientsStore } from "../../features/patients/store/patients-store";
-import type { Patient } from "../../features/patients/domain/patient";
+import {
+  patientDisplayName,
+  type Patient,
+} from "../../features/patients/domain/patient";
 import type { Analysis } from "../../features/capture/domain/analysis";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -76,7 +79,7 @@ function buildItem(patient: Patient, a: Analysis): ReportListItem {
   return {
     analysisId: a.id,
     patientId: patient.id,
-    patientName: patient.name,
+    patientName: patientDisplayName(patient),
     date,
     ...(hkaSummary ? { hkaSummary } : {}),
     severity,

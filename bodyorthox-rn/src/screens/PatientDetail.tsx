@@ -14,7 +14,6 @@ import {
   BottomTab,
   Btn,
   Card,
-  Gradient,
   Icon,
   SectionLabel,
 } from "../components";
@@ -23,7 +22,7 @@ import {
   fonts,
   fontSize,
   fontWeight,
-  gradients,
+  letterSpacing,
   radius,
   shadows,
   spacing,
@@ -74,55 +73,52 @@ export function PatientDetail({
 }: PatientDetailProps) {
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="light-content" />
-      <SafeAreaView edges={["top"]} style={styles.heroSafe}>
-        <Gradient gradient={gradients.hero} style={styles.heroBg}>
-          <View style={styles.heroDecor} pointerEvents="none" />
-          <View style={styles.heroInner}>
-            <View style={styles.heroTopRow}>
-              <Pressable
-                onPress={onBack}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel="Retour"
-                style={styles.iconBtn}
-              >
-                <Icon name="back" size={16} color={colors.textInverse} />
-              </Pressable>
-              <Text style={styles.heroLabel}>Fiche patient</Text>
-              <Pressable
-                onPress={onEdit}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel="Modifier"
-                style={styles.iconBtn}
-              >
-                <Icon name="edit" size={16} color={colors.textInverse} />
-              </Pressable>
-            </View>
+      <StatusBar barStyle="dark-content" />
+      <SafeAreaView edges={["top"]} style={styles.headerSafe}>
+        <View style={styles.headerInner}>
+          <View style={styles.headerTopRow}>
+            <Pressable
+              onPress={onBack}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Retour"
+              style={styles.iconBtn}
+            >
+              <Icon name="back" size={16} color={colors.ink} />
+            </Pressable>
+            <Text style={styles.headerLabel}>Fiche patient</Text>
+            <Pressable
+              onPress={onEdit}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Modifier"
+              style={styles.iconBtn}
+            >
+              <Icon name="edit" size={16} color={colors.ink} />
+            </Pressable>
+          </View>
 
-            <View style={styles.identityRow}>
-              <View style={styles.avatar}>
-                <Icon name="user" size={28} color={colors.textInverse} strokeWidth={1.5} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.heroName}>{data.name}</Text>
-                <View style={styles.heroMetaRow}>
-                  <Text style={styles.heroMeta}>
-                    {data.sex} · {data.age}a · #{data.id}
-                  </Text>
-                  <Badge label={data.status.label} color={data.status.color} />
-                </View>
-              </View>
+          <View style={styles.identityRow}>
+            <View style={styles.avatar}>
+              <Icon name="user" size={28} color={colors.textSecond} strokeWidth={1.5} />
             </View>
-
-            <View style={styles.metricsGrid}>
-              <Metric value={`${data.heightCm}`} unit=" cm" label="Taille" />
-              <Metric value={`${data.weightKg}`} unit=" kg" label="Poids" />
-              <Metric value={data.dob} label="Naissance" />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.heroName}>{data.name}</Text>
+              <View style={styles.heroMetaRow}>
+                <Text style={styles.heroMeta}>
+                  {data.sex} · {data.age}a · #{data.id}
+                </Text>
+                <Badge label={data.status.label} color={data.status.color} />
+              </View>
             </View>
           </View>
-        </Gradient>
+
+          <View style={styles.metricsGrid}>
+            <Metric value={`${data.heightCm}`} unit=" cm" label="Taille" />
+            <Metric value={`${data.weightKg}`} unit=" kg" label="Poids" />
+            <Metric value={data.dob} label="Naissance" />
+          </View>
+        </View>
       </SafeAreaView>
 
       <ScrollView
@@ -222,25 +218,18 @@ function HistoryRow({
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
-  heroSafe: { backgroundColor: colors.navy },
-  heroBg: { paddingHorizontal: 0 },
-  heroDecor: {
-    position: "absolute",
-    top: -50,
-    right: -50,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    borderWidth: 22,
-    borderColor: colors.white06,
+  headerSafe: {
+    backgroundColor: colors.bg,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
-  heroInner: {
+  headerInner: {
     paddingHorizontal: spacing.heroPadH,
     paddingTop: 8,
-    paddingBottom: spacing.s20,
+    paddingBottom: spacing.s18,
     gap: spacing.s14,
   },
-  heroTopRow: {
+  headerTopRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -248,16 +237,20 @@ const styles = StyleSheet.create({
   iconBtn: {
     width: 36,
     height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.white12,
+    borderRadius: radius.iconSm,
+    backgroundColor: colors.bgCard,
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
-  heroLabel: {
+  headerLabel: {
     fontFamily: fonts.sans,
-    fontSize: fontSize.bodyLg,
+    fontSize: fontSize.eyebrow,
     fontWeight: fontWeight.semiBold,
-    color: colors.white60,
+    color: colors.textMuted,
+    letterSpacing: letterSpacing.eyebrow,
+    textTransform: "uppercase",
   },
   identityRow: {
     flexDirection: "row",
@@ -268,17 +261,17 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: radius.avatarLg,
-    backgroundColor: colors.white12,
-    borderWidth: 1.5,
-    borderColor: colors.white35,
+    backgroundColor: colors.bgSubtle,
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
   heroName: {
-    fontFamily: fonts.sans,
-    fontSize: 19,
-    fontWeight: fontWeight.extraBold,
-    color: colors.textInverse,
+    fontFamily: fonts.display,
+    fontSize: fontSize.hero,
+    fontWeight: fontWeight.bold,
+    color: colors.ink,
     letterSpacing: -0.4,
   },
   heroMetaRow: {
@@ -290,7 +283,7 @@ const styles = StyleSheet.create({
   heroMeta: {
     fontFamily: fonts.mono,
     fontSize: fontSize.caption,
-    color: colors.white55,
+    color: colors.textMuted,
   },
   metricsGrid: {
     flexDirection: "row",
@@ -298,8 +291,10 @@ const styles = StyleSheet.create({
   },
   metricCell: {
     flex: 1,
-    backgroundColor: colors.white07,
-    borderRadius: 11,
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.cardSm,
+    borderWidth: 1,
+    borderColor: colors.border,
     paddingVertical: spacing.s9,
     paddingHorizontal: spacing.s10,
     gap: 2,
@@ -308,20 +303,21 @@ const styles = StyleSheet.create({
     fontFamily: fonts.mono,
     fontSize: fontSize.statSm,
     fontWeight: fontWeight.bold,
-    color: colors.textInverse,
+    color: colors.ink,
   },
   metricUnit: {
     fontFamily: fonts.mono,
     fontSize: fontSize.monoSm,
     fontWeight: fontWeight.medium,
-    color: colors.white60,
+    color: colors.textMuted,
   },
   metricLabel: {
     fontFamily: fonts.sans,
     fontSize: fontSize.monoSm,
-    color: colors.white40,
-    letterSpacing: 0.05 * fontSize.monoSm,
+    color: colors.textMuted,
+    letterSpacing: letterSpacing.label,
     textTransform: "uppercase",
+    marginTop: 2,
   },
   body: { flex: 1 },
   bodyContent: {
@@ -340,7 +336,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.eyebrow,
     fontWeight: fontWeight.bold,
     color: colors.textMuted,
-    letterSpacing: 0.08 * fontSize.eyebrow,
+    letterSpacing: letterSpacing.eyebrow,
     textTransform: "uppercase",
     marginBottom: 4,
   },
@@ -399,8 +395,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   historyDate: {
-    fontFamily: fonts.sans,
-    fontSize: fontSize.eyebrow,
+    fontFamily: fonts.mono,
+    fontSize: fontSize.monoSm,
     color: colors.textMuted,
   },
   tabSafe: { backgroundColor: colors.bgCard },

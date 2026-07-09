@@ -173,13 +173,8 @@ export function PatientList({ hideBottomTab = false, onAddPatient, onPatientPres
             </Text>
           </View>
         ) : (
-          filtered.map((p, idx) => (
-            <PatientRow
-              key={p.id}
-              patient={p}
-              tone={idx % 2 === 0 ? "navy" : "teal"}
-              onPress={() => onPatientPress?.(p)}
-            />
+          filtered.map((p) => (
+            <PatientRow key={p.id} patient={p} onPress={() => onPatientPress?.(p)} />
           ))
         )}
       </ScrollView>
@@ -197,14 +192,11 @@ export function PatientList({ hideBottomTab = false, onAddPatient, onPatientPres
 
 interface PatientRowProps {
   readonly patient: Patient;
-  readonly tone: "navy" | "teal";
   readonly onPress?: () => void;
 }
-function PatientRow({ patient, tone, onPress }: PatientRowProps) {
+function PatientRow({ patient, onPress }: PatientRowProps) {
   const meta = buildPatientMeta(patient);
   const status = derivePatientStatus(patient);
-  const avatarBg = tone === "navy" ? colors.navyLight : colors.tealLight;
-  const avatarFg = tone === "navy" ? colors.navyMid : colors.teal;
 
   return (
     <Pressable
@@ -213,8 +205,8 @@ function PatientRow({ patient, tone, onPress }: PatientRowProps) {
       accessibilityRole="button"
       accessibilityLabel={patient.name}
     >
-      <View style={[styles.avatar, { backgroundColor: avatarBg }]}>
-        <Icon name="user" size={18} color={avatarFg} strokeWidth={1.75} />
+      <View style={styles.avatar}>
+        <Icon name="user" size={18} color={colors.textSecond} strokeWidth={1.75} />
       </View>
       <View style={styles.rowMid}>
         <Text style={styles.rowName} numberOfLines={1}>
@@ -288,9 +280,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   title: {
-    fontFamily: fonts.sans,
+    fontFamily: fonts.display,
     fontSize: fontSize.h1,
-    fontWeight: fontWeight.extraBold,
+    fontWeight: fontWeight.bold,
     color: colors.textPrimary,
     letterSpacing: -0.5,
   },
@@ -298,7 +290,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: colors.navyMid,
+    backgroundColor: colors.ink,
     alignItems: "center",
     justifyContent: "center",
     ...shadows.primary,
@@ -341,8 +333,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   chipActive: {
-    backgroundColor: colors.navy,
-    borderColor: colors.navy,
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
   },
   chipLabel: {
     fontFamily: fonts.sans,
@@ -400,8 +392,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   rowDate: {
-    fontFamily: fonts.sans,
-    fontSize: fontSize.eyebrow,
+    fontFamily: fonts.mono,
+    fontSize: fontSize.monoSm,
     color: colors.textMuted,
   },
   empty: {

@@ -4,6 +4,7 @@ import {
   deviationColor,
   DeviationLevel,
 } from "../reference-norms";
+import { Colors } from "../../../../shared/design-system/colors";
 
 describe("REFERENCE_NORMS", () => {
   it("defines norms for all three joints", () => {
@@ -86,21 +87,20 @@ describe("assessAngle", () => {
 });
 
 describe("deviationColor", () => {
-  it("returns green for normal", () => {
-    expect(deviationColor("normal")).toBe("#34C759");
+  it("returns the success token for normal", () => {
+    expect(deviationColor("normal")).toBe(Colors.success);
   });
 
-  it("returns orange/yellow for mild", () => {
-    expect(deviationColor("mild")).toBeDefined();
-    expect(typeof deviationColor("mild")).toBe("string");
+  it("returns the warning token for mild", () => {
+    expect(deviationColor("mild")).toBe(Colors.warning);
   });
 
-  it("returns orange for moderate", () => {
-    expect(deviationColor("moderate")).toBeDefined();
+  it("returns the moderate warning token for moderate", () => {
+    expect(deviationColor("moderate")).toBe(Colors.warningModerate);
   });
 
-  it("returns red for severe", () => {
-    expect(deviationColor("severe")).toBe("#FF3B30");
+  it("returns the error token for severe", () => {
+    expect(deviationColor("severe")).toBe(Colors.error);
   });
 
   it("each level returns a different color", () => {

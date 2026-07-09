@@ -1,7 +1,7 @@
 import React, { useCallback, useRef, useEffect } from "react";
 import { Platform, StyleSheet, Text, TouchableOpacity } from "react-native";
-import { Colors } from "../../../shared/design-system/colors";
-import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
+import { colors, fonts, fontWeight, radius, spacing } from "../../../theme/tokens";
+import { validateImageFile } from "../domain/validate-image-file";
 
 interface PhotoUploadProps {
   onPhotoSelected: (dataUrl: string) => void;
@@ -22,7 +22,25 @@ export function PhotoUpload({ onPhotoSelected }: PhotoUploadProps) {
 
     const handleChange = () => {
       const file = input.files?.[0];
-      if (!file) return;
+      // Toujours vider l'input, même en cas de rejet, pour permettre de
+      // resélectionner le même fichier après correction.
+      const reset = () => {
+        input.value = "";
+      };
+
+      if (!file) {
+        reset();
+        return;
+      }
+
+      // `accept="image/*"` n'est qu'indicatif : on valide type + taille avant
+      // toute lecture pour éviter qu'une data URL non-image fige l'écran.
+      const validation = validateImageFile(file);
+      if (!validation.ok) {
+        reset();
+        window.alert(validation.message);
+        return;
+      }
 
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -31,8 +49,11 @@ export function PhotoUpload({ onPhotoSelected }: PhotoUploadProps) {
           onPhotoSelected(result);
         }
       };
+      reader.onerror = () => {
+        window.alert("Impossible de lire l'image. Réessayez avec une autre photo.");
+      };
       reader.readAsDataURL(file);
-      input.value = "";
+      reset();
     };
 
     input.addEventListener("change", handleChange);
@@ -66,17 +87,22 @@ export function PhotoUpload({ onPhotoSelected }: PhotoUploadProps) {
 }
 
 const styles = StyleSheet.create({
+  // Même grammaire que le bouton translucide de capture-screen : hairline
+  // blanche sur fond sombre, pas de card blanche opaque.
   button: {
-    backgroundColor: "rgba(255,255,255,0.15)",
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.lg,
-    marginTop: Spacing.md,
+    backgroundColor: colors.white12,
+    borderColor: colors.white20,
+    borderWidth: 1,
+    paddingHorizontal: spacing.s24,
+    paddingVertical: spacing.s8,
+    borderRadius: radius.button,
+    marginTop: spacing.s16,
   },
   buttonText: {
-    color: Colors.textSecondary,
+    color: colors.textInverse,
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: fontWeight.semiBold,
+    fontFamily: fonts.sans,
     textAlign: "center",
   },
 });

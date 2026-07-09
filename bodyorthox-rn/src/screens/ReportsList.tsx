@@ -131,9 +131,9 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.s12,
   },
   title: {
-    fontFamily: fonts.sans,
+    fontFamily: fonts.display,
     fontSize: fontSize.h1,
-    fontWeight: fontWeight.extraBold,
+    fontWeight: fontWeight.bold,
     color: colors.textPrimary,
     letterSpacing: -0.5,
   },
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.1,
   },
   rowMeta: {
-    fontFamily: fonts.sans,
+    fontFamily: fonts.mono,
     fontSize: fontSize.caption,
     color: colors.textMuted,
     marginTop: 2,
