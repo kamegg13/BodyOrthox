@@ -4,8 +4,6 @@ import { Analysis } from "../../domain/analysis";
 import { INotificationService } from "../../../../core/notifications/notification-types";
 import { ApiError } from "../../../../core/api/api-client";
 
-jest.mock("uuid", () => ({ v4: () => "analysis-id-1" }));
-
 const sampleLandmarks = {
   24: { x: 0.5, y: 0.3, visibility: 0.95 },
   26: { x: 0.5, y: 0.6, visibility: 0.9 },

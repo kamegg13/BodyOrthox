@@ -59,15 +59,13 @@ En mode production, `__DEV__` vaut `false` (défini dynamiquement selon le `--mo
 
 ## 3. Déploiement sur le Raspberry Pi
 
-Le web-dist est servi par le Pi qui proxy `/api` vers l'API privée Tailscale.
+Le déploiement web est **automatique et centralisé** : un push sur `main` touchant `bodyorthox-rn/**` déclenche `.github/workflows/deploy.yml`, qui envoie un `repository_dispatch` au repo [`kamegg13/orthopedist_gen_ai-deployment`](https://github.com/kamegg13/orthopedist_gen_ai-deployment). C'est ce repo externe qui build, rsync et redémarre le service (`systemd --user`, sans sudo) sur le Pi.
 
-```bash
-rsync -avz --delete web-dist/ pi@<host-tailscale>:/var/www/bodyorthox/
-```
+- App live : `https://orthogenai.inconnu-elevator.ts.net/` (Tailscale)
+- Statut du pipeline : [Actions du repo de déploiement](https://github.com/kamegg13/orthopedist_gen_ai-deployment/actions)
+- Procédure assistée complète (tests → push → surveillance CI → vérification live) : skill `deploy` (`.claude/commands/deploy/SKILL.md`)
 
-Côté Pi (à vérifier / configurer) :
-- Le reverse-proxy (nginx/caddy) doit router `/api/*` vers `https://orthogenai.inconnu-elevator.ts.net` (l'API Tailscale) et servir le SPA (`historyApiFallback` → `index.html`) pour les autres routes.
-- HTTPS de bout en bout ; pas de trafic en clair.
+Aucun rsync manuel depuis ce repo : le pipeline du repo de déploiement est la seule voie de mise en production.
 
 ## 4. Variables d'environnement
 
