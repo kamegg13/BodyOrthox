@@ -1,5 +1,6 @@
 import React, { useCallback, useRef, useEffect } from "react";
-import { Platform, StyleSheet, Text, TouchableOpacity } from "react-native";
+import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Icon } from "../../../components/icons";
 import { colors, fonts, fontWeight, radius, spacing } from "../../../theme/tokens";
 import { validateImageFile } from "../domain/validate-image-file";
 
@@ -81,7 +82,10 @@ export function PhotoUpload({ onPhotoSelected }: PhotoUploadProps) {
       onPress={handlePress}
       testID="photo-upload-button"
     >
-      <Text style={styles.buttonText}>📁 Importer une photo</Text>
+      <View style={styles.buttonRow}>
+        <Icon name="image" size={15} color={colors.white} strokeWidth={1.6} />
+        <Text style={styles.buttonText}>Importer une photo</Text>
+      </View>
     </TouchableOpacity>
   );
 }
@@ -97,6 +101,12 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.s8,
     borderRadius: radius.button,
     marginTop: spacing.s16,
+  },
+  buttonRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.s8,
   },
   buttonText: {
     color: colors.textInverse,

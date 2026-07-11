@@ -29,7 +29,12 @@ export type IconName =
   | "plus"
   | "bell"
   | "flip"
-  | "edit";
+  | "edit"
+  | "clock"
+  | "trendUp"
+  | "arrowRight"
+  | "image"
+  | "alert";
 
 interface IconProps {
   readonly name: IconName;
@@ -222,6 +227,43 @@ export function Icon({ name, size = 16, color = colors.textPrimary, strokeWidth 
         <Svg width={size} height={size} viewBox="0 0 16 16">
           <Path d="M11 2.5 L 13.5 5 L 5 13.5 L 2.5 13.5 L 2.5 11 Z" {...stroke} />
           <Line x1={9.5} y1={4} x2={12} y2={6.5} {...stroke} />
+        </Svg>
+      );
+    case "clock":
+      return (
+        <Svg width={size} height={size} viewBox="0 0 16 16">
+          <Circle cx={8} cy={8} r={5.5} {...stroke} />
+          <Polyline points="8 5 8 8 10.2 9.5" {...stroke} />
+        </Svg>
+      );
+    case "trendUp":
+      return (
+        <Svg width={size} height={size} viewBox="0 0 16 16">
+          <Line x1={3} y1={13} x2={13} y2={3} {...stroke} />
+          <Polyline points="6.5 3 13 3 13 9.5" {...stroke} />
+        </Svg>
+      );
+    case "arrowRight":
+      return (
+        <Svg width={size} height={size} viewBox="0 0 16 16">
+          <Line x1={2.5} y1={8} x2={13} y2={8} {...stroke} />
+          <Polyline points="8.5 3.5 13 8 8.5 12.5" {...stroke} />
+        </Svg>
+      );
+    case "image":
+      return (
+        <Svg width={size} height={size} viewBox="0 0 16 16">
+          <Rect x={2} y={2} width={12} height={12} rx={2} {...stroke} />
+          <Circle cx={6} cy={6} r={1.4} {...stroke} />
+          <Polyline points="2 11.5 5.8 7.8 8.8 10.8 11 8.6 14 11.5" {...stroke} />
+        </Svg>
+      );
+    case "alert":
+      return (
+        <Svg width={size} height={size} viewBox="0 0 16 16">
+          <Path d="M8 2 L 14.5 13.5 L 1.5 13.5 Z" {...stroke} />
+          <Line x1={8} y1={6.5} x2={8} y2={9.5} {...stroke} />
+          <Line x1={8} y1={11.4} x2={8} y2={11.5} {...stroke} />
         </Svg>
       );
     default:

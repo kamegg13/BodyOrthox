@@ -8,6 +8,14 @@
 import { Platform } from "react-native";
 import type { PoseLandmarks, BilateralAngles } from "./angle-calculator";
 
+/**
+ * Couleurs d'overlay v4 « Accessible & Ethical » — variantes vives de la
+ * palette (lisibles sur photo, les labels portent le côté en texte G/D).
+ */
+const LEFT_COLOR = "#34D399"; // jambe gauche — vert santé vif
+const RIGHT_COLOR = "#22D3EE"; // jambe droite — cyan secondaire
+const GUIDE_COLOR = "#FBBF24"; // ligne de référence bassin — ambre vif
+
 export function drawSkeletonOnCanvas(
   ctx: CanvasRenderingContext2D,
   landmarks: PoseLandmarks,
@@ -62,18 +70,18 @@ export function drawSkeletonOnCanvas(
   };
 
   // Left leg (green): hip=23, knee=25, ankle=27
-  segment(23, 25, "#34C759");
-  segment(25, 27, "#34C759");
-  joint(23, "#34C759");
-  joint(25, "#34C759");
-  joint(27, "#34C759");
+  segment(23, 25, LEFT_COLOR);
+  segment(25, 27, LEFT_COLOR);
+  joint(23, LEFT_COLOR);
+  joint(25, LEFT_COLOR);
+  joint(27, LEFT_COLOR);
 
   // Right leg (blue): hip=24, knee=26, ankle=28
-  segment(24, 26, "#007AFF");
-  segment(26, 28, "#007AFF");
-  joint(24, "#007AFF");
-  joint(26, "#007AFF");
-  joint(28, "#007AFF");
+  segment(24, 26, RIGHT_COLOR);
+  segment(26, 28, RIGHT_COLOR);
+  joint(24, RIGHT_COLOR);
+  joint(26, RIGHT_COLOR);
+  joint(28, RIGHT_COLOR);
 
   // Hip-to-hip dashed (yellow)
   if (has(23) && has(24)) {
@@ -81,7 +89,7 @@ export function drawSkeletonOnCanvas(
     ctx.setLineDash([Math.max(8, w * 0.015), Math.max(4, w * 0.007)]);
     ctx.moveTo(lx(23), ly(23));
     ctx.lineTo(lx(24), ly(24));
-    ctx.strokeStyle = "#FFD60A";
+    ctx.strokeStyle = GUIDE_COLOR;
     ctx.lineWidth = 2;
     ctx.stroke();
     ctx.setLineDash([]);
@@ -94,7 +102,7 @@ export function drawSkeletonOnCanvas(
     `G HKA: ${bilateral.leftHKA > 0 ? bilateral.leftHKA.toFixed(1) + "°" : "—"}`,
     16,
     topY,
-    "#34C759",
+    LEFT_COLOR,
     "left",
     hkaSz,
   );
@@ -102,7 +110,7 @@ export function drawSkeletonOnCanvas(
     `D HKA: ${bilateral.rightHKA > 0 ? bilateral.rightHKA.toFixed(1) + "°" : "—"}`,
     w - 16,
     topY,
-    "#007AFF",
+    RIGHT_COLOR,
     "right",
     hkaSz,
   );
@@ -111,22 +119,22 @@ export function drawSkeletonOnCanvas(
   const jointSz = Math.max(24, w * 0.034);
 
   if (has(23) && bilateral.left.hipAngle > 0) {
-    label(`Han. ${bilateral.left.hipAngle.toFixed(1)}°`, lx(23) + 12, ly(23) - 14, "#34C759", "left", jointSz);
+    label(`Han. ${bilateral.left.hipAngle.toFixed(1)}°`, lx(23) + 12, ly(23) - 14, LEFT_COLOR, "left", jointSz);
   }
   if (has(24) && bilateral.right.hipAngle > 0) {
-    label(`Han. ${bilateral.right.hipAngle.toFixed(1)}°`, lx(24) - 12, ly(24) - 14, "#007AFF", "right", jointSz);
+    label(`Han. ${bilateral.right.hipAngle.toFixed(1)}°`, lx(24) - 12, ly(24) - 14, RIGHT_COLOR, "right", jointSz);
   }
   if (has(25) && bilateral.left.kneeAngle > 0) {
-    label(`Gen. ${bilateral.left.kneeAngle.toFixed(1)}°`, lx(25) + 12, ly(25) - 14, "#34C759", "left", jointSz);
+    label(`Gen. ${bilateral.left.kneeAngle.toFixed(1)}°`, lx(25) + 12, ly(25) - 14, LEFT_COLOR, "left", jointSz);
   }
   if (has(26) && bilateral.right.kneeAngle > 0) {
-    label(`Gen. ${bilateral.right.kneeAngle.toFixed(1)}°`, lx(26) - 12, ly(26) - 14, "#007AFF", "right", jointSz);
+    label(`Gen. ${bilateral.right.kneeAngle.toFixed(1)}°`, lx(26) - 12, ly(26) - 14, RIGHT_COLOR, "right", jointSz);
   }
   if (has(27) && bilateral.left.ankleAngle > 0) {
-    label(`Che. ${bilateral.left.ankleAngle.toFixed(1)}°`, lx(27) + 12, ly(27) + jointSz + 4, "#34C759", "left", jointSz);
+    label(`Che. ${bilateral.left.ankleAngle.toFixed(1)}°`, lx(27) + 12, ly(27) + jointSz + 4, LEFT_COLOR, "left", jointSz);
   }
   if (has(28) && bilateral.right.ankleAngle > 0) {
-    label(`Che. ${bilateral.right.ankleAngle.toFixed(1)}°`, lx(28) - 12, ly(28) + jointSz + 4, "#007AFF", "right", jointSz);
+    label(`Che. ${bilateral.right.ankleAngle.toFixed(1)}°`, lx(28) - 12, ly(28) + jointSz + 4, RIGHT_COLOR, "right", jointSz);
   }
 }
 

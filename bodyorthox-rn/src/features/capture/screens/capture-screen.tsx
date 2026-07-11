@@ -15,6 +15,7 @@ import { CaptureSuccess } from "../components/capture-success";
 import { GuidedCameraOverlay } from "../components/guided-camera-overlay";
 import { LoadingSpinner } from "../../../shared/components/loading-spinner";
 import { Btn } from "../../../components/Btn";
+import { Icon } from "../../../components/icons";
 import {
   colors,
   fonts,
@@ -154,9 +155,10 @@ export function CaptureScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="Changer de caméra"
                 >
-                  <Text style={styles.translucentButtonText}>
-                    🔄 Changer de caméra
-                  </Text>
+                  <View style={styles.translucentButtonRow}>
+                    <Icon name="flip" size={15} color={colors.white} strokeWidth={1.6} />
+                    <Text style={styles.translucentButtonText}>Changer de caméra</Text>
+                  </View>
                 </Pressable>
                 <PhotoUpload onPhotoSelected={handlePhotoUploaded} />
               </>
@@ -184,9 +186,10 @@ export function CaptureScreen() {
             accessibilityRole="button"
             accessibilityLabel="Choisir depuis la galerie"
           >
-            <Text style={styles.translucentButtonText}>
-              📁 Choisir depuis la galerie
-            </Text>
+            <View style={styles.translucentButtonRow}>
+              <Icon name="image" size={15} color={colors.white} strokeWidth={1.6} />
+              <Text style={styles.translucentButtonText}>Choisir depuis la galerie</Text>
+            </View>
           </Pressable>
         </View>
       )}
@@ -265,6 +268,11 @@ const styles = StyleSheet.create({
     minHeight: 44,
     width: "100%",
     paddingHorizontal: spacing.s16,
+  },
+  translucentButtonRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.s8,
   },
   translucentButtonText: {
     color: colors.textInverse,

@@ -1,83 +1,96 @@
 /**
- * BodyOrthox – Design Tokens (v3 « Instrument »)
- * Source : DESIGN_DIRECTION.md (direction artistique).
+ * BodyOrthox – Design Tokens (v4 « Accessible & Ethical »)
+ * Source : design-system/bodyorthox/MASTER.md (généré par ui-ux-pro-max).
  *
- * Identité : instrument de mesure numérique — fond papier, encre, hairlines,
- * un seul accent cyan chirurgical, données en monospace. Plat et tracé.
+ * Identité : outil clinique de confiance — cyan calme, vert santé pour les
+ * actions, fond teinté #ECFEFF, encre #164E63, WCAG AA/AAA visé.
+ * Typographie : Lexend (titres, valeurs, boutons) + Source Sans 3 (corps).
  *
- * Adaptation React Native :
- * - les gradients historiques sont conservés en API mais rendus quasi plats ;
- * - les ombres sont réduites au minimum (hiérarchie par le trait, pas l'ombre).
+ * Règles portées par le système :
+ * - contraste texte ≥ 4.5:1 ; les états ne reposent jamais sur la couleur seule ;
+ * - cibles tactiles ≥ 44 px (voir sizes.tap) ;
+ * - anti-patterns : néons, gradients décoratifs marqués, emojis-icônes.
  *
- * Clés legacy (navy, navyMid, teal…) : ALIAS vers les valeurs Instrument pour
- * la rétro-compatibilité — ne pas les utiliser dans du code nouveau.
+ * Clés legacy (ink, navy, teal…) : ALIAS vers les valeurs v4 pour la
+ * rétro-compatibilité — ne pas les utiliser dans du code nouveau.
  */
 import { Platform, type ViewStyle, type TextStyle } from "react-native";
 
-// Valeurs canoniques « Instrument »
-const INK = "#101012";
-const INK_SOFT = "#16161B";
-const ACCENT = "#0891B2";
-const ACCENT_DEEP = "#0E7490";
-const ACCENT_LIGHT = "#E0F2F7";
-const ACCENT_SOFT = "#BAE6F0";
+// Valeurs canoniques « Accessible & Ethical »
+const PRIMARY = "#0891B2";
+const PRIMARY_DEEP = "#0E7490";
+const PRIMARY_LIGHT = "#D7F5FA";
+const PRIMARY_SOFT = "#A5F3FC";
+const ACCENT_GREEN = "#059669";
+const ACCENT_GREEN_DEEP = "#047857";
+const ACCENT_GREEN_LIGHT = "#D9F2E5";
+const FG = "#164E63";
+const FG_DEEP = "#103B4C";
 
 export const colors = {
-  // Backgrounds — papier chaud
-  bg: "#FAFAF8",
+  // Backgrounds — cyan très pâle, cartes blanches
+  bg: "#ECFEFF",
   bgCard: "#FFFFFF",
-  bgSubtle: "#F3F2EE",
-  bgHover: "#F0EFEA",
+  bgSubtle: "#E8F1F6",
+  bgHover: "#DDF2F7",
 
-  // Borders — hairlines encre
-  border: "rgba(16,16,18,0.14)",
-  borderMid: "rgba(16,16,18,0.26)",
+  // Borders — teintées primaire (cartes bordées, pas de hairline grise)
+  border: PRIMARY_SOFT,
+  borderMid: "rgba(22,78,99,0.30)",
 
-  // Encre & accent (canoniques)
-  ink: INK,
-  inkSoft: INK_SOFT,
-  accent: ACCENT,
-  accentDeep: ACCENT_DEEP,
-  accentLight: ACCENT_LIGHT,
-  accentSoft: ACCENT_SOFT,
+  // Système de couleur canonique v4
+  primary: PRIMARY,
+  primaryDeep: PRIMARY_DEEP,
+  primaryLight: PRIMARY_LIGHT,
+  primarySoft: PRIMARY_SOFT,
+  onPrimary: "#FFFFFF",
+  secondary: "#22D3EE",
 
-  // Legacy « navy » → encre/accent (alias rétro-compat)
-  navy: INK,
-  navyMid: ACCENT,
-  navyLight: ACCENT_LIGHT,
-  navySoft: ACCENT_SOFT,
+  // Legacy « ink » → encre cyan foncé (alias rétro-compat)
+  ink: FG,
+  inkSoft: FG_DEEP,
+  accent: PRIMARY,
+  accentDeep: PRIMARY_DEEP,
+  accentLight: PRIMARY_LIGHT,
+  accentSoft: PRIMARY_SOFT,
 
-  // Legacy « teal » → accent unique (alias rétro-compat)
-  teal: ACCENT,
-  tealLight: ACCENT_LIGHT,
-  tealSoft: ACCENT_SOFT,
+  // Legacy « navy » → primaire (alias rétro-compat)
+  navy: FG,
+  navyMid: PRIMARY,
+  navyLight: PRIMARY_LIGHT,
+  navySoft: PRIMARY_SOFT,
 
-  // Semantic — mesures (jamais portées par la couleur seule)
+  // Legacy « teal » → primaire (alias rétro-compat)
+  teal: PRIMARY,
+  tealLight: PRIMARY_LIGHT,
+  tealSoft: PRIMARY_SOFT,
+
+  // Semantic — mesures et états (toujours accompagnés d'icône/texte)
+  green: ACCENT_GREEN,
+  greenDeep: ACCENT_GREEN_DEEP,
+  greenLight: ACCENT_GREEN_LIGHT,
   amber: "#92510A",
-  // Écart léger (mild) : ambre plus clair que `amber` (réservé à modéré),
-  // AA sur fond clair (4.6:1 sur #FFFFFF).
+  // Écart modéré : ambre AA sur fonds clairs (4.6:1 sur #FFFFFF).
   amberMid: "#B45309",
-  amberLight: "#FEF3C7",
-  amberSoft: "#FDE68A",
-  red: "#B91C1C",
+  amberLight: "#FDF0DC",
+  amberSoft: "#FBE3C0",
+  red: "#DC2626",
   redLight: "#FEE2E2",
-  green: "#047857",
-  greenLight: "#ECFDF5",
 
-  // Text — encre sur papier
-  textPrimary: INK,
-  textSecond: "#46464F",
-  // AA : 4.9:1 sur blanc, 4.7:1 sur bg #FAFAF8.
-  textMuted: "#6E6E78",
+  // Text — encre cyan sur fonds clairs
+  textPrimary: FG,
+  textSecond: "#35606F",
+  // AA : ≥ 4.5:1 sur blanc et sur bg #ECFEFF.
+  textMuted: "#46707F",
   textInverse: "#FFFFFF",
 
   white: "#FFFFFF",
   black: "#000000",
 
-  // Capture screen — noir instrument, hairlines blanches
-  captureBg: "#0C0C0E",
-  captureViewfinderFrom: "#101014",
-  captureViewfinderTo: "#16161B",
+  // Capture screen — chambre sombre cyan, repères clairs
+  captureBg: "#0A2029",
+  captureViewfinderFrom: "#0E2A35",
+  captureViewfinderTo: "#081820",
 
   // Whites with alpha (overlays sur fonds sombres)
   white06: "rgba(255,255,255,0.06)",
@@ -94,8 +107,8 @@ export const colors = {
 } as const;
 
 /**
- * Gradients — API conservée, rendu « Instrument » : surfaces quasi plates
- * (duo très resserré), plus aucun dégradé décoratif marqué.
+ * Gradients — API conservée, rendu v4 : duos resserrés dans la teinte
+ * primaire ; aucun dégradé décoratif marqué (anti-pattern du système).
  */
 export type GradientStop = readonly [color: string, offset: number];
 export interface Gradient {
@@ -107,50 +120,50 @@ export const gradients = {
   primaryBtn: {
     angle: 135,
     stops: [
-      [INK_SOFT, 0],
-      [INK, 1],
+      [PRIMARY, 0],
+      [PRIMARY_DEEP, 1],
     ],
   } satisfies Gradient,
   tealBtn: {
     angle: 135,
     stops: [
-      [ACCENT, 0],
-      [ACCENT_DEEP, 1],
+      [PRIMARY, 0],
+      [PRIMARY_DEEP, 1],
     ],
   } satisfies Gradient,
   hero: {
     angle: 160,
     stops: [
-      [INK_SOFT, 0],
-      [INK, 1],
+      [PRIMARY, 0],
+      [PRIMARY_DEEP, 1],
     ],
   } satisfies Gradient,
   tipBanner: {
     angle: 120,
     stops: [
-      ["#F3F2EE", 0],
-      [ACCENT_LIGHT, 1],
+      ["#E8F1F6", 0],
+      [PRIMARY_LIGHT, 1],
     ],
   } satisfies Gradient,
   reportHeader: {
     angle: 120,
     stops: [
-      [INK_SOFT, 0],
-      [INK, 1],
+      [FG, 0],
+      [FG_DEEP, 1],
     ],
   } satisfies Gradient,
   viewfinder: {
     angle: 160,
     stops: [
-      ["#101014", 0],
-      ["#16161B", 1],
+      ["#0E2A35", 0],
+      ["#081820", 1],
     ],
   } satisfies Gradient,
 } as const;
 
 /**
- * Shadows — quasi nulles : la hiérarchie vient des hairlines et de l'espace.
- * On garde l'API (sm/md/lg/primary/teal/actionBar) avec des valeurs discrètes.
+ * Shadows — discrètes : la hiérarchie vient des bordures teintées et des
+ * remplissages, pas de l'ombre. API conservée (sm/md/lg/primary/teal/actionBar).
  */
 export const shadows: Record<
   "sm" | "md" | "lg" | "primary" | "teal" | "actionBar",
@@ -158,9 +171,9 @@ export const shadows: Record<
 > = {
   sm: Platform.select({
     ios: {
-      shadowColor: INK,
+      shadowColor: FG,
       shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.03,
+      shadowOpacity: 0.04,
       shadowRadius: 4,
     },
     android: { elevation: 1 },
@@ -168,9 +181,9 @@ export const shadows: Record<
   }) as ViewStyle,
   md: Platform.select({
     ios: {
-      shadowColor: INK,
+      shadowColor: FG,
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.04,
+      shadowOpacity: 0.06,
       shadowRadius: 10,
     },
     android: { elevation: 1 },
@@ -178,9 +191,9 @@ export const shadows: Record<
   }) as ViewStyle,
   lg: Platform.select({
     ios: {
-      shadowColor: INK,
+      shadowColor: FG,
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.05,
+      shadowOpacity: 0.08,
       shadowRadius: 16,
     },
     android: { elevation: 2 },
@@ -188,29 +201,29 @@ export const shadows: Record<
   }) as ViewStyle,
   primary: Platform.select({
     ios: {
-      shadowColor: INK,
+      shadowColor: PRIMARY_DEEP,
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.06,
-      shadowRadius: 6,
+      shadowOpacity: 0.18,
+      shadowRadius: 8,
     },
     android: { elevation: 2 },
     default: {},
   }) as ViewStyle,
   teal: Platform.select({
     ios: {
-      shadowColor: INK,
+      shadowColor: PRIMARY_DEEP,
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.06,
-      shadowRadius: 6,
+      shadowOpacity: 0.18,
+      shadowRadius: 8,
     },
     android: { elevation: 2 },
     default: {},
   }) as ViewStyle,
   actionBar: Platform.select({
     ios: {
-      shadowColor: INK,
+      shadowColor: FG,
       shadowOffset: { width: 0, height: -2 },
-      shadowOpacity: 0.04,
+      shadowOpacity: 0.05,
       shadowRadius: 10,
     },
     android: { elevation: 3 },
@@ -219,32 +232,32 @@ export const shadows: Record<
 };
 
 /**
- * Typographie — Space Grotesk (display) / système (corps) / IBM Plex Mono
- * (toutes les données numériques : angles, écarts, IDs, dates techniques).
+ * Typographie — Lexend (titres, valeurs, boutons) / Source Sans 3 (corps) /
+ * mono système (IDs, dates techniques — chiffres tabulaires).
  *
  * Web : Google Fonts chargées via `<link>` dans `web/index.html`.
- * Native : fallback système assumé (pas de TTF bundlé pour l'instant).
+ * Native : TTF à bundler (assets/fonts) — voir design-system/bodyorthox/MASTER.md.
  */
 export const fonts = {
-  /** Titres, valeurs héro — Space Grotesk. */
+  /** Titres, valeurs héro, boutons — Lexend (lisibilité). */
   display: Platform.select({
-    web: '"Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-    ios: "SpaceGrotesk-Regular",
-    android: "SpaceGrotesk-Regular",
+    web: '"Lexend", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    ios: "Lexend",
+    android: "Lexend-Regular",
     default: "System",
   }) as string,
-  /** Corps de texte — pile système (lisibilité, zéro chargement). */
+  /** Corps de texte — Source Sans 3, fallback système. */
   sans: Platform.select({
-    web: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    ios: "System",
-    android: "System",
+    web: '"Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    ios: "Source Sans 3",
+    android: "SourceSans3-Regular",
     default: "System",
   }) as string,
-  /** Données chiffrées & techniques — IBM Plex Mono, tabulaire. */
+  /** Données techniques (IDs, dates) — mono système, tabulaire. */
   mono: Platform.select({
-    web: '"IBM Plex Mono", "SF Mono", Menlo, Consolas, monospace',
-    ios: "IBMPlexMono",
-    android: "IBMPlexMono",
+    web: 'ui-monospace, "SF Mono", Menlo, Consolas, monospace',
+    ios: "Menlo",
+    android: "monospace",
     default: "Menlo",
   }) as string,
 } as const;
@@ -257,39 +270,39 @@ export const fontWeight = {
   extraBold: "700",
 } as const satisfies Record<string, TextStyle["fontWeight"]>;
 
-/** Tailles de texte par rôle. */
+/** Tailles de texte par rôle — corps ≥ 15, base lisible mobile. */
 export const fontSize = {
   // Page H1 (Patients title)
-  h1: 22,
+  h1: 24,
   // Hero name (greeting, patient name)
-  hero: 20,
+  hero: 24,
   // Section H2
   h2: 22,
   // NavBar title
   navTitle: 16,
   // List item primary
-  listPrimary: 14,
+  listPrimary: 15,
   // Body / button
-  body: 14,
-  bodyLg: 15,
+  body: 15,
+  bodyLg: 16,
   // Stat values
   statLg: 32,
-  statMd: 26,
-  statSm: 14,
+  statMd: 28,
+  statSm: 15,
   // Caption / meta
-  caption: 12,
-  captionXs: 11,
+  caption: 12.5,
+  captionXs: 11.5,
   // Section label / Field label (eyebrow)
-  eyebrow: 11,
+  eyebrow: 12,
   // Tiny mono (IDs, live readouts)
-  monoSm: 10,
+  monoSm: 10.5,
   monoMd: 12,
 } as const;
 
-/** Lettrage des micro-labels uppercase (plaques d'instrument). */
+/** Lettrage des micro-labels uppercase. */
 export const letterSpacing = {
-  eyebrow: 1.4,
-  label: 1.1,
+  eyebrow: 0.96,
+  label: 0.8,
 } as const;
 
 /** Espacements. */
@@ -310,39 +323,39 @@ export const spacing = {
   s24: 24,
   s28: 28,
   // Insets fréquents
-  screenH: 16,
-  screenHWide: 18,
-  cardPadV: 12,
-  cardPadH: 14,
+  screenH: 20,
+  screenHWide: 20,
+  cardPadV: 14,
+  cardPadH: 16,
   heroPadH: 20,
   heroPadV: 18,
 } as const;
 
-/** Border radius par rôle — plat et net. */
+/** Border radius par rôle — arrondi net, cartes 16. */
 export const radius = {
-  button: 8,
-  field: 8,
-  iconSm: 8,
-  cardSm: 10,
-  cardLg: 10,
-  cardXl: 12,
+  button: 14,
+  field: 12,
+  iconSm: 10,
+  cardSm: 14,
+  cardLg: 16,
+  cardXl: 16,
   pill: 999,
   chip: 999,
-  avatarLg: 10,
-  shutterInner: 28,
-  shutterOuter: 36,
+  avatarLg: 12,
+  shutterInner: 29,
+  shutterOuter: 38,
 } as const;
 
-/** Tailles de composant (hauteurs, etc.). */
+/** Tailles de composant (hauteurs, etc.) — touch targets ≥ 44. */
 export const sizes = {
-  btnPrimary: 50,
-  btnSmall: 38,
+  btnPrimary: 52,
+  btnSmall: 44,
   field: 48,
-  search: 44,
-  navBar: 54,
-  bottomTab: 66,
+  search: 46,
+  navBar: 56,
+  bottomTab: 68,
   bottomTabSafePad: 6,
-  chip: 30,
+  chip: 32,
   tap: 44,
 } as const;
 

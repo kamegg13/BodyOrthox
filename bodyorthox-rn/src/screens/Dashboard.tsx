@@ -17,6 +17,7 @@ import {
   type IconName,
   SectionLabel,
 } from "../components";
+import { avatarTone, initials } from "../components/avatar-tone";
 import {
   colors,
   fonts,
@@ -28,7 +29,11 @@ import {
   spacing,
 } from "../theme/tokens";
 import { usePatientsStore } from "../features/patients/store/patients-store";
-import { patientAge, type Patient } from "../features/patients/domain/patient";
+import {
+  patientAge,
+  patientDisplayName,
+  type Patient,
+} from "../features/patients/domain/patient";
 
 interface DashboardProps {
   readonly practitionerName?: string;
@@ -84,7 +89,8 @@ export function Dashboard({
             <StatCard
               value={String(stats.total)}
               label="Patients"
-              sub={stats.thisWeek > 0 ? `+${stats.thisWeek} cette semaine` : "—"}
+              highlight
+              trend={stats.thisWeek > 0 ? `+${stats.thisWeek} cette semaine` : undefined}
             />
             <StatCard value={String(stats.today)} label="Aujourd’hui" sub="Sessions" />
             <StatCard value={String(stats.reports)} label="Rapports" sub="Générés" />
@@ -98,17 +104,28 @@ export function Dashboard({
         contentContainerStyle={styles.bodyContent}
         showsVerticalScrollIndicator={false}
       >
-        <SectionLabel>Actions rapides</SectionLabel>
+        <Pressable
+          onPress={() => onQuickAction?.("capture")}
+          style={({ pressed }) => [styles.primaryAction, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Capture"
+        >
+          <View style={styles.primaryActionIcon}>
+            <Icon name="camera" size={20} color={colors.onPrimary} strokeWidth={1.75} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.primaryActionTitle}>Nouvelle capture</Text>
+            <Text style={styles.primaryActionSub}>
+              L’analyse HKA démarre automatiquement
+            </Text>
+          </View>
+          <Icon name="arrowRight" size={16} color={colors.onPrimary} strokeWidth={1.75} />
+        </Pressable>
         <View style={styles.actionsGrid}>
           <ActionCard
             icon="plus"
             label="Nouveau patient"
             onPress={() => onQuickAction?.("new-patient")}
-          />
-          <ActionCard
-            icon="camera"
-            label="Capture"
-            onPress={() => onQuickAction?.("capture")}
           />
           <ActionCard
             icon="chart"
@@ -182,13 +199,24 @@ interface StatCardProps {
   readonly value: string;
   readonly label: string;
   readonly sub?: string;
+  /** Tendance positive — affichée en vert avec flèche. */
+  readonly trend?: string;
+  /** Met la valeur en couleur primaire. */
+  readonly highlight?: boolean;
 }
-function StatCard({ value, label, sub }: StatCardProps) {
+function StatCard({ value, label, sub, trend, highlight = false }: StatCardProps) {
   return (
     <View style={styles.statCard}>
-      <Text style={styles.statValue}>{value}</Text>
+      <Text style={[styles.statValue, highlight && styles.statValueHi]}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
-      {sub ? <Text style={styles.statSub}>{sub}</Text> : null}
+      {trend ? (
+        <View style={styles.statTrend}>
+          <Icon name="trendUp" size={10} color={colors.green} strokeWidth={1.8} />
+          <Text style={styles.statTrendText}>{trend}</Text>
+        </View>
+      ) : sub ? (
+        <Text style={styles.statSub}>{sub}</Text>
+      ) : null}
     </View>
   );
 }
@@ -206,9 +234,7 @@ function ActionCard({ icon, label, onPress }: ActionCardProps) {
       accessibilityRole="button"
       accessibilityLabel={label}
     >
-      <View style={styles.actionIcon}>
-        <Icon name={icon} size={20} color={colors.ink} strokeWidth={1.75} />
-      </View>
+      <Icon name={icon} size={18} color={colors.primary} strokeWidth={1.75} />
       <Text style={styles.actionLabel}>{label}</Text>
     </Pressable>
   );
@@ -229,8 +255,17 @@ function PatientRow({ patient, onPress }: PatientRowProps) {
       accessibilityRole="button"
       accessibilityLabel={patient.name}
     >
-      <View style={styles.avatar}>
-        <Icon name="user" size={18} color={colors.textSecond} strokeWidth={1.75} />
+      <View
+        style={[
+          styles.avatar,
+          { backgroundColor: avatarTone(patientDisplayName(patient)).bg },
+        ]}
+      >
+        <Text
+          style={[styles.avatarText, { color: avatarTone(patientDisplayName(patient)).fg }]}
+        >
+          {initials(patientDisplayName(patient))}
+        </Text>
       </View>
       <View style={styles.patientMid}>
         <Text style={styles.patientName} numberOfLines={1}>
@@ -376,12 +411,28 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   statValue: {
-    fontFamily: fonts.mono,
+    fontFamily: fonts.display,
     fontSize: fontSize.statLg,
-    fontWeight: fontWeight.bold,
+    fontWeight: fontWeight.semiBold,
     color: colors.ink,
     lineHeight: fontSize.statLg,
     letterSpacing: -0.5,
+    fontVariant: ["tabular-nums"],
+  },
+  statValueHi: {
+    color: colors.primary,
+  },
+  statTrend: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 2,
+  },
+  statTrendText: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.monoSm,
+    fontWeight: fontWeight.semiBold,
+    color: colors.green,
   },
   statLabel: {
     fontFamily: fonts.sans,
@@ -407,34 +458,57 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.s24,
     gap: spacing.s16,
   },
-  actionsGrid: {
+  primaryAction: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-  },
-  actionCard: {
-    flexBasis: "48%",
-    flexGrow: 1,
-    backgroundColor: colors.bgCard,
-    borderRadius: radius.cardLg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.s14,
+    alignItems: "center",
     gap: spacing.s12,
-    ...shadows.sm,
+    minHeight: 64,
+    backgroundColor: colors.primary,
+    borderRadius: radius.cardLg,
+    paddingVertical: spacing.s14,
+    paddingHorizontal: spacing.s16,
+    ...shadows.primary,
   },
-  actionIcon: {
-    width: 42,
-    height: 42,
+  primaryActionIcon: {
+    width: 38,
+    height: 38,
     borderRadius: radius.iconSm,
-    backgroundColor: colors.bgSubtle,
+    backgroundColor: colors.white20,
     alignItems: "center",
     justifyContent: "center",
   },
+  primaryActionTitle: {
+    fontFamily: fonts.display,
+    fontSize: fontSize.bodyLg,
+    fontWeight: fontWeight.semiBold,
+    color: colors.onPrimary,
+  },
+  primaryActionSub: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    color: colors.onPrimary,
+    opacity: 0.9,
+    marginTop: 1,
+  },
+  actionsGrid: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  actionCard: {
+    flex: 1,
+    minHeight: 72,
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.cardLg,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    padding: spacing.s12,
+    justifyContent: "space-between",
+    gap: spacing.s8,
+  },
   actionLabel: {
     fontFamily: fonts.sans,
-    fontSize: 13,
-    fontWeight: fontWeight.bold,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.semiBold,
     color: colors.textPrimary,
     letterSpacing: -0.1,
   },
@@ -491,12 +565,18 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.iconSm,
+    width: 42,
+    height: 42,
+    borderRadius: radius.avatarLg,
     backgroundColor: colors.bgSubtle,
     alignItems: "center",
     justifyContent: "center",
+  },
+  avatarText: {
+    fontFamily: fonts.display,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.semiBold,
+    letterSpacing: 0.3,
   },
   patientMid: {
     flex: 1,

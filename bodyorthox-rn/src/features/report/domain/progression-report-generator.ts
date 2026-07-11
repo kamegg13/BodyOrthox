@@ -25,10 +25,10 @@ function escapeHtml(text: string): string {
 // ─── Color helpers ────────────────────────────────────────────
 
 function angleColor(value: number, min: number, max: number): string {
-  if (value === 0) return "#888";
-  if (value >= min && value <= max) return "#34C759";
+  if (value === 0) return "#46707F";
+  if (value >= min && value <= max) return "#059669";
   const dev = value < min ? min - value : value - max;
-  return dev <= 5 ? "#FF9500" : "#FF3B30";
+  return dev <= 5 ? "#B45309" : "#DC2626";
 }
 
 function fmt(v: number): string {
@@ -104,17 +104,17 @@ function buildGridAndAxes(cfg: ChartConfig, tickStep: number): string {
       `<line x1="${PAD_LEFT}" y1="${y.toFixed(1)}" x2="${PAD_LEFT + chartW}" y2="${y.toFixed(1)}" stroke="#e5e7eb" stroke-dasharray="4,3" stroke-width="0.8"/>`,
     );
     lines.push(
-      `<text x="${PAD_LEFT - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end" font-size="9" fill="#6b7280">${v}°</text>`,
+      `<text x="${PAD_LEFT - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end" font-size="9" fill="#46707F">${v}°</text>`,
     );
   }
 
   // Y axis
   lines.push(
-    `<line x1="${PAD_LEFT}" y1="${PAD_TOP}" x2="${PAD_LEFT}" y2="${PAD_TOP + chartH}" stroke="#374151" stroke-width="1.5"/>`,
+    `<line x1="${PAD_LEFT}" y1="${PAD_TOP}" x2="${PAD_LEFT}" y2="${PAD_TOP + chartH}" stroke="#164E63" stroke-width="1.5"/>`,
   );
   // X axis
   lines.push(
-    `<line x1="${PAD_LEFT}" y1="${PAD_TOP + chartH}" x2="${PAD_LEFT + chartW}" y2="${PAD_TOP + chartH}" stroke="#374151" stroke-width="1.5"/>`,
+    `<line x1="${PAD_LEFT}" y1="${PAD_TOP + chartH}" x2="${PAD_LEFT + chartW}" y2="${PAD_TOP + chartH}" stroke="#164E63" stroke-width="1.5"/>`,
   );
 
   return lines.join("\n  ");
@@ -176,8 +176,8 @@ function buildDateLabels(
       const cy = cfg.height - PAD_BOTTOM + 14;
       const label = formatDateShort(a.createdAt);
       return altLabels
-        ? `<text x="${cx.toFixed(1)}" y="${cy}" font-size="8" fill="#6b7280" transform="rotate(-45,${cx.toFixed(1)},${cy})" text-anchor="end">${label}</text>`
-        : `<text x="${cx.toFixed(1)}" y="${cy}" font-size="8" fill="#6b7280" text-anchor="middle">${label}</text>`;
+        ? `<text x="${cx.toFixed(1)}" y="${cy}" font-size="8" fill="#46707F" transform="rotate(-45,${cx.toFixed(1)},${cy})" text-anchor="end">${label}</text>`
+        : `<text x="${cx.toFixed(1)}" y="${cy}" font-size="8" fill="#46707F" text-anchor="middle">${label}</text>`;
     })
     .join("\n  ");
 }
@@ -214,20 +214,20 @@ export function generateHkaSvgChart(
 
   const gridAndAxes = buildGridAndAxes(cfg, 5);
 
-  const normalRect = `<rect x="${PAD_LEFT}" y="${normalRectY}" width="${chartW}" height="${normalRectH}" fill="#d1fae5" stroke="#34d399" stroke-width="0.5" opacity="0.7"/>
+  const normalRect = `<rect x="${PAD_LEFT}" y="${normalRectY}" width="${chartW}" height="${normalRectH}" fill="#D9F2E5" stroke="#059669" stroke-width="0.5" opacity="0.7"/>
   <text x="${PAD_LEFT + chartW - 4}" y="${(Number(normalRectY) + 10).toFixed(1)}" text-anchor="end" font-size="8" fill="#059669" opacity="0.8">Plage de référence</text>`;
 
-  const leftPolyline = buildPolyline(leftValues, cfg, "#2563eb");
-  const rightPolyline = buildPolyline(rightValues, cfg, "#d97706");
+  const leftPolyline = buildPolyline(leftValues, cfg, "#059669");
+  const rightPolyline = buildPolyline(rightValues, cfg, "#0891B2");
   const dateLabels = buildDateLabels(analyses, cfg);
 
   const legendY = height - 8;
-  const legend = `<rect x="${PAD_LEFT}" y="${legendY - 6}" width="10" height="10" fill="#2563eb" rx="2"/>
-  <text x="${PAD_LEFT + 14}" y="${legendY + 2}" font-size="9" fill="#374151">HKA Gauche</text>
-  <rect x="${PAD_LEFT + 90}" y="${legendY - 6}" width="10" height="10" fill="#d97706" rx="2"/>
-  <text x="${PAD_LEFT + 104}" y="${legendY + 2}" font-size="9" fill="#374151">HKA Droite</text>
-  <rect x="${PAD_LEFT + 180}" y="${legendY - 6}" width="10" height="10" fill="#d1fae5" stroke="#34d399" stroke-width="0.8" rx="2"/>
-  <text x="${PAD_LEFT + 194}" y="${legendY + 2}" font-size="9" fill="#374151">Plage de référence (175–180°)</text>`;
+  const legend = `<rect x="${PAD_LEFT}" y="${legendY - 6}" width="10" height="10" fill="#059669" rx="2"/>
+  <text x="${PAD_LEFT + 14}" y="${legendY + 2}" font-size="9" fill="#164E63">HKA Gauche</text>
+  <rect x="${PAD_LEFT + 90}" y="${legendY - 6}" width="10" height="10" fill="#0891B2" rx="2"/>
+  <text x="${PAD_LEFT + 104}" y="${legendY + 2}" font-size="9" fill="#164E63">HKA Droite</text>
+  <rect x="${PAD_LEFT + 180}" y="${legendY - 6}" width="10" height="10" fill="#D9F2E5" stroke="#059669" stroke-width="0.8" rx="2"/>
+  <text x="${PAD_LEFT + 194}" y="${legendY + 2}" font-size="9" fill="#164E63">Plage de référence (175–180°)</text>`;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
   ${normalRect}
@@ -272,17 +272,17 @@ function generateKneeSvgChart(
 
   const gridAndAxes = buildGridAndAxes(cfg, 5);
 
-  const normalRect = `<rect x="${PAD_LEFT}" y="${normalRectY}" width="${chartW}" height="${normalRectH}" fill="#ede9fe" stroke="#8b5cf6" stroke-width="0.5" opacity="0.6"/>`;
+  const normalRect = `<rect x="${PAD_LEFT}" y="${normalRectY}" width="${chartW}" height="${normalRectH}" fill="#D7F5FA" stroke="#0891B2" stroke-width="0.5" opacity="0.6"/>`;
 
-  const leftPolyline = buildPolyline(leftKneeValues, cfg, "#7c3aed");
-  const rightPolyline = buildPolyline(rightKneeValues, cfg, "#db2777");
+  const leftPolyline = buildPolyline(leftKneeValues, cfg, "#059669");
+  const rightPolyline = buildPolyline(rightKneeValues, cfg, "#0891B2");
   const dateLabels = buildDateLabels(withBilateral, cfg);
 
   const legendY = height - 8;
-  const legend = `<rect x="${PAD_LEFT}" y="${legendY - 6}" width="10" height="10" fill="#7c3aed" rx="2"/>
-  <text x="${PAD_LEFT + 14}" y="${legendY + 2}" font-size="9" fill="#374151">Genou Gauche</text>
-  <rect x="${PAD_LEFT + 100}" y="${legendY - 6}" width="10" height="10" fill="#db2777" rx="2"/>
-  <text x="${PAD_LEFT + 114}" y="${legendY + 2}" font-size="9" fill="#374151">Genou Droite</text>`;
+  const legend = `<rect x="${PAD_LEFT}" y="${legendY - 6}" width="10" height="10" fill="#059669" rx="2"/>
+  <text x="${PAD_LEFT + 14}" y="${legendY + 2}" font-size="9" fill="#164E63">Genou Gauche</text>
+  <rect x="${PAD_LEFT + 100}" y="${legendY - 6}" width="10" height="10" fill="#0891B2" rx="2"/>
+  <text x="${PAD_LEFT + 114}" y="${legendY + 2}" font-size="9" fill="#164E63">Genou Droite</text>`;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
   ${normalRect}
@@ -338,7 +338,7 @@ function buildSynthesisSection(analyses: ReadonlyArray<Analysis>): string {
     const trend = generateTrendText(firstLeft, lastLeft);
     const deltaVal = lastLeft - firstLeft;
     const sign = deltaVal >= 0 ? "+" : "";
-    const trendColor = "#374151";
+    const trendColor = "#164E63";
     rows.push(`<tr>
         <td><strong>HKA Gauche</strong></td>
         <td>${fmt(firstLeft)}</td>
@@ -352,7 +352,7 @@ function buildSynthesisSection(analyses: ReadonlyArray<Analysis>): string {
     const trend = generateTrendText(firstRight, lastRight);
     const deltaVal = lastRight - firstRight;
     const sign = deltaVal >= 0 ? "+" : "";
-    const trendColor = "#374151";
+    const trendColor = "#164E63";
     rows.push(`<tr>
         <td><strong>HKA Droite</strong></td>
         <td>${fmt(firstRight)}</td>

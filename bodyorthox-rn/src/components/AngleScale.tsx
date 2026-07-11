@@ -7,7 +7,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
-import { colors, fonts, fontSize, fontWeight, letterSpacing } from "../theme/tokens";
+import { colors, fonts, fontSize, fontWeight, letterSpacing, radius } from "../theme/tokens";
 
 interface AngleScaleProps {
   /** Valeur mesurée en degrés. `null` → pas de curseur, mention « — ». */
@@ -27,13 +27,14 @@ interface AngleScaleProps {
 }
 
 /**
- * `AngleScale` — composant signature « Instrument ».
+ * `AngleScale` — bullet chart v4 « Accessible & Ethical ».
  *
- * Règle graduée horizontale rendant une mesure d'angle : ticks mineurs tous
- * les 1° (hairline), majeurs tous les 5° (labellisés en Plex Mono), bande de
- * plage de référence [refMin, refMax] (fond `greenLight` délimité hairline
- * verte), curseur encre (trait + triangle) sur la valeur mesurée, valeur en
- * mono semiBold au-dessus. Rendu en Views RN pures (web + natif).
+ * Piste arrondie (fond `bgSubtle`) avec bande de plage de référence
+ * [refMin, refMax] (fond `greenLight` borné vert), repères majeurs tous les
+ * 5° (lignes discrètes + labels tabulaires), marqueur arrondi primaire sur la
+ * valeur mesurée, valeur lisible au-dessus (Lexend). La valeur est toujours
+ * portée par le texte, jamais par la position seule (reco charts du DS).
+ * Rendu en Views RN pures (web + natif).
  *
  * Aucune valeur n'est fabriquée : `value` null ⇒ « — » et pas de curseur.
  */
@@ -63,9 +64,7 @@ export function AngleScale({
     return ((clamped - min) / span) * width;
   };
 
-  const minorH = compact ? 4 : 6;
-  const majorH = compact ? 8 : 10;
-  const trackH = compact ? 18 : 24;
+  const trackH = compact ? 14 : 18;
   const readoutSize = compact ? fontSize.monoMd : fontSize.statSm;
 
   const hasBand =
@@ -120,31 +119,20 @@ export function AngleScale({
           />
         ) : null}
 
-        {ticks.map((deg) => {
-          const isMajor = deg % 5 === 0;
-          return (
-            <View
-              key={deg}
-              style={[
-                styles.tick,
-                {
-                  left: pos(deg),
-                  height: isMajor ? majorH : minorH,
-                  backgroundColor: isMajor ? colors.ink : colors.borderMid,
-                },
-              ]}
-            />
-          );
-        })}
+        {ticks
+          .filter((deg) => deg % 5 === 0)
+          .map((deg) => (
+            <View key={deg} style={[styles.tick, { left: pos(deg) }]} />
+          ))}
 
         {value !== null && ready ? (
           <View
             testID={testID ? `${testID}-cursor` : undefined}
-            style={[styles.cursor, { left: Math.max(0, Math.min(width, cursorX)) }]}
-          >
-            <View style={styles.cursorTriangle} />
-            <View style={[styles.cursorLine, { height: trackH }]} />
-          </View>
+            style={[
+              styles.cursor,
+              { left: Math.max(0, Math.min(width, cursorX)), height: trackH },
+            ]}
+          />
         ) : null}
       </View>
 
@@ -167,7 +155,6 @@ export function AngleScale({
   );
 }
 
-const CURSOR_TRI = 4;
 const LABEL_W = 30;
 
 const styles = StyleSheet.create({
@@ -179,7 +166,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   readoutEmpty: {
-    fontFamily: fonts.mono,
+    fontFamily: fonts.display,
     fontWeight: fontWeight.semiBold,
     color: colors.textMuted,
   },
@@ -190,53 +177,47 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   readoutValue: {
-    fontFamily: fonts.mono,
+    fontFamily: fonts.display,
     fontWeight: fontWeight.semiBold,
     color: colors.ink,
     letterSpacing: -0.2,
+    fontVariant: ["tabular-nums"],
   },
   track: {
     width: "100%",
     justifyContent: "flex-start",
+    backgroundColor: colors.bgSubtle,
+    borderRadius: radius.pill,
+    overflow: "hidden",
   },
   band: {
     position: "absolute",
     top: 0,
     bottom: 0,
     backgroundColor: colors.greenLight,
-    borderLeftWidth: StyleSheet.hairlineWidth,
-    borderRightWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.green,
+    borderLeftWidth: 1.5,
+    borderRightWidth: 1.5,
+    borderColor: "rgba(5,150,105,0.35)",
   },
   tick: {
     position: "absolute",
     top: 0,
+    bottom: 0,
     width: StyleSheet.hairlineWidth,
+    backgroundColor: colors.borderMid,
+    opacity: 0.4,
   },
   cursor: {
     position: "absolute",
     top: 0,
-    alignItems: "center",
-  },
-  cursorTriangle: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: CURSOR_TRI,
-    borderRightWidth: CURSOR_TRI,
-    borderTopWidth: CURSOR_TRI + 2,
-    borderLeftColor: "transparent",
-    borderRightColor: "transparent",
-    borderTopColor: colors.ink,
-  },
-  cursorLine: {
-    position: "absolute",
-    top: 0,
-    width: 1.5,
-    backgroundColor: colors.ink,
+    width: 4,
+    marginLeft: -2,
+    borderRadius: 2,
+    backgroundColor: colors.primary,
   },
   labelRow: {
     width: "100%",
-    marginTop: 2,
+    marginTop: 4,
   },
   labelAnchor: {
     position: "absolute",
@@ -245,9 +226,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   majorLabel: {
-    fontFamily: fonts.mono,
+    fontFamily: fonts.sans,
     fontSize: fontSize.monoMd,
+    fontWeight: fontWeight.semiBold,
     color: colors.textMuted,
     letterSpacing: letterSpacing.label,
+    fontVariant: ["tabular-nums"],
   },
 });
