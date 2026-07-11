@@ -9,6 +9,7 @@ export { BottomTab, TABS, type TabKey } from "./BottomTab";
 export { Logo } from "./Logo";
 export { Steps } from "./Steps";
 export { AngleScale } from "./AngleScale";
+export { ZoomableImage } from "./ZoomableImage";
 export { Gradient } from "./gradient";
 export { Icon, type IconName } from "./icons";
 export { Screen } from "./Screen";

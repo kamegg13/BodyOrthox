@@ -17,6 +17,7 @@ import {
   Icon,
   NavBar,
   SectionLabel,
+  ZoomableImage,
 } from "../components";
 import {
   colors,
@@ -37,13 +38,23 @@ export interface AngleMeasurement {
   readonly unit: "°" | "mm";
 }
 
+/** Mesure posturale bilatérale — un côté peut être indisponible (null). */
+export interface PosturalMeasurement {
+  readonly key: string;
+  readonly label: string;
+  readonly left: number | null;
+  readonly right: number | null;
+  readonly norm: number;
+  readonly unit: "°" | "mm";
+}
+
 export interface ResultsData {
   readonly patientName: string;
   readonly date: string;
   readonly type: string;
   readonly severity: "normal" | "moderate" | "severe" | "unavailable";
   readonly hka: { readonly left: AngleMeasurement; readonly right: AngleMeasurement };
-  readonly postural: readonly AngleMeasurement[];
+  readonly postural: readonly PosturalMeasurement[];
   readonly capturedImageUrl?: string;
 }
 
@@ -160,16 +171,11 @@ export function Results({ data, onBack, onShare, onGenerateReport }: ResultsProp
           ]}
         >
           {data.capturedImageUrl ? (
-            <>
-              <Image
-                source={{ uri: data.capturedImageUrl }}
-                style={styles.heroImage}
-                resizeMode="contain"
-              />
-              <View style={styles.heroCaptionOverlay}>
-                <Text style={styles.heroCaptionLight}>Capture · {data.date}</Text>
-              </View>
-            </>
+            <ZoomableImage
+              uri={data.capturedImageUrl}
+              caption={`Capture · ${data.date}`}
+              style={StyleSheet.absoluteFill}
+            />
           ) : (
             <>
               <Icon name="user" size={64} color={colors.textMuted} strokeWidth={1.25} />
@@ -246,28 +252,32 @@ const HKA_REF_MIN = 175;
 const HKA_REF_MAX = 180;
 
 /** Sévérité d'une mesure → couleur sémantique (texte + icône, jamais seule). */
-function sevTone(m: AngleMeasurement): {
+function sevTone(
+  value: number | null,
+  norm: number,
+  unit: "°" | "mm",
+): {
   readonly color: string;
   readonly icon: "check" | "alert";
   readonly deltaLabel: string;
 } {
-  if (m.value === null) {
+  if (value === null) {
     return { color: colors.textMuted, icon: "alert", deltaLabel: "indisponible" };
   }
-  const delta = +(m.value - m.norm).toFixed(1);
+  const delta = +(value - norm).toFixed(1);
   const sev = severity(delta);
   const color =
     sev === "normal" ? colors.green : sev === "moderate" ? colors.amberMid : colors.red;
   const deltaLabel =
     sev === "normal"
       ? "dans la norme"
-      : `${delta >= 0 ? `+${delta}` : `${delta}`}${m.unit} vs norme`;
+      : `${delta >= 0 ? `+${delta}` : `${delta}`}${unit} vs norme`;
   return { color, icon: sev === "normal" ? "check" : "alert", deltaLabel };
 }
 
 /** Ligne bullet chart HKA — valeur en texte + échelle de norme (reco DS). */
 function HkaBullet({ m, sideLabel }: { m: AngleMeasurement; sideLabel: string }) {
-  const tone = sevTone(m);
+  const tone = sevTone(m.value, m.norm, m.unit);
   return (
     <View style={angleStyles.bullet}>
       <View style={angleStyles.bulletHead}>
@@ -301,9 +311,8 @@ function HkaBullet({ m, sideLabel }: { m: AngleMeasurement; sideLabel: string })
   );
 }
 
-/** Ligne de mesure posturale — icône d'état + valeur en texte. */
-function PosturalRow({ m, first }: { m: AngleMeasurement; first: boolean }) {
-  const tone = sevTone(m);
+/** Ligne de mesure posturale bilatérale — icône d'état + valeur par côté. */
+function PosturalRow({ m, first }: { m: PosturalMeasurement; first: boolean }) {
   return (
     <View style={[angleStyles.row, !first && angleStyles.rowBorder]}>
       <View style={{ flex: 1 }}>
@@ -313,10 +322,29 @@ function PosturalRow({ m, first }: { m: AngleMeasurement; first: boolean }) {
           {m.unit}
         </Text>
       </View>
+      <PosturalSide m={m} side="left" />
+      <PosturalSide m={m} side="right" />
+    </View>
+  );
+}
+
+/** Valeur d'un côté (G/D) d'une mesure posturale. */
+function PosturalSide({
+  m,
+  side,
+}: {
+  m: PosturalMeasurement;
+  side: "left" | "right";
+}) {
+  const value = side === "left" ? m.left : m.right;
+  const tone = sevTone(value, m.norm, m.unit);
+  return (
+    <View style={angleStyles.sideWrap}>
+      <Text style={angleStyles.sideTag}>{side === "left" ? "G" : "D"}</Text>
       <View style={angleStyles.rowValueWrap}>
         <Icon name={tone.icon} size={13} color={tone.color} strokeWidth={1.8} />
-        <Text style={angleStyles.rowValue}>
-          {m.value === null ? "—" : `${m.value}${m.unit}`}
+        <Text style={angleStyles.rowValue} testID={`postural-${m.key}-${side}`}>
+          {value === null ? "—" : `${value}${m.unit}`}
         </Text>
       </View>
     </View>
@@ -395,24 +423,6 @@ const styles = StyleSheet.create({
     gap: 12,
     overflow: "hidden",
     ...shadows.sm,
-  },
-  heroImage: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  heroCaptionOverlay: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: spacing.s12,
-    paddingVertical: spacing.s10,
-    backgroundColor: "rgba(16,16,18,0.55)",
-  },
-  heroCaptionLight: {
-    fontFamily: fonts.sans,
-    fontSize: fontSize.caption,
-    fontWeight: fontWeight.semiBold,
-    color: colors.textInverse,
   },
   heroCaption: {
     fontFamily: fonts.sans,
@@ -525,6 +535,18 @@ const angleStyles = StyleSheet.create({
     marginTop: 1,
     fontVariant: ["tabular-nums"],
   },
+  sideWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.s6,
+    marginLeft: spacing.s14,
+  },
+  sideTag: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.captionXs,
+    fontWeight: fontWeight.semiBold,
+    color: colors.textMuted,
+  },
   rowValueWrap: {
     flexDirection: "row",
     alignItems: "center",
@@ -551,9 +573,9 @@ export const SAMPLE_RESULTS: ResultsData = {
     right: { key: "hka-r", label: "HKA droit",  value: 177, norm: 180, unit: "°" },
   },
   postural: [
-    { key: "shoulder", label: "Inclin. épaules", value: 4,  norm: 0,  unit: "°" },
-    { key: "pelvis",   label: "Inclin. bassin",  value: 9,  norm: 5,  unit: "°" },
-    { key: "head",     label: "Décal. tête",      value: 14, norm: 0,  unit: "mm" },
-    { key: "spine",    label: "Courbure rachis", value: 18, norm: 10, unit: "°" },
+    { key: "shoulder", label: "Inclin. épaules", left: 4,  right: 3,  norm: 0,  unit: "°" },
+    { key: "pelvis",   label: "Inclin. bassin",  left: 9,  right: 6,  norm: 5,  unit: "°" },
+    { key: "head",     label: "Décal. tête",      left: 14, right: 12, norm: 0,  unit: "mm" },
+    { key: "spine",    label: "Courbure rachis", left: 18, right: 15, norm: 10, unit: "°" },
   ],
 };
