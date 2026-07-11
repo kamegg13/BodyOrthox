@@ -1,5 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+  type RouteProp,
+} from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Share, Platform } from "react-native";
 import type { RootStackParamList } from "../types";
@@ -8,6 +13,7 @@ import {
   type ResultsData,
   type AngleMeasurement,
   type PosturalMeasurement,
+  type NotesSaveStatus,
 } from "../../screens/Results";
 import { LoadingSpinner } from "../../shared/components/loading-spinner";
 import { ErrorWidget } from "../../shared/components/error-widget";
@@ -22,6 +28,10 @@ import type { Analysis } from "../../features/capture/domain/analysis";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, "Results">;
+
+// Sauvegarde automatique des notes cliniques : pas de bouton dédié — un délai
+// court après la dernière frappe suffit, le blur du champ force un flush immédiat.
+const NOTES_SAVE_DEBOUNCE_MS = 800;
 
 export function ResultsRoute() {
   const navigation = useNavigation<Nav>();
@@ -39,6 +49,68 @@ export function ResultsRoute() {
   const patient = usePatientsStore((s) =>
     s.patients.find((p) => p.id === patientId),
   );
+
+  // Recharge l'analyse quand l'écran regagne le focus — couvre le retour
+  // depuis la relecture experte après une correction manuelle des points.
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [analysisId]),
+  );
+
+  // ── Notes cliniques : sauvegarde débouncée pendant la frappe + flush au blur.
+  const [notesSaveStatus, setNotesSaveStatus] = useState<NotesSaveStatus>("idle");
+  const [notesSaveError, setNotesSaveError] = useState<string | null>(null);
+  const notesDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const saveNotes = useCallback(
+    async (notesValue: string) => {
+      if (notesDebounceRef.current) {
+        clearTimeout(notesDebounceRef.current);
+        notesDebounceRef.current = null;
+      }
+      setNotesSaveStatus("saving");
+      setNotesSaveError(null);
+      try {
+        await repo.update(analysisId, { clinicalNotes: notesValue });
+        setNotesSaveStatus("saved");
+      } catch (err) {
+        setNotesSaveStatus("error");
+        setNotesSaveError(
+          err instanceof Error ? err.message : "Échec de l'enregistrement",
+        );
+      }
+    },
+    [analysisId, repo],
+  );
+
+  const handleNotesChange = useCallback(
+    (notesValue: string) => {
+      if (notesDebounceRef.current) clearTimeout(notesDebounceRef.current);
+      notesDebounceRef.current = setTimeout(() => {
+        void saveNotes(notesValue);
+      }, NOTES_SAVE_DEBOUNCE_MS);
+    },
+    [saveNotes],
+  );
+
+  const handleNotesBlur = useCallback(
+    (notesValue: string) => {
+      void saveNotes(notesValue);
+    },
+    [saveNotes],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (notesDebounceRef.current) clearTimeout(notesDebounceRef.current);
+    };
+  }, []);
+
+  const handleCorrectPoints = useCallback(() => {
+    navigation.navigate("Replay", { analysisId, patientId });
+  }, [navigation, analysisId, patientId]);
 
   const effectiveImageUrl = capturedImageUrl ?? analysis?.capturedImageUrl;
   const effectiveLandmarks: PoseLandmarks | undefined = (allLandmarks ?? analysis?.allLandmarks) as
@@ -120,6 +192,11 @@ export function ResultsRoute() {
       onBack={handleBack}
       onShare={handleShare}
       onGenerateReport={handleGenerateReport}
+      onCorrectPoints={handleCorrectPoints}
+      onNotesChange={handleNotesChange}
+      onNotesBlur={handleNotesBlur}
+      notesSaveStatus={notesSaveStatus}
+      notesSaveError={notesSaveError}
     />
   );
 }
@@ -184,6 +261,7 @@ function buildResultsData(
     hka,
     postural,
     ...(imageUrl ? { capturedImageUrl: imageUrl } : {}),
+    ...(analysis.clinicalNotes ? { clinicalNotes: analysis.clinicalNotes } : {}),
   };
 }
 

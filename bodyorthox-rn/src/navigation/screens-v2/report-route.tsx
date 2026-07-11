@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Alert } from "react-native";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../types";
@@ -6,7 +7,11 @@ import { Report, type ReportData, type ReportRow } from "../../screens/Report";
 import { LoadingSpinner } from "../../shared/components/loading-spinner";
 import { ErrorWidget } from "../../shared/components/error-widget";
 import { useReportStore } from "../../features/report/store/report-store";
-import { shareReport } from "../../features/report/data/share-service";
+import {
+  downloadReport,
+  shareReport,
+} from "../../features/report/data/share-service";
+import { confirmPrivacyBeforeShare } from "../../features/report/data/privacy-confirm";
 import { useAuthStore } from "../../core/auth/auth-store";
 import { calculateBilateralAngles, classifyHKA } from "../../features/capture/data/angle-calculator";
 import { composeSkeletonImage } from "../../features/capture/data/skeleton-canvas";
@@ -50,10 +55,15 @@ export function ReportRoute() {
     };
   }, [analysis]);
 
-  // (Re-)génère le HTML du rapport quand la photo composée est prête.
+  // (Re-)génère le HTML du rapport quand la photo composée est prête. Les
+  // notes cliniques du praticien (Résultats) sont reprises telles quelles —
+  // le PDF remis au patient doit contenir la même conclusion clinique.
   useEffect(() => {
     reset();
-    generateReport(analysis, patient, photoBase64 ? { photoBase64 } : {});
+    generateReport(analysis, patient, {
+      ...(photoBase64 ? { photoBase64 } : {}),
+      ...(analysis.clinicalNotes ? { notes: analysis.clinicalNotes } : {}),
+    });
     return () => reset();
   }, [analysis, patient, photoBase64, generateReport, reset]);
 
@@ -64,17 +74,48 @@ export function ReportRoute() {
 
   const handleBack = useCallback(() => navigation.goBack(), [navigation]);
 
-  const handleShare = useCallback(async () => {
-    if (!reportHtml || !fileName) return;
-    await shareReport(reportHtml, fileName);
-  }, [reportHtml, fileName]);
+  // « Partager » et « Envoyer » ouvrent tous deux le share sheet OS (seul
+  // mécanisme d'envoi disponible dans l'app — pas de canal email/SMS dédié) :
+  // ils partagent la même logique (avertissement confidentialité + PDF réel)
+  // mais restent deux callbacks distincts pour rester alignés sur l'intention
+  // de chaque bouton.
+  const shareViaSheet = useCallback(
+    async (errorTitle: string) => {
+      if (!reportHtml || !fileName) return;
+      const confirmed = await confirmPrivacyBeforeShare();
+      if (!confirmed) return;
+      const result = await shareReport(reportHtml, fileName);
+      if (result.kind === "error") {
+        Alert.alert(errorTitle, result.message);
+      }
+    },
+    [reportHtml, fileName],
+  );
 
+  const handleShare = useCallback(
+    () => shareViaSheet("Partage impossible"),
+    [shareViaSheet],
+  );
+  const handleSend = useCallback(
+    () => shareViaSheet("Envoi impossible"),
+    [shareViaSheet],
+  );
+
+  // « Télécharger PDF » sauvegarde le fichier localement, sans share sheet :
+  // pas d'avertissement de confidentialité (aucun destinataire tiers), mais
+  // confirmation de l'emplacement une fois l'enregistrement terminé.
   const handleDownload = useCallback(async () => {
     if (!reportHtml || !fileName) return;
-    await shareReport(reportHtml, fileName);
+    const result = await downloadReport(reportHtml, fileName);
+    if (result.kind === "downloaded") {
+      Alert.alert(
+        "PDF enregistré",
+        `Le rapport a été enregistré : ${result.filePath}`,
+      );
+    } else {
+      Alert.alert("Échec de l'enregistrement", result.message);
+    }
   }, [reportHtml, fileName]);
-
-  const handleSend = handleShare;
 
   if (status === "generating") {
     return <LoadingSpinner fullScreen message="Génération du rapport..." />;
@@ -83,7 +124,13 @@ export function ReportRoute() {
     return (
       <ErrorWidget
         message={errorMessage}
-        onRetry={() => generateReport(analysis, patient, {})}
+        onRetry={() =>
+          generateReport(
+            analysis,
+            patient,
+            analysis.clinicalNotes ? { notes: analysis.clinicalNotes } : {},
+          )
+        }
       />
     );
   }
@@ -160,6 +207,7 @@ function buildReportData(
     severityColor: sevColor,
     rows,
     ...(capturedImageUrl ? { capturedImageUrl } : {}),
+    ...(analysis.clinicalNotes ? { clinicalNotes: analysis.clinicalNotes } : {}),
   };
 }
 

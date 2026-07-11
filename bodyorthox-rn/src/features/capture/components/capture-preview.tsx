@@ -8,6 +8,8 @@ interface CapturePreviewProps {
   isRecording: boolean;
   mlLoading: boolean;
   detectionError: string | null;
+  /** Limite produit connue (ex. pas d'analyse auto sur mobile) — pas une erreur. */
+  platformLimitation: string | null;
   lowConfidenceWarning: {
     message: string;
     onContinue: () => void;
@@ -21,6 +23,7 @@ export function CapturePreview({
   isRecording,
   mlLoading,
   detectionError,
+  platformLimitation,
   lowConfidenceWarning,
   onAnalyze,
   onRetake,
@@ -39,6 +42,19 @@ export function CapturePreview({
       <View style={styles.controls}>
         {isRecording ? (
           <LoadingSpinner message="Analyse en cours..." />
+        ) : platformLimitation ? (
+          <View style={styles.infoContainer} testID="platform-limitation">
+            <Text style={styles.infoText}>{platformLimitation}</Text>
+            <TouchableOpacity
+              style={styles.retakeButton}
+              onPress={onRetake}
+              testID="retake-after-platform-limitation-button"
+              accessibilityRole="button"
+              accessibilityLabel="Recommencer la capture"
+            >
+              <Text style={styles.retakeButtonText}>Recommencer</Text>
+            </TouchableOpacity>
+          </View>
         ) : detectionError ? (
           <View style={styles.errorContainer} testID="detection-error">
             <Text style={styles.errorText}>{detectionError}</Text>
@@ -162,6 +178,23 @@ const styles = StyleSheet.create({
     padding: spacing.s24,
     borderRadius: radius.cardLg,
     marginHorizontal: spacing.s24,
+  },
+  // Ton informatif (limite produit), distinct du rouge d'erreur : le cyan
+  // signale un message neutre, pas un échec.
+  infoContainer: {
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.7)",
+    padding: spacing.s24,
+    borderRadius: radius.cardLg,
+    marginHorizontal: spacing.s24,
+  },
+  infoText: {
+    color: colors.accent,
+    fontSize: 15,
+    textAlign: "center",
+    marginBottom: spacing.s16,
+    fontWeight: fontWeight.medium,
+    fontFamily: fonts.sans,
   },
   errorText: {
     color: colors.red,

@@ -56,16 +56,37 @@ export interface ResultsData {
   readonly hka: { readonly left: AngleMeasurement; readonly right: AngleMeasurement };
   readonly postural: readonly PosturalMeasurement[];
   readonly capturedImageUrl?: string;
+  readonly clinicalNotes?: string;
 }
+
+export type NotesSaveStatus = "idle" | "saving" | "saved" | "error";
 
 interface ResultsProps {
   readonly data: ResultsData;
   readonly onBack?: () => void;
   readonly onShare?: () => void;
   readonly onGenerateReport?: () => void;
+  /** Navigue vers la relecture experte (correction manuelle des points). */
+  readonly onCorrectPoints?: () => void;
+  /** Appelé à chaque frappe — le conteneur décide du débounce de sauvegarde. */
+  readonly onNotesChange?: (notes: string) => void;
+  /** Appelé à la perte de focus — sauvegarde immédiate (flush). */
+  readonly onNotesBlur?: (notes: string) => void;
+  readonly notesSaveStatus?: NotesSaveStatus;
+  readonly notesSaveError?: string | null;
 }
 
-export function Results({ data, onBack, onShare, onGenerateReport }: ResultsProps) {
+export function Results({
+  data,
+  onBack,
+  onShare,
+  onGenerateReport,
+  onCorrectPoints,
+  onNotesChange,
+  onNotesBlur,
+  notesSaveStatus = "idle",
+  notesSaveError,
+}: ResultsProps) {
   const sevColor: BadgeColor =
     data.severity === "unavailable"
       ? "navy"
@@ -82,6 +103,25 @@ export function Results({ data, onBack, onShare, onGenerateReport }: ResultsProp
       : data.severity === "moderate"
       ? "Modéré"
       : "Sévère";
+
+  // Notes cliniques — état local pour la réactivité de saisie ; la sauvegarde
+  // (débounce + flush au blur) est orchestrée par le conteneur (results-route).
+  const [notes, setNotes] = useState(data.clinicalNotes ?? "");
+  const [notesFocused, setNotesFocused] = useState(false);
+  useEffect(() => {
+    // Ne pas écraser une saisie en cours si la donnée source est rafraîchie
+    // (ex. recharge au focus après une correction de points).
+    if (!notesFocused) setNotes(data.clinicalNotes ?? "");
+  }, [data.clinicalNotes, notesFocused]);
+
+  const notesFeedback =
+    notesSaveStatus === "saving"
+      ? "Enregistrement…"
+      : notesSaveStatus === "saved"
+      ? "Enregistré"
+      : notesSaveStatus === "error"
+      ? notesSaveError ?? "Échec de l'enregistrement"
+      : null;
 
   // Mesure la photo pour adapter dynamiquement l'aspect ratio du conteneur,
   // sinon une photo verticale (3:4) est croppée dans un cadre 4:3.
@@ -199,6 +239,20 @@ export function Results({ data, onBack, onShare, onGenerateReport }: ResultsProp
           ))}
         </View>
 
+        {onCorrectPoints ? (
+          <View style={styles.correctPointsRow}>
+            <Btn
+              label="Corriger les points"
+              icon="edit"
+              variant="secondary"
+              small
+              full={false}
+              onPress={onCorrectPoints}
+              testID="correct-points-button"
+            />
+          </View>
+        ) : null}
+
         <SectionLabel style={{ marginTop: spacing.s14 }}>Notes du praticien</SectionLabel>
         <View style={styles.notes}>
           <TextInput
@@ -206,8 +260,31 @@ export function Results({ data, onBack, onShare, onGenerateReport }: ResultsProp
             placeholder="Ajouter une interprétation clinique…"
             placeholderTextColor={colors.textMuted}
             style={styles.notesInput}
+            value={notes}
+            onChangeText={(text) => {
+              setNotes(text);
+              onNotesChange?.(text);
+            }}
+            onFocus={() => setNotesFocused(true)}
+            onBlur={() => {
+              setNotesFocused(false);
+              onNotesBlur?.(notes);
+            }}
+            accessibilityLabel="Notes cliniques du praticien"
+            testID="clinical-notes-input"
           />
         </View>
+        {notesFeedback ? (
+          <Text
+            style={[
+              styles.notesFeedback,
+              notesSaveStatus === "error" && styles.notesFeedbackError,
+            ]}
+            testID="clinical-notes-feedback"
+          >
+            {notesFeedback}
+          </Text>
+        ) : null}
       </ScrollView>
 
       <SafeAreaView edges={["bottom"]} style={styles.actionBar}>
@@ -462,6 +539,20 @@ const styles = StyleSheet.create({
     padding: 0,
     minHeight: 44,
     textAlignVertical: "top",
+  },
+  notesFeedback: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.captionXs,
+    color: colors.textMuted,
+    marginTop: -4,
+  },
+  notesFeedbackError: {
+    color: colors.red,
+    fontWeight: fontWeight.semiBold,
+  },
+  correctPointsRow: {
+    flexDirection: "row",
+    marginTop: spacing.s4,
   },
   actionBar: {
     backgroundColor: colors.bgCard,

@@ -33,6 +33,22 @@ import { PhotoUpload } from "../components/photo-upload";
 
 type Route = RouteProp<RootStackParamList, "Capture">;
 
+/**
+ * Capture est sur le stack racine, mais l'écran Protocols est déclaré à
+ * l'intérieur d'AnalysesStack (MainTabs > AnalysesTab > Protocols). Le
+ * typage de BottomTabParamList n'exprime pas les écrans imbriqués des
+ * onglets (chaque tab est `undefined`) — cast local nécessaire pour cette
+ * navigation imbriquée, comme le reset() de processing-route.tsx.
+ */
+function navigateToProtocols(navigation: {
+  navigate: (screen: string, params?: object) => void;
+}): void {
+  navigation.navigate("MainTabs", {
+    screen: "AnalysesTab",
+    params: { screen: "Protocols" },
+  });
+}
+
 export function CaptureScreen() {
   const { params } = useRoute<Route>();
   const { patientId } = params;
@@ -51,6 +67,7 @@ export function CaptureScreen() {
     previewUrl,
     mlLoading,
     detectionError,
+    platformLimitation,
     lowConfidenceWarning,
     webCameraRef,
     handleWebCameraPermissionDenied,
@@ -90,6 +107,7 @@ export function CaptureScreen() {
         isRecording={phase.type === "recording"}
         mlLoading={mlLoading}
         detectionError={detectionError}
+        platformLimitation={platformLimitation}
         lowConfidenceWarning={lowConfidenceWarning}
         onAnalyze={handleAnalyze}
         onRetake={handleRetake}
@@ -135,7 +153,15 @@ export function CaptureScreen() {
           <Text style={styles.topTitle} numberOfLines={1}>
             {topTitle}
           </Text>
-          <View style={styles.roundSpacer} />
+          <Pressable
+            onPress={() => navigateToProtocols(navigation)}
+            style={({ pressed }) => [styles.roundBtn, pressed && styles.pressed]}
+            accessibilityRole="button"
+            accessibilityLabel="Protocole de positionnement"
+            hitSlop={6}
+          >
+            <Icon name="file" size={16} color={colors.white70} strokeWidth={1.75} />
+          </Pressable>
         </View>
       </SafeAreaView>
 
@@ -256,10 +282,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white08,
     alignItems: "center",
     justifyContent: "center",
-  },
-  roundSpacer: {
-    width: sizes.tap,
-    height: sizes.tap,
   },
   viewfinder: {
     flex: 1,

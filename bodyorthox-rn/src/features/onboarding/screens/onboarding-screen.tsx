@@ -9,8 +9,9 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RouteProp } from "@react-navigation/native";
 import type { RootStackParamList } from "../../../navigation/types";
 import { OnboardingPage } from "../components/onboarding-page";
 import { useOnboardingStore } from "../store/onboarding-store";
@@ -32,6 +33,7 @@ type NavigationProp = NativeStackNavigationProp<
   RootStackParamList,
   "Onboarding"
 >;
+type OnboardingRouteProp = RouteProp<RootStackParamList, "Onboarding">;
 
 /* ------------------------------------------------------------------ */
 /* Illustration components (built with Views/Text, no external assets) */
@@ -140,6 +142,11 @@ const TOTAL_PAGES = 3;
 
 export function OnboardingScreen() {
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<OnboardingRouteProp>();
+  // Revisite depuis Compte > À propos > "Revoir l'introduction" : l'onboarding
+  // est déjà complété, on ne le re-complète pas et on revient d'où on vient
+  // (Compte) plutôt que de rediriger vers MainTabs/AnalysesTab.
+  const isReviewMode = route.params?.mode === "review";
   const { width } = useWindowDimensions();
   const scrollViewRef = useRef<ScrollView>(null);
   const [currentPage, setCurrentPage] = useState(0);
@@ -172,14 +179,22 @@ export function OnboardingScreen() {
   }, [currentPage, goToPage]);
 
   const handleComplete = useCallback(async () => {
+    if (isReviewMode) {
+      navigation.goBack();
+      return;
+    }
     await completeOnboarding();
     navigation.replace("MainTabs", { screen: "AnalysesTab" });
-  }, [completeOnboarding, navigation]);
+  }, [completeOnboarding, navigation, isReviewMode]);
 
   const handleSkip = useCallback(async () => {
+    if (isReviewMode) {
+      navigation.goBack();
+      return;
+    }
     await completeOnboarding();
     navigation.replace("MainTabs", { screen: "AnalysesTab" });
-  }, [completeOnboarding, navigation]);
+  }, [completeOnboarding, navigation, isReviewMode]);
 
   const requestCameraPermission = useCallback(() => {
     // Camera permission is handled by the capture screen when needed.

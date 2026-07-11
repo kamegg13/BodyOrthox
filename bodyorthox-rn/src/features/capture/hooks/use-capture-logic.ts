@@ -19,9 +19,18 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 /** Low confidence threshold — warn the user below this */
 const LOW_CONFIDENCE_THRESHOLD = 0.6;
 
-/** Honest message shown when no real pose detector is available (native). */
-const NO_DETECTOR_MESSAGE =
-  "L'analyse automatique n'est pas encore disponible sur cette plateforme.";
+/**
+ * Message affiché sur mobile natif : ce n'est pas une erreur mais une
+ * limite produit connue (pas de détecteur de pose embarqué hors web) —
+ * distingué de `detectionError` pour ne pas s'afficher avec le style
+ * "erreur" et pour orienter vers l'alternative qui fonctionne.
+ */
+const NATIVE_PLATFORM_LIMITATION_MESSAGE =
+  "L'analyse automatique n'est pas disponible sur mobile pour le moment. Utilisez BodyOrthox sur navigateur pour analyser cette capture.";
+
+/** Erreur réelle : le modèle ML n'a pas pu être chargé sur le web. */
+const ML_UNAVAILABLE_MESSAGE =
+  "Le modèle d'analyse n'a pas pu être chargé. Réessayez ou rechargez la page.";
 
 export function useCaptureLogic(patientId: string) {
   const navigation = useNavigation<Nav>();
@@ -51,6 +60,7 @@ export function useCaptureLogic(patientId: string) {
   const poseDetectorRef = useRef<IPoseDetector | null>(null);
   const [mlLoading, setMlLoading] = useState(false);
   const [detectionError, setDetectionError] = useState<string | null>(null);
+  const [platformLimitation, setPlatformLimitation] = useState<string | null>(null);
   const [lowConfidenceWarning, setLowConfidenceWarning] = useState<{
     message: string;
     onContinue: () => void;
@@ -112,15 +122,24 @@ export function useCaptureLogic(patientId: string) {
   const handleAnalyze = useCallback(async () => {
     if (!previewUrl) return;
     setDetectionError(null);
+    setPlatformLimitation(null);
     setLowConfidenceWarning(null);
 
     const detector = poseDetectorRef.current;
 
-    // No real pose detector (native without frame processor, or web ML failed
-    // to load): block honestly instead of fabricating landmarks. We must never
-    // present or persist a simulated analysis as a real measurement.
-    if (Platform.OS !== "web" || !detector || !detector.isReady()) {
-      setDetectionError(NO_DETECTOR_MESSAGE);
+    // Mobile natif : pas de détecteur de pose embarqué. C'est une limite
+    // produit connue, pas une erreur — distingué de `detectionError` pour un
+    // affichage informatif plutôt qu'un style "erreur".
+    if (Platform.OS !== "web") {
+      setPlatformLimitation(NATIVE_PLATFORM_LIMITATION_MESSAGE);
+      return;
+    }
+
+    // Web mais le modèle ML n'a pas pu être chargé : ceci est une vraie
+    // erreur (pas une limite de plateforme) — on ne fabrique jamais de
+    // landmarks simulés pour la masquer.
+    if (!detector || !detector.isReady()) {
+      setDetectionError(ML_UNAVAILABLE_MESSAGE);
       return;
     }
 
@@ -170,6 +189,7 @@ export function useCaptureLogic(patientId: string) {
     setPreviewUrl(null);
     setCapturedImageUrl(null);
     setDetectionError(null);
+    setPlatformLimitation(null);
     setLowConfidenceWarning(null);
   }, [setCapturedImageUrl]);
 
@@ -205,7 +225,7 @@ export function useCaptureLogic(patientId: string) {
 
     // Native has no real pose detector yet — block honestly rather than
     // fabricating a "straight legs" analysis from simulated landmarks.
-    setDetectionError(NO_DETECTOR_MESSAGE);
+    setPlatformLimitation(NATIVE_PLATFORM_LIMITATION_MESSAGE);
   }, [phase, handleTakeWebPhoto]);
 
   const handleSave = useCallback(
@@ -270,6 +290,7 @@ export function useCaptureLogic(patientId: string) {
     previewUrl,
     mlLoading,
     detectionError,
+    platformLimitation,
     lowConfidenceWarning,
     webCameraRef,
     handleWebCameraPermissionDenied,

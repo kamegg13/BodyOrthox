@@ -1,5 +1,5 @@
 import React from "react";
-import { Image, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
+import { Image, Platform, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AngleScale, Badge, Btn, Icon, Logo, NavBar } from "../components";
 import {
@@ -38,6 +38,7 @@ export interface ReportData {
   readonly severityColor: "green" | "amber" | "red" | "navy";
   readonly rows: readonly ReportRow[];
   readonly capturedImageUrl?: string;
+  readonly clinicalNotes?: string;
 }
 
 interface ReportProps {
@@ -131,8 +132,18 @@ export function Report({ data, onBack, onShare, onDownload, onSend }: ReportProp
 
           <View style={[styles.section, styles.sectionBorder]}>
             <Text style={styles.eyebrow}>Conclusion clinique</Text>
-            <View style={styles.placeholderLg} />
-            <View style={styles.placeholderSm} />
+            {data.clinicalNotes ? (
+              <Text style={styles.conclusionText} testID="report-conclusion-text">
+                {data.clinicalNotes}
+              </Text>
+            ) : (
+              <Text
+                style={styles.conclusionEmptyText}
+                testID="report-conclusion-empty"
+              >
+                Aucune interprétation clinique saisie.
+              </Text>
+            )}
             <View style={styles.footer}>
               <View style={styles.footerLeft}>
                 <View style={styles.footerAvatar}>
@@ -149,7 +160,13 @@ export function Report({ data, onBack, onShare, onDownload, onSend }: ReportProp
       <SafeAreaView edges={["bottom"]} style={styles.actionBar}>
         <View style={styles.actionBarInner}>
           <View style={{ flex: 1 }}>
-            <Btn label="Télécharger PDF" icon="download" onPress={onDownload} />
+            {/* Sur web, aucun moteur PDF n'est disponible : le fichier
+                téléchargé est le rapport HTML — le libellé doit le dire. */}
+            <Btn
+              label={Platform.OS === "web" ? "Télécharger (HTML)" : "Télécharger PDF"}
+              icon="download"
+              onPress={onDownload}
+            />
           </View>
           <View style={{ flex: 1 }}>
             <Btn label="Envoyer" icon="share" variant="secondary" onPress={onSend} />
@@ -362,17 +379,17 @@ const styles = StyleSheet.create({
     fontSize: fontSize.monoSm,
     fontWeight: fontWeight.bold,
   },
-  placeholderLg: {
-    height: 44,
-    backgroundColor: colors.bgSubtle,
-    borderRadius: 8,
+  conclusionText: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.eyebrow,
+    color: colors.textPrimary,
+    lineHeight: 16,
   },
-  placeholderSm: {
-    height: 16,
-    width: "60%",
-    backgroundColor: colors.bgSubtle,
-    borderRadius: 8,
-    marginTop: 8,
+  conclusionEmptyText: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.eyebrow,
+    color: colors.textMuted,
+    fontStyle: "italic",
   },
   footer: {
     flexDirection: "row",

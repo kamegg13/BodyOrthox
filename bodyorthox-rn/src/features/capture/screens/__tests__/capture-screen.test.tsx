@@ -1,11 +1,14 @@
 import React from "react";
-import { render } from "@testing-library/react-native";
+import { render, fireEvent } from "@testing-library/react-native";
 import { CaptureScreen } from "../capture-screen";
 
 // ── Navigation ────────────────────────────────────────────────────────────────
+const mockNavigate = jest.fn();
+const mockGoBack = jest.fn();
+
 jest.mock("@react-navigation/native", () => ({
   useRoute: () => ({ params: { patientId: "patient-1" } }),
-  useNavigation: () => ({ goBack: jest.fn() }),
+  useNavigation: () => ({ goBack: mockGoBack, navigate: mockNavigate }),
 }));
 
 // ── useCaptureLogic ───────────────────────────────────────────────────────────
@@ -22,6 +25,7 @@ const defaultLogic = {
   previewUrl: undefined,
   mlLoading: false,
   detectionError: null,
+  platformLimitation: null,
   lowConfidenceWarning: null,
   webCameraRef: { current: null },
   handleWebCameraPermissionDenied: jest.fn(),
@@ -90,5 +94,34 @@ describe("CaptureScreen — permission_denied", () => {
     const { getByText } = render(<CaptureScreen />);
     expect(getByText("Accès caméra refusé")).toBeTruthy();
     expect(getByText("Accès refusé.")).toBeTruthy();
+  });
+});
+
+describe("CaptureScreen — lien protocole", () => {
+  beforeAll(() => {
+    // @ts-ignore
+    require("react-native").Platform.OS = "web";
+  });
+
+  afterAll(() => {
+    // @ts-ignore
+    require("react-native").Platform.OS = "ios";
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUseCaptureLogic.mockReturnValue({
+      ...defaultLogic,
+      phase: { type: "ready" },
+    });
+  });
+
+  it("ouvre le protocole de positionnement depuis l'écran de capture", () => {
+    const { getByLabelText } = render(<CaptureScreen />);
+    fireEvent.press(getByLabelText("Protocole de positionnement"));
+    expect(mockNavigate).toHaveBeenCalledWith("MainTabs", {
+      screen: "AnalysesTab",
+      params: { screen: "Protocols" },
+    });
   });
 });

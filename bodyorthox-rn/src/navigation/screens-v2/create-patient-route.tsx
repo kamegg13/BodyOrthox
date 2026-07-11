@@ -46,7 +46,7 @@ export function CreatePatientRoute() {
   );
 }
 
-function formValuesToCreateInput(values: NewPatientFormValues): CreatePatientInput {
+export function formValuesToCreateInput(values: NewPatientFormValues): CreatePatientInput {
   const morpho: MorphologicalProfile = {
     sex: values.sex ?? undefined,
     ...(values.heightCm !== null ? { heightCm: values.heightCm } : {}),
@@ -58,5 +58,11 @@ function formValuesToCreateInput(values: NewPatientFormValues): CreatePatientInp
     name: `${values.firstName} ${values.lastName}`,
     dateOfBirth: values.dateOfBirth,
     morphologicalProfile: morpho,
+    ...(values.referringPhysician ? { referringPhysician: values.referringPhysician } : {}),
+    consentStorage: values.consentStorage,
+    consentPhotoCapture: values.consentPhotoCapture,
+    consentPdfExport: values.consentPdfExport,
+    consentGiven: values.consentStorage && values.consentPhotoCapture && values.consentPdfExport,
+    ...(values.consentDate ? { consentDate: values.consentDate } : {}),
   };
 }

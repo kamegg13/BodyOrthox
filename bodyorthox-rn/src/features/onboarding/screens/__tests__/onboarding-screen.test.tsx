@@ -6,14 +6,16 @@ import { useOnboardingStore } from "../../store/onboarding-store";
 // Mock navigation
 const mockReplace = jest.fn();
 const mockNavigate = jest.fn();
+const mockGoBack = jest.fn();
+let mockRouteParams: { mode?: "review" } | undefined = {};
 jest.mock("@react-navigation/native", () => ({
   useNavigation: () => ({
     replace: mockReplace,
     navigate: mockNavigate,
-    goBack: jest.fn(),
+    goBack: mockGoBack,
     push: jest.fn(),
   }),
-  useRoute: () => ({ params: {} }),
+  useRoute: () => ({ params: mockRouteParams }),
 }));
 
 // Mock react-native-vision-camera for camera permission
@@ -45,6 +47,7 @@ Object.defineProperty(global, "localStorage", {
 describe("OnboardingScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockRouteParams = {};
     Object.keys(mockLocalStorage).forEach(
       (key) => delete mockLocalStorage[key],
     );
@@ -157,5 +160,53 @@ describe("OnboardingScreen", () => {
     });
 
     expect(useOnboardingStore.getState().isCompleted).toBe(true);
+  });
+
+  describe("mode révision (re-consultation depuis Compte)", () => {
+    beforeEach(() => {
+      mockRouteParams = { mode: "review" };
+      useOnboardingStore.setState({ isCompleted: true, isLoading: false });
+    });
+
+    it("le bouton Passer revient en arrière (goBack) sans re-rediriger vers MainTabs", async () => {
+      const { getByTestId } = render(<OnboardingScreen />);
+
+      await act(async () => {
+        fireEvent.press(getByTestId("onboarding-skip"));
+      });
+
+      expect(mockGoBack).toHaveBeenCalledTimes(1);
+      expect(mockReplace).not.toHaveBeenCalled();
+    });
+
+    it("le bouton Terminer revient en arrière (goBack) une fois sur la dernière page", async () => {
+      const { getByTestId } = render(<OnboardingScreen />);
+
+      // Avance page par page via "Suivant" (déterministe, indépendant de la
+      // largeur d'écran simulée par le test — cf. onboarding-next ci-dessus).
+      await act(async () => {
+        fireEvent.press(getByTestId("onboarding-next"));
+      });
+      await act(async () => {
+        fireEvent.press(getByTestId("onboarding-next"));
+      });
+
+      await act(async () => {
+        fireEvent.press(getByTestId("onboarding-complete"));
+      });
+
+      expect(mockGoBack).toHaveBeenCalledTimes(1);
+      expect(mockReplace).not.toHaveBeenCalled();
+    });
+
+    it("ne touche pas au flag isCompleted (déjà vrai, pas de re-complétion forcée)", async () => {
+      const { getByTestId } = render(<OnboardingScreen />);
+
+      await act(async () => {
+        fireEvent.press(getByTestId("onboarding-skip"));
+      });
+
+      expect(useOnboardingStore.getState().isCompleted).toBe(true);
+    });
   });
 });

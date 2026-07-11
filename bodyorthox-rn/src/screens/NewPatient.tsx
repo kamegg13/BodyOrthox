@@ -38,6 +38,12 @@ export interface NewPatientFormValues {
   readonly diagnosis: string;
   readonly referringPhysician: string;
   readonly observations: string;
+  /** Consentement granulaire (RGPD) — preuve par finalité. */
+  readonly consentStorage: boolean;
+  readonly consentPhotoCapture: boolean;
+  readonly consentPdfExport: boolean;
+  /** Horodatage de la collecte de consentement — `null` si non recueilli dans cet écran. */
+  readonly consentDate: string | null;
 }
 
 interface NewPatientProps {
@@ -119,6 +125,8 @@ export function NewPatient({
     if (!canSubmit) return;
     const iso = parseDobToIso(dob);
     if (!iso || !sex) return;
+    // skipConsents = les 3 cases ne sont pas affichées : on ne fabrique jamais
+    // une preuve de consentement pour un écran où le patient ne les a pas vues.
     onSave?.({
       firstName: firstName.trim(),
       lastName: lastName.trim(),
@@ -129,6 +137,10 @@ export function NewPatient({
       diagnosis: diagnosis.trim(),
       referringPhysician: referring.trim(),
       observations: observations.trim(),
+      consentStorage: skipConsents ? false : consents[0],
+      consentPhotoCapture: skipConsents ? false : consents[1],
+      consentPdfExport: skipConsents ? false : consents[2],
+      consentDate: !skipConsents && allConsents ? new Date().toISOString() : null,
     });
   }
 
@@ -235,6 +247,7 @@ export function NewPatient({
             icon="user"
             value={referring}
             onChangeText={setReferring}
+            testID="np-referring-physician"
           />
           <View>
             <Text style={styles.fieldLabel}>Observations initiales</Text>

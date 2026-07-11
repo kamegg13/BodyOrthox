@@ -13,6 +13,9 @@ jest.mock('react-native-biometrics', () => {
 
 // Import after mock is set up
 import { NativeBiometricService } from '../biometric-service.native';
+import MockedReactNativeBiometrics from 'react-native-biometrics';
+
+const mockConstructor = MockedReactNativeBiometrics as unknown as jest.Mock;
 
 describe('WebBiometricService', () => {
   let service: WebBiometricService;
@@ -43,6 +46,11 @@ describe('NativeBiometricService', () => {
   beforeEach(() => {
     service = new NativeBiometricService();
     jest.clearAllMocks();
+  });
+
+  it('enables the device credential (PIN/schéma) fallback', () => {
+    new NativeBiometricService();
+    expect(mockConstructor).toHaveBeenCalledWith({ allowDeviceCredentials: true });
   });
 
   describe('isAvailable', () => {

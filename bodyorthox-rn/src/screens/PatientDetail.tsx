@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useCallback } from "react";
 import {
+  Alert,
   Pressable,
   ScrollView,
   StatusBar,
@@ -47,6 +48,10 @@ export interface PatientDetailData {
   readonly diagnosisLabel: string;
   readonly diagnosisDescription: string;
   readonly history: readonly AnalysisHistoryItem[];
+  /** Médecin ayant adressé le patient — affiché seulement si renseigné. */
+  readonly referringPhysician?: string;
+  /** Date de consentement RGPD (déjà formatée pour l'affichage) — preuve de collecte. */
+  readonly consentDate?: string;
 }
 
 interface PatientDetailProps {
@@ -58,6 +63,10 @@ interface PatientDetailProps {
   readonly onGeneratePdf?: () => void;
   readonly onHistoryPress?: (item: AnalysisHistoryItem) => void;
   readonly onTabPress?: (key: "home" | "patients" | "capture" | "reports" | "settings") => void;
+  /** Archivage RGPD — masque le patient de la liste principale sans le supprimer. */
+  readonly onArchive?: () => void;
+  /** Suppression RGPD (droit à l'effacement) — irréversible. */
+  readonly onDelete?: () => void;
 }
 
 export function PatientDetail({
@@ -69,7 +78,31 @@ export function PatientDetail({
   onGeneratePdf,
   onHistoryPress,
   onTabPress,
+  onArchive,
+  onDelete,
 }: PatientDetailProps) {
+  const handleArchivePress = useCallback(() => {
+    Alert.alert(
+      "Archiver le patient",
+      `Voulez-vous archiver ${data.name} ? Il ne sera plus visible dans la liste principale des patients actifs, mais ses données sont conservées.`,
+      [
+        { text: "Annuler", style: "cancel" },
+        { text: "Archiver", onPress: () => onArchive?.() },
+      ],
+    );
+  }, [data.name, onArchive]);
+
+  const handleDeletePress = useCallback(() => {
+    Alert.alert(
+      "Supprimer le patient",
+      `Voulez-vous vraiment supprimer définitivement ${data.name} ? Cette action est irréversible : toutes les données et analyses associées seront effacées (droit à l'effacement RGPD).`,
+      [
+        { text: "Annuler", style: "cancel" },
+        { text: "Supprimer", style: "destructive", onPress: () => onDelete?.() },
+      ],
+    );
+  }, [data.name, onDelete]);
+
   return (
     <View style={styles.root}>
       <StatusBar barStyle="dark-content" />
@@ -131,6 +164,22 @@ export function PatientDetail({
           <Text style={styles.diagnosisDesc}>{data.diagnosisDescription}</Text>
         </Card>
 
+        {data.referringPhysician || data.consentDate ? (
+          <Card style={styles.diagnosisCard}>
+            <Text style={styles.eyebrow}>Suivi</Text>
+            {data.referringPhysician ? (
+              <Text style={styles.diagnosisDesc} testID="patient-referring-physician">
+                Medecin referent : {data.referringPhysician}
+              </Text>
+            ) : null}
+            {data.consentDate ? (
+              <Text style={styles.diagnosisDesc} testID="patient-consent-date">
+                Consentement RGPD enregistre le {data.consentDate}
+              </Text>
+            ) : null}
+          </Card>
+        ) : null}
+
         <View style={styles.actionsRow}>
           <View style={{ flex: 1 }}>
             <Btn label="Nouvelle capture" icon="camera" small onPress={onCapture} />
@@ -152,6 +201,26 @@ export function PatientDetail({
             {data.history.map((item) => (
               <HistoryRow key={item.id} item={item} onPress={() => onHistoryPress?.(item)} />
             ))}
+          </View>
+        </View>
+
+        <View style={styles.dangerZone}>
+          <SectionLabel>Zone dangereuse</SectionLabel>
+          <View style={{ gap: 10 }}>
+            <Btn
+              label="Archiver le patient"
+              variant="secondary"
+              small
+              onPress={handleArchivePress}
+              testID="archive-button"
+            />
+            <Btn
+              label="Supprimer le patient"
+              variant="danger"
+              small
+              onPress={handleDeletePress}
+              testID="delete-button"
+            />
           </View>
         </View>
       </ScrollView>
@@ -349,6 +418,12 @@ const styles = StyleSheet.create({
   actionsRow: {
     flexDirection: "row",
     gap: 10,
+  },
+  dangerZone: {
+    marginTop: spacing.s8,
+    paddingTop: spacing.s16,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
   },
   historyRow: {
     flexDirection: "row",

@@ -34,8 +34,29 @@ interface FieldProps {
   readonly type?: "text" | "password" | "email" | "number";
   readonly disabled?: boolean;
   readonly autoCapitalize?: TextInputProps["autoCapitalize"];
+  /** Surcharge du type d'autofill iOS (déduit de `type` sinon). */
+  readonly textContentType?: TextInputProps["textContentType"];
+  /** Surcharge du type d'autofill Android/web (déduit de `type` sinon). */
+  readonly autoComplete?: TextInputProps["autoComplete"];
   readonly style?: StyleProp<ViewStyle>;
   readonly testID?: string;
+}
+
+/** Déduit les props d'autofill (gestionnaire de mots de passe) du `type` du champ. */
+function defaultTextContentType(
+  type: FieldProps["type"],
+): TextInputProps["textContentType"] {
+  if (type === "email") return "emailAddress";
+  if (type === "password") return "password";
+  return "none";
+}
+
+function defaultAutoComplete(
+  type: FieldProps["type"],
+): TextInputProps["autoComplete"] {
+  if (type === "email") return "email";
+  if (type === "password") return "current-password";
+  return "off";
 }
 
 export function Field({
@@ -50,6 +71,8 @@ export function Field({
   type = "text",
   disabled = false,
   autoCapitalize,
+  textContentType,
+  autoComplete,
   style,
   testID,
 }: FieldProps) {
@@ -89,6 +112,8 @@ export function Field({
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize ?? (type === "email" ? "none" : undefined)}
           autoCorrect={type !== "email" && type !== "password"}
+          textContentType={textContentType ?? defaultTextContentType(type)}
+          autoComplete={autoComplete ?? defaultAutoComplete(type)}
           testID={testID}
         />
         {isPwd ? (

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Alert } from "react-native";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../types";
@@ -31,6 +32,8 @@ export function PatientDetailRoute() {
   );
   const patientsLoading = usePatientsStore((s) => s.isLoading);
   const patientsCount = usePatientsStore((s) => s.patients.length);
+  const deletePatient = usePatientsStore((s) => s.deletePatient);
+  const archivePatient = usePatientsStore((s) => s.archivePatient);
   const repo = useAnalysisRepository();
   const [analyses, setAnalyses] = useState<readonly Analysis[]>([]);
   const [loadingAnalyses, setLoadingAnalyses] = useState(true);
@@ -97,6 +100,24 @@ export function PatientDetailRoute() {
     },
     [navigation, patientId],
   );
+  const handleDelete = useCallback(async () => {
+    await deletePatient(patientId);
+    const err = usePatientsStore.getState().error;
+    if (err) {
+      Alert.alert("Erreur", err);
+      return;
+    }
+    navigation.navigate("MainTabs", { screen: "PatientsTab" });
+  }, [deletePatient, patientId, navigation]);
+  const handleArchive = useCallback(async () => {
+    await archivePatient(patientId);
+    const err = usePatientsStore.getState().error;
+    if (err) {
+      Alert.alert("Erreur", err);
+      return;
+    }
+    navigation.navigate("MainTabs", { screen: "PatientsTab" });
+  }, [archivePatient, patientId, navigation]);
   const handleTabPress = useCallback(
     (key: "home" | "patients" | "capture" | "reports" | "settings") => {
       switch (key) {
@@ -143,11 +164,13 @@ export function PatientDetailRoute() {
       onGeneratePdf={handleGeneratePdf}
       onHistoryPress={handleHistoryPress}
       onTabPress={handleTabPress}
+      onArchive={handleArchive}
+      onDelete={handleDelete}
     />
   );
 }
 
-function buildDetailData(patient: Patient, analyses: readonly Analysis[]): PatientDetailData {
+export function buildDetailData(patient: Patient, analyses: readonly Analysis[]): PatientDetailData {
   const sex: "F" | "M" | "X" =
     patient.morphologicalProfile?.sex === "female"
       ? "F"
@@ -181,6 +204,8 @@ function buildDetailData(patient: Patient, analyses: readonly Analysis[]): Patie
     diagnosisLabel: "Diagnostic principal",
     diagnosisDescription,
     history: buildHistory(analyses),
+    ...(patient.referringPhysician ? { referringPhysician: patient.referringPhysician } : {}),
+    ...(patient.consentDate ? { consentDate: formatShortDate(patient.consentDate) } : {}),
   };
 }
 

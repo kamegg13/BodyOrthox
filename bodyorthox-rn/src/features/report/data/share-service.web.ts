@@ -1,4 +1,4 @@
-import { ShareResult } from "./share-service";
+import { DownloadResult, ShareResult } from "./share-service";
 
 export async function shareReport(
   htmlContent: string,
@@ -40,6 +40,40 @@ export async function shareReport(
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Erreur lors de l'export PDF";
+    return { kind: "error", message };
+  }
+}
+
+/**
+ * Télécharge réellement le rapport via un lien `a[download]`.
+ * Aucun moteur de génération PDF n'est disponible côté web : le fichier
+ * produit est le HTML stylé du rapport, nommé `.html` pour rester honnête
+ * sur son contenu (le bouton qui déclenche cet appel s'appelle « Télécharger
+ * PDF » côté UI — voir le rapport de livraison pour ce compromis).
+ */
+export async function downloadReport(
+  htmlContent: string,
+  fileName: string,
+): Promise<DownloadResult> {
+  try {
+    const downloadName = `${fileName.replace(/\.(pdf|html)$/i, "")}.html`;
+    const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = downloadName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+    return { kind: "downloaded", filePath: downloadName };
+  } catch (err) {
+    const message =
+      err instanceof Error
+        ? err.message
+        : "Erreur lors du téléchargement du rapport.";
     return { kind: "error", message };
   }
 }

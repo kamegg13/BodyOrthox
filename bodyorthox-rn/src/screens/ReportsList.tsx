@@ -63,13 +63,13 @@ export function ReportsList({ items, isLoading = false, onItemPress }: ReportsLi
             </View>
             <Text style={styles.emptyTitle}>Aucun rapport</Text>
             <Text style={styles.emptySub}>
-              Les rapports d’analyse generes apparaitront ici. Demarrez une capture
+              Les rapports d’analyse générés apparaîtront ici. Démarrez une capture
               depuis la fiche d’un patient pour produire le premier.
             </Text>
           </View>
         ) : (
           <View style={{ gap: 10 }}>
-            <SectionLabel>Rapports recents</SectionLabel>
+            <SectionLabel>Rapports récents</SectionLabel>
             {items.map((item) => (
               <ReportRow key={item.analysisId} item={item} onPress={() => onItemPress?.(item)} />
             ))}
@@ -90,7 +90,7 @@ function ReportRow({
   const sevColor: BadgeColor =
     item.severity === "normal" ? "green" : item.severity === "moderate" ? "amber" : "red";
   const sevLabel =
-    item.severity === "normal" ? "Normal" : item.severity === "moderate" ? "Modere" : "Severe";
+    item.severity === "normal" ? "Normal" : item.severity === "moderate" ? "Modéré" : "Sévère";
   return (
     <Pressable
       onPress={onPress}

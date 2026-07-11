@@ -13,7 +13,20 @@ import { IPatientRepository } from "../data/patient-repository";
 enableMapSet();
 
 export type SortBy = "alpha" | "recent" | "last-analyzed";
-export type PatientFilter = "male" | "female" | "active" | "sedentary" | "has-pains" | "archived";
+// "notArchived" reflète le statut d'archivage (opposé de "archived"), distinct
+// d'un éventuel filtre de niveau d'activité sportive — les deux ne doivent
+// jamais être confondus (cf. chip "Actifs" de la liste patients).
+export type PatientFilter = "male" | "female" | "notArchived" | "sedentary" | "has-pains" | "archived";
+
+/**
+ * Identifiant court affiché sur la fiche patient (`#P-XXXX`). Dupliqué ici
+ * (plutôt qu'importé) car la recherche doit matcher exactement ce que
+ * l'utilisateur voit à l'écran — voir patient-detail-route.tsx::shortId.
+ */
+function shortPatientId(id: string): string {
+  if (id.length <= 8) return id;
+  return `P-${id.slice(0, 4).toUpperCase()}`;
+}
 
 function computeFiltered(
   patients: Patient[],
@@ -24,6 +37,11 @@ function computeFiltered(
   const showArchived = activeFilters.has("archived");
 
   let result = patients.filter((p) => {
+    // Le statut non-archivé se lit uniquement sur `archivedAt` — jamais sur
+    // `morphologicalProfile.activityLevel` (c'était le bug du chip "Actifs").
+    // "notArchived" (chip "Actifs") est donc cohérent avec le comportement
+    // par défaut : sans le chip "Archivés", les patients archivés restent
+    // masqués de la liste principale.
     if (showArchived) {
       if (!p.archivedAt) return false;
     } else {
@@ -32,12 +50,6 @@ function computeFiltered(
 
     if (activeFilters.has("male") && p.morphologicalProfile?.sex !== "male") return false;
     if (activeFilters.has("female") && p.morphologicalProfile?.sex !== "female") return false;
-    if (
-      activeFilters.has("active") &&
-      p.morphologicalProfile?.activityLevel !== "active" &&
-      p.morphologicalProfile?.activityLevel !== "athlete"
-    )
-      return false;
     if (activeFilters.has("sedentary") && p.morphologicalProfile?.activityLevel !== "sedentary")
       return false;
     if (activeFilters.has("has-pains") && (p.morphologicalProfile?.pains?.length ?? 0) === 0)
@@ -45,7 +57,10 @@ function computeFiltered(
 
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      if (!patientDisplayName(p).toLowerCase().includes(q)) return false;
+      const matchesName = patientDisplayName(p).toLowerCase().includes(q);
+      const matchesId =
+        p.id.toLowerCase().includes(q) || shortPatientId(p.id).toLowerCase().includes(q);
+      if (!matchesName && !matchesId) return false;
     }
 
     return true;
@@ -185,7 +200,7 @@ export const usePatientsStore = create<PatientsState & PatientsActions>()(
     },
 
     async updatePatient(id: string, input: UpdatePatientInput) {
-      if (!_repository) return;
+      if (!_repository) throw new Error("Repository non initialisé");
       try {
         const updated = await _repository.update(id, input);
         set((state) => {
@@ -199,14 +214,23 @@ export const usePatientsStore = create<PatientsState & PatientsActions>()(
           );
         });
       } catch (error) {
+        // Ne PAS avaler l'erreur : un appelant qui `await`e updatePatient() doit
+        // savoir que la persistance a échoué (ex. ne pas quitter l'écran d'édition).
+        const msg = error instanceof Error ? error.message : "Erreur de mise à jour";
         set((state) => {
-          state.error = error instanceof Error ? error.message : "Erreur de mise à jour";
+          state.error = msg;
         });
+        throw error;
       }
     },
 
     async archivePatient(id: string) {
       if (!_repository) return;
+      // Purge d'une éventuelle erreur antérieure : les appelants lisent
+      // `error` après l'await pour distinguer succès et échec.
+      set((state) => {
+        state.error = null;
+      });
       try {
         const archived = await _repository.archive(id);
         set((state) => {
@@ -228,6 +252,10 @@ export const usePatientsStore = create<PatientsState & PatientsActions>()(
 
     async deletePatient(id: string) {
       if (!_repository) return;
+      // Même contrat que archivePatient : error nulle ⇔ opération réussie.
+      set((state) => {
+        state.error = null;
+      });
       try {
         await _repository.delete(id);
         set((state) => {

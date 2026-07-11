@@ -152,4 +152,81 @@ describe("SqliteAnalysisRepository", () => {
       );
     });
   });
+
+  describe("clinicalNotes", () => {
+    it("maps clinical_notes column to clinicalNotes", async () => {
+      const db = createMockDb([
+        { ...mockRow, clinical_notes: "Suivi recommandé dans 3 mois." },
+      ]);
+      const repo = new SqliteAnalysisRepository(db);
+
+      const analysis = await repo.getById("mock-analysis-id");
+      expect(analysis?.clinicalNotes).toBe("Suivi recommandé dans 3 mois.");
+    });
+
+    it("leaves clinicalNotes undefined when the column is null", async () => {
+      const db = createMockDb([{ ...mockRow, clinical_notes: null }]);
+      const repo = new SqliteAnalysisRepository(db);
+
+      const analysis = await repo.getById("mock-analysis-id");
+      expect(analysis?.clinicalNotes).toBeUndefined();
+    });
+
+    it("includes clinical_notes in the INSERT statement", async () => {
+      const db = createMockDb();
+      (db.execute as jest.Mock).mockResolvedValueOnce({
+        rows: [],
+        rowsAffected: 1,
+      });
+      const repo = new SqliteAnalysisRepository(db);
+
+      await repo.create({
+        patientId: "p1",
+        angles: { kneeAngle: 175.0, hipAngle: 178.0, ankleAngle: 90.5 },
+        confidenceScore: 0.9,
+        clinicalNotes: "Observation initiale.",
+      });
+
+      expect(db.execute).toHaveBeenCalledWith(
+        expect.stringContaining("clinical_notes"),
+        expect.arrayContaining(["Observation initiale."]),
+      );
+    });
+
+    it("updates clinical_notes when provided", async () => {
+      const db = createMockDb();
+      const repo = new SqliteAnalysisRepository(db);
+
+      await repo.update("analysis-1", { clinicalNotes: "Nouvelle note." });
+
+      expect(db.execute).toHaveBeenCalledWith(
+        expect.stringContaining("clinical_notes = ?"),
+        ["Nouvelle note.", "analysis-1"],
+      );
+    });
+
+    it("clears clinical_notes to null when set to a blank string", async () => {
+      const db = createMockDb();
+      const repo = new SqliteAnalysisRepository(db);
+
+      await repo.update("analysis-1", { clinicalNotes: "   " });
+
+      expect(db.execute).toHaveBeenCalledWith(
+        expect.stringContaining("clinical_notes = ?"),
+        [null, "analysis-1"],
+      );
+    });
+
+    it("does not touch clinical_notes when not part of the partial update", async () => {
+      const db = createMockDb();
+      const repo = new SqliteAnalysisRepository(db);
+
+      await repo.update("analysis-1", { manualCorrectionApplied: true });
+
+      expect(db.execute).not.toHaveBeenCalledWith(
+        expect.stringContaining("clinical_notes"),
+        expect.anything(),
+      );
+    });
+  });
 });

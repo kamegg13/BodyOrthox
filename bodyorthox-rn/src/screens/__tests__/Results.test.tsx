@@ -1,5 +1,5 @@
 import React from "react";
-import { render } from "@testing-library/react-native";
+import { render, fireEvent } from "@testing-library/react-native";
 import { Results, SAMPLE_RESULTS } from "../Results";
 
 describe("Results", () => {
@@ -47,5 +47,85 @@ describe("Results", () => {
     const { getByTestId } = render(<Results data={data} />);
     expect(getByTestId("zoomable-image")).toBeTruthy();
     expect(getByTestId("zoomable-image-slider")).toBeTruthy();
+  });
+
+  describe("notes cliniques", () => {
+    it("pré-remplit le champ avec les notes existantes de l'analyse", () => {
+      const data = { ...SAMPLE_RESULTS, clinicalNotes: "Suivi à 3 mois." };
+      const { getByTestId } = render(<Results data={data} />);
+      expect(getByTestId("clinical-notes-input").props.value).toBe(
+        "Suivi à 3 mois.",
+      );
+    });
+
+    it("expose un label accessible sur le champ de notes", () => {
+      const { getByTestId } = render(<Results data={SAMPLE_RESULTS} />);
+      expect(getByTestId("clinical-notes-input").props.accessibilityLabel).toBe(
+        "Notes cliniques du praticien",
+      );
+    });
+
+    it("appelle onNotesChange à chaque frappe", () => {
+      const onNotesChange = jest.fn();
+      const { getByTestId } = render(
+        <Results data={SAMPLE_RESULTS} onNotesChange={onNotesChange} />,
+      );
+      fireEvent.changeText(getByTestId("clinical-notes-input"), "Nouvelle note");
+      expect(onNotesChange).toHaveBeenCalledWith("Nouvelle note");
+    });
+
+    it("appelle onNotesBlur avec la valeur courante à la perte de focus", () => {
+      const onNotesBlur = jest.fn();
+      const { getByTestId } = render(
+        <Results data={SAMPLE_RESULTS} onNotesBlur={onNotesBlur} />,
+      );
+      const input = getByTestId("clinical-notes-input");
+      fireEvent.changeText(input, "Texte final");
+      fireEvent(input, "blur");
+      expect(onNotesBlur).toHaveBeenCalledWith("Texte final");
+    });
+
+    it("n'affiche aucun feedback par défaut", () => {
+      const { queryByTestId } = render(<Results data={SAMPLE_RESULTS} />);
+      expect(queryByTestId("clinical-notes-feedback")).toBeNull();
+    });
+
+    it("affiche 'Enregistré' une fois la sauvegarde confirmée", () => {
+      const { getByTestId } = render(
+        <Results data={SAMPLE_RESULTS} notesSaveStatus="saved" />,
+      );
+      expect(getByTestId("clinical-notes-feedback")).toHaveTextContent(
+        "Enregistré",
+      );
+    });
+
+    it("affiche un message d'erreur visible si la sauvegarde échoue", () => {
+      const { getByTestId } = render(
+        <Results
+          data={SAMPLE_RESULTS}
+          notesSaveStatus="error"
+          notesSaveError="Connexion perdue"
+        />,
+      );
+      expect(getByTestId("clinical-notes-feedback")).toHaveTextContent(
+        "Connexion perdue",
+      );
+    });
+  });
+
+  describe("Corriger les points", () => {
+    it("n'affiche pas l'action quand onCorrectPoints est absent", () => {
+      const { queryByTestId } = render(<Results data={SAMPLE_RESULTS} />);
+      expect(queryByTestId("correct-points-button")).toBeNull();
+    });
+
+    it("navigue vers la relecture experte au tap", () => {
+      const onCorrectPoints = jest.fn();
+      const { getByTestId } = render(
+        <Results data={SAMPLE_RESULTS} onCorrectPoints={onCorrectPoints} />,
+      );
+      fireEvent.press(getByTestId("correct-points-button"));
+      expect(onCorrectPoints).toHaveBeenCalledTimes(1);
+    });
   });
 });

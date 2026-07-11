@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Chemins exposables via le FileProvider (partage des rapports PDF).
+     react-native-html-to-pdf écrit dans le cache de l'app (partage) ou dans
+     le répertoire documents (téléchargement) selon l'option `directory`. -->
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <cache-path name="cache" path="." />
+    <files-path name="files" path="." />
+    <external-cache-path name="external-cache" path="." />
+    <external-files-path name="external-files" path="." />
+</paths>

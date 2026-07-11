@@ -4,6 +4,7 @@ import { Colors } from "../../../shared/design-system/colors";
 import { Typography } from "../../../shared/design-system/typography";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
 import { shareReport } from "../data/share-service";
+import { confirmPrivacyBeforeShare } from "../data/privacy-confirm";
 
 type ExportStatus = "idle" | "sharing" | "error";
 
@@ -23,6 +24,9 @@ export function ExportButton({
 
   const handlePress = useCallback(async () => {
     if (disabled || status === "sharing") return;
+
+    const confirmed = await confirmPrivacyBeforeShare();
+    if (!confirmed) return;
 
     setStatus("sharing");
     setErrorMessage(null);
@@ -63,9 +67,20 @@ export function ExportButton({
         )}
       </Pressable>
       {status === "error" && errorMessage && (
-        <Text style={styles.errorText} testID="export-error">
-          {errorMessage}
-        </Text>
+        <>
+          <Text style={styles.errorText} testID="export-error">
+            {errorMessage}
+          </Text>
+          <Pressable
+            onPress={handlePress}
+            testID="export-retry"
+            accessibilityLabel="Réessayer l'export"
+            accessibilityRole="button"
+            style={styles.retryButton}
+          >
+            <Text style={styles.retryText}>Réessayer</Text>
+          </Pressable>
+        </>
       )}
     </>
   );
@@ -94,5 +109,16 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: "center",
     marginTop: Spacing.sm,
+  },
+  retryButton: {
+    alignSelf: "center",
+    marginTop: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+  },
+  retryText: {
+    color: Colors.primary,
+    fontWeight: "600",
+    fontSize: 13,
   },
 });

@@ -1,23 +1,26 @@
 import React, { useCallback } from 'react';
-import { Platform, Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet, Text } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/shared/design-system/colors';
 import { Shadows } from '@/shared/design-system/card-styles';
+import { sizes } from '@/theme/tokens';
 import { useFeedbackStore } from '../store/feedback-store';
 
 export function FeedbackFab() {
   const { openModal } = useFeedbackStore();
+  const insets = useSafeAreaInsets();
 
   const handlePress = useCallback(() => {
     openModal();
   }, [openModal]);
 
-  if (Platform.OS !== 'web') {
-    return null;
-  }
+  // Au-dessus de la tab bar + son inset de sécurité (varie selon l'appareil —
+  // un offset fixe recouvrait la tab bar sur les téléphones à home indicator).
+  const bottom = insets.bottom + sizes.bottomTab + sizes.bottomTabSafePad;
 
   return (
     <Pressable
-      style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
+      style={({ pressed }) => [styles.fab, { bottom }, pressed && styles.fabPressed]}
       onPress={handlePress}
       accessibilityRole="button"
       accessibilityLabel="Envoyer un retour"
@@ -30,9 +33,6 @@ export function FeedbackFab() {
 const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
-    // Au-dessus de la tab bar (~72px) : à 24px le FAB recouvrait l'onglet
-    // « Réglages » et intercepait ses clics.
-    bottom: 96,
     right: 24,
     width: 48,
     height: 48,

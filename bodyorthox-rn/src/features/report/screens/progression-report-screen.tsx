@@ -34,7 +34,9 @@ export function ProgressionReportScreen() {
   const [fileName, setFileName] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  useEffect(() => {
+  function generate() {
+    setStatus("generating");
+    setErrorMessage(null);
     try {
       const data = buildProgressionReportData(patient, [...analyses]);
       const html = generateProgressionReportHtml(data);
@@ -52,6 +54,10 @@ export function ProgressionReportScreen() {
       setErrorMessage(message);
       setStatus("error");
     }
+  }
+
+  useEffect(() => {
+    generate();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (status === "generating") {
@@ -63,6 +69,14 @@ export function ProgressionReportScreen() {
       <View style={styles.containerCentered}>
         <Text style={styles.errorText} testID="progression-report-error">
           {errorMessage ?? "Une erreur est survenue"}
+        </Text>
+        <Text
+          style={styles.retryLink}
+          onPress={generate}
+          accessibilityRole="button"
+          testID="progression-report-retry"
+        >
+          Réessayer
         </Text>
       </View>
     );
@@ -218,5 +232,14 @@ const styles = StyleSheet.create({
     fontSize: fontSize.bodyLg,
     textAlign: "center",
     padding: spacing.s16,
+  },
+  retryLink: {
+    fontFamily: fonts.sans,
+    color: colors.accent,
+    fontSize: fontSize.bodyLg,
+    fontWeight: fontWeight.semiBold,
+    textAlign: "center",
+    padding: spacing.s16,
+    minHeight: 44,
   },
 });

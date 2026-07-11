@@ -9,17 +9,34 @@ export type ShareResult =
   | { readonly kind: "cancelled" }
   | { readonly kind: "error"; readonly message: string };
 
-export interface IShareService {
-  shareFile(filePath: string, fileName: string): Promise<ShareResult>;
-}
+export type DownloadResult =
+  | { readonly kind: "downloaded"; readonly filePath: string }
+  | { readonly kind: "error"; readonly message: string };
 
 /**
- * Share an HTML report as a downloadable/shareable file.
+ * Share an HTML report as a real PDF file via the OS share sheet.
  * This is the default export — platform-specific files override it.
  */
 export async function shareReport(
   _htmlContent: string,
   _fileName: string,
 ): Promise<ShareResult> {
-  return { kind: "error", message: "Share not supported on this platform" };
+  return {
+    kind: "error",
+    message: "Le partage n'est pas pris en charge sur cette plateforme.",
+  };
+}
+
+/**
+ * Save the report locally as a file, without opening a share sheet.
+ * This is the default export — platform-specific files override it.
+ */
+export async function downloadReport(
+  _htmlContent: string,
+  _fileName: string,
+): Promise<DownloadResult> {
+  return {
+    kind: "error",
+    message: "Le téléchargement n'est pas pris en charge sur cette plateforme.",
+  };
 }

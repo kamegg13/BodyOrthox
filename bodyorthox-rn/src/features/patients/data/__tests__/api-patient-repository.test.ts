@@ -74,4 +74,50 @@ describe('ApiPatientRepository', () => {
     await repo.delete('p1');
     expect(mockApiRequest).toHaveBeenCalledWith('/patients/p1', expect.objectContaining({ method: 'DELETE' }));
   });
+
+  it('maps granular consent fields and referringPhysician from the API response', async () => {
+    mockApiRequest.mockResolvedValue([{
+      ...apiPatient,
+      referringPhysician: 'Dr. Martin',
+      consentStorage: true,
+      consentPhotoCapture: true,
+      consentPdfExport: false,
+      consentDate: '2026-01-01T00:00:00Z',
+    }]);
+    const patients = await repo.getAll();
+    expect(patients[0].referringPhysician).toBe('Dr. Martin');
+    expect(patients[0].consentStorage).toBe(true);
+    expect(patients[0].consentPdfExport).toBe(false);
+    expect(patients[0].consentDate).toBe('2026-01-01T00:00:00Z');
+  });
+
+  it('create sends granular consent fields and referringPhysician', async () => {
+    mockApiRequest.mockResolvedValue(apiPatient);
+    await repo.create({
+      name: 'Jean Dupont',
+      referringPhysician: 'Dr. Martin',
+      consentStorage: true,
+      consentPhotoCapture: true,
+      consentPdfExport: false,
+      consentDate: '2026-01-01T00:00:00Z',
+    });
+    expect(mockApiRequest).toHaveBeenCalledWith('/patients', expect.objectContaining({
+      method: 'POST',
+      body: expect.stringContaining('"referringPhysician":"Dr. Martin"'),
+    }));
+    const [, options] = mockApiRequest.mock.calls[0];
+    const body = JSON.parse((options as { body: string }).body);
+    expect(body.consentStorage).toBe(true);
+    expect(body.consentPhotoCapture).toBe(true);
+    expect(body.consentPdfExport).toBe(false);
+  });
+
+  it('update sends granular consent fields and referringPhysician', async () => {
+    mockApiRequest.mockResolvedValue(apiPatient);
+    await repo.update('p1', { referringPhysician: 'Dr. Petit', consentPdfExport: true });
+    const [, options] = mockApiRequest.mock.calls[0];
+    const body = JSON.parse((options as { body: string }).body);
+    expect(body.referringPhysician).toBe('Dr. Petit');
+    expect(body.consentPdfExport).toBe(true);
+  });
 });

@@ -19,6 +19,7 @@ interface AnalysisRow {
   created_at: string;
   landmarks_json?: string | null;
   captured_image_url?: string | null;
+  clinical_notes?: string | null;
 }
 
 function parseLandmarksJson(
@@ -54,6 +55,7 @@ function rowToAnalysis(row: Record<string, unknown>): Analysis {
       (r.manual_correction_joint as Analysis["manualCorrectionJoint"]) ?? null,
     allLandmarks,
     capturedImageUrl: r.captured_image_url ?? undefined,
+    clinicalNotes: r.clinical_notes ?? undefined,
   };
 }
 
@@ -89,8 +91,8 @@ export class SqliteAnalysisRepository implements IAnalysisRepository {
       `INSERT INTO analyses
          (id, patient_id, knee_angle, hip_angle, ankle_angle,
           confidence_score, ml_corrected, manual_correction_joint, created_at,
-          landmarks_json, captured_image_url)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          landmarks_json, captured_image_url, clinical_notes)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         analysis.id,
         analysis.patientId,
@@ -103,6 +105,7 @@ export class SqliteAnalysisRepository implements IAnalysisRepository {
         analysis.createdAt,
         landmarksJson,
         analysis.capturedImageUrl ?? null,
+        analysis.clinicalNotes ?? null,
       ],
     );
     return analysis;
@@ -117,6 +120,7 @@ export class SqliteAnalysisRepository implements IAnalysisRepository {
         | "bilateralAngles"
         | "manualCorrectionApplied"
         | "manualCorrectionJoint"
+        | "clinicalNotes"
       >
     >,
   ): Promise<void> {
@@ -141,6 +145,10 @@ export class SqliteAnalysisRepository implements IAnalysisRepository {
     if (partial.manualCorrectionJoint !== undefined) {
       setClauses.push("manual_correction_joint = ?");
       params.push(partial.manualCorrectionJoint);
+    }
+    if (partial.clinicalNotes !== undefined) {
+      setClauses.push("clinical_notes = ?");
+      params.push(partial.clinicalNotes?.trim() || null);
     }
 
     if (setClauses.length === 0) return;

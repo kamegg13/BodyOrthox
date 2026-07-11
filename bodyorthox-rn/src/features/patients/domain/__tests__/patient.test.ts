@@ -81,6 +81,37 @@ describe("createPatient", () => {
     expect(patient.consentDate).toBe("2026-01-01T00:00:00Z");
   });
 
+  it("stores granular consent fields when provided", () => {
+    const patient = createPatient({
+      name: "Jean",
+      consentStorage: true,
+      consentPhotoCapture: true,
+      consentPdfExport: false,
+    });
+    expect(patient.consentStorage).toBe(true);
+    expect(patient.consentPhotoCapture).toBe(true);
+    expect(patient.consentPdfExport).toBe(false);
+  });
+
+  it("does not set granular consent fields when absent (no fabricated proof)", () => {
+    const patient = createPatient({ name: "Jean" });
+    expect(patient.consentStorage).toBeUndefined();
+    expect(patient.consentPhotoCapture).toBeUndefined();
+    expect(patient.consentPdfExport).toBeUndefined();
+  });
+
+  it("stores referringPhysician when provided", () => {
+    const patient = createPatient({ name: "Jean", referringPhysician: "Dr. Martin" });
+    expect(patient.referringPhysician).toBe("Dr. Martin");
+  });
+
+  it("trims referringPhysician and omits it when blank", () => {
+    expect(createPatient({ name: "Jean", referringPhysician: "  Dr. Martin  " }).referringPhysician).toBe(
+      "Dr. Martin",
+    );
+    expect(createPatient({ name: "Jean", referringPhysician: "   " }).referringPhysician).toBeUndefined();
+  });
+
   // --- Validation conservée uniquement quand la donnée est présente ---
 
   it("throws if dateOfBirth is invalid (when provided)", () => {
@@ -305,6 +336,28 @@ describe("updatePatient", () => {
     });
     expect(updated.consentGiven).toBe(true);
     expect(updated.consentDate).toBe("2026-01-01T00:00:00Z");
+  });
+
+  it("updates granular consent fields", () => {
+    const updated = updatePatient(base, {
+      consentStorage: true,
+      consentPhotoCapture: false,
+      consentPdfExport: true,
+    });
+    expect(updated.consentStorage).toBe(true);
+    expect(updated.consentPhotoCapture).toBe(false);
+    expect(updated.consentPdfExport).toBe(true);
+  });
+
+  it("updates referringPhysician", () => {
+    const updated = updatePatient(base, { referringPhysician: "Dr. Petit" });
+    expect(updated.referringPhysician).toBe("Dr. Petit");
+  });
+
+  it("clears referringPhysician when set to an empty string", () => {
+    const withPhysician = { ...base, referringPhysician: "Dr. Petit" };
+    const updated = updatePatient(withPhysician, { referringPhysician: "   " });
+    expect(updated.referringPhysician).toBeUndefined();
   });
 
   it("updates dateOfBirth", () => {

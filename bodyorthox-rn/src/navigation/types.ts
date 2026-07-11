@@ -12,7 +12,7 @@ export type BottomTabParamList = {
 export type RootStackParamList = {
   Lock: undefined;
   Login: undefined;
-  Onboarding: undefined;
+  Onboarding: { mode?: "review" } | undefined;
   MainTabs: NavigatorScreenParams<BottomTabParamList>;
   Patients: undefined;
   CreatePatient: undefined;
@@ -42,7 +42,6 @@ export type RootStackParamList = {
   Report: { analysis: Analysis; patient: Patient };
   ProgressionReport: { patient: Patient; analyses: Analysis[] };
   Protocols: undefined;
-  Reports: undefined;
   Admin: undefined;
   Calibration: undefined;
 };
