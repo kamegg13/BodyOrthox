@@ -1,7 +1,7 @@
 import React, { useCallback, useRef, useEffect } from "react";
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Icon } from "../../../components/icons";
-import { colors, fonts, fontWeight, radius, spacing } from "../../../theme/tokens";
+import { colors, fonts, fontSize, fontWeight, sizes } from "../../../theme/tokens";
 import { validateImageFile } from "../domain/validate-image-file";
 
 interface PhotoUploadProps {
@@ -81,36 +81,38 @@ export function PhotoUpload({ onPhotoSelected }: PhotoUploadProps) {
       style={styles.button}
       onPress={handlePress}
       testID="photo-upload-button"
+      accessibilityRole="button"
+      accessibilityLabel="Importer une photo"
     >
-      <View style={styles.buttonRow}>
-        <Icon name="image" size={15} color={colors.white} strokeWidth={1.6} />
-        <Text style={styles.buttonText}>Importer une photo</Text>
+      <View style={styles.iconWrap}>
+        <Icon name="image" size={17} color={colors.white70} strokeWidth={1.5} />
       </View>
+      <Text style={styles.buttonText}>Importer</Text>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  // Même grammaire que le bouton translucide de capture-screen : hairline
-  // blanche sur fond sombre, pas de card blanche opaque.
+  // Bouton latéral v4 (même grammaire que « Caméra » sur capture-screen) :
+  // icône ronde hairline sur fond sombre + label dessous.
   button: {
-    backgroundColor: colors.white12,
-    borderColor: colors.white20,
-    borderWidth: 1,
-    paddingHorizontal: spacing.s24,
-    paddingVertical: spacing.s8,
-    borderRadius: radius.button,
-    marginTop: spacing.s16,
+    alignItems: "center",
+    gap: 6,
+    minWidth: sizes.tap,
   },
-  buttonRow: {
-    flexDirection: "row",
+  iconWrap: {
+    width: sizes.tap,
+    height: sizes.tap,
+    borderRadius: 999,
+    borderWidth: 1.5,
+    borderColor: colors.white20,
+    backgroundColor: colors.white08,
     alignItems: "center",
     justifyContent: "center",
-    gap: spacing.s8,
   },
   buttonText: {
-    color: colors.textInverse,
-    fontSize: 15,
+    color: colors.white60,
+    fontSize: fontSize.caption,
     fontWeight: fontWeight.semiBold,
     fontFamily: fonts.sans,
     textAlign: "center",

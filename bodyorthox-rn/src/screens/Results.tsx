@@ -154,6 +154,8 @@ export function Results({ data, onBack, onShare, onGenerateReport }: ResultsProp
         <View
           style={[
             styles.heroPreview,
+            // Ratio réel de la photo, mais hauteur bornée : la photo reste une
+            // vignette de contexte, les cartes de mesure dominent l'écran.
             { aspectRatio: imageAspect ?? (data.capturedImageUrl ? 3 / 4 : 4 / 3) },
           ]}
         >
@@ -176,16 +178,18 @@ export function Results({ data, onBack, onShare, onGenerateReport }: ResultsProp
           )}
         </View>
 
-        <SectionLabel>Angles HKA</SectionLabel>
-        <View style={styles.grid2}>
-          <AngleRow m={data.hka.left} showScale />
-          <AngleRow m={data.hka.right} showScale />
+        <View style={styles.measureCard}>
+          <Text style={styles.measureCardLabel}>
+            Angle HKA · norme {HKA_REF_MIN}°–{HKA_REF_MAX}°
+          </Text>
+          <HkaBullet m={data.hka.left} sideLabel="Genou gauche" />
+          <HkaBullet m={data.hka.right} sideLabel="Genou droit" />
         </View>
 
-        <SectionLabel style={{ marginTop: spacing.s14 }}>Angles posturaux</SectionLabel>
-        <View style={styles.grid2}>
-          {data.postural.map((m) => (
-            <AngleRow key={m.key} m={m} />
+        <SectionLabel style={{ marginTop: spacing.s8 }}>Angles posturaux</SectionLabel>
+        <View style={[styles.measureCard, styles.listCard]}>
+          {data.postural.map((m, i) => (
+            <PosturalRow key={m.key} m={m} first={i === 0} />
           ))}
         </View>
 
@@ -241,105 +245,80 @@ function outOfNormDetail(data: ResultsData): string {
 const HKA_REF_MIN = 175;
 const HKA_REF_MAX = 180;
 
-function AngleRow({ m, showScale }: { m: AngleMeasurement; showScale?: boolean }) {
+/** Sévérité d'une mesure → couleur sémantique (texte + icône, jamais seule). */
+function sevTone(m: AngleMeasurement): {
+  readonly color: string;
+  readonly icon: "check" | "alert";
+  readonly deltaLabel: string;
+} {
   if (m.value === null) {
-    return (
-      <View style={angleStyles.card}>
-        <View style={angleStyles.topRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={angleStyles.eyebrow}>{m.label}</Text>
-            <View style={angleStyles.valueRow}>
-              <Text style={angleStyles.value}>—</Text>
-            </View>
-          </View>
-          <View style={{ alignItems: "flex-end", gap: 4 }}>
-            <Text style={angleStyles.norm}>
-              norme {m.norm}
-              {m.unit}
-            </Text>
-            <View style={[angleStyles.deltaPill, { backgroundColor: colors.bgSubtle }]}>
-              <Text style={[angleStyles.deltaText, { color: colors.textMuted }]}>
-                indisponible
-              </Text>
-            </View>
-          </View>
-        </View>
-        {!showScale && <View style={angleStyles.bar} />}
-        {showScale ? (
-          <AngleScale
-            value={null}
-            refMin={HKA_REF_MIN}
-            refMax={HKA_REF_MAX}
-            compact
-            style={angleStyles.scale}
-            testID={`angle-scale-${m.key}`}
-          />
-        ) : null}
-      </View>
-    );
+    return { color: colors.textMuted, icon: "alert", deltaLabel: "indisponible" };
   }
-
   const delta = +(m.value - m.norm).toFixed(1);
   const sev = severity(delta);
-  const sevColor =
-    sev === "normal" ? colors.green : sev === "moderate" ? colors.amber : colors.red;
-  const sevBg =
+  const color =
+    sev === "normal" ? colors.green : sev === "moderate" ? colors.amberMid : colors.red;
+  const deltaLabel =
     sev === "normal"
-      ? colors.greenLight
-      : sev === "moderate"
-      ? colors.amberLight
-      : colors.redLight;
-  const fillRatio = Math.min(1, Math.abs(m.value) / Math.max(0.001, Math.abs(m.norm) * 1.4));
+      ? "dans la norme"
+      : `${delta >= 0 ? `+${delta}` : `${delta}`}${m.unit} vs norme`;
+  return { color, icon: sev === "normal" ? "check" : "alert", deltaLabel };
+}
 
+/** Ligne bullet chart HKA — valeur en texte + échelle de norme (reco DS). */
+function HkaBullet({ m, sideLabel }: { m: AngleMeasurement; sideLabel: string }) {
+  const tone = sevTone(m);
   return (
-    <View style={angleStyles.card}>
-      <View style={angleStyles.topRow}>
-        <View style={{ flex: 1 }}>
-          <Text style={angleStyles.eyebrow}>{m.label}</Text>
-          <View style={angleStyles.valueRow}>
-            <Text style={[angleStyles.value, showScale && { color: sevColor }]}>
-              {m.value}
-            </Text>
-            <Text style={[angleStyles.unit, showScale && { color: sevColor }]}>
-              {m.unit}
-            </Text>
-          </View>
-        </View>
-        <View style={{ alignItems: "flex-end", gap: 4 }}>
-          <Text style={angleStyles.norm}>
-            norme {m.norm}
-            {m.unit}
-          </Text>
-          <View style={[angleStyles.deltaPill, { backgroundColor: sevBg }]}>
-            <Text style={[angleStyles.deltaText, { color: sevColor }]}>
-              {delta >= 0 ? `+${delta}` : `${delta}`}
-              {m.unit}
-            </Text>
-          </View>
+    <View style={angleStyles.bullet}>
+      <View style={angleStyles.bulletHead}>
+        <Text style={angleStyles.bulletSide}>{sideLabel}</Text>
+        <View style={angleStyles.bulletValueWrap}>
+          {m.value !== null ? (
+            <>
+              <Text style={[angleStyles.value, { color: tone.color }]}>
+                {m.value}
+                {m.unit}
+              </Text>
+              <Text style={angleStyles.bulletDelta}>{tone.deltaLabel}</Text>
+            </>
+          ) : (
+            <Text style={angleStyles.bulletDelta}>indisponible</Text>
+          )}
         </View>
       </View>
-      {/* La règle graduée remplace la barre de sévérité (redondante) sur les
-          cards HKA ; la barre reste pour les angles posturaux sans échelle. */}
-      {!showScale && (
-        <View style={angleStyles.bar}>
-          <View
-            style={[
-              angleStyles.barFill,
-              { width: `${fillRatio * 100}%`, backgroundColor: sevColor },
-            ]}
-          />
-        </View>
-      )}
-      {showScale ? (
-        <AngleScale
-          value={m.value}
-          refMin={HKA_REF_MIN}
-          refMax={HKA_REF_MAX}
-          compact
-          style={angleStyles.scale}
-          testID={`angle-scale-${m.key}`}
-        />
-      ) : null}
+      <AngleScale
+        value={m.value}
+        min={170}
+        max={190}
+        refMin={HKA_REF_MIN}
+        refMax={HKA_REF_MAX}
+        compact
+        showReadout={false}
+        style={angleStyles.scale}
+        testID={`angle-scale-${m.key}`}
+      />
+    </View>
+  );
+}
+
+/** Ligne de mesure posturale — icône d'état + valeur en texte. */
+function PosturalRow({ m, first }: { m: AngleMeasurement; first: boolean }) {
+  const tone = sevTone(m);
+  return (
+    <View style={[angleStyles.row, !first && angleStyles.rowBorder]}>
+      <View style={{ flex: 1 }}>
+        <Text style={angleStyles.rowLabel}>{m.label}</Text>
+        <Text style={angleStyles.rowNorm}>
+          norme {m.norm}
+          {m.unit}
+        </Text>
+      </View>
+      <View style={angleStyles.rowValueWrap}>
+        <Icon name={tone.icon} size={13} color={tone.color} strokeWidth={1.8} />
+        <Text style={angleStyles.rowValue}>
+          {m.value === null ? "—" : `${m.value}${m.unit}`}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -405,7 +384,9 @@ const styles = StyleSheet.create({
   },
   heroPreview: {
     width: "100%",
-    borderRadius: 14,
+    maxHeight: 380,
+    alignSelf: "center",
+    borderRadius: radius.cardLg,
     backgroundColor: colors.bgSubtle,
     borderWidth: 1.5,
     borderColor: colors.border,
@@ -438,10 +419,22 @@ const styles = StyleSheet.create({
     fontSize: fontSize.caption,
     color: colors.textMuted,
   },
-  grid2: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
+  measureCard: {
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.cardLg,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    paddingVertical: spacing.s14,
+    paddingHorizontal: spacing.s16,
+  },
+  measureCardLabel: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.semiBold,
+    color: colors.textMuted,
+  },
+  listCard: {
+    paddingVertical: spacing.s4,
   },
   notes: {
     minHeight: 68,
@@ -474,80 +467,75 @@ const styles = StyleSheet.create({
 });
 
 const angleStyles = StyleSheet.create({
-  card: {
-    flexBasis: "48%",
-    flexGrow: 1,
-    backgroundColor: colors.bgCard,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingVertical: 13,
-    paddingHorizontal: 14,
-    gap: 10,
-    ...shadows.sm,
+  bullet: {
+    marginTop: spacing.s14,
   },
-  topRow: {
+  bulletHead: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    marginBottom: spacing.s8,
   },
-  // v4 : label de mesure en casse normale.
-  eyebrow: {
+  bulletSide: {
     fontFamily: fonts.sans,
-    fontSize: fontSize.caption,
-    fontWeight: fontWeight.semiBold,
-    color: colors.textMuted,
-  },
-  valueRow: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    marginTop: 4,
-  },
-  value: {
-    fontFamily: fonts.display,
-    fontSize: fontSize.statLg,
-    fontWeight: fontWeight.semiBold,
-    color: colors.textPrimary,
-    letterSpacing: -0.5,
-    lineHeight: fontSize.statLg,
-    fontVariant: ["tabular-nums"],
-  },
-  unit: {
-    fontFamily: fonts.display,
     fontSize: fontSize.body,
     fontWeight: fontWeight.semiBold,
     color: colors.textPrimary,
-    marginLeft: 1,
   },
-  norm: {
+  bulletValueWrap: {
+    alignItems: "flex-end",
+  },
+  value: {
+    fontFamily: fonts.display,
+    fontSize: fontSize.statMd,
+    fontWeight: fontWeight.semiBold,
+    letterSpacing: -0.5,
+    lineHeight: fontSize.statMd + 2,
+    fontVariant: ["tabular-nums"],
+  },
+  bulletDelta: {
     fontFamily: fonts.sans,
     fontSize: fontSize.captionXs,
     fontWeight: fontWeight.semiBold,
     color: colors.textMuted,
     fontVariant: ["tabular-nums"],
   },
-  deltaPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 2.5,
-    borderRadius: 999,
+  scale: {
+    marginTop: 2,
   },
-  deltaText: {
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: spacing.s12,
+  },
+  rowBorder: {
+    borderTopWidth: 1,
+    borderTopColor: colors.bgSubtle,
+  },
+  rowLabel: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.body,
+    fontWeight: fontWeight.semiBold,
+    color: colors.textPrimary,
+  },
+  rowNorm: {
     fontFamily: fonts.sans,
     fontSize: fontSize.captionXs,
-    fontWeight: fontWeight.semiBold,
+    color: colors.textMuted,
+    marginTop: 1,
     fontVariant: ["tabular-nums"],
   },
-  bar: {
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: colors.bgSubtle,
-    overflow: "hidden",
+  rowValueWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
   },
-  barFill: {
-    height: "100%",
-    borderRadius: 3,
-  },
-  scale: {
-    marginTop: 4,
+  rowValue: {
+    fontFamily: fonts.display,
+    fontSize: fontSize.bodyLg,
+    fontWeight: fontWeight.semiBold,
+    color: colors.textPrimary,
+    fontVariant: ["tabular-nums"],
   },
 });
 

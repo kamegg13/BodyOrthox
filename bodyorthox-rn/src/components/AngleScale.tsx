@@ -22,6 +22,12 @@ interface AngleScaleProps {
   readonly refMax?: number;
   /** Version dense (hauteurs réduites) pour cards/listes. */
   readonly compact?: boolean;
+  /**
+   * Affiche la valeur au-dessus du curseur (défaut). À désactiver quand la
+   * valeur est déjà affichée à côté (bullet chart) — la mention « — » d'une
+   * mesure indisponible reste rendue dans tous les cas.
+   */
+  readonly showReadout?: boolean;
   readonly style?: StyleProp<ViewStyle>;
   readonly testID?: string;
 }
@@ -45,6 +51,7 @@ export function AngleScale({
   refMin,
   refMax,
   compact = false,
+  showReadout = true,
   style,
   testID,
 }: AngleScaleProps) {
@@ -84,6 +91,7 @@ export function AngleScale({
   return (
     <View style={[styles.root, style]} testID={testID} onLayout={onLayout}>
       {/* Lecture de la valeur, au-dessus du curseur. */}
+      {showReadout || value === null ? (
       <View style={[styles.readoutRow, { height: compact ? 18 : 22 }]}>
         {value === null ? (
           <Text
@@ -106,6 +114,7 @@ export function AngleScale({
           </View>
         ) : null}
       </View>
+      ) : null}
 
       {/* Piste graduée. */}
       <View style={[styles.track, { height: trackH }]}>

@@ -5,6 +5,7 @@ import { CaptureScreen } from "../capture-screen";
 // ── Navigation ────────────────────────────────────────────────────────────────
 jest.mock("@react-navigation/native", () => ({
   useRoute: () => ({ params: { patientId: "patient-1" } }),
+  useNavigation: () => ({ goBack: jest.fn() }),
 }));
 
 // ── useCaptureLogic ───────────────────────────────────────────────────────────

@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { Btn } from "../../../components/Btn";
+import { Icon } from "../../../components/icons";
 import { colors, fonts, spacing } from "../../../theme/tokens";
 
 export interface WebCameraRef {
@@ -122,7 +123,7 @@ export const WebCamera = forwardRef<WebCameraRef, WebCameraProps>(
     if (error) {
       return (
         <View style={[StyleSheet.absoluteFill, styles.errorContainer]}>
-          <Text style={styles.errorIcon}>🚫</Text>
+          <Icon name="alert" size={36} color={colors.red} strokeWidth={1.4} />
           <Text style={styles.errorText}>{error}</Text>
           <Btn
             label="Réessayer"
@@ -151,10 +152,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: spacing.s28,
-  },
-  errorIcon: {
-    fontSize: 48,
-    marginBottom: spacing.s16,
+    gap: spacing.s16,
   },
   errorText: {
     color: colors.red,
