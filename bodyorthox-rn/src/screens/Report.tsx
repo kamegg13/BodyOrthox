@@ -7,7 +7,6 @@ import {
   fonts,
   fontSize,
   fontWeight,
-  letterSpacing,
   shadows,
   spacing,
 } from "../theme/tokens";
@@ -266,8 +265,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.eyebrow,
     fontWeight: fontWeight.bold,
     color: colors.textMuted,
-    letterSpacing: letterSpacing.eyebrow,
-    textTransform: "uppercase",
     marginBottom: 8,
   },
   captureBlock: {
@@ -315,16 +312,12 @@ const styles = StyleSheet.create({
     fontSize: 9.5,
     fontWeight: fontWeight.bold,
     color: colors.textMuted,
-    letterSpacing: letterSpacing.label,
-    textTransform: "uppercase",
   },
   thNum: {
     fontFamily: fonts.sans,
     fontSize: 9.5,
     fontWeight: fontWeight.bold,
     color: colors.textMuted,
-    letterSpacing: letterSpacing.label,
-    textTransform: "uppercase",
     textAlign: "right",
   },
   tableRowGroup: {

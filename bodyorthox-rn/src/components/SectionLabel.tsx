@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
-import { colors, fonts, fontSize, fontWeight, letterSpacing } from "../theme/tokens";
+import { colors, fonts, fontSize, fontWeight } from "../theme/tokens";
 
 interface SectionLabelProps {
   readonly children: React.ReactNode;
@@ -24,12 +24,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 10,
   },
+  // v4 : titre de section en casse normale (Lexend), plus d'eyebrow uppercase.
   label: {
-    fontFamily: fonts.sans,
-    fontSize: fontSize.eyebrow,
+    fontFamily: fonts.display,
+    fontSize: fontSize.navTitle,
     fontWeight: fontWeight.semiBold,
-    color: colors.textMuted,
-    letterSpacing: letterSpacing.eyebrow,
-    textTransform: "uppercase",
+    color: colors.ink,
+    letterSpacing: -0.1,
   },
 });

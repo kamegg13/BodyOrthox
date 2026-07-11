@@ -17,7 +17,6 @@ import {
   fonts,
   fontSize,
   fontWeight,
-  letterSpacing,
   radius,
   sizes,
   spacing,
@@ -115,13 +114,12 @@ const styles = StyleSheet.create({
     width: "100%",
     minWidth: 0,
   },
+  // v4 : label de champ en casse normale (plus d'eyebrow uppercase).
   label: {
     fontFamily: fonts.sans,
-    fontSize: fontSize.eyebrow,
+    fontSize: fontSize.caption,
     fontWeight: fontWeight.semiBold,
-    color: colors.textMuted,
-    letterSpacing: letterSpacing.eyebrow,
-    textTransform: "uppercase",
+    color: colors.textSecond,
   },
   input: {
     flexDirection: "row",

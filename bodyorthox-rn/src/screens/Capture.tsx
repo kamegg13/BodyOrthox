@@ -16,7 +16,6 @@ import {
   fonts,
   fontSize,
   fontWeight,
-  letterSpacing,
   radius,
   spacing,
 } from "../theme/tokens";
@@ -343,8 +342,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.eyebrow,
     fontWeight: fontWeight.bold,
     color: colors.white60,
-    letterSpacing: letterSpacing.eyebrow,
-    textTransform: "uppercase",
   },
   hkaValue: {
     fontFamily: fonts.mono,

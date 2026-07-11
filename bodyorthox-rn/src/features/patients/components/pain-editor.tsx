@@ -12,7 +12,6 @@ import { generateId } from "../../../shared/utils/generate-id";
 import { Colors } from "../../../shared/design-system/colors";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
 import { FontSize, FontWeight } from "../../../shared/design-system/typography";
-import { letterSpacing } from "../../../theme/tokens";
 
 interface PainEditorProps {
   pains: PainEntry[];
@@ -318,8 +317,6 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xs,
     fontWeight: FontWeight.semiBold,
     color: Colors.textDisabled,
-    letterSpacing: letterSpacing.eyebrow,
-    textTransform: "uppercase",
     marginTop: Spacing.xs,
   },
   optionsRow: {

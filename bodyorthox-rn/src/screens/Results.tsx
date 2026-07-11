@@ -23,7 +23,6 @@ import {
   fonts,
   fontSize,
   fontWeight,
-  letterSpacing,
   radius,
   shadows,
   spacing,
@@ -119,8 +118,38 @@ export function Results({ data, onBack, onShare, onGenerateReport }: ResultsProp
               {data.date} · {data.type}
             </Text>
           </View>
-          <Badge label={sevLabel} color={sevColor} />
+          {data.severity === "normal" || data.severity === "unavailable" ? (
+            <Badge label={sevLabel} color={sevColor} />
+          ) : null}
         </View>
+
+        {data.severity === "moderate" || data.severity === "severe" ? (
+          <View
+            style={[
+              styles.sevBand,
+              data.severity === "severe" && styles.sevBandSevere,
+            ]}
+            testID="severity-band"
+          >
+            <Icon
+              name="alert"
+              size={16}
+              color={data.severity === "severe" ? colors.red : colors.amberMid}
+              strokeWidth={1.6}
+            />
+            <Text style={styles.sevBandText} numberOfLines={2}>
+              <Text
+                style={[
+                  styles.sevBandLabel,
+                  { color: data.severity === "severe" ? colors.red : colors.amberMid },
+                ]}
+              >
+                {`Écart ${sevLabel.toLowerCase()}`}
+              </Text>
+              {outOfNormDetail(data)}
+            </Text>
+          </View>
+        ) : null}
 
         <View
           style={[
@@ -173,7 +202,12 @@ export function Results({ data, onBack, onShare, onGenerateReport }: ResultsProp
 
       <SafeAreaView edges={["bottom"]} style={styles.actionBar}>
         <View style={styles.actionBarInner}>
-          <Btn label="Générer le rapport PDF" icon="file" onPress={onGenerateReport} />
+          <Btn
+            label="Générer le rapport PDF"
+            icon="file"
+            variant="success"
+            onPress={onGenerateReport}
+          />
         </View>
       </SafeAreaView>
     </View>
@@ -187,6 +221,18 @@ function severity(delta: number): "normal" | "moderate" | "severe" {
   if (a < 2) return "normal";
   if (a < 6) return "moderate";
   return "severe";
+}
+
+/** Détail des genoux hors plage de référence — « — genou gauche hors norme ». */
+function outOfNormDetail(data: ResultsData): string {
+  const out = (m: AngleMeasurement) =>
+    m.value !== null && (m.value < HKA_REF_MIN || m.value > HKA_REF_MAX);
+  const left = out(data.hka.left);
+  const right = out(data.hka.right);
+  if (left && right) return " — genoux gauche et droit hors norme";
+  if (left) return " — genou gauche hors norme";
+  if (right) return " — genou droit hors norme";
+  return "";
 }
 
 // Plage de référence HKA (175°–180°), cf. classifyHKA dans
@@ -251,8 +297,12 @@ function AngleRow({ m, showScale }: { m: AngleMeasurement; showScale?: boolean }
         <View style={{ flex: 1 }}>
           <Text style={angleStyles.eyebrow}>{m.label}</Text>
           <View style={angleStyles.valueRow}>
-            <Text style={angleStyles.value}>{m.value}</Text>
-            <Text style={angleStyles.unit}>{m.unit}</Text>
+            <Text style={[angleStyles.value, showScale && { color: sevColor }]}>
+              {m.value}
+            </Text>
+            <Text style={[angleStyles.unit, showScale && { color: sevColor }]}>
+              {m.unit}
+            </Text>
           </View>
         </View>
         <View style={{ alignItems: "flex-end", gap: 4 }}>
@@ -317,16 +367,41 @@ const styles = StyleSheet.create({
   },
   patientName: {
     fontFamily: fonts.display,
-    fontSize: fontSize.navTitle,
-    fontWeight: fontWeight.bold,
+    fontSize: fontSize.h2,
+    fontWeight: fontWeight.semiBold,
     color: colors.textPrimary,
     letterSpacing: -0.3,
   },
   summarySub: {
     fontFamily: fonts.sans,
     fontSize: fontSize.caption,
+    fontWeight: fontWeight.semiBold,
     color: colors.textMuted,
     marginTop: 2,
+  },
+  sevBand: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.s9,
+    backgroundColor: colors.amberLight,
+    borderWidth: 1.5,
+    borderColor: "rgba(180,83,9,0.25)",
+    borderRadius: radius.field,
+    paddingVertical: spacing.s11,
+    paddingHorizontal: spacing.s14,
+  },
+  sevBandSevere: {
+    backgroundColor: colors.redLight,
+    borderColor: "rgba(220,38,38,0.3)",
+  },
+  sevBandText: {
+    flex: 1,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.body,
+    color: colors.textPrimary,
+  },
+  sevBandLabel: {
+    fontWeight: fontWeight.semiBold,
   },
   heroPreview: {
     width: "100%",
@@ -415,13 +490,12 @@ const angleStyles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
   },
+  // v4 : label de mesure en casse normale.
   eyebrow: {
     fontFamily: fonts.sans,
-    fontSize: fontSize.eyebrow,
-    fontWeight: fontWeight.bold,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.semiBold,
     color: colors.textMuted,
-    letterSpacing: letterSpacing.eyebrow,
-    textTransform: "uppercase",
   },
   valueRow: {
     flexDirection: "row",
@@ -429,34 +503,38 @@ const angleStyles = StyleSheet.create({
     marginTop: 4,
   },
   value: {
-    fontFamily: fonts.mono,
+    fontFamily: fonts.display,
     fontSize: fontSize.statLg,
-    fontWeight: fontWeight.extraBold,
+    fontWeight: fontWeight.semiBold,
     color: colors.textPrimary,
-    letterSpacing: -1,
+    letterSpacing: -0.5,
     lineHeight: fontSize.statLg,
+    fontVariant: ["tabular-nums"],
   },
   unit: {
-    fontFamily: fonts.mono,
+    fontFamily: fonts.display,
     fontSize: fontSize.body,
-    fontWeight: fontWeight.bold,
+    fontWeight: fontWeight.semiBold,
     color: colors.textPrimary,
     marginLeft: 1,
   },
   norm: {
-    fontFamily: fonts.mono,
-    fontSize: fontSize.eyebrow,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.captionXs,
+    fontWeight: fontWeight.semiBold,
     color: colors.textMuted,
+    fontVariant: ["tabular-nums"],
   },
   deltaPill: {
     paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 7,
+    paddingVertical: 2.5,
+    borderRadius: 999,
   },
   deltaText: {
-    fontFamily: fonts.mono,
-    fontSize: fontSize.eyebrow,
-    fontWeight: fontWeight.bold,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.captionXs,
+    fontWeight: fontWeight.semiBold,
+    fontVariant: ["tabular-nums"],
   },
   bar: {
     height: 5,

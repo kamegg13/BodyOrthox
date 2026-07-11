@@ -26,7 +26,7 @@ import { ErrorWidget } from "../../../shared/components/error-widget";
 import { Colors } from "../../../shared/design-system/colors";
 import { Spacing } from "../../../shared/design-system/spacing";
 import { Typography } from "../../../shared/design-system/typography";
-import { colors, fonts, fontSize, letterSpacing, radius } from "../../../theme/tokens";
+import { colors, fonts, fontSize, radius } from "../../../theme/tokens";
 import { LEGAL_CONSTANTS } from "../../../core/legal/legal-constants";
 import { formatDisplayDateTime } from "../../../shared/utils/date-utils";
 import { useAnalysisRepository } from "../../../shared/hooks/use-analysis-repository";
@@ -559,8 +559,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.eyebrow,
     fontWeight: "600",
     color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: letterSpacing.eyebrow,
     marginTop: Spacing.sm,
   },
 

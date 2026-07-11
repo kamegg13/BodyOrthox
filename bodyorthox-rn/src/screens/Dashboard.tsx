@@ -23,7 +23,6 @@ import {
   fonts,
   fontSize,
   fontWeight,
-  letterSpacing,
   radius,
   shadows,
   spacing,
@@ -72,7 +71,7 @@ export function Dashboard({
         <View style={styles.headerInner}>
           <View style={styles.headerTopRow}>
             <View>
-              <Text style={styles.greeting}>{greeting()}</Text>
+              <Text style={styles.greeting}>{todayLabel()}</Text>
               <Text style={styles.practitioner}>{practitionerName}</Text>
             </View>
             <Pressable
@@ -81,7 +80,7 @@ export function Dashboard({
               accessibilityLabel="Notifications"
               style={styles.bellBtn}
             >
-              <Icon name="bell" size={18} color={colors.ink} />
+              <Icon name="bell" size={18} color={colors.primary} />
             </Pressable>
           </View>
 
@@ -287,12 +286,14 @@ function PatientRow({ patient, onPress }: PatientRowProps) {
 // Helpers
 // ────────────────────────────────────────────────────────────
 
-function greeting(): string {
-  const h = new Date().getHours();
-  if (h < 6) return "Bonsoir";
-  if (h < 12) return "Bonjour";
-  if (h < 18) return "Bon après-midi";
-  return "Bonsoir";
+/** Date du jour en casse normale — « Jeudi 10 juillet ». */
+function todayLabel(): string {
+  const label = new Date().toLocaleDateString("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+  return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
 function startOfWeek(date: Date): Date {
@@ -356,8 +357,6 @@ const styles = StyleSheet.create({
   },
   headerSafe: {
     backgroundColor: colors.bg,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
   },
   headerInner: {
     paddingHorizontal: spacing.heroPadH,
@@ -372,11 +371,9 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontFamily: fonts.sans,
-    fontSize: fontSize.eyebrow,
+    fontSize: fontSize.caption,
     color: colors.textMuted,
     fontWeight: fontWeight.semiBold,
-    letterSpacing: letterSpacing.eyebrow,
-    textTransform: "uppercase",
   },
   practitioner: {
     fontFamily: fonts.display,
@@ -436,12 +433,10 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontFamily: fonts.sans,
-    fontSize: fontSize.eyebrow,
+    fontSize: fontSize.caption,
     fontWeight: fontWeight.semiBold,
     color: colors.textMuted,
-    letterSpacing: letterSpacing.eyebrow,
-    textTransform: "uppercase",
-    marginTop: 6,
+    marginTop: 5,
   },
   statSub: {
     fontFamily: fonts.sans,
@@ -599,8 +594,9 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   patientDate: {
-    fontFamily: fonts.mono,
-    fontSize: fontSize.monoSm,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.captionXs,
+    fontWeight: fontWeight.medium,
     color: colors.textMuted,
   },
   emptyCard: {
