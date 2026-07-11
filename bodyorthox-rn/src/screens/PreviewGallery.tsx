@@ -13,7 +13,6 @@ import {
   fonts,
   fontSize,
   fontWeight,
-  letterSpacing,
   shadows,
   spacing,
 } from "../theme/tokens";
@@ -108,8 +107,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.eyebrow,
     fontWeight: fontWeight.bold,
     color: colors.white70,
-    letterSpacing: letterSpacing.eyebrow,
-    textTransform: "uppercase",
   },
   frame: {
     width: FRAME_W,

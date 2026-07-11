@@ -96,6 +96,5 @@ export const Typography = StyleSheet.create({
     color: Colors.textSecondary,
     lineHeight: 18,
     letterSpacing: 0.5,
-    textTransform: "uppercase",
   },
 });

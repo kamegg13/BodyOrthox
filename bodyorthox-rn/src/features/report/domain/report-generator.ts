@@ -66,10 +66,10 @@ export function buildReportData(
 
 /** Print-safe color: in-range green, ≤5° off orange, >5° off red, unmeasured grey */
 function angleColor(value: number, min: number, max: number): string {
-  if (!Number.isFinite(value) || value === 0) return "#888888";
-  if (value >= min && value <= max) return "#1a7f37";
+  if (!Number.isFinite(value) || value === 0) return "#46707F";
+  if (value >= min && value <= max) return "#059669";
   const dev = value < min ? min - value : value - max;
-  return dev <= 5 ? "#b45309" : "#c0392b";
+  return dev <= 5 ? "#b45309" : "#DC2626";
 }
 
 function fmt(v: number): string {

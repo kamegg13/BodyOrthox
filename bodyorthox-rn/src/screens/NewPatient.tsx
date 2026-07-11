@@ -23,7 +23,6 @@ import {
   fonts,
   fontSize,
   fontWeight,
-  letterSpacing,
   radius,
   shadows,
   spacing,
@@ -441,8 +440,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.eyebrow,
     fontWeight: fontWeight.semiBold,
     color: colors.textSecond,
-    letterSpacing: letterSpacing.eyebrow,
-    textTransform: "uppercase",
     marginBottom: 6,
   },
   textarea: {

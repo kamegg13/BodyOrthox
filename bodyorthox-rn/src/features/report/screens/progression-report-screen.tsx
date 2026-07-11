@@ -8,7 +8,6 @@ import {
   fonts,
   fontSize,
   fontWeight,
-  letterSpacing,
   radius,
   spacing,
 } from "../../../theme/tokens";
@@ -175,8 +174,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.eyebrow,
     fontWeight: fontWeight.semiBold,
     color: colors.textMuted,
-    letterSpacing: letterSpacing.eyebrow,
-    textTransform: "uppercase",
   },
   metaRow: {
     flexDirection: "row",

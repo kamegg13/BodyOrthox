@@ -3,7 +3,12 @@ import { useNavigation, useRoute, type RouteProp } from "@react-navigation/nativ
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Share, Platform } from "react-native";
 import type { RootStackParamList } from "../types";
-import { Results, type ResultsData, type AngleMeasurement } from "../../screens/Results";
+import {
+  Results,
+  type ResultsData,
+  type AngleMeasurement,
+  type PosturalMeasurement,
+} from "../../screens/Results";
 import { LoadingSpinner } from "../../shared/components/loading-spinner";
 import { ErrorWidget } from "../../shared/components/error-widget";
 import { useAnalysisRepository } from "../../shared/hooks/use-analysis-repository";
@@ -139,10 +144,28 @@ function buildResultsData(
     right: measure("hka-r", "HKA droit",  rightHKA, norms.hka, "°"),
   };
 
-  const postural: readonly AngleMeasurement[] = [
-    measure("hip", "Inclin. bassin", round(analysis.angles.hipAngle), norms.pelvis, "°"),
-    measure("knee", "Angle genou",   round(analysis.angles.kneeAngle), 0, "°"),
-    measure("ankle", "Angle cheville", round(analysis.angles.ankleAngle), 0, "°"),
+  // Angles posturaux bilatéraux. Sans données bilatérales (analyses
+  // historiques), les angles legacy — calculés sur la jambe gauche —
+  // alimentent le côté gauche, le droit reste indisponible.
+  const sided = (
+    key: string,
+    label: string,
+    pick: (s: { kneeAngle: number; hipAngle: number; ankleAngle: number }) => number,
+    legacy: number,
+    norm: number,
+  ): PosturalMeasurement => ({
+    key,
+    label,
+    left: bilateral ? angleOrNull(pick(bilateral.left)) : angleOrNull(legacy),
+    right: bilateral ? angleOrNull(pick(bilateral.right)) : null,
+    norm,
+    unit: "°",
+  });
+
+  const postural: readonly PosturalMeasurement[] = [
+    sided("hip", "Inclin. bassin", (s) => s.hipAngle, analysis.angles.hipAngle, norms.pelvis),
+    sided("knee", "Angle genou", (s) => s.kneeAngle, analysis.angles.kneeAngle, 0),
+    sided("ankle", "Angle cheville", (s) => s.ankleAngle, analysis.angles.ankleAngle, 0),
   ];
 
   const severity = severityFromAnalysis(leftHKA, rightHKA);
@@ -180,6 +203,12 @@ function hkaValueOrNull(value: number | undefined): number | null {
   return round(value);
 }
 
+/** Angle arrondi, ou null quand il n'a pas pu être mesuré (0 / non-fini). */
+function angleOrNull(value: number): number | null {
+  if (!Number.isFinite(value) || value === 0) return null;
+  return round(value);
+}
+
 function severityFromAnalysis(
   leftHKA: number | null,
   rightHKA: number | null,
@@ -199,16 +228,19 @@ function round(value: number): number {
 }
 
 function formatShareText(d: ResultsData): string {
-  const fmt = (m: AngleMeasurement): string =>
-    m.value === null ? "—" : `${m.value}${m.unit}`;
+  const fmt = (value: number | null, unit: string): string =>
+    value === null ? "—" : `${value}${unit}`;
   const lines = [
     `Patient : ${d.patientName}`,
     `Date : ${d.date}`,
     `Severite : ${d.severity}`,
-    `HKA gauche : ${fmt(d.hka.left)}  (norme ${d.hka.left.norm}°)`,
-    `HKA droit : ${fmt(d.hka.right)}  (norme ${d.hka.right.norm}°)`,
+    `HKA gauche : ${fmt(d.hka.left.value, d.hka.left.unit)}  (norme ${d.hka.left.norm}°)`,
+    `HKA droit : ${fmt(d.hka.right.value, d.hka.right.unit)}  (norme ${d.hka.right.norm}°)`,
     "",
-    ...d.postural.map((m) => `${m.label} : ${fmt(m)}  (norme ${m.norm}${m.unit})`),
+    ...d.postural.map(
+      (m) =>
+        `${m.label} : G ${fmt(m.left, m.unit)} / D ${fmt(m.right, m.unit)}  (norme ${m.norm}${m.unit})`,
+    ),
   ];
   return lines.join("\n");
 }

@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { Colors } from "../../../shared/design-system/colors";
 import { Spacing } from "../../../shared/design-system/spacing";
 import { Shadows } from "../../../shared/design-system/card-styles";
-import { colors, fonts, fontSize, letterSpacing, radius } from "../../../theme/tokens";
+import { colors, fonts, fontSize, radius } from "../../../theme/tokens";
 import type { HkaStatus } from "./hka-angle-card";
 
 interface NormsReferenceCardProps {
@@ -81,8 +81,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.eyebrow,
     fontWeight: "600",
     color: colors.textMuted,
-    letterSpacing: letterSpacing.eyebrow,
-    textTransform: "uppercase",
     marginBottom: Spacing.md,
   },
   rows: {

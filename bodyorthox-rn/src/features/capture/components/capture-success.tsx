@@ -9,7 +9,14 @@ import {
   View,
 } from "react-native";
 import { Btn } from "../../../components/Btn";
-import { colors, fonts, fontWeight, radius, spacing } from "../../../theme/tokens";
+import {
+  colors,
+  fonts,
+  fontSize,
+  fontWeight,
+  radius,
+  spacing,
+} from "../../../theme/tokens";
 import { SkeletonOverlay } from "./skeleton-overlay";
 import type { PoseLandmarks, BilateralAngles } from "../data/angle-calculator";
 import {
@@ -248,13 +255,14 @@ export function CaptureSuccess({
       )}
 
       {/* Bilateral HKA analysis */}
+      <Text style={styles.bilateralLabel}>Angle HKA</Text>
       <View style={styles.bilateralSection} testID="bilateral-section">
         <View style={styles.legColumn}>
           <Text style={styles.legTitle}>Jambe gauche</Text>
           {currentBilateral.leftHKA > 0 ? (
             <>
               <Text style={styles.hkaAngle} testID="left-hka">
-                HKA : {currentBilateral.leftHKA.toFixed(1)}°
+                {currentBilateral.leftHKA.toFixed(1)}°
               </Text>
               <Text style={styles.hkaClassification}>
                 {hkaLabel(currentBilateral.leftHKA)}
@@ -269,7 +277,7 @@ export function CaptureSuccess({
           {currentBilateral.rightHKA > 0 ? (
             <>
               <Text style={styles.hkaAngle} testID="right-hka">
-                HKA : {currentBilateral.rightHKA.toFixed(1)}°
+                {currentBilateral.rightHKA.toFixed(1)}°
               </Text>
               <Text style={styles.hkaClassification}>
                 {hkaLabel(currentBilateral.rightHKA)}
@@ -448,17 +456,28 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 18,
   },
+  // Titres et valeurs en Lexend (fonts.display), encre #164E63 — l'état
+  // « succès » est porté par les données, pas par un titre vert.
   successTitle: {
-    color: colors.green,
-    fontFamily: fonts.sans,
-    fontSize: 24,
-    fontWeight: fontWeight.bold,
+    color: colors.textPrimary,
+    fontFamily: fonts.display,
+    fontSize: fontSize.h1,
+    fontWeight: fontWeight.semiBold,
+    letterSpacing: -0.3,
   },
-  // Donnée numérique (pourcentage de confiance) → mono tabulaire.
   successScore: {
     color: colors.textSecond,
-    fontFamily: fonts.mono,
-    fontSize: 16,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.semiBold,
+    fontVariant: ["tabular-nums"],
+  },
+  bilateralLabel: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.semiBold,
+    color: colors.textSecond,
+    marginTop: spacing.s8,
   },
   bilateralSection: {
     flexDirection: "row" as const,
@@ -474,21 +493,26 @@ const styles = StyleSheet.create({
   legTitle: {
     color: colors.textPrimary,
     fontFamily: fonts.sans,
-    fontSize: 16,
-    fontWeight: fontWeight.bold,
+    fontSize: fontSize.body,
+    fontWeight: fontWeight.semiBold,
     marginBottom: spacing.s4,
   },
-  // Angle HKA : la donnée héro → mono tabulaire, noir sur clair.
+  // Angle HKA : la donnée héro → Lexend semibold tabulaire (grammaire
+  // identique au bullet chart de l'écran Résultats).
   hkaAngle: {
     color: colors.textPrimary,
-    fontFamily: fonts.mono,
-    fontSize: 18,
-    fontWeight: fontWeight.medium,
+    fontFamily: fonts.display,
+    fontSize: fontSize.statMd,
+    fontWeight: fontWeight.semiBold,
+    letterSpacing: -0.5,
+    lineHeight: fontSize.statMd + 2,
+    fontVariant: ["tabular-nums"],
   },
   hkaClassification: {
     color: colors.textSecond,
     fontFamily: fonts.sans,
-    fontSize: 14,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.semiBold,
     marginTop: 2,
   },
   hkaUnavailable: {
@@ -497,12 +521,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontStyle: "italic" as const,
   },
-  // Angles genou/hanche/cheville : donnée héro → mono tabulaire.
   angleLabel: {
     color: colors.textPrimary,
-    fontFamily: fonts.mono,
-    fontSize: 18,
-    fontWeight: fontWeight.medium,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.bodyLg,
+    fontWeight: fontWeight.semiBold,
+    fontVariant: ["tabular-nums"],
   },
   correctionButtons: {
     width: "100%",

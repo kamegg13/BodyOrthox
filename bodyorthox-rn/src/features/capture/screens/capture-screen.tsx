@@ -6,21 +6,26 @@ import {
   Text,
   View,
 } from "react-native";
-import { useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import type { RouteProp } from "@react-navigation/native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import type { RootStackParamList } from "../../../navigation/types";
+import { usePatientsStore } from "../../patients/store/patients-store";
+import { patientDisplayName } from "../../patients/domain/patient";
 import { useCaptureLogic } from "../hooks/use-capture-logic";
 import { CapturePreview } from "../components/capture-preview";
 import { CaptureSuccess } from "../components/capture-success";
 import { GuidedCameraOverlay } from "../components/guided-camera-overlay";
 import { LoadingSpinner } from "../../../shared/components/loading-spinner";
 import { Btn } from "../../../components/Btn";
+import { Icon } from "../../../components/icons";
 import {
   colors,
   fonts,
   fontSize,
   fontWeight,
   radius,
+  sizes,
   spacing,
 } from "../../../theme/tokens";
 import { WebCamera } from "../components/web-camera";
@@ -31,6 +36,9 @@ type Route = RouteProp<RootStackParamList, "Capture">;
 export function CaptureScreen() {
   const { params } = useRoute<Route>();
   const { patientId } = params;
+  const navigation = useNavigation();
+  const patient = usePatientsStore((s) => s.patients.find((p) => p.id === patientId));
+  const topTitle = patient ? `Capture — ${patientDisplayName(patient)}` : "Capture";
 
   const {
     phase,
@@ -56,27 +64,6 @@ export function CaptureScreen() {
     handleDiscard,
   } = useCaptureLogic(patientId);
 
-  if (phase.type === "permission_denied") {
-    return (
-      <View style={styles.container}>
-        <View style={styles.permissionContainer}>
-          <Text style={styles.permissionIcon}>🚫</Text>
-          <Text style={styles.permissionTitle}>Accès caméra refusé</Text>
-          <Text style={styles.permissionText}>{phase.message}</Text>
-          <View style={styles.permissionActions}>
-            <PhotoUpload onPhotoSelected={handlePhotoUploaded} />
-          </View>
-        </View>
-      </View>
-    );
-  }
-
-  if (phase.type === "idle" || phase.type === "requesting_permission") {
-    return (
-      <LoadingSpinner fullScreen message="Initialisation de la caméra..." />
-    );
-  }
-
   if (phase.type === "success") {
     return (
       <CaptureSuccess
@@ -93,7 +80,9 @@ export function CaptureScreen() {
     );
   }
 
-  // Preview state: photo taken or uploaded, waiting for analysis
+  // Preview state: photo taken or uploaded, waiting for analysis.
+  // Testé AVANT permission_denied : sans caméra, l'import photo doit
+  // quand même mener à la preview (sinon le bouton Importer est sans effet).
   if (previewUrl) {
     return (
       <CapturePreview
@@ -108,57 +97,103 @@ export function CaptureScreen() {
     );
   }
 
+  if (phase.type === "permission_denied") {
+    return (
+      <View style={styles.container}>
+        <View style={styles.permissionContainer}>
+          <Icon name="alert" size={40} color={colors.red} strokeWidth={1.4} />
+          <Text style={styles.permissionTitle}>Accès caméra refusé</Text>
+          <Text style={styles.permissionText}>{phase.message}</Text>
+          <View style={styles.permissionActions}>
+            <PhotoUpload onPhotoSelected={handlePhotoUploaded} />
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  if (phase.type === "idle" || phase.type === "requesting_permission") {
+    return (
+      <LoadingSpinner fullScreen message="Initialisation de la caméra..." />
+    );
+  }
+
   return (
     <View style={styles.container} testID="capture-screen">
-      {Platform.OS === "web" ? (
-        <WebCamera
-          ref={webCameraRef}
-          onPermissionDenied={handleWebCameraPermissionDenied}
-        />
-      ) : (
-        <View style={[StyleSheet.absoluteFill, styles.nativePlaceholder]}>
-          <Text style={styles.nativeInstructionTitle}>📷</Text>
-          <Text style={styles.nativeInstructionText}>
-            Prenez une photo du patient ou importez depuis votre galerie
+      {/* Barre supérieure — retour + patient */}
+      <SafeAreaView edges={["top"]}>
+        <View style={styles.topBar}>
+          <Pressable
+            onPress={() => navigation.goBack()}
+            style={({ pressed }) => [styles.roundBtn, pressed && styles.pressed]}
+            accessibilityRole="button"
+            accessibilityLabel="Retour"
+            hitSlop={6}
+          >
+            <Icon name="back" size={16} color={colors.white70} strokeWidth={1.75} />
+          </Pressable>
+          <Text style={styles.topTitle} numberOfLines={1}>
+            {topTitle}
           </Text>
+          <View style={styles.roundSpacer} />
         </View>
-      )}
-      <GuidedCameraOverlay
-        phase={phase}
-        frameCount={frameCount}
-        luminosity={luminosity}
-        isCorrectPosition={isCorrectPosition}
-      />
+      </SafeAreaView>
+
+      {/* Viseur contenu — caméra + overlay guidé */}
+      <View style={styles.viewfinder}>
+        {Platform.OS === "web" ? (
+          <WebCamera
+            ref={webCameraRef}
+            onPermissionDenied={handleWebCameraPermissionDenied}
+          />
+        ) : (
+          <View style={[StyleSheet.absoluteFill, styles.nativePlaceholder]}>
+            <Icon name="camera" size={40} color={colors.white40} strokeWidth={1.4} />
+            <Text style={styles.nativeInstructionText}>
+              Prenez une photo du patient ou importez depuis votre galerie
+            </Text>
+          </View>
+        )}
+        <GuidedCameraOverlay
+          phase={phase}
+          frameCount={frameCount}
+          luminosity={luminosity}
+          isCorrectPosition={isCorrectPosition}
+        />
+      </View>
+
       {(phase.type === "ready" || phase.type === "recording") &&
         Platform.OS === "web" && (
           <View style={styles.controls} testID="capture-controls">
             {phase.type === "ready" ? (
               <>
-                <Btn
-                  label="Prendre une photo"
-                  icon="camera"
-                  onPress={handleStartCapture}
-                  full
-                  testID="start-capture-button"
-                />
                 <Text style={styles.captureHint}>
                   L'analyse HKA démarre automatiquement
                 </Text>
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.translucentButton,
-                    pressed && styles.pressed,
-                  ]}
-                  onPress={() => webCameraRef.current?.switchCamera()}
-                  testID="switch-camera-button"
-                  accessibilityRole="button"
-                  accessibilityLabel="Changer de caméra"
-                >
-                  <Text style={styles.translucentButtonText}>
-                    🔄 Changer de caméra
-                  </Text>
-                </Pressable>
-                <PhotoUpload onPhotoSelected={handlePhotoUploaded} />
+                <View style={styles.controlsRow}>
+                  <Pressable
+                    style={({ pressed }) => [styles.sideBtn, pressed && styles.pressed]}
+                    onPress={() => webCameraRef.current?.switchCamera()}
+                    testID="switch-camera-button"
+                    accessibilityRole="button"
+                    accessibilityLabel="Changer de caméra"
+                  >
+                    <View style={styles.sideBtnIcon}>
+                      <Icon name="flip" size={17} color={colors.white70} strokeWidth={1.5} />
+                    </View>
+                    <Text style={styles.sideBtnLabel}>Caméra</Text>
+                  </Pressable>
+                  <Pressable
+                    style={({ pressed }) => [styles.shutter, pressed && styles.pressed]}
+                    onPress={handleStartCapture}
+                    testID="start-capture-button"
+                    accessibilityRole="button"
+                    accessibilityLabel="Prendre une photo"
+                  >
+                    <View style={styles.shutterInner} />
+                  </Pressable>
+                  <PhotoUpload onPhotoSelected={handlePhotoUploaded} />
+                </View>
               </>
             ) : (
               <LoadingSpinner message="Capture en cours..." />
@@ -184,9 +219,10 @@ export function CaptureScreen() {
             accessibilityRole="button"
             accessibilityLabel="Choisir depuis la galerie"
           >
-            <Text style={styles.translucentButtonText}>
-              📁 Choisir depuis la galerie
-            </Text>
+            <View style={styles.translucentButtonRow}>
+              <Icon name="image" size={15} color={colors.white} strokeWidth={1.6} />
+              <Text style={styles.translucentButtonText}>Choisir depuis la galerie</Text>
+            </View>
           </Pressable>
         </View>
       )}
@@ -196,15 +232,93 @@ export function CaptureScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.captureBg },
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.s10,
+    paddingHorizontal: spacing.s16,
+    paddingVertical: spacing.s12,
+  },
+  topTitle: {
+    flex: 1,
+    textAlign: "center",
+    fontFamily: fonts.display,
+    fontSize: fontSize.navTitle,
+    fontWeight: fontWeight.medium,
+    color: colors.textInverse,
+  },
+  roundBtn: {
+    width: sizes.tap,
+    height: sizes.tap,
+    borderRadius: radius.field,
+    borderWidth: 1.5,
+    borderColor: colors.white20,
+    backgroundColor: colors.white08,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  roundSpacer: {
+    width: sizes.tap,
+    height: sizes.tap,
+  },
+  viewfinder: {
+    flex: 1,
+    marginHorizontal: spacing.s16,
+    borderRadius: radius.cardLg,
+    borderWidth: 1.5,
+    borderColor: colors.white20,
+    overflow: "hidden",
+    backgroundColor: colors.captureViewfinderTo,
+  },
+  controlsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 40,
+    alignSelf: "stretch",
+  },
+  sideBtn: {
+    alignItems: "center",
+    gap: 6,
+    minWidth: sizes.tap,
+  },
+  sideBtnIcon: {
+    width: sizes.tap,
+    height: sizes.tap,
+    borderRadius: 999,
+    borderWidth: 1.5,
+    borderColor: colors.white20,
+    backgroundColor: colors.white08,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sideBtnLabel: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.semiBold,
+    color: colors.white60,
+  },
+  shutter: {
+    width: radius.shutterOuter * 2,
+    height: radius.shutterOuter * 2,
+    borderRadius: radius.shutterOuter,
+    borderWidth: 3,
+    borderColor: colors.textInverse,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  shutterInner: {
+    width: radius.shutterInner * 2,
+    height: radius.shutterInner * 2,
+    borderRadius: radius.shutterInner,
+    backgroundColor: colors.secondary,
+  },
   permissionContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: spacing.s24,
     gap: spacing.s16,
-  },
-  permissionIcon: {
-    fontSize: 48,
   },
   permissionTitle: {
     color: colors.red,
@@ -224,13 +338,11 @@ const styles = StyleSheet.create({
     marginTop: spacing.s20,
   },
   controls: {
-    position: "absolute",
-    bottom: 48,
-    left: 0,
-    right: 0,
     alignItems: "center",
     paddingHorizontal: spacing.s20,
-    gap: spacing.s10,
+    paddingTop: spacing.s14,
+    paddingBottom: spacing.s24,
+    gap: spacing.s14,
   },
   captureHint: {
     color: colors.white60,
@@ -243,10 +355,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: spacing.s24,
-  },
-  nativeInstructionTitle: {
-    fontSize: 48,
-    marginBottom: spacing.s16,
+    gap: spacing.s16,
   },
   nativeInstructionText: {
     color: colors.white60,
@@ -265,6 +374,11 @@ const styles = StyleSheet.create({
     minHeight: 44,
     width: "100%",
     paddingHorizontal: spacing.s16,
+  },
+  translucentButtonRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.s8,
   },
   translucentButtonText: {
     color: colors.textInverse,

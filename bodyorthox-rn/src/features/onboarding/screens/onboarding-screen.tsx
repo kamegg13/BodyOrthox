@@ -15,6 +15,7 @@ import type { RootStackParamList } from "../../../navigation/types";
 import { OnboardingPage } from "../components/onboarding-page";
 import { useOnboardingStore } from "../store/onboarding-store";
 import { Screen } from "../../../components/Screen";
+import { Icon } from "../../../components/icons";
 import { Steps } from "../../../components/Steps";
 import { Btn } from "../../../components/Btn";
 import {
@@ -103,10 +104,10 @@ function PdfExportIllustration() {
       {/* Share icons */}
       <View style={illustrationStyles.shareRow}>
         <View style={illustrationStyles.shareIcon}>
-          <Text style={illustrationStyles.shareIconText}>🔒</Text>
+          <Icon name="lock" size={18} strokeWidth={1.6} />
         </View>
         <View style={illustrationStyles.shareIcon}>
-          <Text style={illustrationStyles.shareIconText}>📤</Text>
+          <Icon name="share" size={18} strokeWidth={1.6} />
         </View>
       </View>
     </View>

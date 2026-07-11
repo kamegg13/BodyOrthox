@@ -7,6 +7,7 @@ import {
   Platform,
 } from 'react-native';
 import { Colors } from '../design-system/colors';
+import { Icon } from '../../components/icons';
 import { Typography } from '../design-system/typography';
 import { Spacing, BorderRadius } from '../design-system/spacing';
 
@@ -30,7 +31,9 @@ export function BiometricLockScreen({
   return (
     <View style={styles.container} testID="biometric-lock-screen">
       <View style={styles.content}>
-        <Text style={styles.lockIcon}>🔒</Text>
+        <View style={styles.lockIcon}>
+          <Icon name="lock" size={34} color={Colors.primary} strokeWidth={1.4} />
+        </View>
         <Text style={[Typography.h2, styles.title]}>BodyOrthox</Text>
         <Text style={[Typography.body, styles.subtitle]}>
           Authentifiez-vous pour accéder à l'application

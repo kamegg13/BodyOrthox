@@ -1,6 +1,7 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { CapturePhase } from "../domain/capture-state";
+import { Icon } from "../../../components/icons";
 import { colors, fonts, fontSize, fontWeight, radius, spacing } from "../../../theme/tokens";
 
 interface GuidedCameraOverlayProps {
@@ -22,8 +23,9 @@ export function GuidedCameraOverlay({
     >
       {/* RGPD banner at the TOP */}
       <View style={styles.rgpdBanner} testID="rgpd-banner">
+        <Icon name="lock" size={12} color={colors.white70} strokeWidth={1.6} />
         <Text style={styles.rgpdText}>
-          🔒 Données enregistrées uniquement sur votre appareil
+          Données enregistrées uniquement sur votre appareil
         </Text>
       </View>
 
@@ -50,10 +52,13 @@ export function GuidedCameraOverlay({
       {/* Bottom status (processing / error only) */}
       <View style={styles.bottomBar}>
         {phase.type === "processing" && (
-          <Text style={styles.processingText}>⚙️ Analyse en cours...</Text>
+          <Text style={styles.processingText}>Analyse en cours…</Text>
         )}
         {phase.type === "error" && (
-          <Text style={styles.errorText}>⚠️ {phase.message}</Text>
+          <View style={styles.errorRow}>
+            <Icon name="alert" size={14} color={colors.redLight} strokeWidth={1.6} />
+            <Text style={styles.errorText}>{phase.message}</Text>
+          </View>
         )}
       </View>
     </View>
@@ -71,7 +76,10 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.6)",
     paddingVertical: spacing.s6 + 2,
     paddingHorizontal: spacing.s16,
+    flexDirection: "row",
+    justifyContent: "center",
     alignItems: "center",
+    gap: spacing.s6,
   },
   rgpdText: {
     color: colors.white70,
@@ -143,8 +151,14 @@ const styles = StyleSheet.create({
     fontFamily: fonts.sans,
     textAlign: "center",
   },
+  errorRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.s6,
+  },
   errorText: {
-    color: colors.red,
+    color: colors.redLight,
     fontSize: fontSize.caption,
     fontFamily: fonts.sans,
     textAlign: "center",

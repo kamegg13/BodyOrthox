@@ -28,7 +28,7 @@ export function BottomTab({ active, onPress }: BottomTabProps) {
     <View style={styles.bar}>
       {TABS.map((tab) => {
         const focused = tab.key === active;
-        const tint = focused ? colors.ink : colors.textMuted;
+        const tint = focused ? colors.primary : colors.textMuted;
         return (
           <Pressable
             key={tab.key}
@@ -38,10 +38,9 @@ export function BottomTab({ active, onPress }: BottomTabProps) {
             accessibilityState={{ selected: focused }}
             accessibilityLabel={tab.label}
           >
-            <View style={styles.tickSlot}>
-              {focused ? <View style={styles.tick} /> : null}
+            <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
+              <Icon name={tab.icon} size={20} color={tint} strokeWidth={1.75} />
             </View>
-            <Icon name={tab.icon} size={20} color={tint} strokeWidth={1.75} />
             <Text
               style={[
                 styles.label,
@@ -75,15 +74,16 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
     gap: 3,
   },
-  // Signature « graduation » : trait accent au-dessus de l'onglet actif.
-  tickSlot: {
-    height: 4,
+  // v4 : pilule primaire douce derrière l'icône de l'onglet actif.
+  iconWrap: {
+    width: 40,
+    height: 26,
+    borderRadius: 999,
+    alignItems: "center",
     justifyContent: "center",
   },
-  tick: {
-    width: 16,
-    height: 2,
-    backgroundColor: colors.accent,
+  iconWrapActive: {
+    backgroundColor: colors.primaryLight,
   },
   label: {
     fontFamily: fonts.sans,
