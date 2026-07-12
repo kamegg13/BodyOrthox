@@ -236,21 +236,24 @@ export const shadows: Record<
  * mono système (IDs, dates techniques — chiffres tabulaires).
  *
  * Web : Google Fonts chargées via `<link>` dans `web/index.html`.
- * Native : TTF à bundler (assets/fonts) — voir design-system/bodyorthox/MASTER.md.
+ * Native : fontes VARIABLES bundlées (assets/fonts/Lexend.ttf, SourceSans3.ttf)
+ * — mêmes fichiers d'axes wght que Google Fonts, donc les graisses 400-700
+ * rendent identiques au web (Android résout par nom de fichier et applique
+ * fontWeight via Typeface.create — vraie graisse sur API 28+).
  */
 export const fonts = {
   /** Titres, valeurs héro, boutons — Lexend (lisibilité). */
   display: Platform.select({
     web: '"Lexend", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     ios: "Lexend",
-    android: "Lexend-Regular",
+    android: "Lexend",
     default: "System",
   }) as string,
   /** Corps de texte — Source Sans 3, fallback système. */
   sans: Platform.select({
     web: '"Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     ios: "Source Sans 3",
-    android: "SourceSans3-Regular",
+    android: "SourceSans3",
     default: "System",
   }) as string,
   /** Données techniques (IDs, dates) — mono système, tabulaire. */

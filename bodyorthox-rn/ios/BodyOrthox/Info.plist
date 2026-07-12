@@ -51,12 +51,8 @@
 	<false/>
 	<key>UIAppFonts</key>
 	<array>
-		<string>Lexend-Regular.ttf</string>
-		<string>Lexend-SemiBold.ttf</string>
-		<string>SourceSans3-Regular.ttf</string>
-		<string>SourceSans3-SemiBold.ttf</string>
-		<string>Lexend-Medium.ttf</string>
-		<string>Lexend-Bold.ttf</string>
+		<string>Lexend.ttf</string>
+		<string>SourceSans3.ttf</string>
 	</array>
 </dict>
 </plist>
