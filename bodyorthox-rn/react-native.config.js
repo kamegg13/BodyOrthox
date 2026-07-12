@@ -16,9 +16,6 @@ module.exports = {
     "react-native-keychain": {
       platforms: { android: null, ios: null },
     },
-    "react-native-svg": {
-      platforms: { android: null, ios: null },
-    },
     "@notifee/react-native": {
       platforms: { android: null, ios: null },
     },
