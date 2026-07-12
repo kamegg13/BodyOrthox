@@ -6,6 +6,10 @@
 appId: com.bodyorthox.app
 ---
 - launchApp
+# Premier lancement : Metro peut bundler 1-2 min avant d'afficher l'UI
+- extendedWaitUntil:
+    visible: "Se connecter|Patients|Accueil|Passer"
+    timeout: 120000
 - runFlow:
     when:
       visible:
@@ -17,8 +21,21 @@ appId: com.bodyorthox.app
       - tapOn:
           id: "login-password"
       - inputText: "ChangeMe456!"
+      # Android : le clavier recouvre le bouton (hideKeyboard échoue sur iOS
+      # mais y est inutile, le bouton reste visible)
+      - runFlow:
+          when:
+            platform: Android
+          commands:
+            - hideKeyboard
       - tapOn:
           id: "login-submit"
+# iOS peut proposer d'enregistrer le mot de passe dans le trousseau
+- runFlow:
+    when:
+      visible: "Enregistrer le mot de passe ?"
+    commands:
+      - tapOn: "Plus tard"
 # L'onboarding peut apparaître au premier login ; « Passer » peut nécessiter
 # plusieurs tentatives le temps que l'écran soit interactif.
 - waitForAnimationToEnd
@@ -57,11 +74,12 @@ appId: com.bodyorthox.app
 - takeScreenshot: e2e/shots/04-preview
 - tapOn:
     id: "analyze-button"
-# Détection heavy+full on-device (CPU sur simulateur : laisser du temps)
+# Détection heavy+full on-device (émulateur/simulateur = CPU, avec sur
+# Android un éventuel rechargement des modèles après échec GPU : long)
 - extendedWaitUntil:
     visible:
       id: "bilateral-section"
-    timeout: 120000
+    timeout: 300000
 - takeScreenshot: e2e/shots/05-analyse-hka
 - tapOn:
     id: "save-analysis-button"

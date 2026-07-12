@@ -68,7 +68,25 @@ class PoseLandmarkerModule(reactContext: ReactApplicationContext) :
           return@execute
         }
 
-        val result = landmarker.detect(BitmapImageBuilder(bitmap).build())
+        val mpImage = BitmapImageBuilder(bitmap).build()
+        val result = try {
+          landmarker.detect(mpImage)
+        } catch (gpuError: Exception) {
+          // Le delegate GPU peut se créer sans erreur mais échouer au premier
+          // detect() (ex. GL incomplet sur émulateur ou driver défaillant).
+          // On bascule définitivement ce modèle en CPU et on retente une fois.
+          val cpuKey = "$modelAsset|CPU"
+          landmarkers.entries.removeAll { it.value === landmarker }
+          try {
+            landmarker.close()
+          } catch (_: Exception) {
+            // close() best-effort
+          }
+          val cpu = landmarkers[cpuKey]
+              ?: createLandmarker(modelAsset, Delegate.CPU, minDetection, minPresence)
+                  .also { landmarkers[cpuKey] = it }
+          cpu.detect(mpImage)
+        }
 
         val landmarksArray: WritableArray = Arguments.createArray()
         if (result.landmarks().isNotEmpty()) {
