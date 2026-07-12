@@ -13,9 +13,6 @@ module.exports = {
     "react-native-sqlite-storage": {
       platforms: { android: null, ios: null },
     },
-    "react-native-keychain": {
-      platforms: { android: null, ios: null },
-    },
     "@notifee/react-native": {
       platforms: { android: null, ios: null },
     },

@@ -211,18 +211,6 @@ export function CaptureSuccess({
           )}
         </View>
       )}
-      {Platform.OS !== "web" && (
-        <View
-          style={styles.simulationWarning}
-          testID="simulation-warning"
-          accessibilityRole="alert"
-        >
-          <Text style={styles.simulationWarningText}>
-            {"⚠️"} Données de démonstration — l'analyse ML native n'est pas
-            encore intégrée. Les valeurs affichées ne reflètent pas la réalité.
-          </Text>
-        </View>
-      )}
       <Text style={styles.successTitle}>Analyse complète</Text>
       <Text style={styles.successScore}>
         Confiance : {Math.round(confidenceScore * 100)}%
@@ -439,22 +427,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     marginBottom: 4,
-  },
-  simulationWarning: {
-    backgroundColor: `${colors.amberMid}33`,
-    borderWidth: 1,
-    borderColor: colors.amberMid,
-    borderRadius: radius.button,
-    padding: spacing.s16,
-    marginBottom: spacing.s16,
-    width: "100%",
-  },
-  simulationWarningText: {
-    color: colors.amberMid,
-    fontFamily: fonts.sans,
-    fontSize: 13,
-    textAlign: "center",
-    lineHeight: 18,
   },
   // Titres et valeurs en Lexend (fonts.display), encre #164E63 — l'état
   // « succès » est porté par les données, pas par un titre vert.

@@ -34,11 +34,19 @@ import UIKit
         return
       }
 
+      // Le delegate GPU (Metal) de MediaPipe abort() sur simulateur au premier
+      // detect() — irrécupérable (abseil FailWithoutStackTrace). CPU forcé.
+      #if targetEnvironment(simulator)
+      let wantGpu = false
+      #else
+      let wantGpu = delegate.uppercased() == "GPU"
+      #endif
+
       let landmarker: PoseLandmarker
       do {
         landmarker = try self.obtainLandmarker(
           modelAsset: modelAsset,
-          wantGpu: delegate.uppercased() == "GPU",
+          wantGpu: wantGpu,
           minDetection: Float(minPoseDetectionConfidence),
           minPresence: Float(minPosePresenceConfidence)
         )

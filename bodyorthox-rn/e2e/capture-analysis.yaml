@@ -1,0 +1,72 @@
+# Parcours E2E natif : login → patient → import galerie → analyse HKA on-device → sauvegarde.
+# Prérequis : API locale (services/bodyorthox-api, PORT=3002, npm run seed),
+# Metro lancé, photo de test dans la galerie du simulateur (simctl addmedia),
+# patient « Vitruve Test » existant (créé via POST /patients).
+# Lancer : maestro test e2e/capture-analysis.yaml
+appId: com.bodyorthox.app
+---
+- launchApp
+- runFlow:
+    when:
+      visible:
+        id: "login-email"
+    commands:
+      - tapOn:
+          id: "login-email"
+      - inputText: "ortho@antidotesport.local"
+      - tapOn:
+          id: "login-password"
+      - inputText: "ChangeMe456!"
+      - tapOn:
+          id: "login-submit"
+# L'onboarding peut apparaître au premier login ; « Passer » peut nécessiter
+# plusieurs tentatives le temps que l'écran soit interactif.
+- waitForAnimationToEnd
+- repeat:
+    while:
+      visible:
+        id: "onboarding-skip"
+    commands:
+      - tapOn:
+          id: "onboarding-skip"
+      - waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "Patients"
+    timeout: 15000
+- takeScreenshot: e2e/shots/01-apres-login
+- tapOn: "Patients"
+- extendedWaitUntil:
+    visible: "Vitruve.*"
+    timeout: 10000
+- tapOn: "Vitruve.*"
+- takeScreenshot: e2e/shots/02-fiche-patient
+- tapOn: "Nouvelle capture"
+- takeScreenshot: e2e/shots/03-ecran-capture
+- tapOn:
+    id: "native-gallery-button"
+# PHPicker (process système) : la première photo de la grille
+- extendedWaitUntil:
+    visible: "Photos|Récents|Recents|All Photos"
+    timeout: 10000
+- tapOn:
+    point: "13%,30%"
+- extendedWaitUntil:
+    visible:
+      id: "analyze-button"
+    timeout: 15000
+- takeScreenshot: e2e/shots/04-preview
+- tapOn:
+    id: "analyze-button"
+# Détection heavy+full on-device (CPU sur simulateur : laisser du temps)
+- extendedWaitUntil:
+    visible:
+      id: "bilateral-section"
+    timeout: 120000
+- takeScreenshot: e2e/shots/05-analyse-hka
+- tapOn:
+    id: "save-analysis-button"
+# Processing v2 auto-avance vers Résultats
+- extendedWaitUntil:
+    visible: "Générer le rapport PDF"
+    timeout: 30000
+- takeScreenshot: e2e/shots/06-resultats
