@@ -577,7 +577,7 @@ export function NewPatient({
           </View>
         ) : null}
 
-        <SectionLabel>Identite</SectionLabel>
+        <SectionLabel>Identité</SectionLabel>
         <View style={{ gap: 12 }}>
           <View style={styles.row2}>
             <View style={styles.col}>
@@ -611,7 +611,7 @@ export function NewPatient({
             <View style={styles.col} ref={sexWrapRef}>
               <SelectField
                 label="Sexe"
-                placeholder="Selectionner"
+                placeholder="Sélectionner"
                 value={sex ? labelForSex(sex) : undefined}
                 onPress={() => setShowSexPicker(true)}
                 testID="np-sex"

@@ -183,7 +183,7 @@ export function Report({ data, onBack, onShare, onDownload, onSend }: ReportProp
             {/* Sur web, aucun moteur PDF n'est disponible : le fichier
                 téléchargé est le rapport HTML — le libellé doit le dire. */}
             <Btn
-              label={Platform.OS === "web" ? "Télécharger (HTML)" : "Télécharger PDF"}
+              label={Platform.OS === "web" ? "Télécharger HTML" : "Télécharger PDF"}
               icon="download"
               onPress={onDownload}
             />
