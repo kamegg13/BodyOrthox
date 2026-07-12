@@ -39,7 +39,14 @@ export interface ReportData {
   readonly rows: readonly ReportRow[];
   readonly capturedImageUrl?: string;
   readonly clinicalNotes?: string;
+  /** Score de confiance ML [0,1] de la détection ayant produit l'analyse. */
+  readonly confidenceScore?: number;
 }
+
+// Seuil de confiance ML basse, cf. LOW_CONFIDENCE_THRESHOLD dans
+// src/features/capture/hooks/use-capture-logic.ts — reprise ici telle
+// quelle, aucune valeur n'est inventée.
+const LOW_CONFIDENCE_THRESHOLD = 0.6;
 
 interface ReportProps {
   readonly data: ReportData;
@@ -90,6 +97,19 @@ export function Report({ data, onBack, onShare, onDownload, onSend }: ReportProp
               </View>
               <Badge label={data.severityLabel} color={data.severityColor} />
             </View>
+            {data.confidenceScore !== undefined &&
+            data.confidenceScore < LOW_CONFIDENCE_THRESHOLD ? (
+              <View
+                style={styles.confidenceRow}
+                testID="report-low-confidence-badge"
+              >
+                <Badge label="Confiance faible" color="amber" icon="clock" />
+                <Text style={styles.confidenceText}>
+                  Confiance de détection faible lors de la capture — à vérifier
+                  avant usage clinique.
+                </Text>
+              </View>
+            ) : null}
           </View>
 
           <View style={[styles.section, styles.sectionBorder]}>
@@ -264,6 +284,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
+  },
+  confidenceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 10,
+  },
+  confidenceText: {
+    flex: 1,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.eyebrow,
+    color: colors.textMuted,
   },
   title: {
     fontFamily: fonts.display,

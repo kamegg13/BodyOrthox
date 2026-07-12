@@ -200,6 +200,15 @@ describe("ReportRoute — conclusion clinique", () => {
     );
   });
 
+  it("affiche le badge de confiance faible quand l'analyse a une confidenceScore basse", async () => {
+    mockRouteParams = {
+      analysis: { ...mockAnalysis, confidenceScore: 0.3 },
+      patient: mockPatient,
+    };
+    const { findByTestId } = render(<ReportRoute />);
+    expect(await findByTestId("report-low-confidence-badge")).toBeTruthy();
+  });
+
   it("inclut les notes cliniques dans le HTML généré pour le PDF", async () => {
     mockRouteParams = {
       analysis: {

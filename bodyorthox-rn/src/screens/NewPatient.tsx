@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Modal,
   Pressable,
@@ -27,6 +27,7 @@ import {
   shadows,
   spacing,
 } from "../theme/tokens";
+import { getKeyValueStorage } from "../core/storage/key-value-storage";
 
 export interface NewPatientFormValues {
   readonly firstName: string;
@@ -55,6 +56,8 @@ interface NewPatientProps {
   readonly errorMessage?: string | null;
   readonly onCancel?: () => void;
   readonly onSave?: (values: NewPatientFormValues) => void;
+  /** Signale à l'écran parent si la saisie contient des changements non enregistrés. */
+  readonly onDirtyChange?: (dirty: boolean) => void;
 }
 
 const SEX_OPTIONS: readonly { value: "male" | "female" | "other"; label: string }[] = [
@@ -74,6 +77,67 @@ const DIAGNOSIS_OPTIONS: readonly string[] = [
   "Autre",
 ];
 
+/** Clé de persistance du brouillon — un seul brouillon de création à la fois. */
+export const NEW_PATIENT_DRAFT_KEY = "new_patient_draft_v1";
+
+/** Délai de debounce avant l'écriture du brouillon (évite d'écrire à chaque frappe). */
+const DRAFT_DEBOUNCE_MS = 1000;
+
+type TouchableFieldKey = "firstName" | "lastName" | "sex" | "dob";
+
+interface NewPatientDraftV1 {
+  readonly firstName: string;
+  readonly lastName: string;
+  readonly sex: NewPatientFormValues["sex"];
+  readonly dob: string;
+  readonly heightCm: string;
+  readonly weightKg: string;
+  readonly diagnosis: string;
+  readonly referring: string;
+  readonly observations: string;
+}
+
+function isDraftEmpty(d: NewPatientDraftV1): boolean {
+  return (
+    !d.firstName &&
+    !d.lastName &&
+    !d.sex &&
+    !d.dob &&
+    !d.heightCm &&
+    !d.weightKg &&
+    !d.diagnosis &&
+    !d.referring &&
+    !d.observations
+  );
+}
+
+function readDraft(): NewPatientDraftV1 | null {
+  const raw = getKeyValueStorage().getItem(NEW_PATIENT_DRAFT_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as Partial<NewPatientDraftV1>;
+    return {
+      firstName: parsed.firstName ?? "",
+      lastName: parsed.lastName ?? "",
+      sex: parsed.sex ?? null,
+      dob: parsed.dob ?? "",
+      heightCm: parsed.heightCm ?? "",
+      weightKg: parsed.weightKg ?? "",
+      diagnosis: parsed.diagnosis ?? "",
+      referring: parsed.referring ?? "",
+      observations: parsed.observations ?? "",
+    };
+  } catch {
+    // Brouillon corrompu — ignoré silencieusement, comme s'il n'existait pas.
+    return null;
+  }
+}
+
+/** Purge le brouillon — à appeler après une création réussie ou un abandon confirmé. */
+export function clearNewPatientDraft(): void {
+  getKeyValueStorage().removeItem(NEW_PATIENT_DRAFT_KEY);
+}
+
 export function NewPatient({
   title = "Nouveau patient",
   initialValues,
@@ -83,6 +147,7 @@ export function NewPatient({
   errorMessage,
   onCancel,
   onSave,
+  onDirtyChange,
 }: NewPatientProps) {
   const [firstName, setFirstName] = useState(initialValues?.firstName ?? "");
   const [lastName, setLastName] = useState(initialValues?.lastName ?? "");
@@ -103,28 +168,201 @@ export function NewPatient({
   const [showSexPicker, setShowSexPicker] = useState(false);
   const [showDxPicker, setShowDxPicker] = useState(false);
 
+  const [touched, setTouched] = useState<Partial<Record<TouchableFieldKey, boolean>>>({});
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
+
+  const firstNameRef = useRef<TextInput>(null);
+  const lastNameRef = useRef<TextInput>(null);
+  const dobRef = useRef<TextInput>(null);
+  const scrollRef = useRef<ScrollView>(null);
+  const sexWrapRef = useRef<View>(null);
+  const consentWrapRef = useRef<View>(null);
+
+  // Restaure un éventuel brouillon au montage. On n'écrase jamais un
+  // formulaire pré-rempli explicitement par l'appelant (mode edit/duplication).
+  useEffect(() => {
+    if (initialValues) return;
+    const draft = readDraft();
+    if (!draft || isDraftEmpty(draft)) return;
+    setFirstName(draft.firstName);
+    setLastName(draft.lastName);
+    setSex(draft.sex);
+    setDob(draft.dob);
+    setHeightCm(draft.heightCm);
+    setWeightKg(draft.weightKg);
+    setDiagnosis(draft.diagnosis);
+    setReferring(draft.referring);
+    setObservations(draft.observations);
+    setDraftRestored(true);
+    // Montage uniquement — le brouillon n'est restauré qu'une fois.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persiste le brouillon avec un léger debounce — jamais les consentements
+  // (preuve RGPD à recueillir fraîchement à chaque création).
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const draft: NewPatientDraftV1 = {
+        firstName,
+        lastName,
+        sex,
+        dob,
+        heightCm,
+        weightKg,
+        diagnosis,
+        referring,
+        observations,
+      };
+      if (isDraftEmpty(draft)) {
+        getKeyValueStorage().removeItem(NEW_PATIENT_DRAFT_KEY);
+      } else {
+        getKeyValueStorage().setItem(NEW_PATIENT_DRAFT_KEY, JSON.stringify(draft));
+      }
+    }, DRAFT_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [firstName, lastName, sex, dob, heightCm, weightKg, diagnosis, referring, observations]);
+
+  const initialSnapshotRef = useRef(
+    JSON.stringify({
+      firstName: initialValues?.firstName ?? "",
+      lastName: initialValues?.lastName ?? "",
+      sex: initialValues?.sex ?? null,
+      dob: formatDobForInput(initialValues?.dateOfBirth),
+      heightCm: initialValues?.heightCm ? String(initialValues.heightCm) : "",
+      weightKg: initialValues?.weightKg ? String(initialValues.weightKg) : "",
+      diagnosis: initialValues?.diagnosis ?? "",
+      referring: initialValues?.referringPhysician ?? "",
+      observations: initialValues?.observations ?? "",
+      consents: skipConsents ? [true, true, true] : [false, false, false],
+    }),
+  );
+
+  const isDirty = useMemo(() => {
+    const current = JSON.stringify({
+      firstName,
+      lastName,
+      sex,
+      dob,
+      heightCm,
+      weightKg,
+      diagnosis,
+      referring,
+      observations,
+      consents,
+    });
+    return current !== initialSnapshotRef.current;
+  }, [firstName, lastName, sex, dob, heightCm, weightKg, diagnosis, referring, observations, consents]);
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+
   const allConsents = consents.every(Boolean);
+
+  const fieldErrors = useMemo(() => {
+    const e: Partial<Record<TouchableFieldKey, string>> = {};
+    if (!firstName.trim()) e.firstName = "Le prenom est requis.";
+    if (!lastName.trim()) e.lastName = "Le nom est requis.";
+    if (!sex) e.sex = "Le sexe est requis.";
+    if (!dob.trim()) e.dob = "La date de naissance est requise.";
+    else if (!isValidDob(dob)) e.dob = "Date invalide — format attendu JJ/MM/AAAA.";
+    return e;
+  }, [firstName, lastName, sex, dob]);
+
   const missing = useMemo(() => {
     const m: string[] = [];
-    if (!firstName.trim()) m.push("Prenom");
-    if (!lastName.trim()) m.push("Nom");
-    if (!sex) m.push("Sexe");
-    if (!isValidDob(dob)) m.push("Naissance");
+    if (fieldErrors.firstName) m.push("Prenom");
+    if (fieldErrors.lastName) m.push("Nom");
+    if (fieldErrors.sex) m.push("Sexe");
+    if (fieldErrors.dob) m.push("Naissance");
     if (!skipConsents && !allConsents) m.push("Consentements");
     return m;
-  }, [firstName, lastName, sex, dob, allConsents, skipConsents]);
+  }, [fieldErrors, allConsents, skipConsents]);
 
   const formValid = missing.length === 0;
-  const canSubmit = formValid && !isSubmitting;
+
+  function markTouched(key: TouchableFieldKey) {
+    setTouched((t) => (t[key] ? t : { ...t, [key]: true }));
+  }
+
+  function shownError(key: TouchableFieldKey): string | undefined {
+    return touched[key] || submitAttempted ? fieldErrors[key] : undefined;
+  }
 
   function toggleConsent(i: number) {
     setConsents((prev) => prev.map((v, j) => (j === i ? !v : v)));
   }
 
+  /** Scroll best-effort vers une section sans TextInput focusable (Sexe, Consentements). */
+  function scrollIntoView(target: React.RefObject<View | null>) {
+    const node = target.current as unknown as {
+      measureLayout?: (
+        relativeNode: number,
+        onSuccess: (x: number, y: number) => void,
+        onFail?: () => void,
+      ) => void;
+    } | null;
+    const scrollNode = scrollRef.current as unknown as {
+      getInnerViewNode?: () => number;
+      scrollTo?: (opts: { y: number; animated: boolean }) => void;
+    } | null;
+    if (!node?.measureLayout || !scrollNode?.getInnerViewNode) return;
+    node.measureLayout(
+      scrollNode.getInnerViewNode(),
+      (_x, y) => scrollNode.scrollTo?.({ y: Math.max(y - 24, 0), animated: true }),
+      () => undefined,
+    );
+  }
+
+  function focusFirstInvalidField() {
+    if (fieldErrors.firstName) {
+      firstNameRef.current?.focus();
+      return;
+    }
+    if (fieldErrors.lastName) {
+      lastNameRef.current?.focus();
+      return;
+    }
+    if (fieldErrors.sex) {
+      scrollIntoView(sexWrapRef);
+      return;
+    }
+    if (fieldErrors.dob) {
+      dobRef.current?.focus();
+      return;
+    }
+    if (!skipConsents && !allConsents) {
+      scrollIntoView(consentWrapRef);
+    }
+  }
+
+  function handleClearDraft() {
+    setFirstName("");
+    setLastName("");
+    setSex(null);
+    setDob("");
+    setHeightCm("");
+    setWeightKg("");
+    setDiagnosis("");
+    setReferring("");
+    setObservations("");
+    clearNewPatientDraft();
+    setDraftRestored(false);
+  }
+
   function handleSubmit() {
-    if (!canSubmit) return;
+    if (isSubmitting) return;
+    setSubmitAttempted(true);
+    setTouched({ firstName: true, lastName: true, sex: true, dob: true });
+    if (!formValid) {
+      focusFirstInvalidField();
+      return;
+    }
     const iso = parseDobToIso(dob);
     if (!iso || !sex) return;
+    clearNewPatientDraft();
+    setDraftRestored(false);
     // skipConsents = les 3 cases ne sont pas affichées : on ne fabrique jamais
     // une preuve de consentement pour un écran où le patient ne les a pas vues.
     onSave?.({
@@ -144,6 +382,8 @@ export function NewPatient({
     });
   }
 
+  const showConsentError = submitAttempted && !skipConsents && !allConsents;
+
   return (
     <View style={styles.root}>
       <StatusBar barStyle="dark-content" />
@@ -153,41 +393,57 @@ export function NewPatient({
           back
           onBack={onCancel}
           action={isSubmitting ? "..." : "Enregistrer"}
-          onAction={canSubmit ? handleSubmit : undefined}
+          onAction={isSubmitting ? undefined : handleSubmit}
         />
       </SafeAreaView>
 
       <ScrollView
+        ref={scrollRef}
         style={styles.body}
         contentContainerStyle={styles.bodyContent}
         showsVerticalScrollIndicator={false}
       >
+        {draftRestored ? (
+          <View style={styles.draftBanner} testID="np-draft-banner">
+            <Text style={styles.draftBannerText}>Brouillon restaure</Text>
+            <Pressable onPress={handleClearDraft} hitSlop={8} testID="np-draft-clear">
+              <Text style={styles.draftBannerAction}>Effacer</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
         <SectionLabel>Identite</SectionLabel>
         <View style={{ gap: 12 }}>
           <View style={styles.row2}>
             <View style={styles.col}>
               <Field
+                ref={firstNameRef}
                 label="Prenom"
                 placeholder="Sophie"
                 value={firstName}
                 onChangeText={setFirstName}
+                onBlur={() => markTouched("firstName")}
+                error={shownError("firstName")}
                 autoCapitalize="words"
                 testID="np-first-name"
               />
             </View>
             <View style={styles.col}>
               <Field
+                ref={lastNameRef}
                 label="Nom"
                 placeholder="Leclerc"
                 value={lastName}
                 onChangeText={setLastName}
+                onBlur={() => markTouched("lastName")}
+                error={shownError("lastName")}
                 autoCapitalize="words"
                 testID="np-last-name"
               />
             </View>
           </View>
           <View style={styles.row2}>
-            <View style={styles.col}>
+            <View style={styles.col} ref={sexWrapRef}>
               <SelectField
                 label="Sexe"
                 placeholder="Selectionner"
@@ -195,14 +451,27 @@ export function NewPatient({
                 onPress={() => setShowSexPicker(true)}
                 testID="np-sex"
               />
+              {shownError("sex") ? (
+                <Text
+                  style={styles.selectError}
+                  accessibilityRole="alert"
+                  accessibilityLiveRegion="polite"
+                  testID="np-sex-error"
+                >
+                  {shownError("sex")}
+                </Text>
+              ) : null}
             </View>
             <View style={styles.col}>
               <Field
+                ref={dobRef}
                 label="Naissance"
                 placeholder="JJ/MM/AAAA"
                 icon="calendar"
                 value={dob}
                 onChangeText={(raw) => setDob(formatDobMask(raw))}
+                onBlur={() => markTouched("dob")}
+                error={shownError("dob")}
                 type="number"
                 testID="np-dob"
               />
@@ -267,7 +536,7 @@ export function NewPatient({
         {!skipConsents ? (
           <>
             <SectionLabel style={styles.sectionGap}>Consentements patient</SectionLabel>
-            <View style={styles.consentCard}>
+            <View style={styles.consentCard} ref={consentWrapRef}>
               {[
                 "Stockage et traitement des donnees",
                 "Capture photo / video",
@@ -297,6 +566,16 @@ export function NewPatient({
                 );
               })}
             </View>
+            {showConsentError ? (
+              <Text
+                style={styles.consentErrorText}
+                accessibilityRole="alert"
+                accessibilityLiveRegion="polite"
+                testID="np-consent-error"
+              >
+                Les 3 consentements sont requis pour creer le patient.
+              </Text>
+            ) : null}
           </>
         ) : null}
 
@@ -308,15 +587,10 @@ export function NewPatient({
           <Btn
             label={submitLabel}
             icon="camera"
-            disabled={!canSubmit}
+            disabled={isSubmitting}
             onPress={handleSubmit}
             testID="np-submit"
           />
-          {missing.length > 0 ? (
-            <Text style={styles.missingHint} testID="np-missing-hint">
-              Champs requis : {missing.join(" · ")}
-            </Text>
-          ) : null}
         </View>
       </SafeAreaView>
 
@@ -325,10 +599,14 @@ export function NewPatient({
         title="Sexe"
         options={SEX_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
         selectedValue={sex ?? undefined}
-        onClose={() => setShowSexPicker(false)}
+        onClose={() => {
+          setShowSexPicker(false);
+          markTouched("sex");
+        }}
         onSelect={(v) => {
           setSex(v as NewPatientFormValues["sex"]);
           setShowSexPicker(false);
+          markTouched("sex");
         }}
       />
       <PickerModal
@@ -512,6 +790,40 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.textSecond,
   },
+  consentErrorText: {
+    marginTop: spacing.s8,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    color: colors.red,
+  },
+  selectError: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    color: colors.red,
+  },
+  draftBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: colors.amberLight,
+    borderRadius: radius.field,
+    paddingHorizontal: spacing.s12,
+    paddingVertical: spacing.s10,
+    marginBottom: spacing.s14,
+  },
+  draftBannerText: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.semiBold,
+    color: colors.amber,
+  },
+  draftBannerAction: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.bold,
+    color: colors.amber,
+    textDecorationLine: "underline",
+  },
   actionBar: {
     backgroundColor: colors.bgCard,
     borderTopWidth: StyleSheet.hairlineWidth,
@@ -523,12 +835,6 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 4,
     gap: 8,
-  },
-  missingHint: {
-    fontFamily: fonts.sans,
-    fontSize: fontSize.eyebrow,
-    color: colors.amber,
-    textAlign: "center",
   },
   errorBanner: {
     marginTop: spacing.s14,

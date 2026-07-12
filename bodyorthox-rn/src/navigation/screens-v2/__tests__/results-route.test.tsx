@@ -148,6 +148,23 @@ describe("ResultsRoute — Corriger les points", () => {
   });
 });
 
+describe("ResultsRoute — badge de confiance faible", () => {
+  it("affiche le badge quand l'analyse a une confidenceScore basse", async () => {
+    mockGetById.mockResolvedValue(buildAnalysis({ confidenceScore: 0.35 }));
+    const { findByTestId } = render(<ResultsRoute />);
+    expect(await findByTestId("low-confidence-badge")).toHaveTextContent(
+      "Confiance faible",
+    );
+  });
+
+  it("n'affiche pas le badge quand la confidenceScore est élevée", async () => {
+    mockGetById.mockResolvedValue(buildAnalysis({ confidenceScore: 0.92 }));
+    const { findByTestId, queryByTestId } = render(<ResultsRoute />);
+    await findByTestId("clinical-notes-input");
+    expect(queryByTestId("low-confidence-badge")).toBeNull();
+  });
+});
+
 describe("ResultsRoute — recharge au focus", () => {
   it("recharge l'analyse quand l'écran regagne le focus", async () => {
     mockGetById.mockResolvedValue(buildAnalysis());

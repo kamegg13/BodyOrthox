@@ -260,6 +260,7 @@ function buildResultsData(
     severity,
     hka,
     postural,
+    confidenceScore: analysis.confidenceScore,
     ...(imageUrl ? { capturedImageUrl: imageUrl } : {}),
     ...(analysis.clinicalNotes ? { clinicalNotes: analysis.clinicalNotes } : {}),
   };

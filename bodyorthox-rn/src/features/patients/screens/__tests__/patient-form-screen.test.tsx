@@ -1,4 +1,5 @@
 import React from "react";
+import { Alert } from "react-native";
 import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import { PatientFormScreen } from "../patient-form-screen";
 
@@ -24,9 +25,24 @@ jest.mock("../../components/pain-editor", () => ({
   PainEditor: () => null,
 }));
 
+type BeforeRemoveEvent = { preventDefault: () => void; data: { action: unknown } };
+type BeforeRemoveListener = (e: BeforeRemoveEvent) => void;
+
+const mockGoBack = jest.fn();
+const mockDispatch = jest.fn();
+let capturedListener: BeforeRemoveListener | undefined;
+const mockAddListener = jest.fn((event: string, listener: BeforeRemoveListener) => {
+  if (event === "beforeRemove") capturedListener = listener;
+  return jest.fn();
+});
+
 // Mock navigation
 jest.mock("@react-navigation/native", () => ({
-  useNavigation: () => ({ goBack: jest.fn() }),
+  useNavigation: () => ({
+    goBack: mockGoBack,
+    dispatch: mockDispatch,
+    addListener: mockAddListener,
+  }),
 }));
 
 describe("PatientFormScreen", () => {
@@ -34,6 +50,7 @@ describe("PatientFormScreen", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    capturedListener = undefined;
   });
 
   it("renders all required fields", () => {
@@ -168,5 +185,95 @@ describe("PatientFormScreen", () => {
     await waitFor(() => {
       expect(getByText(/poids invalide/i)).toBeTruthy();
     });
+  });
+});
+
+describe("PatientFormScreen — confirmation avant abandon", () => {
+  const onSubmit = jest.fn().mockResolvedValue(undefined);
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    capturedListener = undefined;
+  });
+
+  it("laisse partir sans confirmation en mode create tant que rien n'est saisi", () => {
+    render(<PatientFormScreen mode="create" onSubmit={onSubmit} />);
+    const preventDefault = jest.fn();
+    capturedListener?.({ preventDefault, data: { action: { type: "GO_BACK" } } });
+
+    expect(preventDefault).not.toHaveBeenCalled();
+    expect(mockDispatch).not.toHaveBeenCalled();
+  });
+
+  it("bloque la sortie et demande confirmation dès qu'un champ change", () => {
+    const alertSpy = jest.spyOn(Alert, "alert").mockImplementation(() => {});
+    const { getByTestId } = render(<PatientFormScreen mode="create" onSubmit={onSubmit} />);
+    fireEvent.changeText(getByTestId("firstName-input"), "Jean");
+
+    const preventDefault = jest.fn();
+    const action = { type: "GO_BACK" };
+    capturedListener?.({ preventDefault, data: { action } });
+
+    expect(preventDefault).toHaveBeenCalled();
+    expect(alertSpy).toHaveBeenCalled();
+    expect(mockDispatch).not.toHaveBeenCalled();
+    alertSpy.mockRestore();
+  });
+
+  it("laisse la navigation continuer une fois l'abandon confirmé", () => {
+    jest.spyOn(Alert, "alert").mockImplementation((_title, _msg, buttons) => {
+      const confirmButton = buttons?.find((b) => b.text === "Abandonner");
+      confirmButton?.onPress?.();
+    });
+    const { getByTestId } = render(<PatientFormScreen mode="create" onSubmit={onSubmit} />);
+    fireEvent.changeText(getByTestId("firstName-input"), "Jean");
+
+    const action = { type: "GO_BACK" };
+    capturedListener?.({ preventDefault: jest.fn(), data: { action } });
+
+    expect(mockDispatch).toHaveBeenCalledWith(action);
+  });
+
+  it("ne considère pas le mode edit pré-rempli comme dirty tant que rien n'a changé", () => {
+    render(
+      <PatientFormScreen
+        mode="edit"
+        initialValues={{
+          firstName: "Marie",
+          lastName: "Dupont",
+          dateOfBirth: "1990-01-01",
+          morphologicalProfile: { sex: "female", heightCm: 165 },
+        }}
+        onSubmit={onSubmit}
+      />,
+    );
+    const preventDefault = jest.fn();
+    capturedListener?.({ preventDefault, data: { action: { type: "GO_BACK" } } });
+
+    expect(preventDefault).not.toHaveBeenCalled();
+  });
+
+  it("considère le mode edit comme dirty dès qu'un champ pré-rempli est modifié", () => {
+    const alertSpy = jest.spyOn(Alert, "alert").mockImplementation(() => {});
+    const { getByTestId } = render(
+      <PatientFormScreen
+        mode="edit"
+        initialValues={{
+          firstName: "Marie",
+          lastName: "Dupont",
+          dateOfBirth: "1990-01-01",
+          morphologicalProfile: { sex: "female", heightCm: 165 },
+        }}
+        onSubmit={onSubmit}
+      />,
+    );
+    fireEvent.changeText(getByTestId("firstName-input"), "Marie-Claire");
+
+    const preventDefault = jest.fn();
+    capturedListener?.({ preventDefault, data: { action: { type: "GO_BACK" } } });
+
+    expect(preventDefault).toHaveBeenCalled();
+    expect(alertSpy).toHaveBeenCalled();
+    alertSpy.mockRestore();
   });
 });

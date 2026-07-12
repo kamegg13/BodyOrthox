@@ -113,6 +113,37 @@ describe("Results", () => {
     });
   });
 
+  describe("badge de confiance faible", () => {
+    it("n'affiche pas de badge quand confidenceScore est absent", () => {
+      const { queryByTestId } = render(<Results data={SAMPLE_RESULTS} />);
+      expect(queryByTestId("low-confidence-badge")).toBeNull();
+    });
+
+    it("n'affiche pas de badge quand confidenceScore est élevé", () => {
+      const data = { ...SAMPLE_RESULTS, confidenceScore: 0.92 };
+      const { queryByTestId } = render(<Results data={data} />);
+      expect(queryByTestId("low-confidence-badge")).toBeNull();
+    });
+
+    it("affiche un badge 'Confiance faible' quand confidenceScore est sous le seuil", () => {
+      const data = { ...SAMPLE_RESULTS, confidenceScore: 0.42 };
+      const { getByTestId } = render(<Results data={data} />);
+      expect(getByTestId("low-confidence-badge")).toHaveTextContent(
+        "Confiance faible",
+      );
+      expect(getByTestId("low-confidence-subtext")).toHaveTextContent(
+        "Détection à vérifier",
+        { exact: false },
+      );
+    });
+
+    it("affiche le badge à la limite exacte du seuil (0.6 exclu)", () => {
+      const data = { ...SAMPLE_RESULTS, confidenceScore: 0.6 };
+      const { queryByTestId } = render(<Results data={data} />);
+      expect(queryByTestId("low-confidence-badge")).toBeNull();
+    });
+  });
+
   describe("Corriger les points", () => {
     it("n'affiche pas l'action quand onCorrectPoints est absent", () => {
       const { queryByTestId } = render(<Results data={SAMPLE_RESULTS} />);

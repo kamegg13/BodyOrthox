@@ -206,6 +206,7 @@ function buildReportData(
     severityLabel: sevLabel,
     severityColor: sevColor,
     rows,
+    confidenceScore: analysis.confidenceScore,
     ...(capturedImageUrl ? { capturedImageUrl } : {}),
     ...(analysis.clinicalNotes ? { clinicalNotes: analysis.clinicalNotes } : {}),
   };

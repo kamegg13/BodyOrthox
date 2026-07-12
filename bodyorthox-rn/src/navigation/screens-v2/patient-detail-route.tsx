@@ -8,8 +8,8 @@ import {
   type AnalysisHistoryItem,
   type PatientDetailData,
 } from "../../screens/PatientDetail";
-import { LoadingSpinner } from "../../shared/components/loading-spinner";
-import { ErrorWidget } from "../../shared/components/error-widget";
+import { LoadingState } from "../../components/LoadingState";
+import { ErrorState } from "../../components/ErrorState";
 import { usePatientsStore } from "../../features/patients/store/patients-store";
 import { useAnalysisRepository } from "../../shared/hooks/use-analysis-repository";
 import {
@@ -140,19 +140,26 @@ export function PatientDetailRoute() {
   if (!patient) {
     // Si on attend les patients (initial load), afficher loading plutot que "introuvable"
     if (patientsLoading || patientsCount === 0 || loadingAnalyses) {
-      return <LoadingSpinner message="Chargement..." />;
+      return <LoadingState message="Chargement..." />;
     }
     return (
-      <ErrorWidget
+      <ErrorState
         message="Patient introuvable."
-        onRetry={() => navigation.goBack()}
+        actionLabel="Réessayer"
+        onAction={() => navigation.goBack()}
       />
     );
   }
   if (error && !data) {
-    return <ErrorWidget message={error} onRetry={() => navigation.goBack()} />;
+    return (
+      <ErrorState
+        message={error}
+        actionLabel="Réessayer"
+        onAction={() => navigation.goBack()}
+      />
+    );
   }
-  if (!data) return <LoadingSpinner message="Chargement…" />;
+  if (!data) return <LoadingState message="Chargement…" />;
 
   return (
     <PatientDetail

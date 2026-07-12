@@ -11,7 +11,8 @@ import {
   radius,
   spacing,
 } from "../../../theme/tokens";
-import { LoadingSpinner } from "../../../shared/components/loading-spinner";
+import { LoadingState } from "../../../components/LoadingState";
+import { ErrorState } from "../../../components/ErrorState";
 import { ExportButton } from "../components/export-button";
 import { LEGAL_CONSTANTS } from "../../../core/legal/legal-constants";
 import { patientDisplayName } from "../../patients/domain/patient";
@@ -61,24 +62,17 @@ export function ProgressionReportScreen() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (status === "generating") {
-    return <LoadingSpinner fullScreen message="Préparation du rapport..." />;
+    return <LoadingState fullScreen message="Préparation du rapport..." />;
   }
 
   if (status === "error") {
     return (
-      <View style={styles.containerCentered}>
-        <Text style={styles.errorText} testID="progression-report-error">
-          {errorMessage ?? "Une erreur est survenue"}
-        </Text>
-        <Text
-          style={styles.retryLink}
-          onPress={generate}
-          accessibilityRole="button"
-          testID="progression-report-retry"
-        >
-          Réessayer
-        </Text>
-      </View>
+      <ErrorState
+        message={errorMessage ?? "Une erreur est survenue"}
+        actionLabel="Réessayer"
+        onAction={generate}
+        testID="progression-report-error"
+      />
     );
   }
 
@@ -157,12 +151,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.bg,
   },
-  containerCentered: {
-    flex: 1,
-    backgroundColor: colors.bg,
-    justifyContent: "center",
-    alignItems: "center",
-  },
   content: {
     padding: spacing.s16,
     paddingBottom: spacing.s28 * 2,
@@ -225,21 +213,5 @@ const styles = StyleSheet.create({
   },
   exportContainer: {
     alignItems: "center",
-  },
-  errorText: {
-    fontFamily: fonts.sans,
-    color: colors.red,
-    fontSize: fontSize.bodyLg,
-    textAlign: "center",
-    padding: spacing.s16,
-  },
-  retryLink: {
-    fontFamily: fonts.sans,
-    color: colors.accent,
-    fontSize: fontSize.bodyLg,
-    fontWeight: fontWeight.semiBold,
-    textAlign: "center",
-    padding: spacing.s16,
-    minHeight: 44,
   },
 });

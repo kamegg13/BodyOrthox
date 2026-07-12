@@ -25,7 +25,11 @@ jest.mock("../../components/pain-editor", () => ({
 
 const mockGoBack = jest.fn();
 jest.mock("@react-navigation/native", () => ({
-  useNavigation: () => ({ goBack: mockGoBack }),
+  useNavigation: () => ({
+    goBack: mockGoBack,
+    dispatch: jest.fn(),
+    addListener: jest.fn(() => jest.fn()),
+  }),
   useRoute: () => ({ params: { patientId: "p1" } }),
 }));
 

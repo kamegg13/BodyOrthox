@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -129,6 +129,23 @@ const ACTIVITY_OPTIONS: { value: ActivityLevel; label: string }[] = [
   { value: "athlete", label: "Athlète" },
 ];
 
+/**
+ * Confirmation multiplateforme avant d'abandonner une saisie non enregistrée.
+ * Même pattern que `showLogoutConfirm` (lock-screen.tsx) / `confirmPrivacyBeforeShare`.
+ */
+function confirmDiscardEdits(onConfirm: () => void) {
+  const title = "Abandonner la saisie ?";
+  const message = "Les informations ne seront pas enregistrées.";
+  if (Platform.OS === "web") {
+    if (window.confirm(`${title}\n\n${message}`)) onConfirm();
+    return;
+  }
+  Alert.alert(title, message, [
+    { text: "Continuer la saisie", style: "cancel" },
+    { text: "Abandonner", style: "destructive", onPress: onConfirm },
+  ]);
+}
+
 // ---------------------------------------------------------------------------
 // PatientFormScreen
 // ---------------------------------------------------------------------------
@@ -167,6 +184,70 @@ export function PatientFormScreen({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // ---------------------------------------------------------------------------
+  // Confirmation avant fermeture avec saisie non sauvegardée
+  // ---------------------------------------------------------------------------
+
+  const initialSnapshotRef = useRef(
+    JSON.stringify({
+      firstName: initialValues?.firstName ?? "",
+      lastName: initialValues?.lastName ?? "",
+      dateOfBirth: initialValues?.dateOfBirth ?? null,
+      sex: init?.sex,
+      laterality: init?.laterality,
+      activityLevel: init?.activityLevel,
+      sport: init?.sport ?? "",
+      pathology: init?.pathology ?? "",
+      pains: init?.pains ?? [],
+      heightCm: init?.heightCm?.toString() ?? "",
+      weightKg: init?.weightKg?.toString() ?? "",
+      notes: init?.notes ?? "",
+    }),
+  );
+
+  const isDirty = useMemo(() => {
+    const current = JSON.stringify({
+      firstName,
+      lastName,
+      dateOfBirth,
+      sex,
+      laterality,
+      activityLevel,
+      sport,
+      pathology,
+      pains,
+      heightCm,
+      weightKg,
+      notes,
+    });
+    return current !== initialSnapshotRef.current;
+  }, [
+    firstName,
+    lastName,
+    dateOfBirth,
+    sex,
+    laterality,
+    activityLevel,
+    sport,
+    pathology,
+    pains,
+    heightCm,
+    weightKg,
+    notes,
+  ]);
+
+  // Intercepte toute sortie de l'écran (bouton Annuler, geste retour, back
+  // matériel Android) tant que la saisie contient des changements non
+  // enregistrés — un seul point de contrôle, quelle que soit la cause.
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("beforeRemove", (e) => {
+      if (!isDirty) return;
+      e.preventDefault();
+      confirmDiscardEdits(() => navigation.dispatch(e.data.action));
+    });
+    return unsubscribe;
+  }, [navigation, isDirty]);
 
   // ---------------------------------------------------------------------------
   // BMI calculation (derived, immutable)

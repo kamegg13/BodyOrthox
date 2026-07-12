@@ -13,6 +13,11 @@ import {
 } from "../services/native-image-picker";
 import type { IPoseDetector } from "../data/pose-detector";
 import type { PoseLandmarks } from "../data/angle-calculator";
+import {
+  saveCaptureDraft,
+  loadCaptureDraft,
+  clearCaptureDraft,
+} from "../data/capture-draft-storage";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -65,6 +70,13 @@ export function useCaptureLogic(patientId: string) {
     message: string;
     onContinue: () => void;
   } | null>(null);
+  // Preview d'une capture interrompue (appel entrant, arrière-plan prolongé)
+  // retrouvée en stockage pour CE patient au remontage de l'écran — jamais
+  // appliquée automatiquement, l'utilisateur choisit via le bandeau
+  // (Reprendre / Refaire, cf. handleRestoreDraft / handleDiscardDraft).
+  const [restorableDraft, setRestorableDraft] = useState<string | null>(
+    () => loadCaptureDraft(patientId)?.previewUrl ?? null,
+  );
 
   useEffect(() => {
     // Clear any state left over from a previous patient/session before starting.
@@ -108,15 +120,17 @@ export function useCaptureLogic(patientId: string) {
     if (dataUrl) {
       setPreviewUrl(dataUrl);
       setCapturedImageUrl(dataUrl);
+      saveCaptureDraft(patientId, dataUrl);
     }
-  }, [phase, setCapturedImageUrl]);
+  }, [phase, setCapturedImageUrl, patientId]);
 
   const handlePhotoUploaded = useCallback(
     (dataUrl: string) => {
       setPreviewUrl(dataUrl);
       setCapturedImageUrl(dataUrl);
+      saveCaptureDraft(patientId, dataUrl);
     },
-    [setCapturedImageUrl],
+    [setCapturedImageUrl, patientId],
   );
 
   const handleAnalyze = useCallback(async () => {
@@ -191,7 +205,23 @@ export function useCaptureLogic(patientId: string) {
     setDetectionError(null);
     setPlatformLimitation(null);
     setLowConfidenceWarning(null);
-  }, [setCapturedImageUrl]);
+    clearCaptureDraft(patientId);
+  }, [setCapturedImageUrl, patientId]);
+
+  /** Applique la preview d'une capture interrompue restaurée depuis le stockage. */
+  const handleRestoreDraft = useCallback(() => {
+    if (restorableDraft) {
+      setPreviewUrl(restorableDraft);
+      setCapturedImageUrl(restorableDraft);
+    }
+    setRestorableDraft(null);
+  }, [restorableDraft, setCapturedImageUrl]);
+
+  /** Refus explicite de la restauration : purge le brouillon, repart de zéro. */
+  const handleDiscardDraft = useCallback(() => {
+    clearCaptureDraft(patientId);
+    setRestorableDraft(null);
+  }, [patientId]);
 
   const handleNativeCamera = useCallback(async () => {
     try {
@@ -233,6 +263,7 @@ export function useCaptureLogic(patientId: string) {
       if (phase.type !== "success") return;
       const analysis = await saveAnalysis(patientId, correctedLandmarks);
       if (analysis) {
+        clearCaptureDraft(patientId);
         const { capturedImageUrl: imgUrl, allDetectedLandmarks: allLm } =
           useCaptureStore.getState();
         // On passe par l'écran Processing v2 qui auto-advance vers Results.
@@ -273,11 +304,12 @@ export function useCaptureLogic(patientId: string) {
         onPress: () => {
           reset();
           setPreviewUrl(null);
+          clearCaptureDraft(patientId);
           navigation.goBack();
         },
       },
     ]);
-  }, [reset, navigation]);
+  }, [reset, navigation, patientId]);
 
   return {
     phase,
@@ -292,6 +324,7 @@ export function useCaptureLogic(patientId: string) {
     detectionError,
     platformLimitation,
     lowConfidenceWarning,
+    restorableDraft,
     webCameraRef,
     handleWebCameraPermissionDenied,
     handleTakeWebPhoto,
@@ -303,5 +336,7 @@ export function useCaptureLogic(patientId: string) {
     handleStartCapture,
     handleSave,
     handleDiscard,
+    handleRestoreDraft,
+    handleDiscardDraft,
   };
 }

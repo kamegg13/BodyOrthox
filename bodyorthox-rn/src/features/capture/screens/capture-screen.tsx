@@ -69,6 +69,7 @@ export function CaptureScreen() {
     detectionError,
     platformLimitation,
     lowConfidenceWarning,
+    restorableDraft,
     webCameraRef,
     handleWebCameraPermissionDenied,
     handlePhotoUploaded,
@@ -79,6 +80,8 @@ export function CaptureScreen() {
     handleStartCapture,
     handleSave,
     handleDiscard,
+    handleRestoreDraft,
+    handleDiscardDraft,
   } = useCaptureLogic(patientId);
 
   if (phase.type === "success") {
@@ -164,6 +167,40 @@ export function CaptureScreen() {
           </Pressable>
         </View>
       </SafeAreaView>
+
+      {restorableDraft ? (
+        <View style={styles.draftBanner} testID="capture-draft-banner">
+          <View style={styles.draftBannerHead}>
+            <Icon name="alert" size={16} color={colors.white70} strokeWidth={1.6} />
+            <Text style={styles.draftBannerTitle}>Capture en cours restaurée</Text>
+          </View>
+          <Text style={styles.draftBannerText}>
+            Une photo non sauvegardée a été retrouvée pour ce patient.
+          </Text>
+          <View style={styles.draftBannerActions}>
+            <Pressable
+              onPress={handleDiscardDraft}
+              style={({ pressed }) => [styles.draftBannerBtn, pressed && styles.pressed]}
+              accessibilityRole="button"
+              testID="capture-draft-discard"
+            >
+              <Text style={styles.draftBannerBtnText}>Refaire</Text>
+            </Pressable>
+            <Pressable
+              onPress={handleRestoreDraft}
+              style={({ pressed }) => [
+                styles.draftBannerBtn,
+                styles.draftBannerBtnPrimary,
+                pressed && styles.pressed,
+              ]}
+              accessibilityRole="button"
+              testID="capture-draft-restore"
+            >
+              <Text style={styles.draftBannerBtnTextPrimary}>Reprendre</Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
 
       {/* Viseur contenu — caméra + overlay guidé */}
       <View style={styles.viewfinder}>
@@ -282,6 +319,60 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white08,
     alignItems: "center",
     justifyContent: "center",
+  },
+  draftBanner: {
+    marginHorizontal: spacing.s16,
+    marginBottom: spacing.s12,
+    padding: spacing.s12,
+    borderRadius: radius.field,
+    borderWidth: 1.5,
+    borderColor: colors.white20,
+    backgroundColor: colors.white12,
+    gap: spacing.s8,
+  },
+  draftBannerHead: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.s8,
+  },
+  draftBannerTitle: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.body,
+    fontWeight: fontWeight.semiBold,
+    color: colors.textInverse,
+  },
+  draftBannerText: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    color: colors.white70,
+  },
+  draftBannerActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: spacing.s10,
+  },
+  draftBannerBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: radius.button,
+    borderWidth: 1,
+    borderColor: colors.white20,
+  },
+  draftBannerBtnPrimary: {
+    backgroundColor: colors.textInverse,
+    borderColor: colors.textInverse,
+  },
+  draftBannerBtnText: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.semiBold,
+    color: colors.textInverse,
+  },
+  draftBannerBtnTextPrimary: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.semiBold,
+    color: colors.ink,
   },
   viewfinder: {
     flex: 1,

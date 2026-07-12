@@ -1,8 +1,14 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../types";
-import { ReportsList, type ReportListItem } from "../../screens/ReportsList";
+import {
+  ReportsList,
+  type ReportListItem,
+  type ReportSeverityFilter,
+} from "../../screens/ReportsList";
+import { LoadingState } from "../../components/LoadingState";
+import { ErrorState } from "../../components/ErrorState";
 import { useAnalysisRepository } from "../../shared/hooks/use-analysis-repository";
 import { usePatientsStore } from "../../features/patients/store/patients-store";
 import {
@@ -13,14 +19,42 @@ import type { Analysis } from "../../features/capture/domain/analysis";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
+/**
+ * Identifiant court affiché sur la fiche patient (`#P-XXXX`). Dupliqué ici
+ * (plutôt qu'importé) car la recherche doit matcher exactement ce que
+ * l'utilisateur voit à l'écran — voir patients-store.ts::shortPatientId.
+ */
+function shortPatientId(id: string): string {
+  if (id.length <= 8) return id;
+  return `P-${id.slice(0, 4).toUpperCase()}`;
+}
+
+function matchesSearch(item: ReportListItem, query: string): boolean {
+  if (!query) return true;
+  const q = query.toLowerCase();
+  return (
+    item.patientName.toLowerCase().includes(q) ||
+    item.patientId.toLowerCase().includes(q) ||
+    shortPatientId(item.patientId).toLowerCase().includes(q)
+  );
+}
+
+function matchesSeverity(item: ReportListItem, filter: ReportSeverityFilter): boolean {
+  return filter === "all" || item.severity === filter;
+}
+
 export function ReportsListRoute() {
   const navigation = useNavigation<Nav>();
   const repo = useAnalysisRepository();
   const patients = usePatientsStore((s) => s.patients);
+  const patientsLoading = usePatientsStore((s) => s.isLoading);
+  const patientsError = usePatientsStore((s) => s.error);
   const loadPatients = usePatientsStore((s) => s.loadPatients);
 
-  const [items, setItems] = useState<readonly ReportListItem[]>([]);
+  const [allItems, setAllItems] = useState<readonly ReportListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [severityFilter, setSeverityFilter] = useState<ReportSeverityFilter>("all");
 
   useEffect(() => {
     loadPatients();
@@ -42,13 +76,21 @@ export function ReportsListRoute() {
       if (cancelled) return;
       const flat = nested.flat();
       flat.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
-      setItems(flat);
+      setAllItems(flat);
       setLoading(false);
     });
     return () => {
       cancelled = true;
     };
   }, [patients, repo]);
+
+  const filteredItems = useMemo(
+    () =>
+      allItems.filter(
+        (item) => matchesSearch(item, searchQuery) && matchesSeverity(item, severityFilter),
+      ),
+    [allItems, searchQuery, severityFilter],
+  );
 
   const handleItemPress = useCallback(
     async (item: ReportListItem) => {
@@ -60,7 +102,31 @@ export function ReportsListRoute() {
     [navigation, repo, patients],
   );
 
-  return <ReportsList items={items} isLoading={loading} onItemPress={handleItemPress} />;
+  if (patientsError) {
+    return (
+      <ErrorState
+        message={patientsError}
+        actionLabel="Réessayer"
+        onAction={() => loadPatients()}
+      />
+    );
+  }
+
+  if (patientsLoading || loading) {
+    return <LoadingState fullScreen message="Chargement des rapports..." />;
+  }
+
+  return (
+    <ReportsList
+      items={filteredItems}
+      hasAnyReports={allItems.length > 0}
+      searchQuery={searchQuery}
+      onSearchChange={setSearchQuery}
+      severityFilter={severityFilter}
+      onSeverityFilterChange={setSeverityFilter}
+      onItemPress={handleItemPress}
+    />
+  );
 }
 
 function buildItem(patient: Patient, a: Analysis): ReportListItem {

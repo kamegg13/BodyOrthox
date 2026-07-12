@@ -26,10 +26,9 @@ jest.mock("@react-navigation/native", () => ({
   useRoute: () => ({ params: { patientId: "p1" } }),
 }));
 
+const mockAnalysisRepo = { getForPatient: jest.fn().mockResolvedValue([]) };
 jest.mock("../../../shared/hooks/use-analysis-repository", () => ({
-  useAnalysisRepository: () => ({
-    getForPatient: jest.fn().mockResolvedValue([]),
-  }),
+  useAnalysisRepository: () => mockAnalysisRepo,
 }));
 
 function resetStore(overrides?: Record<string, unknown>) {
@@ -126,5 +125,32 @@ describe("buildDetailData — médecin référent & consentement RGPD", () => {
     );
     expect(data.consentDate).toEqual(expect.any(String));
     expect(data.consentDate).not.toBe("2026-01-15T10:00:00.000Z");
+  });
+});
+
+describe("PatientDetailRoute — états unifiés (LoadingState/ErrorState)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockCanGoBack.mockReturnValue(true);
+  });
+
+  it("affiche l'état de chargement pendant que les patients sont en cours de chargement", () => {
+    resetStore({ patients: [], isLoading: true });
+
+    const { getByText } = render(<PatientDetailRoute />);
+
+    expect(getByText("Chargement...")).toBeTruthy();
+  });
+
+  it("affiche une ErrorState avec un bouton Réessayer quand le patient est introuvable, et revient en arrière au clic", async () => {
+    resetStore({ patients: [{ ...mockPatient, id: "autre-id" }], isLoading: false });
+
+    const { getByText } = render(<PatientDetailRoute />);
+
+    await waitFor(() => expect(getByText("Patient introuvable.")).toBeTruthy());
+    expect(getByText("Réessayer")).toBeTruthy();
+
+    fireEvent.press(getByText("Réessayer"));
+    expect(mockGoBack).toHaveBeenCalledTimes(1);
   });
 });

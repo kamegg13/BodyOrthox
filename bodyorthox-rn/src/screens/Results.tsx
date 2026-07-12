@@ -57,6 +57,8 @@ export interface ResultsData {
   readonly postural: readonly PosturalMeasurement[];
   readonly capturedImageUrl?: string;
   readonly clinicalNotes?: string;
+  /** Score de confiance ML [0,1] de la détection ayant produit l'analyse. */
+  readonly confidenceScore?: number;
 }
 
 export type NotesSaveStatus = "idle" | "saving" | "saved" | "error";
@@ -173,6 +175,21 @@ export function Results({
             <Badge label={sevLabel} color={sevColor} />
           ) : null}
         </View>
+
+        {data.confidenceScore !== undefined &&
+        data.confidenceScore < LOW_CONFIDENCE_THRESHOLD ? (
+          <View style={styles.confidenceBand} testID="low-confidence-band">
+            <View style={styles.confidenceBandHead}>
+              <Icon name="alert" size={16} color={colors.amberMid} strokeWidth={1.6} />
+              <View testID="low-confidence-badge">
+                <Badge label="Confiance faible" color="amber" icon={null} />
+              </View>
+            </View>
+            <Text style={styles.confidenceBandText} testID="low-confidence-subtext">
+              Détection à vérifier — utilisez Corriger les points si nécessaire.
+            </Text>
+          </View>
+        ) : null}
 
         {data.severity === "moderate" || data.severity === "severe" ? (
           <View
@@ -328,6 +345,11 @@ function outOfNormDetail(data: ResultsData): string {
 const HKA_REF_MIN = 175;
 const HKA_REF_MAX = 180;
 
+// Seuil de confiance ML basse, cf. LOW_CONFIDENCE_THRESHOLD dans
+// src/features/capture/hooks/use-capture-logic.ts — reprise ici telle
+// quelle, aucune valeur n'est inventée.
+const LOW_CONFIDENCE_THRESHOLD = 0.6;
+
 /** Sévérité d'une mesure → couleur sémantique (texte + icône, jamais seule). */
 function sevTone(
   value: number | null,
@@ -462,6 +484,25 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semiBold,
     color: colors.textMuted,
     marginTop: 2,
+  },
+  confidenceBand: {
+    gap: spacing.s6,
+    backgroundColor: colors.amberLight,
+    borderWidth: 1.5,
+    borderColor: "rgba(180,83,9,0.25)",
+    borderRadius: radius.field,
+    paddingVertical: spacing.s11,
+    paddingHorizontal: spacing.s14,
+  },
+  confidenceBandHead: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.s9,
+  },
+  confidenceBandText: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    color: colors.textPrimary,
   },
   sevBand: {
     flexDirection: "row",

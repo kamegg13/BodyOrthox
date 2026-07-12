@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import {
+  FlatList,
   Pressable,
   ScrollView,
   StatusBar,
@@ -7,6 +8,7 @@ import {
   Text,
   TextInput,
   View,
+  type ListRenderItemInfo,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -119,6 +121,13 @@ export function PatientList({ hideBottomTab = false, onAddPatient, onPatientPres
     setSortBy(nextSortBy(sortBy));
   }
 
+  const renderPatientRow = useCallback(
+    ({ item }: ListRenderItemInfo<Patient>) => (
+      <PatientRow patient={item} onPress={() => onPatientPress?.(item)} />
+    ),
+    [onPatientPress],
+  );
+
   return (
     <View style={styles.root}>
       <StatusBar barStyle="dark-content" />
@@ -193,12 +202,16 @@ export function PatientList({ hideBottomTab = false, onAddPatient, onPatientPres
         </View>
       </SafeAreaView>
 
-      <ScrollView
+      <FlatList
+        testID="patient-list"
         style={styles.list}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
-      >
-        {filtered.length === 0 ? (
+        data={filtered}
+        keyExtractor={(p) => p.id}
+        renderItem={renderPatientRow}
+        keyboardShouldPersistTaps="handled"
+        ListEmptyComponent={
           total.length === 0 ? (
             <EmptyState
               icon="user"
@@ -216,12 +229,8 @@ export function PatientList({ hideBottomTab = false, onAddPatient, onPatientPres
               style={styles.empty}
             />
           )
-        ) : (
-          filtered.map((p) => (
-            <PatientRow key={p.id} patient={p} onPress={() => onPatientPress?.(p)} />
-          ))
-        )}
-      </ScrollView>
+        }
+      />
 
       {!hideBottomTab ? (
         <SafeAreaView edges={["bottom"]} style={styles.tabSafe}>

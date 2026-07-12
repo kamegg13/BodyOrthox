@@ -81,4 +81,57 @@ describe("PatientList", () => {
     const btn = getByLabelText("Nouveau patient");
     expect(btn.props.hitSlop).toBeTruthy();
   });
+
+  describe("virtualisation (FlatList)", () => {
+    const patient2: Patient = {
+      id: "p2",
+      name: "Alice Martin",
+      dateOfBirth: "1985-05-05",
+      morphologicalProfile: { sex: "female" },
+      createdAt: "2024-01-02T00:00:00Z",
+    };
+
+    it("rend la liste des patients via une FlatList avec un keyExtractor stable", () => {
+      resetStore({
+        patients: [mockPatient, patient2],
+        filteredPatients: [mockPatient, patient2],
+      });
+      const { getByTestId } = render(<PatientList />);
+      const list = getByTestId("patient-list");
+      expect(list.props.data).toEqual([mockPatient, patient2]);
+      expect(list.props.keyExtractor(mockPatient)).toBe("p1");
+    });
+
+    it("garde keyboardShouldPersistTaps pour que la recherche reste utilisable", () => {
+      resetStore({
+        patients: [mockPatient],
+        filteredPatients: [mockPatient],
+      });
+      const { getByTestId } = render(<PatientList />);
+      expect(getByTestId("patient-list").props.keyboardShouldPersistTaps).toBe(
+        "handled",
+      );
+    });
+
+    it("affiche chaque patient de la liste filtrée", () => {
+      resetStore({
+        patients: [mockPatient, patient2],
+        filteredPatients: [mockPatient, patient2],
+      });
+      const { getByText } = render(<PatientList />);
+      expect(getByText("Jean Dupont")).toBeTruthy();
+      expect(getByText("Alice Martin")).toBeTruthy();
+    });
+
+    it("déclenche onPatientPress au tap sur une ligne", () => {
+      const onPatientPress = jest.fn();
+      resetStore({
+        patients: [mockPatient],
+        filteredPatients: [mockPatient],
+      });
+      const { getByText } = render(<PatientList onPatientPress={onPatientPress} />);
+      fireEvent.press(getByText("Jean Dupont"));
+      expect(onPatientPress).toHaveBeenCalledWith(mockPatient);
+    });
+  });
 });
