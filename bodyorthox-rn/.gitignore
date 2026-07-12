@@ -30,3 +30,16 @@ vendor/bundle/
 
 # Modèles MediaPipe (téléchargés via scripts/download-models.sh)
 *.task
+
+# SDK Android local
+android/local.properties
+
+# Builds Android
+android/.gradle/
+android/.kotlin/
+android/build/
+android/app/build/
+android/app/.cxx/
+
+# Xcode user state
+ios/**/xcuserdata/

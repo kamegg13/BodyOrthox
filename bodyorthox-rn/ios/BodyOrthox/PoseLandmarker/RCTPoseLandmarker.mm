@@ -1,4 +1,9 @@
 #import "RCTPoseLandmarker.h"
+// Déclare RCTDefaultReactNativeFactoryDelegate (superclasse ObjC de
+// ReactNativeDelegate côté AppDelegate.swift) avant le header Swift généré,
+// sans quoi BodyOrthox-Swift.h ne compile pas dans ce .mm.
+#import <React-RCTAppDelegate/RCTDefaultReactNativeFactoryDelegate.h>
+#import <React-RCTAppDelegate/RCTReactNativeFactory.h>
 #import "BodyOrthox-Swift.h"
 
 @implementation RCTPoseLandmarker {

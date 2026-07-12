@@ -34,5 +34,16 @@ target 'BodyOrthox' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+
+    # Xcode 26 : le clang durci rejette le consteval du fmt vendored par RN.
+    # Compiler UNIQUEMENT fmt en C++17 (les internals RN exigent C++20).
+    # https://github.com/facebook/react-native/issues/55601
+    installer.pods_project.targets.each do |target|
+      if target.name == 'fmt'
+        target.build_configurations.each do |build_config|
+          build_config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'
+        end
+      end
+    end
   end
 end
