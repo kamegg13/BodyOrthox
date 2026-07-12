@@ -16,15 +16,17 @@ jest.mock("react-native-biometrics", () => {
   }));
 });
 
-// Mock react-native-vision-camera
-jest.mock("react-native-vision-camera", () => ({
-  Camera: "Camera",
-  useCameraDevice: jest.fn(() => ({ id: "mock-device" })),
-  useCameraPermission: jest.fn(() => ({
-    hasPermission: true,
-    requestPermission: jest.fn().mockResolvedValue(true),
-  })),
-  useFrameProcessor: jest.fn(),
+// Mock du TurboModule PoseLandmarker (pas de runtime natif sous jest).
+// Comportement par défaut : aucune pose détectée ; les suites qui testent la
+// détection le re-mockent explicitement avec des landmarks.
+jest.mock("./src/specs/NativePoseLandmarker", () => ({
+  __esModule: true,
+  default: {
+    detectFromImage: jest
+      .fn()
+      .mockResolvedValue({ landmarks: [], width: 0, height: 0 }),
+    dispose: jest.fn(),
+  },
 }));
 
 // Mock react-native-reanimated

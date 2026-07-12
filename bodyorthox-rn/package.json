@@ -3,6 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "main": "index.js",
+  "codegenConfig": {
+    "name": "BodyOrthoxSpec",
+    "type": "modules",
+    "jsSrcsDir": "src/specs",
+    "android": {
+      "javaPackageName": "com.bodyorthox.app.specs"
+    }
+  },
   "scripts": {
     "android": "react-native run-android",
     "ios": "react-native run-ios",
@@ -37,7 +45,6 @@
     "react-native-screens": "^4.10.0",
     "react-native-share": "^12.3.1",
     "react-native-svg": "^15.8.0",
-    "react-native-vision-camera": "^4.6.4",
     "react-native-web": "^0.19.13",
     "zustand": "^5.0.2"
   },
@@ -73,7 +80,7 @@
       "./jest.setup.ts"
     ],
     "transformIgnorePatterns": [
-      "node_modules/(?!(react-native|@react-native|@react-native-async-storage|@react-navigation|@notifee|react-native-vision-camera|react-native-biometrics|react-native-keychain|react-native-reanimated|react-native-gesture-handler|react-native-screens|react-native-safe-area-context|react-native-svg|react-native-html-to-pdf|react-native-share|zustand|immer)/)"
+      "node_modules/(?!(react-native|@react-native|@react-native-async-storage|@react-navigation|@notifee|react-native-biometrics|react-native-keychain|react-native-reanimated|react-native-gesture-handler|react-native-screens|react-native-safe-area-context|react-native-svg|react-native-html-to-pdf|react-native-share|zustand|immer)/)"
     ],
     "moduleNameMapper": {
       "^@/(.*)$": "<rootDir>/src/$1",

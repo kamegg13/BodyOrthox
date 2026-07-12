@@ -2,6 +2,7 @@ package com.bodyorthox.app
 
 import android.app.Application
 import cl.json.ShareApplication
+import com.bodyorthox.app.poselandmarker.PoseLandmarkerPackage
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
 import com.facebook.react.ReactHost
@@ -23,8 +24,8 @@ class MainApplication : Application(), ShareApplication, ReactApplication {
       object : DefaultReactNativeHost(this) {
         override fun getPackages(): List<ReactPackage> =
             PackageList(this).packages.apply {
-              // Packages that cannot be autolinked yet can be added manually here, for example:
-              // add(MyReactNativePackage())
+              // TurboModule maison : détection de pose MediaPipe on-device
+              add(PoseLandmarkerPackage())
             }
 
         override fun getJSMainModuleName(): String = "index"

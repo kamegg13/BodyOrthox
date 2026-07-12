@@ -1,8 +1,9 @@
 /**
  * IPoseDetector — platform-agnostic interface for pose detection.
  *
- * Web implementation uses MediaPipe Tasks Vision.
- * Native implementation is a stub until react-native-vision-camera integration.
+ * Web implementation uses MediaPipe Tasks Vision (WASM).
+ * Native implementation uses the NativePoseLandmarker TurboModule
+ * (MediaPipe Tasks Vision native SDKs, on-device).
  *
  * Webpack resolves `.web.ts` for web builds; the re-export below
  * provides the default (native) implementation for TypeScript / Metro.

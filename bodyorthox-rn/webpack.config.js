@@ -12,9 +12,7 @@ const compileNodeModules = [
   "react-native-reanimated",
   "react-native-screens",
   "react-native-safe-area-context",
-  "react-native-svg",
-  "react-native-vision-camera",
-  "react-native-web",
+  "react-native-svg",  "react-native-web",
 ].map((moduleName) => path.resolve(appDirectory, "node_modules", moduleName));
 
 const babelLoaderConfiguration = {

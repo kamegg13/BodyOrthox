@@ -24,16 +24,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 /** Low confidence threshold — warn the user below this */
 const LOW_CONFIDENCE_THRESHOLD = 0.6;
 
-/**
- * Message affiché sur mobile natif : ce n'est pas une erreur mais une
- * limite produit connue (pas de détecteur de pose embarqué hors web) —
- * distingué de `detectionError` pour ne pas s'afficher avec le style
- * "erreur" et pour orienter vers l'alternative qui fonctionne.
- */
-const NATIVE_PLATFORM_LIMITATION_MESSAGE =
-  "L'analyse automatique n'est pas disponible sur mobile pour le moment. Utilisez BodyOrthox sur navigateur pour analyser cette capture.";
-
-/** Erreur réelle : le modèle ML n'a pas pu être chargé sur le web. */
+/** Erreur réelle : le modèle ML n'a pas pu être chargé. */
 const ML_UNAVAILABLE_MESSAGE =
   "Le modèle d'analyse n'a pas pu être chargé. Réessayez ou rechargez la page.";
 
@@ -66,7 +57,6 @@ export function useCaptureLogic(patientId: string) {
   const poseDetectorRef = useRef<IPoseDetector | null>(null);
   const [mlLoading, setMlLoading] = useState(false);
   const [detectionError, setDetectionError] = useState<string | null>(null);
-  const [platformLimitation, setPlatformLimitation] = useState<string | null>(null);
   const [lowConfidenceWarning, setLowConfidenceWarning] = useState<{
     message: string;
     onContinue: () => void;
@@ -84,23 +74,21 @@ export function useCaptureLogic(patientId: string) {
     // This also bumps the session token, invalidating any in-flight callback.
     reset();
 
-    // Lazy-load pose detector on web
-    if (Platform.OS === "web") {
-      const detector = getPoseDetector();
-      poseDetectorRef.current = detector;
-      setMlLoading(true);
-      detector
-        .initialize()
-        .catch(() => {
-          // Non-blocking — detection will fail later with a clear message
-        })
-        .finally(() => setMlLoading(false));
-    }
+    // Lazy-load pose detector: MediaPipe WASM on web, TurboModule on native
+    const detector = getPoseDetector();
+    poseDetectorRef.current = detector;
+    setMlLoading(true);
+    detector
+      .initialize()
+      .catch(() => {
+        // Non-blocking — detection will fail later with a clear message
+      })
+      .finally(() => setMlLoading(false));
 
     requestPermission();
-    // On web and Android (without native camera module), grant permission immediately.
-    // The web uses getUserMedia via WebCamera; Android uses simulated capture.
-    // Native camera via react-native-vision-camera is disabled for now.
+    // Grant immediately on every platform: the web uses getUserMedia via
+    // WebCamera (browser prompt), native delegates to the system camera and
+    // gallery via react-native-image-picker (system-level permission).
     permissionGranted();
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
@@ -137,22 +125,12 @@ export function useCaptureLogic(patientId: string) {
   const handleAnalyze = useCallback(async () => {
     if (!previewUrl) return;
     setDetectionError(null);
-    setPlatformLimitation(null);
     setLowConfidenceWarning(null);
 
     const detector = poseDetectorRef.current;
 
-    // Mobile natif : pas de détecteur de pose embarqué. C'est une limite
-    // produit connue, pas une erreur — distingué de `detectionError` pour un
-    // affichage informatif plutôt qu'un style "erreur".
-    if (Platform.OS !== "web") {
-      setPlatformLimitation(NATIVE_PLATFORM_LIMITATION_MESSAGE);
-      return;
-    }
-
-    // Web mais le modèle ML n'a pas pu être chargé : ceci est une vraie
-    // erreur (pas une limite de plateforme) — on ne fabrique jamais de
-    // landmarks simulés pour la masquer.
+    // Le modèle ML n'a pas pu être chargé : vraie erreur — on ne fabrique
+    // jamais de landmarks simulés pour la masquer.
     if (!detector || !detector.isReady()) {
       setDetectionError(ML_UNAVAILABLE_MESSAGE);
       return;
@@ -204,7 +182,6 @@ export function useCaptureLogic(patientId: string) {
     setPreviewUrl(null);
     setCapturedImageUrl(null);
     setDetectionError(null);
-    setPlatformLimitation(null);
     setLowConfidenceWarning(null);
     clearCaptureDraft(patientId);
   }, [setCapturedImageUrl, patientId]);
@@ -254,10 +231,9 @@ export function useCaptureLogic(patientId: string) {
       return;
     }
 
-    // Native has no real pose detector yet — block honestly rather than
-    // fabricating a "straight legs" analysis from simulated landmarks.
-    setPlatformLimitation(NATIVE_PLATFORM_LIMITATION_MESSAGE);
-  }, [phase, handleTakeWebPhoto]);
+    // Natif : la capture passe par la caméra système (image-picker)
+    await handleNativeCamera();
+  }, [phase, handleTakeWebPhoto, handleNativeCamera]);
 
   const handleSave = useCallback(
     async (correctedLandmarks?: PoseLandmarks) => {
@@ -323,7 +299,6 @@ export function useCaptureLogic(patientId: string) {
     previewUrl,
     mlLoading,
     detectionError,
-    platformLimitation,
     lowConfidenceWarning,
     restorableDraft,
     webCameraRef,
