@@ -24,9 +24,9 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 /** Low confidence threshold — warn the user below this */
 const LOW_CONFIDENCE_THRESHOLD = 0.6;
 
-/** Erreur réelle : le modèle ML n'a pas pu être chargé. */
+/** Erreur réelle : le modèle ML n'a pas pu être chargé (web comme natif). */
 const ML_UNAVAILABLE_MESSAGE =
-  "Le modèle d'analyse n'a pas pu être chargé. Réessayez ou rechargez la page.";
+  "Le modèle d'analyse n'a pas pu être chargé. Réessayez plus tard.";
 
 export function useCaptureLogic(patientId: string) {
   const navigation = useNavigation<Nav>();

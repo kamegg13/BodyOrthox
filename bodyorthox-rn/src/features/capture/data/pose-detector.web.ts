@@ -22,6 +22,8 @@ import { calculateConfidenceScore } from "./angle-calculator";
 import { analyzeImageQuality, ImageQualityError } from "./image-quality";
 import { validateAnatomicalProportions } from "./anatomical-validation";
 import {
+  MIN_POSE_DETECTION_CONFIDENCE,
+  MIN_POSE_PRESENCE_CONFIDENCE,
   MIN_VISIBILITY,
   NO_POSE_MESSAGE,
   NoPoseDetectedError,
@@ -531,8 +533,8 @@ async function createLandmarker(
       },
       runningMode: "IMAGE",
       numPoses: 1,
-      minPoseDetectionConfidence: 0.7,
-      minPosePresenceConfidence: 0.7,
+      minPoseDetectionConfidence: MIN_POSE_DETECTION_CONFIDENCE,
+      minPosePresenceConfidence: MIN_POSE_PRESENCE_CONFIDENCE,
     });
   } catch {
     // GPU delegate failed — fall back to CPU
@@ -543,8 +545,8 @@ async function createLandmarker(
       },
       runningMode: "IMAGE",
       numPoses: 1,
-      minPoseDetectionConfidence: 0.7,
-      minPosePresenceConfidence: 0.7,
+      minPoseDetectionConfidence: MIN_POSE_DETECTION_CONFIDENCE,
+      minPosePresenceConfidence: MIN_POSE_PRESENCE_CONFIDENCE,
     });
   }
 }

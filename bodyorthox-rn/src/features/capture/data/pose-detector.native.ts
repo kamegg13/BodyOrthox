@@ -18,6 +18,8 @@ import type { IPoseDetector, PoseDetectionResult } from "./pose-detector";
 import { calculateConfidenceScore } from "./angle-calculator";
 import { validateAnatomicalProportions } from "./anatomical-validation";
 import {
+  MIN_POSE_DETECTION_CONFIDENCE,
+  MIN_POSE_PRESENCE_CONFIDENCE,
   NO_POSE_MESSAGE,
   NoPoseDetectedError,
   fuseMultiModelLandmarks,
@@ -31,8 +33,8 @@ const MODEL_FULL = "pose_landmarker_full.task";
 
 const BASE_OPTIONS: Omit<DetectFromImageOptions, "modelAsset"> = {
   delegate: "GPU",
-  minPoseDetectionConfidence: 0.7,
-  minPosePresenceConfidence: 0.7,
+  minPoseDetectionConfidence: MIN_POSE_DETECTION_CONFIDENCE,
+  minPosePresenceConfidence: MIN_POSE_PRESENCE_CONFIDENCE,
 };
 
 /** Strip an optional `data:image/...;base64,` prefix from a data URL. */

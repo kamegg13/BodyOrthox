@@ -50,6 +50,13 @@ describe("mediapipeToPoseLandmarks (shared)", () => {
     const result = mediapipeToPoseLandmarks(lms);
     expect(result[11]).toEqual({ x: 0.1, y: 0.2, z: 0, visibility: 0 });
   });
+
+  it("préserve la coordonnée z fournie par MediaPipe", () => {
+    const lms = makeLandmarks(33);
+    lms[24] = { x: 0.5, y: 0.5, z: 0.024, visibility: 0.9 };
+    const result = mediapipeToPoseLandmarks(lms);
+    expect(result[24]?.z).toBeCloseTo(0.024, 5);
+  });
 });
 
 describe("mediapipeToAllLandmarks (shared)", () => {
@@ -80,6 +87,13 @@ describe("hasValidPose (shared)", () => {
       lms[i] = { ...lms[i], visibility: 0 };
     }
     expect(hasValidPose(mediapipeToPoseLandmarks(lms))).toBe(true);
+  });
+
+  it("rejette quand chaque côté n'est que partiellement visible", () => {
+    const lms = makeLandmarks(33);
+    lms[26] = { ...lms[26], visibility: 0 }; // genou droit absent
+    lms[27] = { ...lms[27], visibility: 0 }; // cheville gauche absente
+    expect(hasValidPose(mediapipeToPoseLandmarks(lms))).toBe(false);
   });
 });
 

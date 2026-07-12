@@ -25,6 +25,10 @@ export const RELEVANT_INDICES = [11, 12, 23, 24, 25, 26, 27, 28, 29, 30] as cons
 /** Minimum visibility below which a landmark is considered undetected */
 export const MIN_VISIBILITY = 0.3;
 
+/** Confidence thresholds passed to MediaPipe PoseLandmarker (web + native) */
+export const MIN_POSE_DETECTION_CONFIDENCE = 0.7;
+export const MIN_POSE_PRESENCE_CONFIDENCE = 0.7;
+
 /** User-facing message when no pose could be detected (single source of truth) */
 export const NO_POSE_MESSAGE =
   "Aucune personne détectée. Assurez-vous que le patient est entièrement visible dans la photo.";
