@@ -13,7 +13,7 @@ import type { RootStackParamList } from "../../../navigation/types";
 import { useAnalysisRepository } from "../../../shared/hooks/use-analysis-repository";
 import { useAsyncData } from "../../../shared/hooks/use-async-data";
 import { ProgressionChart } from "../components/progression-chart";
-import { LoadingSpinner } from "../../../shared/components/loading-spinner";
+import { LoadingState } from "../../../components/LoadingState";
 import { Colors } from "../../../shared/design-system/colors";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
 import { Typography } from "../../../shared/design-system/typography";
@@ -34,7 +34,7 @@ export function PatientTimelineScreen() {
   );
   const analyses = data ?? [];
 
-  if (isLoading) return <LoadingSpinner fullScreen />;
+  if (isLoading) return <LoadingState fullScreen />;
 
   const needsMoreAnalyses = analyses.length < 2;
 

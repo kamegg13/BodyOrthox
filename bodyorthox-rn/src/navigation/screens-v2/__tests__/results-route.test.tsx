@@ -6,15 +6,13 @@ import type { Analysis } from "../../../features/capture/domain/analysis";
 import type { Patient } from "../../../features/patients/domain/patient";
 
 const mockNavigate = jest.fn();
-const mockGoBack = jest.fn();
-const mockCanGoBack = jest.fn().mockReturnValue(true);
+const mockPopTo = jest.fn();
 
 jest.mock("@react-navigation/native", () => ({
   ...jest.requireActual("@react-navigation/native"),
   useNavigation: () => ({
     navigate: mockNavigate,
-    goBack: mockGoBack,
-    canGoBack: mockCanGoBack,
+    popTo: mockPopTo,
   }),
   useRoute: () => ({
     params: { analysisId: "analysis-1", patientId: "patient-1" },
@@ -173,5 +171,23 @@ describe("ResultsRoute — recharge au focus", () => {
     await waitFor(() => {
       expect(mockGetById).toHaveBeenCalledWith("analysis-1");
     });
+  });
+});
+
+describe("ResultsRoute — retour vers la fiche patient", () => {
+  it("utilise popTo vers PatientDetail (jamais de popToTop ni de push dupliqué)", async () => {
+    mockGetById.mockResolvedValue(buildAnalysis());
+    const { findByLabelText } = render(<ResultsRoute />);
+    const backButton = await findByLabelText("Retour");
+
+    fireEvent.press(backButton);
+
+    expect(mockPopTo).toHaveBeenCalledWith("PatientDetail", {
+      patientId: "patient-1",
+    });
+    expect(mockNavigate).not.toHaveBeenCalledWith(
+      "PatientDetail",
+      expect.anything(),
+    );
   });
 });

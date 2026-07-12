@@ -65,17 +65,11 @@ export function PatientDetailRoute() {
   }, [patient, analyses]);
 
   const handleBack = useCallback(() => {
-    // Sur PatientDetail, le `<` doit toujours revenir a la racine du tab
-    // (Accueil dans AnalysesTab, PatientsList dans PatientsTab).
-    // popToTop evite la boucle Results <-> PatientDetail.
-    const popToTop = (navigation as unknown as { popToTop?: () => void }).popToTop;
-    if (typeof popToTop === "function") {
-      popToTop.call(navigation);
-      return;
-    }
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-    }
+    // Sur PatientDetail, le `<` revient toujours à la racine du tab (Accueil
+    // dans AnalysesTab, PatientsList dans PatientsTab), quel que soit le
+    // point d'entrée sur cette fiche. `popToTop` fait partie de l'API
+    // typée du navigateur natif (StackActionHelpers) : pas besoin de cast.
+    navigation.popToTop();
   }, [navigation]);
   const handleEdit = useCallback(
     () => navigation.navigate("EditPatient", { patientId }),

@@ -15,8 +15,8 @@ import {
   type PosturalMeasurement,
   type NotesSaveStatus,
 } from "../../screens/Results";
-import { LoadingSpinner } from "../../shared/components/loading-spinner";
-import { ErrorWidget } from "../../shared/components/error-widget";
+import { LoadingState } from "../../components/LoadingState";
+import { ErrorState } from "../../components/ErrorState";
 import { useAnalysisRepository } from "../../shared/hooks/use-analysis-repository";
 import { useAsyncData } from "../../shared/hooks/use-async-data";
 import { usePatientsStore } from "../../features/patients/store/patients-store";
@@ -141,15 +141,12 @@ export function ResultsRoute() {
   }, [analysis, patient, effectiveLandmarks, composedImage]);
 
   const handleBack = useCallback(() => {
-    // La stack est garantie [..., PatientDetail, Results] :
-    // - depuis l'historique : push Results sur PatientDetail
-    // - depuis Processing : reset → [Dashboard, PatientDetail, Results]
-    // Donc goBack() pop proprement vers PatientDetail.
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-      return;
-    }
-    navigation.navigate("PatientDetail", { patientId });
+    // popTo revient à l'instance PatientDetail déjà présente dans la pile
+    // (cas normal : Results est toujours poussé par-dessus PatientDetail).
+    // Si elle est absente (ex. deep link direct sur Results), popTo remplace
+    // Results par PatientDetail sans empiler de doublon — contrairement à
+    // `navigate`, qui aurait poussé une seconde instance de PatientDetail.
+    navigation.popTo("PatientDetail", { patientId });
   }, [navigation, patientId]);
 
   const handleShare = useCallback(async () => {
@@ -180,10 +177,10 @@ export function ResultsRoute() {
     navigation.navigate("Report", { analysis, patient });
   }, [navigation, analysis, patient]);
 
-  if (isLoading) return <LoadingSpinner fullScreen message="Chargement des résultats..." />;
-  if (error) return <ErrorWidget message={error} onRetry={refetch} />;
+  if (isLoading) return <LoadingState fullScreen message="Chargement des résultats..." />;
+  if (error) return <ErrorState message={error} actionLabel="Réessayer" onAction={refetch} />;
   if (!analysis || !data) {
-    return <ErrorWidget message="Analyse introuvable." onRetry={refetch} />;
+    return <ErrorState message="Analyse introuvable." actionLabel="Réessayer" onAction={refetch} />;
   }
 
   return (

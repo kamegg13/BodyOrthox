@@ -16,12 +16,14 @@ const mockPatient: Patient = {
 const mockNavigate = jest.fn();
 const mockGoBack = jest.fn();
 const mockCanGoBack = jest.fn().mockReturnValue(true);
+const mockPopToTop = jest.fn();
 
 jest.mock("@react-navigation/native", () => ({
   useNavigation: () => ({
     navigate: mockNavigate,
     goBack: mockGoBack,
     canGoBack: mockCanGoBack,
+    popToTop: mockPopToTop,
   }),
   useRoute: () => ({ params: { patientId: "p1" } }),
 }));
@@ -150,6 +152,23 @@ describe("buildDetailData — médecin référent & consentement RGPD", () => {
     );
     expect(data.consentDate).toEqual(expect.any(String));
     expect(data.consentDate).not.toBe("2026-01-15T10:00:00.000Z");
+  });
+});
+
+describe("PatientDetailRoute — retour vers la racine de l'onglet", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("le bouton `<` appelle popToTop (jamais un cast non-sûr sur navigation)", async () => {
+    resetStore();
+    const { findByLabelText } = render(<PatientDetailRoute />);
+    const backButton = await findByLabelText("Retour");
+
+    fireEvent.press(backButton);
+
+    expect(mockPopToTop).toHaveBeenCalledTimes(1);
+    expect(mockGoBack).not.toHaveBeenCalled();
   });
 });
 

@@ -4,8 +4,8 @@ import { useNavigation, useRoute, type RouteProp } from "@react-navigation/nativ
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../types";
 import { Report, type ReportData, type ReportRow } from "../../screens/Report";
-import { LoadingSpinner } from "../../shared/components/loading-spinner";
-import { ErrorWidget } from "../../shared/components/error-widget";
+import { LoadingState } from "../../components/LoadingState";
+import { ErrorState } from "../../components/ErrorState";
 import { useReportStore } from "../../features/report/store/report-store";
 import {
   downloadReport,
@@ -118,13 +118,14 @@ export function ReportRoute() {
   }, [reportHtml, fileName]);
 
   if (status === "generating") {
-    return <LoadingSpinner fullScreen message="Génération du rapport..." />;
+    return <LoadingState fullScreen message="Génération du rapport..." />;
   }
   if (status === "error" && errorMessage) {
     return (
-      <ErrorWidget
+      <ErrorState
         message={errorMessage}
-        onRetry={() =>
+        actionLabel="Réessayer"
+        onAction={() =>
           generateReport(
             analysis,
             patient,
