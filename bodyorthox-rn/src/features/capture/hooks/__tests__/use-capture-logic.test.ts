@@ -25,54 +25,112 @@ jest.mock("@react-navigation/native", () => ({
   useNavigation: () => ({ reset: jest.fn() }),
 }));
 
-describe("useCaptureLogic — distinction limite plateforme vs erreur ML (mobile natif)", () => {
+const mockDetectFromImage = jest.fn();
+jest.mock("../../../../specs/NativePoseLandmarker", () => ({
+  __esModule: true,
+  default: {
+    detectFromImage: (...args: unknown[]) => mockDetectFromImage(...args),
+    dispose: jest.fn(),
+  },
+}));
+
+const mockOpenNativeCamera = jest.fn();
+jest.mock("../../services/native-image-picker", () => ({
+  openNativeCamera: (...args: unknown[]) => mockOpenNativeCamera(...args),
+  openNativeGallery: jest.fn(),
+  imagePickerResultToDataUrl: (r: { dataUrl: string }) => r.dataUrl,
+}));
+
+/** 33 landmarks d'une pose debout plausible, très visibles */
+function standingPoseLandmarks() {
+  const base = Array.from({ length: 33 }, (_, i) => ({
+    x: 0.5,
+    y: Math.min(0.1 + i * 0.025, 0.95),
+    z: 0,
+    visibility: 0.95,
+  }));
+  const place = (i: number, x: number, y: number) => {
+    base[i] = { x, y, z: 0, visibility: 0.95 };
+  };
+  place(11, 0.42, 0.2); // épaule G
+  place(12, 0.58, 0.2); // épaule D
+  place(23, 0.44, 0.45); // hanche G
+  place(24, 0.56, 0.45); // hanche D
+  place(25, 0.44, 0.65); // genou G
+  place(26, 0.56, 0.65); // genou D
+  place(27, 0.44, 0.85); // cheville G
+  place(28, 0.56, 0.85); // cheville D
+  place(29, 0.43, 0.9); // talon G
+  place(30, 0.57, 0.9); // talon D
+  return base;
+}
+
+describe("useCaptureLogic — analyse native via TurboModule (mobile)", () => {
   beforeAll(() => {
     // @ts-ignore
     Platform.OS = "ios";
   });
 
-  afterAll(() => {
-    // @ts-ignore
-    Platform.OS = "ios";
-  });
-
   beforeEach(() => {
+    mockDetectFromImage.mockReset();
+    mockOpenNativeCamera.mockReset();
     useCaptureStore.getState().reset();
   });
 
-  it("expose un message de limite plateforme (pas une erreur ML) quand on tente d'analyser sur mobile natif", () => {
+  it("l'analyse aboutit sur mobile natif (le détecteur natif est branché)", async () => {
+    mockDetectFromImage.mockResolvedValue({
+      landmarks: standingPoseLandmarks(),
+      width: 1080,
+      height: 1920,
+    });
+
     const { result } = renderHook(() => useCaptureLogic("patient-1"));
 
     act(() => {
       result.current.handlePhotoUploaded("data:image/png;base64,xxx");
     });
 
-    act(() => {
-      result.current.handleAnalyze();
+    await act(async () => {
+      await result.current.handleAnalyze();
     });
 
-    expect(result.current.platformLimitation).toBe(
-      "L'analyse automatique n'est pas disponible sur mobile pour le moment. Utilisez BodyOrthox sur navigateur pour analyser cette capture.",
-    );
+    expect(mockDetectFromImage).toHaveBeenCalled();
     expect(result.current.detectionError).toBeNull();
+    expect(useCaptureStore.getState().phase.type).toBe("success");
   });
 
-  it("efface la limite plateforme quand l'utilisateur recommence la capture", () => {
+  it("n'expose plus de limite plateforme : un échec ML natif est une erreur de détection", async () => {
+    mockDetectFromImage.mockRejectedValue(
+      new Error("E_INIT_FAILED: modèle introuvable"),
+    );
+
     const { result } = renderHook(() => useCaptureLogic("patient-1"));
 
     act(() => {
       result.current.handlePhotoUploaded("data:image/png;base64,xxx");
     });
-    act(() => {
-      result.current.handleAnalyze();
-    });
-    expect(result.current.platformLimitation).not.toBeNull();
 
-    act(() => {
-      result.current.handleRetake();
+    await act(async () => {
+      await result.current.handleAnalyze();
     });
 
-    expect(result.current.platformLimitation).toBeNull();
+    expect(result.current.detectionError).toContain("E_INIT_FAILED");
+    expect(result.current).not.toHaveProperty("platformLimitation");
+  });
+
+  it("handleStartCapture sur natif ouvre la caméra native au lieu de bloquer", async () => {
+    mockOpenNativeCamera.mockResolvedValue({
+      dataUrl: "data:image/jpeg;base64,photo",
+    });
+
+    const { result } = renderHook(() => useCaptureLogic("patient-1"));
+
+    await act(async () => {
+      await result.current.handleStartCapture();
+    });
+
+    expect(mockOpenNativeCamera).toHaveBeenCalledTimes(1);
+    expect(result.current.previewUrl).toBe("data:image/jpeg;base64,photo");
   });
 });
 

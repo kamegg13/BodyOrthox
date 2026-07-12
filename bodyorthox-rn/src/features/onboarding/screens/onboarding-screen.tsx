@@ -197,9 +197,9 @@ export function OnboardingScreen() {
   }, [completeOnboarding, navigation, isReviewMode]);
 
   const requestCameraPermission = useCallback(() => {
-    // Camera permission is handled by the capture screen when needed.
-    // react-native-vision-camera is not linked for Android builds,
-    // so we skip the permission request here to avoid fatal crashes.
+    // Camera permission is handled by the capture screen when needed:
+    // native capture goes through the system camera via image-picker,
+    // so there is no in-app permission to request here.
   }, []);
 
   const isLastPage = currentPage === TOTAL_PAGES - 1;

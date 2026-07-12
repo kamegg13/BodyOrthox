@@ -2,8 +2,10 @@ package com.bodyorthox.app
 
 import android.app.Application
 import cl.json.ShareApplication
+import com.bodyorthox.app.poselandmarker.PoseLandmarkerPackage
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
+import com.facebook.react.common.assets.ReactFontManager
 import com.facebook.react.ReactHost
 import com.facebook.react.ReactNativeHost
 import com.facebook.react.ReactPackage
@@ -23,8 +25,8 @@ class MainApplication : Application(), ShareApplication, ReactApplication {
       object : DefaultReactNativeHost(this) {
         override fun getPackages(): List<ReactPackage> =
             PackageList(this).packages.apply {
-              // Packages that cannot be autolinked yet can be added manually here, for example:
-              // add(MyReactNativePackage())
+              // TurboModule maison : détection de pose MediaPipe on-device
+              add(PoseLandmarkerPackage())
             }
 
         override fun getJSMainModuleName(): String = "index"
@@ -40,6 +42,11 @@ class MainApplication : Application(), ShareApplication, ReactApplication {
 
   override fun onCreate() {
     super.onCreate()
+    // Familles variables déclarées dans res/font/*.xml : les fontWeight
+    // 400-700 des styles JS sélectionnent la vraie graisse (API 28+), alors
+    // qu'une police posée dans assets/fonts resterait figée à 400.
+    ReactFontManager.getInstance().addCustomFont(this, "Lexend", R.font.lexend)
+    ReactFontManager.getInstance().addCustomFont(this, "SourceSans3", R.font.sourcesans3)
     SoLoader.init(this, OpenSourceMergedSoMapping)
     if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
       // If you opted-in for the New Architecture, we load the native entry point for this app.

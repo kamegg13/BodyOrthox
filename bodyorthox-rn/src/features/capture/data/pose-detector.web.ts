@@ -18,12 +18,29 @@ import {
   type NormalizedLandmark,
 } from "@mediapipe/tasks-vision";
 import type { IPoseDetector, PoseDetectionResult } from "./pose-detector";
-import {
-  calculateConfidenceScore,
-  type PoseLandmarks,
-} from "./angle-calculator";
+import { calculateConfidenceScore } from "./angle-calculator";
 import { analyzeImageQuality, ImageQualityError } from "./image-quality";
 import { validateAnatomicalProportions } from "./anatomical-validation";
+import {
+  MIN_POSE_DETECTION_CONFIDENCE,
+  MIN_POSE_PRESENCE_CONFIDENCE,
+  MIN_VISIBILITY,
+  NO_POSE_MESSAGE,
+  NoPoseDetectedError,
+  fuseMultiModelLandmarks,
+  hasValidPose,
+  mediapipeToAllLandmarks,
+  mediapipeToPoseLandmarks,
+} from "./pose-detector-shared";
+
+// Re-export shared pure functions so existing imports/tests keep working
+export {
+  NoPoseDetectedError,
+  fuseMultiModelLandmarks,
+  hasValidPose,
+  mediapipeToAllLandmarks,
+  mediapipeToPoseLandmarks,
+} from "./pose-detector-shared";
 
 const WASM_CDN =
   "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.32/wasm";
@@ -32,12 +49,6 @@ const MODEL_URL_HEAVY =
   "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/latest/pose_landmarker_heavy.task";
 const MODEL_URL_FULL =
   "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task";
-
-/** MediaPipe landmark indices relevant for orthopaedic analysis */
-const RELEVANT_INDICES = [11, 12, 23, 24, 25, 26, 27, 28, 29, 30] as const;
-
-/** Minimum visibility below which a landmark is considered undetected */
-const MIN_VISIBILITY = 0.3;
 
 /** Minimum dimension (longest side) for image upscaling */
 const MIN_DIMENSION = 1920;
@@ -66,66 +77,6 @@ interface PassVariation {
   readonly type: "original" | "crop" | "brightness";
   /** For crop passes: the crop percentage (e.g. 0.95, 0.9) */
   readonly cropPercent?: number;
-}
-
-/**
- * Convert MediaPipe NormalizedLandmark[] (33 points) to our PoseLandmarks
- * format, keeping only the indices relevant for angle calculation.
- */
-export function mediapipeToPoseLandmarks(
-  mpLandmarks: NormalizedLandmark[],
-): PoseLandmarks {
-  const result: PoseLandmarks = {};
-  for (const i of RELEVANT_INDICES) {
-    const lm = mpLandmarks[i];
-    if (lm) {
-      result[i] = {
-        x: lm.x,
-        y: lm.y,
-        z: lm.z ?? 0,
-        visibility: lm.visibility ?? 0,
-      };
-    }
-  }
-  return result;
-}
-
-/**
- * Convert ALL 33 MediaPipe landmarks to PoseLandmarks for full skeleton
- * visualization. This is separate from the angle-relevant subset.
- */
-export function mediapipeToAllLandmarks(
-  mpLandmarks: NormalizedLandmark[],
-): PoseLandmarks {
-  const result: PoseLandmarks = {};
-  for (let i = 0; i < mpLandmarks.length; i++) {
-    const lm = mpLandmarks[i];
-    if (lm) {
-      result[i] = {
-        x: lm.x,
-        y: lm.y,
-        z: lm.z ?? 0,
-        visibility: lm.visibility ?? 0,
-      };
-    }
-  }
-  return result;
-}
-
-/**
- * Check whether the detected landmarks are usable (at least the key joints
- * have visibility above the minimum threshold).
- */
-export function hasValidPose(landmarks: PoseLandmarks): boolean {
-  // Must have at least hip, knee, and ankle on one side
-  const requiredSets = [
-    [23, 25, 27], // left side
-    [24, 26, 28], // right side
-  ];
-
-  return requiredSets.some((indices) =>
-    indices.every((i) => (landmarks[i]?.visibility ?? 0) >= MIN_VISIBILITY),
-  );
 }
 
 /**
@@ -551,62 +502,6 @@ export function mergeRoiResults(
   return merged;
 }
 
-/**
- * Fuse landmarks from two models by weighted average.
- * Weight = average visibility across all landmarks for that model.
- */
-export function fuseMultiModelLandmarks(
-  landmarksA: NormalizedLandmark[],
-  landmarksB: NormalizedLandmark[],
-): NormalizedLandmark[] {
-  const avgVisibility = (lms: NormalizedLandmark[]): number => {
-    if (lms.length === 0) return 0;
-    let sum = 0;
-    for (const lm of lms) {
-      sum += lm.visibility ?? 0;
-    }
-    return sum / lms.length;
-  };
-
-  const weightA = avgVisibility(landmarksA);
-  const weightB = avgVisibility(landmarksB);
-  const totalWeight = weightA + weightB;
-
-  if (totalWeight === 0) return landmarksA;
-
-  const fused: NormalizedLandmark[] = [];
-  const count = Math.max(landmarksA.length, landmarksB.length);
-
-  for (let i = 0; i < count; i++) {
-    const a = landmarksA[i];
-    const b = landmarksB[i];
-
-    if (!a && !b) {
-      fused.push({ x: 0, y: 0, z: 0, visibility: 0 });
-      continue;
-    }
-    if (!a) {
-      fused.push(b!);
-      continue;
-    }
-    if (!b) {
-      fused.push(a);
-      continue;
-    }
-
-    fused.push({
-      x: (a.x * weightA + b.x * weightB) / totalWeight,
-      y: (a.y * weightA + b.y * weightB) / totalWeight,
-      z: ((a.z ?? 0) * weightA + (b.z ?? 0) * weightB) / totalWeight,
-      visibility:
-        ((a.visibility ?? 0) * weightA + (b.visibility ?? 0) * weightB) /
-        totalWeight,
-    });
-  }
-
-  return fused;
-}
-
 /** Options for the detect method */
 export interface DetectOptions {
   /** Enable multi-pass analysis (5 passes averaged). Default: true */
@@ -638,8 +533,8 @@ async function createLandmarker(
       },
       runningMode: "IMAGE",
       numPoses: 1,
-      minPoseDetectionConfidence: 0.7,
-      minPosePresenceConfidence: 0.7,
+      minPoseDetectionConfidence: MIN_POSE_DETECTION_CONFIDENCE,
+      minPosePresenceConfidence: MIN_POSE_PRESENCE_CONFIDENCE,
     });
   } catch {
     // GPU delegate failed — fall back to CPU
@@ -650,8 +545,8 @@ async function createLandmarker(
       },
       runningMode: "IMAGE",
       numPoses: 1,
-      minPoseDetectionConfidence: 0.7,
-      minPosePresenceConfidence: 0.7,
+      minPoseDetectionConfidence: MIN_POSE_DETECTION_CONFIDENCE,
+      minPosePresenceConfidence: MIN_POSE_PRESENCE_CONFIDENCE,
     });
   }
 }
@@ -807,9 +702,7 @@ class MediaPipePoseDetector implements IPoseDetector {
           const allLandmarks = mediapipeToAllLandmarks(mpLandmarks);
 
           if (!hasValidPose(landmarks)) {
-            throw new NoPoseDetectedError(
-              "Aucune personne détectée. Assurez-vous que le patient est entièrement visible dans la photo.",
-            );
+            throw new NoPoseDetectedError(NO_POSE_MESSAGE);
           }
 
           const confidenceScore = calculateConfidenceScore(landmarks);
@@ -857,7 +750,12 @@ class MediaPipePoseDetector implements IPoseDetector {
         : null;
 
       if (heavyResult && fullResult) {
-        return fuseMultiModelLandmarks(heavyResult, fullResult);
+        // Inputs are full NormalizedLandmarks, so the fused result always
+        // carries z + visibility despite the shared LandmarkPoint signature.
+        return fuseMultiModelLandmarks(
+          heavyResult,
+          fullResult,
+        ) as NormalizedLandmark[];
       }
       // Fallback to whichever model succeeded
       return heavyResult ?? fullResult;
@@ -888,9 +786,7 @@ class MediaPipePoseDetector implements IPoseDetector {
       }
 
       if (passResults.length === 0) {
-        throw new NoPoseDetectedError(
-          "Aucune personne détectée. Assurez-vous que le patient est entièrement visible dans la photo.",
-        );
+        throw new NoPoseDetectedError(NO_POSE_MESSAGE);
       }
 
       return averageLandmarks(passResults, successfulVariations);
@@ -912,9 +808,7 @@ class MediaPipePoseDetector implements IPoseDetector {
     const result = this.detectOnImage(workingImage, useMultiModel);
 
     if (!result) {
-      throw new NoPoseDetectedError(
-        "Aucune personne détectée. Assurez-vous que le patient est entièrement visible dans la photo.",
-      );
+      throw new NoPoseDetectedError(NO_POSE_MESSAGE);
     }
 
     return result;
@@ -931,13 +825,6 @@ class MediaPipePoseDetector implements IPoseDetector {
 
   isReady(): boolean {
     return this.ready;
-  }
-}
-
-export class NoPoseDetectedError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "NoPoseDetectedError";
   }
 }
 

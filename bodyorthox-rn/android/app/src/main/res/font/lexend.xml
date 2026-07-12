@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Famille Lexend : la même police variable instanciée par graisse.
+     Indispensable : une police chargée depuis assets/fonts est figée à 400
+     (ReactFontManager ne connaît que normal/bold par fichier) ; via res/font
+     + addCustomFont, fontWeight 400-700 sélectionne la vraie graisse. -->
+<font-family xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <font
+        app:font="@font/lexend_wght"
+        app:fontStyle="normal"
+        app:fontWeight="400"
+        app:fontVariationSettings="'wght' 400" />
+    <font
+        app:font="@font/lexend_wght"
+        app:fontStyle="normal"
+        app:fontWeight="500"
+        app:fontVariationSettings="'wght' 500" />
+    <font
+        app:font="@font/lexend_wght"
+        app:fontStyle="normal"
+        app:fontWeight="600"
+        app:fontVariationSettings="'wght' 600" />
+    <font
+        app:font="@font/lexend_wght"
+        app:fontStyle="normal"
+        app:fontWeight="700"
+        app:fontVariationSettings="'wght' 700" />
+</font-family>

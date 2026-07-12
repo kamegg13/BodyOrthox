@@ -21,3 +21,26 @@ yarn-error.*
 !.env.example
 .env.local
 coverage/
+
+# iOS
+ios/Pods/
+ios/build/
+ios/.xcode.env.local
+vendor/bundle/
+
+# Modèles MediaPipe (téléchargés via scripts/download-models.sh)
+*.task
+
+# SDK Android local
+android/local.properties
+
+# Builds Android
+android/.gradle/
+android/.kotlin/
+android/build/
+android/app/build/
+android/app/.cxx/
+
+# Xcode user state
+ios/**/xcuserdata/
+e2e/shots/

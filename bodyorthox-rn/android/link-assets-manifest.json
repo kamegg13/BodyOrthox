@@ -1,0 +1,13 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "assets/fonts/Lexend.ttf",
+      "sha1": "2dce6e8f7f6bbe0d481e89995b7db53a8dc8d77a"
+    },
+    {
+      "path": "assets/fonts/SourceSans3.ttf",
+      "sha1": "98e4029dc4496f469672746496ad0d8a20c253a6"
+    }
+  ]
+}

@@ -67,7 +67,6 @@ export function CaptureScreen() {
     previewUrl,
     mlLoading,
     detectionError,
-    platformLimitation,
     lowConfidenceWarning,
     restorableDraft,
     webCameraRef,
@@ -111,7 +110,6 @@ export function CaptureScreen() {
         isRecording={phase.type === "recording"}
         mlLoading={mlLoading}
         detectionError={detectionError}
-        platformLimitation={platformLimitation}
         lowConfidenceWarning={lowConfidenceWarning}
         onAnalyze={handleAnalyze}
         onRetake={handleRetake}

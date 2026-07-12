@@ -2,6 +2,36 @@
 
 Checklist de release pour l'app React Native (build Android + build web servi derrière l'API privée Tailscale). Données médicales pseudonymisées : aucun secret ni donnée patient ne doit fuiter (logs, bundle, VCS).
 
+## 0. Prérequis builds natifs (iOS + Android)
+
+### Modèles MediaPipe (obligatoire, une fois par clone)
+
+Les modèles `.task` (~38 Mo) sont **gitignorés** — les télécharger avant tout build natif :
+
+```bash
+./scripts/download-models.sh
+```
+
+Dépose `pose_landmarker_heavy.task` + `pose_landmarker_full.task` dans
+`android/app/src/main/assets/` et `ios/BodyOrthox/Resources/`.
+
+### iOS
+
+- **Xcode complet requis** (les Command Line Tools seuls ne suffisent pas : le SDK
+  iphoneos est nécessaire dès `pod install`). Après installation :
+  `sudo xcode-select -s /Applications/Xcode.app`
+- CocoaPods : utiliser le binaire Homebrew (`brew install cocoapods`), **pas bundler**
+  (conflit ruby système 2.6 / ruby brew sur cette machine).
+- `cd ios && pod install` puis `npm run ios`.
+
+### Android
+
+- SDK Android requis (`~/Library/Android/sdk` via Android Studio → SDK Manager)
+  + JDK (celui d'Android Studio convient : `export JAVA_HOME="/Applications/Android
+  Studio.app/Contents/jbr/Contents/Home"`).
+- La New Architecture est **activée** (`newArchEnabled=true`) — requis par le
+  TurboModule PoseLandmarker (détection de pose on-device).
+
 ## 1. Build Android (release signé)
 
 ### Générer le keystore de release (une seule fois)

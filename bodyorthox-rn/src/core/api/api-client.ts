@@ -1,8 +1,27 @@
+import { Platform } from 'react-native';
 import { loadTokens, saveTokens } from '../auth/token-storage';
 import { parseRefreshedJwt } from '../auth/auth-response-guards';
 
+/**
+ * En build debug natif (__DEV__), l'app cible l'API locale de dev — le
+ * simulateur iOS partage le loopback de l'hôte, l'émulateur Android l'expose
+ * via 10.0.2.2 (lancer l'API : orthopedist_gen_ai-deployment/services/
+ * bodyorthox-api, `npm run dev`, port 3002, sans préfixe /api).
+ * Les builds release et le web (EXPO_PUBLIC_API_URL injecté par webpack)
+ * gardent l'API distante. Device physique en dev : passer par
+ * EXPO_PUBLIC_API_URL n'est pas injecté en natif — pointer ici l'IP LAN
+ * du Mac si besoin.
+ */
+const DEV_NATIVE_API_BASE = Platform.select({
+  android: 'http://10.0.2.2:3002',
+  default: 'http://127.0.0.1:3002',
+});
+
 export const API_BASE =
-  (process.env as any).EXPO_PUBLIC_API_URL ?? 'https://orthogenai.inconnu-elevator.ts.net/api';
+  (process.env as any).EXPO_PUBLIC_API_URL ??
+  (__DEV__ && Platform.OS !== 'web'
+    ? DEV_NATIVE_API_BASE
+    : 'https://orthogenai.inconnu-elevator.ts.net/api');
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) { super(message); }

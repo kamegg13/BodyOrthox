@@ -18,18 +18,6 @@ jest.mock("@react-navigation/native", () => ({
   useRoute: () => ({ params: mockRouteParams }),
 }));
 
-// Mock react-native-vision-camera for camera permission
-jest.mock("react-native-vision-camera", () => ({
-  Camera: {
-    requestCameraPermission: jest.fn().mockResolvedValue("granted"),
-  },
-  useCameraDevice: jest.fn(() => null),
-  useCameraPermission: jest.fn(() => ({
-    hasPermission: false,
-    requestPermission: jest.fn().mockResolvedValue(true),
-  })),
-}));
-
 // Mock localStorage
 const mockLocalStorage: Record<string, string> = {};
 Object.defineProperty(global, "localStorage", {
