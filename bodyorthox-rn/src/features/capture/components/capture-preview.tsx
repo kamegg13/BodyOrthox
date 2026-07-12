@@ -1,6 +1,6 @@
 import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { LoadingSpinner } from "../../../shared/components/loading-spinner";
+import { LoadingState } from "../../../components/LoadingState";
 import { colors, fonts, fontWeight, radius, spacing } from "../../../theme/tokens";
 
 interface CapturePreviewProps {
@@ -41,7 +41,7 @@ export function CapturePreview({
       </View>
       <View style={styles.controls}>
         {isRecording ? (
-          <LoadingSpinner message="Analyse en cours..." />
+          <LoadingState message="Analyse en cours..." />
         ) : platformLimitation ? (
           <View style={styles.infoContainer} testID="platform-limitation">
             <Text style={styles.infoText}>{platformLimitation}</Text>

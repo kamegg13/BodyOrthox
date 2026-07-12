@@ -33,8 +33,48 @@ describe("Dashboard", () => {
   it("ne promet plus un démarrage automatique de l'analyse sur le CTA de capture", () => {
     const { getByText, queryByText } = render(<Dashboard />);
     expect(getByText("Nouvelle capture")).toBeTruthy();
-    expect(getByText("Choisissez un patient pour démarrer")).toBeTruthy();
+    expect(getByText("Choisissez le patient et la capture démarre")).toBeTruthy();
     expect(queryByText("L’analyse HKA démarre automatiquement")).toBeNull();
+    expect(queryByText("Choisissez un patient pour démarrer")).toBeNull();
+  });
+
+  it("ouvre le sélecteur rapide de patient au tap sur le CTA hero « Capture »", () => {
+    const { getByLabelText, queryByLabelText } = render(<Dashboard />);
+    expect(queryByLabelText("Rechercher un patient")).toBeNull();
+    fireEvent.press(getByLabelText("Capture"));
+    expect(getByLabelText("Rechercher un patient")).toBeTruthy();
+  });
+
+  it("sélectionner un patient dans le sélecteur déclenche onCaptureForPatient et referme le picker", () => {
+    usePatientsStore.setState({
+      patients: [makePatient({ id: "p1", name: "Jean Dupont" })],
+    });
+    const onCaptureForPatient = jest.fn();
+    const { getByLabelText, getAllByLabelText, queryByLabelText } = render(
+      <Dashboard onCaptureForPatient={onCaptureForPatient} />,
+    );
+    fireEvent.press(getByLabelText("Capture"));
+    // Le même patient apparaît aussi dans « Patients récents » : on cible la
+    // ligne du picker, la dernière dans l'arbre rendu.
+    const rows = getAllByLabelText("Jean Dupont");
+    fireEvent.press(rows[rows.length - 1]!);
+    expect(onCaptureForPatient).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "p1" }),
+    );
+    expect(queryByLabelText("Rechercher un patient")).toBeNull();
+  });
+
+  it("« Nouveau patient » dans le sélecteur déclenche onQuickAction et referme le picker", () => {
+    const onQuickAction = jest.fn();
+    const { getByLabelText, queryByLabelText, getAllByLabelText } = render(
+      <Dashboard onQuickAction={onQuickAction} />,
+    );
+    fireEvent.press(getByLabelText("Capture"));
+    const newPatientButtons = getAllByLabelText("Nouveau patient");
+    // Le dernier est celui du picker (le premier est la grille d'actions).
+    fireEvent.press(newPatientButtons[newPatientButtons.length - 1]!);
+    expect(onQuickAction).toHaveBeenCalledWith("new-patient");
+    expect(queryByLabelText("Rechercher un patient")).toBeNull();
   });
 
   it("calcule les nouveaux patients du jour à partir des vrais timestamps", () => {

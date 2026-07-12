@@ -24,7 +24,6 @@ import { Dashboard } from "./src/screens/Dashboard";
 import { PatientList } from "./src/screens/PatientList";
 import { PatientDetail, SAMPLE_PATIENT_DETAIL } from "./src/screens/PatientDetail";
 import { NewPatient } from "./src/screens/NewPatient";
-import { Capture } from "./src/screens/Capture";
 import { Processing } from "./src/screens/Processing";
 import { Results, SAMPLE_RESULTS } from "./src/screens/Results";
 import { Report, SAMPLE_REPORT } from "./src/screens/Report";
@@ -221,8 +220,6 @@ function PreviewScreen({ name }: { name: string }) {
       return <PatientDetail data={SAMPLE_PATIENT_DETAIL} />;
     case "new-patient":
       return <NewPatient />;
-    case "capture":
-      return <Capture />;
     case "processing":
       return <Processing />;
     case "results":

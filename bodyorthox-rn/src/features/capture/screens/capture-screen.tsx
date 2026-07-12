@@ -16,7 +16,7 @@ import { useCaptureLogic } from "../hooks/use-capture-logic";
 import { CapturePreview } from "../components/capture-preview";
 import { CaptureSuccess } from "../components/capture-success";
 import { GuidedCameraOverlay } from "../components/guided-camera-overlay";
-import { LoadingSpinner } from "../../../shared/components/loading-spinner";
+import { LoadingState } from "../../../components/LoadingState";
 import { Btn } from "../../../components/Btn";
 import { Icon } from "../../../components/icons";
 import {
@@ -71,6 +71,7 @@ export function CaptureScreen() {
     lowConfidenceWarning,
     restorableDraft,
     webCameraRef,
+    handleLuminositySample,
     handleWebCameraPermissionDenied,
     handlePhotoUploaded,
     handleNativeCamera,
@@ -135,7 +136,7 @@ export function CaptureScreen() {
 
   if (phase.type === "idle" || phase.type === "requesting_permission") {
     return (
-      <LoadingSpinner fullScreen message="Initialisation de la caméra..." />
+      <LoadingState fullScreen message="Initialisation de la caméra..." />
     );
   }
 
@@ -208,6 +209,7 @@ export function CaptureScreen() {
           <WebCamera
             ref={webCameraRef}
             onPermissionDenied={handleWebCameraPermissionDenied}
+            onLuminositySample={handleLuminositySample}
           />
         ) : (
           <View style={[StyleSheet.absoluteFill, styles.nativePlaceholder]}>
@@ -259,7 +261,7 @@ export function CaptureScreen() {
                 </View>
               </>
             ) : (
-              <LoadingSpinner message="Capture en cours..." />
+              <LoadingState message="Capture en cours..." />
             )}
           </View>
         )}

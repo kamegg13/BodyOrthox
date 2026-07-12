@@ -94,6 +94,11 @@ export function PatientDetailRoute() {
     if (!last) return;
     navigation.navigate("Report", { analysis: last, patient });
   }, [navigation, patient, analyses]);
+  const handleProgressionReport = useCallback(() => {
+    if (!patient) return;
+    if (analyses.length < 2) return;
+    navigation.navigate("ProgressionSelection", { patient, analyses: [...analyses] });
+  }, [navigation, patient, analyses]);
   const handleHistoryPress = useCallback(
     (item: AnalysisHistoryItem) => {
       navigation.navigate("Results", { analysisId: item.id, patientId });
@@ -169,6 +174,7 @@ export function PatientDetailRoute() {
       onEdit={handleEdit}
       onCapture={handleCapture}
       onGeneratePdf={handleGeneratePdf}
+      onProgressionReport={handleProgressionReport}
       onHistoryPress={handleHistoryPress}
       onTabPress={handleTabPress}
       onArchive={handleArchive}
@@ -211,6 +217,7 @@ export function buildDetailData(patient: Patient, analyses: readonly Analysis[])
     diagnosisLabel: "Diagnostic principal",
     diagnosisDescription,
     history: buildHistory(analyses),
+    analysisCount: analyses.length,
     ...(patient.referringPhysician ? { referringPhysician: patient.referringPhysician } : {}),
     ...(patient.consentDate ? { consentDate: formatShortDate(patient.consentDate) } : {}),
   };

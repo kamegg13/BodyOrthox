@@ -21,6 +21,7 @@ import { AdminScreen } from "../features/admin/screens/admin-screen";
 import { CalibrationScreen } from "../features/capture/calibration/calibration-screen";
 import { ProtocolsScreen } from "../features/resources/screens/protocols-screen";
 import { ProgressionReportScreen } from "../features/report/screens/progression-report-screen";
+import { ProgressionSelectionScreen } from "../features/report/screens/progression-selection-screen";
 // Screens v2 (refonte design)
 import {
   DashboardRoute,
@@ -101,6 +102,11 @@ function AnalysesStackScreen() {
         options={{ headerShown: false }}
       />
       <AnalysesStack.Screen
+        name="ProgressionSelection"
+        component={ProgressionSelectionScreen}
+        options={{ headerShown: false }}
+      />
+      <AnalysesStack.Screen
         name="ProgressionReport"
         component={ProgressionReportScreen}
         options={{ title: "Rapport de progression" }}
@@ -151,6 +157,11 @@ function PatientsTabStackScreen() {
       <PatientsTabStack.Screen
         name="Report"
         component={ReportRoute}
+        options={{ headerShown: false }}
+      />
+      <PatientsTabStack.Screen
+        name="ProgressionSelection"
+        component={ProgressionSelectionScreen}
         options={{ headerShown: false }}
       />
       <PatientsTabStack.Screen

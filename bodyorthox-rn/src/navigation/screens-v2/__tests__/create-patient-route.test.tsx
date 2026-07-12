@@ -1,6 +1,6 @@
 import React from "react";
 import { Alert } from "react-native";
-import { render, fireEvent } from "@testing-library/react-native";
+import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import { CreatePatientRoute, formValuesToCreateInput } from "../create-patient-route";
 import { NEW_PATIENT_DRAFT_KEY, type NewPatientFormValues } from "../../../screens/NewPatient";
 import {
@@ -126,6 +126,10 @@ function makeValues(overrides: Partial<NewPatientFormValues> = {}): NewPatientFo
     diagnosis: "Scoliose",
     referringPhysician: "",
     observations: "",
+    laterality: null,
+    activityLevel: null,
+    sport: "",
+    pains: [],
     consentStorage: false,
     consentPhotoCapture: false,
     consentPdfExport: false,
@@ -176,5 +180,80 @@ describe("formValuesToCreateInput", () => {
   it("does not fabricate a consentDate when consents were not captured", () => {
     const input = formValuesToCreateInput(makeValues({ consentDate: null }));
     expect(input.consentDate).toBeUndefined();
+  });
+
+  it("maps the clinical profile fields (laterality, activityLevel, sport, pains)", () => {
+    const input = formValuesToCreateInput(
+      makeValues({
+        laterality: "left",
+        activityLevel: "athlete",
+        sport: "Tennis",
+        pains: [
+          { id: "p1", location: "knee", side: "left", intensity: 4, type: "chronic" },
+        ],
+      }),
+    );
+    expect(input.morphologicalProfile?.laterality).toBe("left");
+    expect(input.morphologicalProfile?.activityLevel).toBe("athlete");
+    expect(input.morphologicalProfile?.sport).toBe("Tennis");
+    expect(input.morphologicalProfile?.pains).toHaveLength(1);
+  });
+
+  it("omits the clinical profile fields when left empty", () => {
+    const input = formValuesToCreateInput(makeValues());
+    expect(input.morphologicalProfile?.laterality).toBeUndefined();
+    expect(input.morphologicalProfile?.activityLevel).toBeUndefined();
+    expect(input.morphologicalProfile?.sport).toBeUndefined();
+    expect(input.morphologicalProfile?.pains).toBeUndefined();
+  });
+});
+
+function fillRequiredFields(getByTestId: ReturnType<typeof render>["getByTestId"], getByText: ReturnType<typeof render>["getByText"]) {
+  fireEvent.changeText(getByTestId("np-first-name"), "Sophie");
+  fireEvent.changeText(getByTestId("np-last-name"), "Leclerc");
+  fireEvent.press(getByTestId("np-sex"));
+  fireEvent.press(getByText("Femme"));
+  fireEvent.changeText(getByTestId("np-dob"), "01011990");
+}
+
+describe("CreatePatientRoute — enregistrer sans capturer", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    setKeyValueStorage(makeMemoryStorage());
+  });
+
+  afterEach(() => {
+    __resetKeyValueStorage();
+  });
+
+  it("navigue vers Capture avec le CTA principal", async () => {
+    mockCreatePatient.mockResolvedValue({ id: "patient-1" });
+    const { getByTestId, getByText } = render(<CreatePatientRoute />);
+    fillRequiredFields(getByTestId, getByText);
+    fireEvent.press(getByTestId("np-consent-0"));
+    fireEvent.press(getByTestId("np-consent-1"));
+    fireEvent.press(getByTestId("np-consent-2"));
+
+    fireEvent.press(getByTestId("np-submit"));
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith("Capture", { patientId: "patient-1" });
+    });
+  });
+
+  it("navigue vers la fiche patient avec le CTA « Enregistrer sans capturer »", async () => {
+    mockCreatePatient.mockResolvedValue({ id: "patient-2" });
+    const { getByTestId, getByText } = render(<CreatePatientRoute />);
+    fillRequiredFields(getByTestId, getByText);
+    fireEvent.press(getByTestId("np-consent-0"));
+    fireEvent.press(getByTestId("np-consent-1"));
+    fireEvent.press(getByTestId("np-consent-2"));
+
+    fireEvent.press(getByTestId("np-submit-secondary"));
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith("PatientDetail", { patientId: "patient-2" });
+    });
+    expect(mockNavigate).not.toHaveBeenCalledWith("Capture", expect.anything());
   });
 });

@@ -25,9 +25,16 @@ import {
   fontWeight,
   radius,
   shadows,
+  sizes,
   spacing,
 } from "../theme/tokens";
 import { getKeyValueStorage } from "../core/storage/key-value-storage";
+import { PainEditor } from "../features/patients/components/pain-editor";
+import type {
+  ActivityLevel,
+  Laterality,
+  PainEntry,
+} from "../features/patients/domain/patient";
 
 export interface NewPatientFormValues {
   readonly firstName: string;
@@ -39,6 +46,11 @@ export interface NewPatientFormValues {
   readonly diagnosis: string;
   readonly referringPhysician: string;
   readonly observations: string;
+  /** Profil clinique — facultatif, saisi à la création ou complété en édition. */
+  readonly laterality: Laterality | null;
+  readonly activityLevel: ActivityLevel | null;
+  readonly sport: string;
+  readonly pains: PainEntry[];
   /** Consentement granulaire (RGPD) — preuve par finalité. */
   readonly consentStorage: boolean;
   readonly consentPhotoCapture: boolean;
@@ -47,7 +59,12 @@ export interface NewPatientFormValues {
   readonly consentDate: string | null;
 }
 
+export type NewPatientMode = "create" | "edit";
+/** Distingue le CTA principal (déclenche la capture) du CTA secondaire (enregistre sans capturer). */
+export type NewPatientSubmitAction = "primary" | "secondary";
+
 interface NewPatientProps {
+  readonly mode?: NewPatientMode;
   readonly title?: string;
   readonly initialValues?: Partial<NewPatientFormValues>;
   readonly skipConsents?: boolean;
@@ -55,7 +72,7 @@ interface NewPatientProps {
   readonly isSubmitting?: boolean;
   readonly errorMessage?: string | null;
   readonly onCancel?: () => void;
-  readonly onSave?: (values: NewPatientFormValues) => void;
+  readonly onSave?: (values: NewPatientFormValues, action: NewPatientSubmitAction) => void;
   /** Signale à l'écran parent si la saisie contient des changements non enregistrés. */
   readonly onDirtyChange?: (dirty: boolean) => void;
 }
@@ -77,6 +94,19 @@ const DIAGNOSIS_OPTIONS: readonly string[] = [
   "Autre",
 ];
 
+const LATERALITY_OPTIONS: readonly { value: Laterality; label: string }[] = [
+  { value: "right", label: "Droitier" },
+  { value: "left", label: "Gaucher" },
+  { value: "ambidextrous", label: "Ambidextre" },
+];
+
+const ACTIVITY_OPTIONS: readonly { value: ActivityLevel; label: string }[] = [
+  { value: "sedentary", label: "Sédentaire" },
+  { value: "moderate", label: "Modéré" },
+  { value: "active", label: "Actif" },
+  { value: "athlete", label: "Athlète" },
+];
+
 /** Clé de persistance du brouillon — un seul brouillon de création à la fois. */
 export const NEW_PATIENT_DRAFT_KEY = "new_patient_draft_v1";
 
@@ -95,6 +125,10 @@ interface NewPatientDraftV1 {
   readonly diagnosis: string;
   readonly referring: string;
   readonly observations: string;
+  readonly laterality: Laterality | null;
+  readonly activityLevel: ActivityLevel | null;
+  readonly sport: string;
+  readonly pains: PainEntry[];
 }
 
 function isDraftEmpty(d: NewPatientDraftV1): boolean {
@@ -107,7 +141,11 @@ function isDraftEmpty(d: NewPatientDraftV1): boolean {
     !d.weightKg &&
     !d.diagnosis &&
     !d.referring &&
-    !d.observations
+    !d.observations &&
+    !d.laterality &&
+    !d.activityLevel &&
+    !d.sport &&
+    d.pains.length === 0
   );
 }
 
@@ -126,6 +164,10 @@ function readDraft(): NewPatientDraftV1 | null {
       diagnosis: parsed.diagnosis ?? "",
       referring: parsed.referring ?? "",
       observations: parsed.observations ?? "",
+      laterality: parsed.laterality ?? null,
+      activityLevel: parsed.activityLevel ?? null,
+      sport: parsed.sport ?? "",
+      pains: parsed.pains ?? [],
     };
   } catch {
     // Brouillon corrompu — ignoré silencieusement, comme s'il n'existait pas.
@@ -139,20 +181,26 @@ export function clearNewPatientDraft(): void {
 }
 
 export function NewPatient({
-  title = "Nouveau patient",
+  mode = "create",
+  title,
   initialValues,
   skipConsents = false,
-  submitLabel = "Creer le patient & demarrer la capture",
+  submitLabel,
   isSubmitting = false,
   errorMessage,
   onCancel,
   onSave,
   onDirtyChange,
 }: NewPatientProps) {
+  const isEdit = mode === "edit";
+  const resolvedTitle = title ?? (isEdit ? "Modifier le patient" : "Nouveau patient");
+  const resolvedSubmitLabel =
+    submitLabel ?? (isEdit ? "Enregistrer les modifications" : "Créer et capturer");
+
   const [firstName, setFirstName] = useState(initialValues?.firstName ?? "");
   const [lastName, setLastName] = useState(initialValues?.lastName ?? "");
   const [sex, setSex] = useState<NewPatientFormValues["sex"]>(initialValues?.sex ?? null);
-  const [dob, setDob] = useState(formatDobForInput(initialValues?.dateOfBirth));
+  const [dob, setDob] = useState(formatIsoDateForDisplay(initialValues?.dateOfBirth));
   const [heightCm, setHeightCm] = useState(
     initialValues?.heightCm ? String(initialValues.heightCm) : "",
   );
@@ -162,11 +210,36 @@ export function NewPatient({
   const [diagnosis, setDiagnosis] = useState(initialValues?.diagnosis ?? "");
   const [referring, setReferring] = useState(initialValues?.referringPhysician ?? "");
   const [observations, setObservations] = useState(initialValues?.observations ?? "");
-  const [consents, setConsents] = useState<boolean[]>(
-    skipConsents ? [true, true, true] : [false, false, false],
+  const [laterality, setLaterality] = useState<Laterality | null>(
+    initialValues?.laterality ?? null,
   );
+  const [activityLevel, setActivityLevel] = useState<ActivityLevel | null>(
+    initialValues?.activityLevel ?? null,
+  );
+  const [sport, setSport] = useState(initialValues?.sport ?? "");
+  const [pains, setPains] = useState<PainEntry[]>(initialValues?.pains ?? []);
+  const [consents, setConsents] = useState<boolean[]>(() => {
+    if (isEdit) {
+      // Déjà recueillis par ailleurs — l'écran d'édition ne les recapture pas.
+      return [
+        initialValues?.consentStorage ?? true,
+        initialValues?.consentPhotoCapture ?? true,
+        initialValues?.consentPdfExport ?? true,
+      ];
+    }
+    return skipConsents ? [true, true, true] : [false, false, false];
+  });
   const [showSexPicker, setShowSexPicker] = useState(false);
   const [showDxPicker, setShowDxPicker] = useState(false);
+  const [clinicalOpen, setClinicalOpen] = useState<boolean>(
+    isEdit ||
+      Boolean(
+        initialValues?.laterality ||
+          initialValues?.activityLevel ||
+          initialValues?.sport?.trim() ||
+          (initialValues?.pains && initialValues.pains.length > 0),
+      ),
+  );
 
   const [touched, setTouched] = useState<Partial<Record<TouchableFieldKey, boolean>>>({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
@@ -179,10 +252,10 @@ export function NewPatient({
   const sexWrapRef = useRef<View>(null);
   const consentWrapRef = useRef<View>(null);
 
-  // Restaure un éventuel brouillon au montage. On n'écrase jamais un
-  // formulaire pré-rempli explicitement par l'appelant (mode edit/duplication).
+  // Restaure un éventuel brouillon au montage — jamais en édition, et jamais
+  // pour un formulaire pré-rempli explicitement par l'appelant (duplication).
   useEffect(() => {
-    if (initialValues) return;
+    if (isEdit || initialValues) return;
     const draft = readDraft();
     if (!draft || isDraftEmpty(draft)) return;
     setFirstName(draft.firstName);
@@ -194,14 +267,23 @@ export function NewPatient({
     setDiagnosis(draft.diagnosis);
     setReferring(draft.referring);
     setObservations(draft.observations);
+    setLaterality(draft.laterality);
+    setActivityLevel(draft.activityLevel);
+    setSport(draft.sport);
+    setPains(draft.pains);
+    if (draft.laterality || draft.activityLevel || draft.sport || draft.pains.length > 0) {
+      setClinicalOpen(true);
+    }
     setDraftRestored(true);
     // Montage uniquement — le brouillon n'est restauré qu'une fois.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Persiste le brouillon avec un léger debounce — jamais les consentements
-  // (preuve RGPD à recueillir fraîchement à chaque création).
+  // (preuve RGPD à recueillir fraîchement à chaque création), jamais en édition
+  // (un patient existant ne doit ni lire ni écraser le brouillon de création).
   useEffect(() => {
+    if (isEdit) return;
     const timer = setTimeout(() => {
       const draft: NewPatientDraftV1 = {
         firstName,
@@ -213,6 +295,10 @@ export function NewPatient({
         diagnosis,
         referring,
         observations,
+        laterality,
+        activityLevel,
+        sport,
+        pains,
       };
       if (isDraftEmpty(draft)) {
         getKeyValueStorage().removeItem(NEW_PATIENT_DRAFT_KEY);
@@ -221,20 +307,47 @@ export function NewPatient({
       }
     }, DRAFT_DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [firstName, lastName, sex, dob, heightCm, weightKg, diagnosis, referring, observations]);
+  }, [
+    isEdit,
+    firstName,
+    lastName,
+    sex,
+    dob,
+    heightCm,
+    weightKg,
+    diagnosis,
+    referring,
+    observations,
+    laterality,
+    activityLevel,
+    sport,
+    pains,
+  ]);
 
   const initialSnapshotRef = useRef(
     JSON.stringify({
       firstName: initialValues?.firstName ?? "",
       lastName: initialValues?.lastName ?? "",
       sex: initialValues?.sex ?? null,
-      dob: formatDobForInput(initialValues?.dateOfBirth),
+      dob: formatIsoDateForDisplay(initialValues?.dateOfBirth),
       heightCm: initialValues?.heightCm ? String(initialValues.heightCm) : "",
       weightKg: initialValues?.weightKg ? String(initialValues.weightKg) : "",
       diagnosis: initialValues?.diagnosis ?? "",
       referring: initialValues?.referringPhysician ?? "",
       observations: initialValues?.observations ?? "",
-      consents: skipConsents ? [true, true, true] : [false, false, false],
+      laterality: initialValues?.laterality ?? null,
+      activityLevel: initialValues?.activityLevel ?? null,
+      sport: initialValues?.sport ?? "",
+      pains: initialValues?.pains ?? [],
+      consents: isEdit
+        ? [
+            initialValues?.consentStorage ?? true,
+            initialValues?.consentPhotoCapture ?? true,
+            initialValues?.consentPdfExport ?? true,
+          ]
+        : skipConsents
+          ? [true, true, true]
+          : [false, false, false],
     }),
   );
 
@@ -249,16 +362,38 @@ export function NewPatient({
       diagnosis,
       referring,
       observations,
+      laterality,
+      activityLevel,
+      sport,
+      pains,
       consents,
     });
     return current !== initialSnapshotRef.current;
-  }, [firstName, lastName, sex, dob, heightCm, weightKg, diagnosis, referring, observations, consents]);
+  }, [
+    firstName,
+    lastName,
+    sex,
+    dob,
+    heightCm,
+    weightKg,
+    diagnosis,
+    referring,
+    observations,
+    laterality,
+    activityLevel,
+    sport,
+    pains,
+    consents,
+  ]);
 
   useEffect(() => {
     onDirtyChange?.(isDirty);
   }, [isDirty, onDirtyChange]);
 
   const allConsents = consents.every(Boolean);
+  // En édition, les consentements ont déjà été recueillis ailleurs : jamais
+  // requis, jamais ré-affichés sous forme de cases à cocher.
+  const consentsRequired = !isEdit && !skipConsents;
 
   const fieldErrors = useMemo(() => {
     const e: Partial<Record<TouchableFieldKey, string>> = {};
@@ -272,13 +407,13 @@ export function NewPatient({
 
   const missing = useMemo(() => {
     const m: string[] = [];
-    if (fieldErrors.firstName) m.push("Prenom");
+    if (fieldErrors.firstName) m.push("Prénom");
     if (fieldErrors.lastName) m.push("Nom");
     if (fieldErrors.sex) m.push("Sexe");
     if (fieldErrors.dob) m.push("Naissance");
-    if (!skipConsents && !allConsents) m.push("Consentements");
+    if (consentsRequired && !allConsents) m.push("Consentements");
     return m;
-  }, [fieldErrors, allConsents, skipConsents]);
+  }, [fieldErrors, allConsents, consentsRequired]);
 
   const formValid = missing.length === 0;
 
@@ -332,7 +467,7 @@ export function NewPatient({
       dobRef.current?.focus();
       return;
     }
-    if (!skipConsents && !allConsents) {
+    if (consentsRequired && !allConsents) {
       scrollIntoView(consentWrapRef);
     }
   }
@@ -347,11 +482,15 @@ export function NewPatient({
     setDiagnosis("");
     setReferring("");
     setObservations("");
+    setLaterality(null);
+    setActivityLevel(null);
+    setSport("");
+    setPains([]);
     clearNewPatientDraft();
     setDraftRestored(false);
   }
 
-  function handleSubmit() {
+  function handleSubmit(action: NewPatientSubmitAction) {
     if (isSubmitting) return;
     setSubmitAttempted(true);
     setTouched({ firstName: true, lastName: true, sex: true, dob: true });
@@ -361,39 +500,65 @@ export function NewPatient({
     }
     const iso = parseDobToIso(dob);
     if (!iso || !sex) return;
-    clearNewPatientDraft();
-    setDraftRestored(false);
-    // skipConsents = les 3 cases ne sont pas affichées : on ne fabrique jamais
-    // une preuve de consentement pour un écran où le patient ne les a pas vues.
-    onSave?.({
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      sex,
-      dateOfBirth: iso,
-      heightCm: parseNumberOrNull(heightCm),
-      weightKg: parseNumberOrNull(weightKg),
-      diagnosis: diagnosis.trim(),
-      referringPhysician: referring.trim(),
-      observations: observations.trim(),
-      consentStorage: skipConsents ? false : consents[0],
-      consentPhotoCapture: skipConsents ? false : consents[1],
-      consentPdfExport: skipConsents ? false : consents[2],
-      consentDate: !skipConsents && allConsents ? new Date().toISOString() : null,
-    });
+    if (!isEdit) {
+      clearNewPatientDraft();
+      setDraftRestored(false);
+    }
+
+    // En édition, les consentements ne sont jamais recapturés : on renvoie
+    // tels quels ceux déjà recueillis (jamais fabriqués côté formulaire).
+    const consentPayload = isEdit
+      ? {
+          storage: consents[0],
+          photo: consents[1],
+          pdf: consents[2],
+          date: initialValues?.consentDate ?? null,
+        }
+      : skipConsents
+        ? { storage: false, photo: false, pdf: false, date: null }
+        : {
+            storage: consents[0],
+            photo: consents[1],
+            pdf: consents[2],
+            date: allConsents ? new Date().toISOString() : null,
+          };
+
+    onSave?.(
+      {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        sex,
+        dateOfBirth: iso,
+        heightCm: parseNumberOrNull(heightCm),
+        weightKg: parseNumberOrNull(weightKg),
+        diagnosis: diagnosis.trim(),
+        referringPhysician: referring.trim(),
+        observations: observations.trim(),
+        laterality,
+        activityLevel,
+        sport: sport.trim(),
+        pains,
+        consentStorage: consentPayload.storage,
+        consentPhotoCapture: consentPayload.photo,
+        consentPdfExport: consentPayload.pdf,
+        consentDate: consentPayload.date,
+      },
+      action,
+    );
   }
 
-  const showConsentError = submitAttempted && !skipConsents && !allConsents;
+  const showConsentError = submitAttempted && consentsRequired && !allConsents;
 
   return (
     <View style={styles.root}>
       <StatusBar barStyle="dark-content" />
       <SafeAreaView edges={["top"]} style={styles.headerSafe}>
         <NavBar
-          title={title}
+          title={resolvedTitle}
           back
           onBack={onCancel}
           action={isSubmitting ? "..." : "Enregistrer"}
-          onAction={isSubmitting ? undefined : handleSubmit}
+          onAction={isSubmitting ? undefined : () => handleSubmit("primary")}
         />
       </SafeAreaView>
 
@@ -418,7 +583,7 @@ export function NewPatient({
             <View style={styles.col}>
               <Field
                 ref={firstNameRef}
-                label="Prenom"
+                label="Prénom"
                 placeholder="Sophie"
                 value={firstName}
                 onChangeText={setFirstName}
@@ -511,7 +676,7 @@ export function NewPatient({
             testID="np-diagnosis"
           />
           <Field
-            label="Medecin referent"
+            label="Médecin référent"
             placeholder="Dr. ..."
             icon="user"
             value={referring}
@@ -533,7 +698,62 @@ export function NewPatient({
           </View>
         </View>
 
-        {!skipConsents ? (
+        <SectionLabel
+          style={styles.sectionGap}
+          right={
+            <Pressable
+              onPress={() => setClinicalOpen((v) => !v)}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: clinicalOpen }}
+              accessibilityLabel={
+                clinicalOpen ? "Réduire le profil clinique" : "Déplier le profil clinique"
+              }
+              testID="np-clinical-toggle"
+            >
+              <View style={{ transform: [{ rotate: clinicalOpen ? "180deg" : "0deg" }] }}>
+                <Icon name="chevDown" size={16} color={colors.textMuted} />
+              </View>
+            </Pressable>
+          }
+        >
+          {isEdit ? "Profil clinique" : "Profil clinique (optionnel)"}
+        </SectionLabel>
+        {clinicalOpen ? (
+          <View style={{ gap: 12 }} testID="np-clinical-section">
+            <View>
+              <Text style={styles.fieldLabel}>Latéralité</Text>
+              <ToggleChips
+                options={LATERALITY_OPTIONS}
+                value={laterality}
+                onSelect={setLaterality}
+                testIDPrefix="np-laterality"
+              />
+            </View>
+            <View>
+              <Text style={styles.fieldLabel}>Niveau d'activité</Text>
+              <ToggleChips
+                options={ACTIVITY_OPTIONS}
+                value={activityLevel}
+                onSelect={setActivityLevel}
+                testIDPrefix="np-activity"
+              />
+            </View>
+            <Field
+              label="Sport pratiqué"
+              placeholder="Tennis, course à pied..."
+              value={sport}
+              onChangeText={setSport}
+              testID="np-sport"
+            />
+            <View>
+              <Text style={styles.fieldLabel}>Douleurs</Text>
+              <PainEditor pains={pains} onChange={setPains} />
+            </View>
+          </View>
+        ) : null}
+
+        {consentsRequired ? (
           <>
             <SectionLabel style={styles.sectionGap}>Consentements patient</SectionLabel>
             <View style={styles.consentCard} ref={consentWrapRef}>
@@ -579,18 +799,41 @@ export function NewPatient({
           </>
         ) : null}
 
+        {isEdit ? (
+          <>
+            <SectionLabel style={styles.sectionGap}>Consentement patient</SectionLabel>
+            <View style={styles.consentReadonlyCard} testID="np-consent-readonly">
+              <Icon name="check" size={14} color={colors.green} strokeWidth={2.5} />
+              <Text style={styles.consentReadonlyText}>
+                {initialValues?.consentDate
+                  ? `Consentement recueilli le ${formatIsoDateForDisplay(initialValues.consentDate)}`
+                  : "Consentement recueilli (date non renseignée)"}
+              </Text>
+            </View>
+          </>
+        ) : null}
+
         {errorMessage ? <Text style={styles.errorBanner}>{errorMessage}</Text> : null}
       </ScrollView>
 
       <SafeAreaView edges={["bottom"]} style={styles.actionBar}>
         <View style={styles.actionBarInner}>
           <Btn
-            label={submitLabel}
-            icon="camera"
+            label={resolvedSubmitLabel}
+            icon={isEdit ? undefined : "camera"}
             disabled={isSubmitting}
-            onPress={handleSubmit}
+            onPress={() => handleSubmit("primary")}
             testID="np-submit"
           />
+          {!isEdit ? (
+            <Btn
+              label="Enregistrer sans capturer"
+              variant="secondary"
+              disabled={isSubmitting}
+              onPress={() => handleSubmit("secondary")}
+              testID="np-submit-secondary"
+            />
+          ) : null}
         </View>
       </SafeAreaView>
 
@@ -665,11 +908,51 @@ function PickerModal({ visible, title, options, selectedValue, onSelect, onClose
   );
 }
 
+interface ToggleChipsProps<T extends string> {
+  readonly options: readonly { value: T; label: string }[];
+  readonly value: T | null;
+  readonly onSelect: (value: T | null) => void;
+  readonly testIDPrefix: string;
+}
+
+/** Groupe de puces à sélection unique (déselectionnable) — latéralité, niveau d'activité. */
+function ToggleChips<T extends string>({
+  options,
+  value,
+  onSelect,
+  testIDPrefix,
+}: ToggleChipsProps<T>) {
+  return (
+    <View style={styles.chipsRow}>
+      {options.map((o) => {
+        const active = value === o.value;
+        return (
+          <Pressable
+            key={o.value}
+            onPress={() => onSelect(active ? null : o.value)}
+            style={({ pressed }) => [
+              styles.chip,
+              active && styles.chipActive,
+              pressed && styles.pressed,
+            ]}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: active }}
+            testID={`${testIDPrefix}-${o.value}`}
+          >
+            <Text style={[styles.chipText, active && styles.chipTextActive]}>{o.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 function labelForSex(s: "male" | "female" | "other"): string {
   return s === "female" ? "Femme" : s === "male" ? "Homme" : "Non precise";
 }
 
-function formatDobForInput(iso?: string): string {
+/** Convertit une date ISO (naissance ou consentement) en JJ/MM/AAAA pour affichage/saisie. */
+function formatIsoDateForDisplay(iso?: string | null): string {
   if (!iso) return "";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
@@ -750,6 +1033,34 @@ const styles = StyleSheet.create({
     minHeight: 44,
     textAlignVertical: "top",
   },
+  chipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.s8,
+  },
+  chip: {
+    paddingHorizontal: spacing.s12,
+    height: sizes.chip,
+    borderRadius: radius.chip,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.bgCard,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  chipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  chipText: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    color: colors.textSecond,
+  },
+  chipTextActive: {
+    color: colors.textInverse,
+    fontWeight: fontWeight.semiBold,
+  },
   consentCard: {
     backgroundColor: colors.bgCard,
     borderRadius: radius.cardLg,
@@ -795,6 +1106,22 @@ const styles = StyleSheet.create({
     fontFamily: fonts.sans,
     fontSize: fontSize.caption,
     color: colors.red,
+  },
+  consentReadonlyCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: colors.greenLight,
+    borderRadius: radius.cardLg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 14,
+  },
+  consentReadonlyText: {
+    flex: 1,
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    color: colors.textSecond,
   },
   selectError: {
     fontFamily: fonts.sans,

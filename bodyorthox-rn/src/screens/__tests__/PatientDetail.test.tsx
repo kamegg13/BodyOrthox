@@ -75,3 +75,47 @@ describe("PatientDetail — zone dangereuse", () => {
     expect(onArchive).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("PatientDetail — entrée vers le rapport de progression", () => {
+  it("affiche le lien quand le patient a au moins 2 analyses et un handler est fourni", () => {
+    const onProgressionReport = jest.fn();
+    const { getByTestId } = render(
+      <PatientDetail
+        data={{ ...SAMPLE_PATIENT_DETAIL, analysisCount: 2 }}
+        onProgressionReport={onProgressionReport}
+      />,
+    );
+    expect(getByTestId("progression-report-link")).toBeTruthy();
+  });
+
+  it("masque le lien quand le patient a moins de 2 analyses", () => {
+    const { queryByTestId } = render(
+      <PatientDetail
+        data={{ ...SAMPLE_PATIENT_DETAIL, analysisCount: 1 }}
+        onProgressionReport={jest.fn()}
+      />,
+    );
+    expect(queryByTestId("progression-report-link")).toBeNull();
+  });
+
+  it("masque le lien quand aucun handler n'est fourni, même avec assez d'analyses", () => {
+    const { queryByTestId } = render(
+      <PatientDetail data={{ ...SAMPLE_PATIENT_DETAIL, analysisCount: 5 }} />,
+    );
+    expect(queryByTestId("progression-report-link")).toBeNull();
+  });
+
+  it("appelle onProgressionReport au clic sur le lien", () => {
+    const onProgressionReport = jest.fn();
+    const { getByTestId } = render(
+      <PatientDetail
+        data={{ ...SAMPLE_PATIENT_DETAIL, analysisCount: 3 }}
+        onProgressionReport={onProgressionReport}
+      />,
+    );
+
+    fireEvent.press(getByTestId("progression-report-link"));
+
+    expect(onProgressionReport).toHaveBeenCalledTimes(1);
+  });
+});

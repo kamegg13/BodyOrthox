@@ -57,6 +57,7 @@ export function useCaptureLogic(patientId: string) {
     setError,
     processFrames,
     setCapturedImageUrl,
+    setLuminosity,
   } = useCaptureStore();
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -326,6 +327,7 @@ export function useCaptureLogic(patientId: string) {
     lowConfidenceWarning,
     restorableDraft,
     webCameraRef,
+    handleLuminositySample: setLuminosity,
     handleWebCameraPermissionDenied,
     handleTakeWebPhoto,
     handlePhotoUploaded,

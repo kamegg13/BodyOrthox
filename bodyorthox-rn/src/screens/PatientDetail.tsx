@@ -48,6 +48,8 @@ export interface PatientDetailData {
   readonly diagnosisLabel: string;
   readonly diagnosisDescription: string;
   readonly history: readonly AnalysisHistoryItem[];
+  /** Nombre total d'analyses du patient — peut dépasser `history.length` (tronqué à 5). */
+  readonly analysisCount: number;
   /** Médecin ayant adressé le patient — affiché seulement si renseigné. */
   readonly referringPhysician?: string;
   /** Date de consentement RGPD (déjà formatée pour l'affichage) — preuve de collecte. */
@@ -61,6 +63,8 @@ interface PatientDetailProps {
   readonly onEdit?: () => void;
   readonly onCapture?: () => void;
   readonly onGeneratePdf?: () => void;
+  /** Ouvre la sélection des analyses pour le rapport de progression — masqué si <2 analyses. */
+  readonly onProgressionReport?: () => void;
   readonly onHistoryPress?: (item: AnalysisHistoryItem) => void;
   readonly onTabPress?: (key: "home" | "patients" | "capture" | "reports" | "settings") => void;
   /** Archivage RGPD — masque le patient de la liste principale sans le supprimer. */
@@ -76,6 +80,7 @@ export function PatientDetail({
   onEdit,
   onCapture,
   onGeneratePdf,
+  onProgressionReport,
   onHistoryPress,
   onTabPress,
   onArchive,
@@ -196,7 +201,25 @@ export function PatientDetail({
         </View>
 
         <View>
-          <SectionLabel>Historique d’analyses</SectionLabel>
+          <SectionLabel
+            right={
+              data.analysisCount >= 2 && onProgressionReport ? (
+                <Pressable
+                  onPress={onProgressionReport}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Rapport de progression"
+                  testID="progression-report-link"
+                  style={styles.progressionLink}
+                >
+                  <Text style={styles.progressionLinkText}>Rapport de progression</Text>
+                  <Icon name="chevRight" size={14} color={colors.accent} />
+                </Pressable>
+              ) : undefined
+            }
+          >
+            Historique d’analyses
+          </SectionLabel>
           <View style={{ gap: 10 }}>
             {data.history.map((item) => (
               <HistoryRow key={item.id} item={item} onPress={() => onHistoryPress?.(item)} />
@@ -419,6 +442,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 10,
   },
+  progressionLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+  },
+  progressionLinkText: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.semiBold,
+    color: colors.accent,
+  },
   dangerZone: {
     marginTop: spacing.s8,
     paddingTop: spacing.s16,
@@ -489,4 +523,5 @@ export const SAMPLE_PATIENT_DETAIL: PatientDetailData = {
     { id: "h2", date: "10 mars 2026", type: "Sagittal seul", severity: "normal" },
     { id: "h3", date: "05 janv 2026", type: "Posture complète · 4 vues", hka: "172° / 177°", severity: "severe" },
   ],
+  analysisCount: 3,
 };

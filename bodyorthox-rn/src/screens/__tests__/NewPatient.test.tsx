@@ -1,8 +1,9 @@
 import React from "react";
 import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import { TextInput } from "react-native";
-import { NewPatient, NEW_PATIENT_DRAFT_KEY } from "../NewPatient";
+import { NewPatient, NEW_PATIENT_DRAFT_KEY, type NewPatientFormValues } from "../NewPatient";
 import {
+  getKeyValueStorage,
   setKeyValueStorage,
   __resetKeyValueStorage,
   type KeyValueStorage,
@@ -316,5 +317,188 @@ describe("NewPatient — brouillon (autosave)", () => {
     expect(
       require("../../core/storage/key-value-storage").getKeyValueStorage().getItem(NEW_PATIENT_DRAFT_KEY),
     ).toBeNull();
+  });
+});
+
+const EDIT_INITIAL_VALUES: Partial<NewPatientFormValues> = {
+  firstName: "Marie",
+  lastName: "Dupont",
+  sex: "female",
+  dateOfBirth: "1990-01-01",
+  heightCm: 165,
+  weightKg: 58,
+  diagnosis: "Scoliose",
+  referringPhysician: "",
+  observations: "",
+  laterality: "right",
+  activityLevel: "moderate",
+  sport: "Course à pied",
+  pains: [{ id: "pain1", location: "knee", side: "left", intensity: 4, type: "chronic" }],
+  consentStorage: true,
+  consentPhotoCapture: true,
+  consentPdfExport: true,
+  consentDate: "2024-03-15T12:00:00.000Z",
+};
+
+describe("NewPatient — profil clinique (progressive disclosure)", () => {
+  it("est repliée par défaut à la création", () => {
+    const { getByText, queryByTestId } = render(<NewPatient onSave={jest.fn()} />);
+    expect(getByText("Profil clinique (optionnel)")).toBeTruthy();
+    expect(queryByTestId("np-clinical-section")).toBeNull();
+  });
+
+  it("se déplie au clic sur le chevron et laisse choisir latéralité, activité et sport", () => {
+    const { getByTestId, queryByTestId } = render(<NewPatient onSave={jest.fn()} />);
+    fireEvent.press(getByTestId("np-clinical-toggle"));
+
+    expect(queryByTestId("np-clinical-section")).toBeTruthy();
+    fireEvent.press(getByTestId("np-laterality-left"));
+    fireEvent.press(getByTestId("np-activity-athlete"));
+    fireEvent.changeText(getByTestId("np-sport"), "Tennis");
+
+    expect(getByTestId("np-laterality-left").props.accessibilityState.checked).toBe(true);
+    expect(getByTestId("np-activity-athlete").props.accessibilityState.checked).toBe(true);
+  });
+
+  it("n'exige aucun champ clinique pour soumettre", () => {
+    const onSave = jest.fn();
+    const { getByTestId, getByText } = render(<NewPatient onSave={onSave} />);
+    fillRequiredFields(getByTestId, getByText);
+    fireEvent.press(getByTestId("np-consent-0"));
+    fireEvent.press(getByTestId("np-consent-1"));
+    fireEvent.press(getByTestId("np-consent-2"));
+
+    fireEvent.press(getByTestId("np-submit"));
+
+    expect(onSave).toHaveBeenCalledTimes(1);
+    const [values] = onSave.mock.calls[0];
+    expect(values.laterality).toBeNull();
+    expect(values.activityLevel).toBeNull();
+    expect(values.sport).toBe("");
+    expect(values.pains).toEqual([]);
+  });
+
+  it("transmet les champs cliniques renseignés, y compris une douleur ajoutée via le PainEditor", () => {
+    const onSave = jest.fn();
+    const { getByTestId, getByText } = render(<NewPatient onSave={onSave} />);
+    fillRequiredFields(getByTestId, getByText);
+    fireEvent.press(getByTestId("np-consent-0"));
+    fireEvent.press(getByTestId("np-consent-1"));
+    fireEvent.press(getByTestId("np-consent-2"));
+
+    fireEvent.press(getByTestId("np-clinical-toggle"));
+    fireEvent.press(getByTestId("np-laterality-left"));
+    fireEvent.press(getByTestId("np-activity-athlete"));
+    fireEvent.changeText(getByTestId("np-sport"), "Tennis");
+    fireEvent.press(getByTestId("add-pain-button"));
+    fireEvent.press(getByTestId("confirm-pain-button"));
+
+    fireEvent.press(getByTestId("np-submit"));
+
+    expect(onSave).toHaveBeenCalledTimes(1);
+    const [values, action] = onSave.mock.calls[0];
+    expect(values.laterality).toBe("left");
+    expect(values.activityLevel).toBe("athlete");
+    expect(values.sport).toBe("Tennis");
+    expect(values.pains).toHaveLength(1);
+    expect(action).toBe("primary");
+  });
+});
+
+describe("NewPatient — CTA « Enregistrer sans capturer »", () => {
+  it("transmet l'action « secondary » distincte du CTA principal", () => {
+    const onSave = jest.fn();
+    const { getByTestId, getByText } = render(<NewPatient onSave={onSave} />);
+    fillRequiredFields(getByTestId, getByText);
+    fireEvent.press(getByTestId("np-consent-0"));
+    fireEvent.press(getByTestId("np-consent-1"));
+    fireEvent.press(getByTestId("np-consent-2"));
+
+    fireEvent.press(getByTestId("np-submit-secondary"));
+
+    expect(onSave).toHaveBeenCalledTimes(1);
+    const [, action] = onSave.mock.calls[0];
+    expect(action).toBe("secondary");
+  });
+
+  it("applique la même validation qu'au CTA principal", () => {
+    const onSave = jest.fn();
+    const { getByTestId } = render(<NewPatient onSave={onSave} />);
+    fireEvent.press(getByTestId("np-submit-secondary"));
+    expect(onSave).not.toHaveBeenCalled();
+  });
+});
+
+describe("NewPatient — mode édition", () => {
+  it("affiche le titre et le CTA adaptés en mode édition", () => {
+    const { getByText, queryByTestId } = render(
+      <NewPatient mode="edit" initialValues={EDIT_INITIAL_VALUES} onSave={jest.fn()} />,
+    );
+    expect(getByText("Modifier le patient")).toBeTruthy();
+    expect(getByText("Enregistrer les modifications")).toBeTruthy();
+    expect(queryByTestId("np-submit-secondary")).toBeNull();
+  });
+
+  it("ne montre pas les cases de consentement, mais leur date de recueil en lecture seule", () => {
+    const { queryByTestId, getByTestId, getByText } = render(
+      <NewPatient mode="edit" initialValues={EDIT_INITIAL_VALUES} onSave={jest.fn()} />,
+    );
+    expect(queryByTestId("np-consent-0")).toBeNull();
+    expect(getByTestId("np-consent-readonly")).toBeTruthy();
+    expect(getByText(/Consentement recueilli le \d{2}\/\d{2}\/\d{4}/)).toBeTruthy();
+  });
+
+  it("indique l'absence de date quand le consentement n'a pas de date connue", () => {
+    const { getByText } = render(
+      <NewPatient
+        mode="edit"
+        initialValues={{ ...EDIT_INITIAL_VALUES, consentDate: null }}
+        onSave={jest.fn()}
+      />,
+    );
+    expect(getByText(/date non renseignée/)).toBeTruthy();
+  });
+
+  it("déplie le profil clinique par défaut", () => {
+    const { queryByTestId } = render(
+      <NewPatient mode="edit" initialValues={EDIT_INITIAL_VALUES} onSave={jest.fn()} />,
+    );
+    expect(queryByTestId("np-clinical-section")).toBeTruthy();
+  });
+
+  it("n'exige pas les consentements pour soumettre", () => {
+    const onSave = jest.fn();
+    const { getByTestId } = render(
+      <NewPatient mode="edit" initialValues={EDIT_INITIAL_VALUES} onSave={onSave} />,
+    );
+    fireEvent.press(getByTestId("np-submit"));
+    expect(onSave).toHaveBeenCalledTimes(1);
+  });
+
+  it("renvoie les consentements déjà recueillis inchangés, sans en fabriquer de nouveaux", () => {
+    const onSave = jest.fn();
+    const { getByTestId } = render(
+      <NewPatient mode="edit" initialValues={EDIT_INITIAL_VALUES} onSave={onSave} />,
+    );
+    fireEvent.press(getByTestId("np-submit"));
+
+    const [values] = onSave.mock.calls[0];
+    expect(values.consentStorage).toBe(true);
+    expect(values.consentPhotoCapture).toBe(true);
+    expect(values.consentPdfExport).toBe(true);
+    expect(values.consentDate).toBe(EDIT_INITIAL_VALUES.consentDate);
+  });
+
+  it("ne persiste aucun brouillon en édition", async () => {
+    setKeyValueStorage(makeMemoryStorage());
+    const { getByTestId } = render(
+      <NewPatient mode="edit" initialValues={EDIT_INITIAL_VALUES} onSave={jest.fn()} />,
+    );
+    fireEvent.changeText(getByTestId("np-first-name"), "Marie-Claire");
+
+    await new Promise((resolve) => setTimeout(resolve, 1300));
+
+    expect(getKeyValueStorage().getItem(NEW_PATIENT_DRAFT_KEY)).toBeNull();
+    __resetKeyValueStorage();
   });
 });

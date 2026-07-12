@@ -3,22 +3,11 @@ import { Alert } from "react-native";
 import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import { EditPatientScreen } from "../edit-patient-screen";
 
-// PatientFormScreen (le vrai composant, non mocké ici) dépend de DatePicker et
-// PainEditor qui touchent des modules natifs — on les mocke comme dans
-// patient-form-screen.test.tsx, mais on laisse le vrai PatientFormScreen actif
-// pour vérifier bout en bout que son `catch` (Alert + pas de goBack) se déclenche
-// bien maintenant que le store propage l'erreur de mise à jour.
-jest.mock("../../components/date-picker", () => ({
-  DatePicker: ({ value }: { value: string | null }) => {
-    const { View, Text } = require("react-native");
-    return require("react").createElement(
-      View,
-      { testID: "date-picker" },
-      require("react").createElement(Text, null, value ?? ""),
-    );
-  },
-}));
-
+// NewPatient (le vrai composant, non mocké ici) importe PainEditor — on le
+// mocke pour garder ce test focalisé sur le flux d'erreur, et on laisse le
+// vrai NewPatient actif pour vérifier bout en bout que son `catch` (Alert +
+// pas de goBack) se déclenche bien maintenant que le store propage l'erreur
+// de mise à jour.
 jest.mock("../../components/pain-editor", () => ({
   PainEditor: () => null,
 }));
@@ -59,7 +48,7 @@ describe("EditPatientScreen — gestion de l'échec de mise à jour", () => {
     const alertSpy = jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
 
     const { getByTestId } = render(<EditPatientScreen />);
-    fireEvent.press(getByTestId("submit-button"));
+    fireEvent.press(getByTestId("np-submit"));
 
     await waitFor(() => {
       expect(mockUpdatePatient).toHaveBeenCalledWith("p1", expect.any(Object));
@@ -76,7 +65,7 @@ describe("EditPatientScreen — gestion de l'échec de mise à jour", () => {
     mockUpdatePatient.mockResolvedValue(undefined);
 
     const { getByTestId } = render(<EditPatientScreen />);
-    fireEvent.press(getByTestId("submit-button"));
+    fireEvent.press(getByTestId("np-submit"));
 
     await waitFor(() => {
       expect(mockUpdatePatient).toHaveBeenCalled();

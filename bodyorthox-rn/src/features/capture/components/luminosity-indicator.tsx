@@ -6,7 +6,7 @@ interface LuminosityIndicatorProps {
   value: number; // 0-255
 }
 
-function getLuminosityStatus(value: number): {
+export function getLuminosityStatus(value: number): {
   label: string;
   color: string;
   icon: string;
@@ -15,6 +15,13 @@ function getLuminosityStatus(value: number): {
   if (value < 80) return { label: 'Faible', color: colors.amberMid, icon: '🌗' };
   if (value > 220) return { label: 'Trop lumineux', color: colors.amberMid, icon: '☀️' };
   return { label: 'Optimal', color: colors.green, icon: '💡' };
+}
+
+/** Conseil actionnable pour l'opérateur, ou `null` quand la luminosité est optimale. */
+export function getLuminosityAdvice(value: number): string | null {
+  if (value < 80) return "Rapprochez-vous d'une source de lumière";
+  if (value > 220) return 'Évitez le contre-jour ou la lumière directe';
+  return null;
 }
 
 export function LuminosityIndicator({ value }: LuminosityIndicatorProps) {

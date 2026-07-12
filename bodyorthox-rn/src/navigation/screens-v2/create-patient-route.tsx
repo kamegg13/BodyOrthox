@@ -7,6 +7,7 @@ import {
   NewPatient,
   clearNewPatientDraft,
   type NewPatientFormValues,
+  type NewPatientSubmitAction,
 } from "../../screens/NewPatient";
 import { usePatientsStore } from "../../features/patients/store/patients-store";
 import type { CreatePatientInput, MorphologicalProfile } from "../../features/patients/domain/patient";
@@ -55,15 +56,22 @@ export function CreatePatientRoute() {
   }, [navigation, dirty]);
 
   const handleSave = useCallback(
-    async (values: NewPatientFormValues) => {
+    async (values: NewPatientFormValues, action: NewPatientSubmitAction) => {
       setSubmitting(true);
       setErrorMsg(null);
       try {
         const input = formValuesToCreateInput(values);
         const patient = await createPatient(input);
-        // Capture est sur le stack racine. On navigate via le navigator courant :
-        // React Navigation remonte automatiquement la chaine pour trouver la route.
-        navigation.navigate("Capture", { patientId: patient.id });
+        if (action === "secondary") {
+          // « Enregistrer sans capturer » — retour direct sur la fiche du
+          // patient créé : son arrivée sur la fiche à jour vaut confirmation,
+          // sans capture ni interruption supplémentaire.
+          navigation.navigate("PatientDetail", { patientId: patient.id });
+        } else {
+          // Capture est sur le stack racine. On navigate via le navigator courant :
+          // React Navigation remonte automatiquement la chaine pour trouver la route.
+          navigation.navigate("Capture", { patientId: patient.id });
+        }
       } catch (e: unknown) {
         setErrorMsg(e instanceof Error ? e.message : "Erreur lors de la creation");
       } finally {
@@ -92,6 +100,10 @@ export function formValuesToCreateInput(values: NewPatientFormValues): CreatePat
     ...(values.weightKg !== null ? { weightKg: values.weightKg } : {}),
     ...(values.diagnosis ? { pathology: values.diagnosis } : {}),
     ...(values.observations ? { notes: values.observations } : {}),
+    ...(values.laterality ? { laterality: values.laterality } : {}),
+    ...(values.activityLevel ? { activityLevel: values.activityLevel } : {}),
+    ...(values.sport ? { sport: values.sport } : {}),
+    ...(values.pains.length > 0 ? { pains: values.pains } : {}),
   };
   return {
     name: `${values.firstName} ${values.lastName}`,

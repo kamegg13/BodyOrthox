@@ -4,7 +4,6 @@ import { Dashboard } from "./Dashboard";
 import { PatientList } from "./PatientList";
 import { PatientDetail, SAMPLE_PATIENT_DETAIL } from "./PatientDetail";
 import { NewPatient } from "./NewPatient";
-import { Capture } from "./Capture";
 import { Processing } from "./Processing";
 import { Results, SAMPLE_RESULTS } from "./Results";
 import { Report, SAMPLE_REPORT } from "./Report";
@@ -52,9 +51,6 @@ export function PreviewGallery() {
         </Frame>
         <Frame title="4 · New Patient">
           <NewPatient />
-        </Frame>
-        <Frame title="5 · Camera Capture">
-          <Capture />
         </Frame>
         <Frame title="6 · ML Processing">
           <Processing />

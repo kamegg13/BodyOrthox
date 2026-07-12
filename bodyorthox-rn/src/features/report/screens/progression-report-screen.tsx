@@ -18,8 +18,11 @@ import { LEGAL_CONSTANTS } from "../../../core/legal/legal-constants";
 import { patientDisplayName } from "../../patients/domain/patient";
 import {
   buildProgressionReportData,
+  buildProgressionPreviewRows,
+  buildProgressionSynthesisSummary,
   generateProgressionReportFileName,
   generateProgressionReportHtml,
+  type ProgressionPreviewRow,
 } from "../domain/progression-report-generator";
 
 type Route = RouteProp<RootStackParamList, "ProgressionReport">;
@@ -82,6 +85,8 @@ export function ProgressionReportScreen() {
   const firstDate = sortedAnalyses[0]?.createdAt.slice(0, 10) ?? "—";
   const lastDate =
     sortedAnalyses[sortedAnalyses.length - 1]?.createdAt.slice(0, 10) ?? "—";
+  const previewRows = buildProgressionPreviewRows(sortedAnalyses);
+  const synthesis = buildProgressionSynthesisSummary(sortedAnalyses);
 
   return (
     <ScrollView
@@ -114,19 +119,43 @@ export function ProgressionReportScreen() {
         </View>
       </View>
 
-      {/* What's in the report */}
-      <View style={styles.card}>
-        <Text style={styles.cardLabel}>Contenu du rapport</Text>
-        <Text style={styles.contentDesc}>
-          • Tableau chronologique de toutes les analyses (HKA, Genou, Hanche,
-          Cheville)
-        </Text>
-        <Text style={styles.contentDesc}>
-          • Code couleur : vert (norme), orange (écart ≤5°), rouge (hors norme)
-        </Text>
-        {analyses.length >= 2 && (
+      {/* Real data preview — reflects exactly the selected analyses, never
+          a static description of what the PDF will contain. */}
+      <View style={styles.card} testID="progression-report-data-table">
+        <Text style={styles.cardLabel}>Données des analyses sélectionnées</Text>
+        <View style={styles.tableHeaderRow}>
+          <Text style={[styles.tableHeaderCell, styles.tableCellDate]}>Date</Text>
+          <Text style={[styles.tableHeaderCell, styles.tableCellValue]}>HKA G</Text>
+          <Text style={[styles.tableHeaderCell, styles.tableCellValue]}>Δ G</Text>
+          <Text style={[styles.tableHeaderCell, styles.tableCellValue]}>HKA D</Text>
+          <Text style={[styles.tableHeaderCell, styles.tableCellValue]}>Δ D</Text>
+        </View>
+        {previewRows.map((row, index) => (
+          <DataRow key={row.date + index} row={row} />
+        ))}
+      </View>
+
+      {/* Honest evolution synthesis, computed from the same data as the
+          exported PDF — never a fabricated appreciation. */}
+      <View style={styles.card} testID="progression-report-synthesis">
+        <Text style={styles.cardLabel}>Synthèse d'évolution</Text>
+        {synthesis.available ? (
+          <>
+            {synthesis.leftTrendText ? (
+              <Text style={styles.contentDesc}>
+                HKA Gauche : {synthesis.leftTrendText}
+              </Text>
+            ) : null}
+            {synthesis.rightTrendText ? (
+              <Text style={styles.contentDesc}>
+                HKA Droite : {synthesis.rightTrendText}
+              </Text>
+            ) : null}
+          </>
+        ) : (
           <Text style={styles.contentDesc}>
-            • Évolution entre la première et la dernière séance
+            Synthèse indisponible : au moins deux analyses avec une mesure HKA
+            sont nécessaires pour comparer une évolution.
           </Text>
         )}
       </View>
@@ -143,6 +172,36 @@ export function ProgressionReportScreen() {
         </View>
       )}
     </ScrollView>
+  );
+}
+
+function fmtAngle(value: number | null): string {
+  return value === null ? "indisponible" : `${value.toFixed(1)}°`;
+}
+
+function fmtDelta(value: number | null): string {
+  if (value === null) return "—";
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${value.toFixed(1)}°`;
+}
+
+function DataRow({ row }: { row: ProgressionPreviewRow }) {
+  return (
+    <View style={styles.tableRow} testID={`progression-report-row-${row.date}`}>
+      <Text style={[styles.tableCell, styles.tableCellDate]}>{row.date}</Text>
+      <Text style={[styles.tableCell, styles.tableCellValue, styles.tableCellMono]}>
+        {fmtAngle(row.leftHKA)}
+      </Text>
+      <Text style={[styles.tableCell, styles.tableCellValue, styles.tableCellMono]}>
+        {fmtDelta(row.leftDelta)}
+      </Text>
+      <Text style={[styles.tableCell, styles.tableCellValue, styles.tableCellMono]}>
+        {fmtAngle(row.rightHKA)}
+      </Text>
+      <Text style={[styles.tableCell, styles.tableCellValue, styles.tableCellMono]}>
+        {fmtDelta(row.rightDelta)}
+      </Text>
+    </View>
   );
 }
 
@@ -203,6 +262,40 @@ const styles = StyleSheet.create({
     color: colors.textSecond,
     fontSize: fontSize.caption,
     lineHeight: 20,
+  },
+  tableHeaderRow: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    paddingBottom: spacing.s8,
+  },
+  tableHeaderCell: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.captionXs,
+    fontWeight: fontWeight.semiBold,
+    color: colors.textMuted,
+    textTransform: "uppercase",
+  },
+  tableRow: {
+    flexDirection: "row",
+    paddingVertical: spacing.s8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  tableCell: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    color: colors.textPrimary,
+  },
+  tableCellMono: {
+    fontFamily: fonts.mono,
+  },
+  tableCellDate: {
+    flex: 1.4,
+  },
+  tableCellValue: {
+    flex: 1,
+    textAlign: "right",
   },
   disclaimer: {
     fontFamily: fonts.sans,

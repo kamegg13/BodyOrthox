@@ -302,7 +302,7 @@ function generateKneeSvgChart(
  * directional arrow only. No clinical appreciation (no improvement /
  * worsening judgement).
  */
-function generateTrendText(first: number, last: number): string {
+export function generateTrendText(first: number, last: number): string {
   const delta = last - first;
   const abs = Math.abs(delta);
   const sign = delta > 0 ? "+" : delta < 0 ? "−" : "";
@@ -314,6 +314,98 @@ function generateTrendText(first: number, last: number): string {
   const arrow = delta > 0 ? "↗" : "↘";
 
   return `Variation ${arrow} ${sign}${abs.toFixed(1)}° (${first.toFixed(1)}° → ${last.toFixed(1)}°)`;
+}
+
+// ─── On-screen preview (real data, no fabricated values) ───────
+
+export interface ProgressionPreviewRow {
+  readonly date: string; // ISO date (YYYY-MM-DD), formatting is the screen's job
+  /** null = mesure indisponible pour cette séance — jamais interpolée. */
+  readonly leftHKA: number | null;
+  readonly rightHKA: number | null;
+  /** Delta vs la séance précédente sélectionnée ; null si l'une des deux mesures est indisponible ou s'il n'y a pas de séance précédente. */
+  readonly leftDelta: number | null;
+  readonly rightDelta: number | null;
+}
+
+function round1(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
+/**
+ * Ligne par ligne = donnée réelle de chaque analyse sélectionnée, dans
+ * l'ordre chronologique déjà appliqué par `buildProgressionReportData`.
+ * Ne fabrique jamais de valeur : une mesure absente reste `null`.
+ */
+export function buildProgressionPreviewRows(
+  analyses: ReadonlyArray<Analysis>,
+): readonly ProgressionPreviewRow[] {
+  let prevLeft: number | null = null;
+  let prevRight: number | null = null;
+
+  return analyses.map((a) => {
+    const b = a.bilateralAngles;
+    const leftHKA = b && b.leftHKA !== 0 ? round1(b.leftHKA) : null;
+    const rightHKA = b && b.rightHKA !== 0 ? round1(b.rightHKA) : null;
+
+    const leftDelta =
+      leftHKA !== null && prevLeft !== null ? round1(leftHKA - prevLeft) : null;
+    const rightDelta =
+      rightHKA !== null && prevRight !== null ? round1(rightHKA - prevRight) : null;
+
+    prevLeft = leftHKA;
+    prevRight = rightHKA;
+
+    return {
+      date: a.createdAt.slice(0, 10),
+      leftHKA,
+      rightHKA,
+      leftDelta,
+      rightDelta,
+    };
+  });
+}
+
+export interface ProgressionSynthesisSummary {
+  readonly available: boolean;
+  readonly firstDate?: string;
+  readonly lastDate?: string;
+  readonly leftTrendText?: string;
+  readonly rightTrendText?: string;
+}
+
+/**
+ * Synthèse d'évolution honnête entre la première et la dernière analyse
+ * sélectionnée — même calcul que celui utilisé dans le PDF exporté
+ * (`generateTrendText`), pour que l'aperçu et l'export ne puissent jamais
+ * diverger. `available: false` quand il n'y a pas assez de données pour
+ * comparer (moins de 2 séances, ou aucune mesure HKA exploitable).
+ */
+export function buildProgressionSynthesisSummary(
+  analyses: ReadonlyArray<Analysis>,
+): ProgressionSynthesisSummary {
+  if (analyses.length < 2) return { available: false };
+
+  const first = analyses[0];
+  const last = analyses[analyses.length - 1];
+
+  const firstLeft = first.bilateralAngles?.leftHKA ?? 0;
+  const firstRight = first.bilateralAngles?.rightHKA ?? 0;
+  const lastLeft = last.bilateralAngles?.leftHKA ?? 0;
+  const lastRight = last.bilateralAngles?.rightHKA ?? 0;
+
+  const hasLeft = firstLeft !== 0 && lastLeft !== 0;
+  const hasRight = firstRight !== 0 && lastRight !== 0;
+
+  if (!hasLeft && !hasRight) return { available: false };
+
+  return {
+    available: true,
+    firstDate: first.createdAt.slice(0, 10),
+    lastDate: last.createdAt.slice(0, 10),
+    ...(hasLeft ? { leftTrendText: generateTrendText(firstLeft, lastLeft) } : {}),
+    ...(hasRight ? { rightTrendText: generateTrendText(firstRight, lastRight) } : {}),
+  };
 }
 
 function buildSynthesisSection(analyses: ReadonlyArray<Analysis>): string {

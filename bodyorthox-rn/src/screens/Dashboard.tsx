@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -16,6 +16,7 @@ import {
   EmptyState,
   Icon,
   type IconName,
+  PatientPickerModal,
   SectionLabel,
 } from "../components";
 import { avatarTone, initials } from "../components/avatar-tone";
@@ -39,9 +40,11 @@ interface DashboardProps {
   readonly practitionerName?: string;
   readonly nextAppointment?: { patientName: string; whenLabel: string; subtitle?: string };
   readonly hideBottomTab?: boolean;
-  readonly onQuickAction?: (key: "new-patient" | "capture" | "analysis" | "report") => void;
+  readonly onQuickAction?: (key: "new-patient" | "analysis" | "report") => void;
   readonly onSeeAllPatients?: () => void;
   readonly onPatientPress?: (patient: Patient) => void;
+  /** Sélection depuis le picker rapide de capture — navigation directe vers l'écran Capture. */
+  readonly onCaptureForPatient?: (patient: Patient) => void;
   readonly onTabPress?: (key: "home" | "patients" | "capture" | "reports" | "settings") => void;
 }
 
@@ -52,10 +55,12 @@ export function Dashboard({
   onQuickAction,
   onSeeAllPatients,
   onPatientPress,
+  onCaptureForPatient,
   onTabPress,
 }: DashboardProps) {
   const patients = usePatientsStore((s) => s.patients);
   const loadPatients = usePatientsStore((s) => s.loadPatients);
+  const [pickerVisible, setPickerVisible] = useState(false);
 
   useEffect(() => {
     loadPatients();
@@ -110,7 +115,7 @@ export function Dashboard({
         showsVerticalScrollIndicator={false}
       >
         <Pressable
-          onPress={() => onQuickAction?.("capture")}
+          onPress={() => setPickerVisible(true)}
           style={({ pressed }) => [styles.primaryAction, pressed && styles.pressed]}
           accessibilityRole="button"
           accessibilityLabel="Capture"
@@ -121,7 +126,7 @@ export function Dashboard({
           <View style={{ flex: 1 }}>
             <Text style={styles.primaryActionTitle}>Nouvelle capture</Text>
             <Text style={styles.primaryActionSub}>
-              Choisissez un patient pour démarrer
+              Choisissez le patient et la capture démarre
             </Text>
           </View>
           <Icon name="arrowRight" size={16} color={colors.onPrimary} strokeWidth={1.75} />
@@ -201,6 +206,20 @@ export function Dashboard({
           <BottomTab active="home" onPress={onTabPress} />
         </SafeAreaView>
       ) : null}
+
+      <PatientPickerModal
+        visible={pickerVisible}
+        patients={patients}
+        onSelectPatient={(patient) => {
+          setPickerVisible(false);
+          onCaptureForPatient?.(patient);
+        }}
+        onCreatePatient={() => {
+          setPickerVisible(false);
+          onQuickAction?.("new-patient");
+        }}
+        onClose={() => setPickerVisible(false)}
+      />
     </View>
   );
 }

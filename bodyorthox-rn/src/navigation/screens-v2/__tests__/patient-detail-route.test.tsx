@@ -106,6 +106,31 @@ describe("PatientDetailRoute — suppression/archivage RGPD", () => {
   });
 });
 
+describe("PatientDetailRoute — entrée vers la sélection du rapport de progression", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("navigue vers ProgressionSelection avec le patient et toutes ses analyses quand il y en a au moins 2", async () => {
+    const analyses = [
+      { id: "a1", patientId: "p1", createdAt: "2026-01-01T00:00:00.000Z", angles: { kneeAngle: 176, hipAngle: 175, ankleAngle: 174 }, confidenceScore: 0.9, manualCorrectionApplied: false, manualCorrectionJoint: null },
+      { id: "a2", patientId: "p1", createdAt: "2026-02-01T00:00:00.000Z", angles: { kneeAngle: 176, hipAngle: 175, ankleAngle: 174 }, confidenceScore: 0.9, manualCorrectionApplied: false, manualCorrectionJoint: null },
+    ];
+    mockAnalysisRepo.getForPatient.mockResolvedValueOnce(analyses);
+    resetStore();
+
+    const { getByTestId } = render(<PatientDetailRoute />);
+    await waitFor(() => expect(getByTestId("progression-report-link")).toBeTruthy());
+
+    fireEvent.press(getByTestId("progression-report-link"));
+
+    expect(mockNavigate).toHaveBeenCalledWith("ProgressionSelection", {
+      patient: mockPatient,
+      analyses,
+    });
+  });
+});
+
 describe("buildDetailData — médecin référent & consentement RGPD", () => {
   it("omits referringPhysician and consentDate when absent", () => {
     const data = buildDetailData(mockPatient, []);
