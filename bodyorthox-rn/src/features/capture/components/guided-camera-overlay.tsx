@@ -1,8 +1,9 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import { CapturePhase } from "../domain/capture-state";
 import { Icon } from "../../../components/icons";
 import { colors, fonts, fontSize, fontWeight, radius, spacing } from "../../../theme/tokens";
+import { LuminosityIndicator, getLuminosityAdvice } from "./luminosity-indicator";
 
 interface GuidedCameraOverlayProps {
   phase: CapturePhase;
@@ -14,7 +15,16 @@ interface GuidedCameraOverlayProps {
 export function GuidedCameraOverlay({
   phase,
   frameCount,
+  luminosity,
+  isCorrectPosition,
 }: GuidedCameraOverlayProps) {
+  // La luminosité n'est mesurée honnêtement que sur web (canvas sur le flux
+  // getUserMedia, cf. web-camera.tsx) — sur les autres plateformes il n'y a
+  // aucun signal réel, donc rien n'est affiché plutôt que d'inventer une
+  // valeur par défaut.
+  const isWeb = Platform.OS === "web";
+  const luminosityAdvice = isWeb ? getLuminosityAdvice(luminosity) : null;
+
   return (
     <View
       style={styles.overlay}
@@ -37,16 +47,37 @@ export function GuidedCameraOverlay({
             <Text style={styles.recordingText}>{frameCount} frames</Text>
           </View>
         )}
+        {isWeb && (
+          <View style={styles.luminosityGroup}>
+            <LuminosityIndicator value={luminosity} />
+            {luminosityAdvice && (
+              <View style={styles.adviceBubble} testID="luminosity-advice">
+                <Text style={styles.adviceText}>{luminosityAdvice}</Text>
+              </View>
+            )}
+          </View>
+        )}
       </View>
+
+      {/* Pill « sujet aligné » — seulement quand un signal réel de cadrage
+          existe (aucun aujourd'hui : jamais fabriquée à partir de rien). */}
+      {isCorrectPosition && (
+        <View style={styles.alignedPill} testID="aligned-pill">
+          <View style={styles.alignedDot} />
+          <Text style={styles.alignedText}>Sujet aligné · prêt à capturer</Text>
+        </View>
+      )}
 
       {/* Instruction text — positioned below status bar, above controls */}
       <View style={styles.instructionArea} pointerEvents="none">
-        <Text style={styles.instructionText}>
-          Placez le patient debout, face à vous
-        </Text>
-        <Text style={styles.instructionSubText}>
-          Corps entier visible dans le cadre
-        </Text>
+        <View style={styles.instructionBg}>
+          <Text style={styles.instructionText}>
+            Placez le patient debout, face à vous
+          </Text>
+          <Text style={styles.instructionSubText}>
+            ~3 m de recul · corps entier visible · fond dégagé
+          </Text>
+        </View>
       </View>
 
       {/* Bottom status (processing / error only) */}
@@ -91,7 +122,7 @@ const styles = StyleSheet.create({
   topBar: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
     padding: spacing.s16,
   },
   recordingIndicator: {
@@ -115,9 +146,62 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semiBold,
     fontFamily: fonts.mono,
   },
+  luminosityGroup: {
+    marginLeft: "auto",
+    alignItems: "flex-end",
+    gap: spacing.s6,
+  },
+  adviceBubble: {
+    backgroundColor: "rgba(0,0,0,0.6)",
+    paddingHorizontal: spacing.s16,
+    paddingVertical: spacing.s4,
+    borderRadius: radius.pill,
+    maxWidth: 200,
+  },
+  adviceText: {
+    color: colors.white,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.medium,
+    fontFamily: fonts.sans,
+    textAlign: "right",
+  },
+  alignedPill: {
+    position: "absolute",
+    top: 56,
+    alignSelf: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.s6,
+    backgroundColor: "rgba(16,16,18,0.75)",
+    paddingHorizontal: spacing.s16,
+    paddingVertical: spacing.s6,
+    borderRadius: radius.pill,
+  },
+  alignedDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: colors.accent,
+  },
+  alignedText: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.semiBold,
+    color: colors.white,
+  },
   instructionArea: {
     alignItems: "center",
     paddingHorizontal: spacing.s24,
+  },
+  instructionBg: {
+    // Fond semi-opaque derrière le texte de consigne : le flux vidéo live
+    // en arrière-plan peut être clair, le seul text-shadow ne suffit pas
+    // toujours à garantir le contraste.
+    backgroundColor: "rgba(0,0,0,0.5)",
+    borderRadius: radius.cardLg,
+    paddingHorizontal: spacing.s16,
+    paddingVertical: spacing.s10,
+    alignItems: "center",
   },
   instructionText: {
     fontSize: 18,
@@ -125,9 +209,6 @@ const styles = StyleSheet.create({
     color: colors.white,
     textAlign: "center",
     fontFamily: fonts.sans,
-    textShadowColor: "rgba(0,0,0,0.8)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
   },
   instructionSubText: {
     fontSize: fontSize.body,
@@ -135,9 +216,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 4,
     fontFamily: fonts.sans,
-    textShadowColor: "rgba(0,0,0,0.6)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
   },
   bottomBar: {
     padding: spacing.s16,

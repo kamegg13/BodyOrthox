@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import {
+  FlatList,
   Pressable,
   ScrollView,
   StatusBar,
@@ -7,12 +8,14 @@ import {
   Text,
   TextInput,
   View,
+  type ListRenderItemInfo,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Badge,
   type BadgeColor,
   BottomTab,
+  EmptyState,
   Icon,
 } from "../components";
 import {
@@ -25,7 +28,11 @@ import {
   sizes,
   spacing,
 } from "../theme/tokens";
-import { usePatientsStore, type PatientFilter } from "../features/patients/store/patients-store";
+import {
+  usePatientsStore,
+  type PatientFilter,
+  type SortBy,
+} from "../features/patients/store/patients-store";
 import { patientAge, type Patient } from "../features/patients/domain/patient";
 
 interface PatientListProps {
@@ -40,24 +47,42 @@ interface ChipDef {
   readonly label: string;
 }
 
+// Pas de chip « Actifs » : les archivés sont déjà masqués par défaut,
+// « Tous » et « Actifs » afficheraient exactement le même ensemble.
 const CHIPS: readonly ChipDef[] = [
   { value: "all", label: "Tous" },
-  { value: "active", label: "Actifs" },
   { value: "has-pains", label: "Suivi" },
   { value: "archived", label: "Archivés" },
 ];
 
 const SEARCH_DEBOUNCE_MS = 200;
 
+const SORT_LABELS: Record<SortBy, string> = {
+  alpha: "Alphabétique",
+  recent: "Plus récents",
+  "last-analyzed": "Dernière analyse",
+};
+
+// "last-analyzed" est volontairement absent du cycle : le store patients n'a
+// pas accès aux analyses, ce tri ne trierait rien (UI mensongère).
+const SORT_CYCLE: readonly SortBy[] = ["alpha", "recent"];
+
+function nextSortBy(current: SortBy): SortBy {
+  const idx = SORT_CYCLE.indexOf(current);
+  return SORT_CYCLE[(idx + 1) % SORT_CYCLE.length];
+}
+
 export function PatientList({ hideBottomTab = false, onAddPatient, onPatientPress, onTabPress }: PatientListProps) {
   const filtered = usePatientsStore((s) => s.filteredPatients);
   const total = usePatientsStore((s) => s.patients);
   const searchQuery = usePatientsStore((s) => s.searchQuery);
   const activeFilters = usePatientsStore((s) => s.activeFilters);
+  const sortBy = usePatientsStore((s) => s.sortBy);
   const loadPatients = usePatientsStore((s) => s.loadPatients);
   const setSearchQuery = usePatientsStore((s) => s.setSearchQuery);
   const toggleFilter = usePatientsStore((s) => s.toggleFilter);
   const clearFilters = usePatientsStore((s) => s.clearFilters);
+  const setSortBy = usePatientsStore((s) => s.setSortBy);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -92,6 +117,17 @@ export function PatientList({ hideBottomTab = false, onAddPatient, onPatientPres
     toggleFilter(chip.value);
   }
 
+  function onSortPress() {
+    setSortBy(nextSortBy(sortBy));
+  }
+
+  const renderPatientRow = useCallback(
+    ({ item }: ListRenderItemInfo<Patient>) => (
+      <PatientRow patient={item} onPress={() => onPatientPress?.(item)} />
+    ),
+    [onPatientPress],
+  );
+
   return (
     <View style={styles.root}>
       <StatusBar barStyle="dark-content" />
@@ -102,6 +138,7 @@ export function PatientList({ hideBottomTab = false, onAddPatient, onPatientPres
             <Text style={styles.title}>Patients</Text>
             <Pressable
               onPress={onAddPatient}
+              hitSlop={8}
               style={({ pressed }) => [styles.addBtn, pressed && styles.pressed]}
               accessibilityRole="button"
               accessibilityLabel="Nouveau patient"
@@ -151,33 +188,49 @@ export function PatientList({ hideBottomTab = false, onAddPatient, onPatientPres
                 </Pressable>
               );
             })}
+            <Pressable
+              onPress={onSortPress}
+              hitSlop={8}
+              style={({ pressed }) => [styles.sortBtn, pressed && styles.pressed]}
+              accessibilityRole="button"
+              accessibilityLabel="Trier les patients"
+            >
+              <Text style={styles.sortLabel}>{SORT_LABELS[sortBy]}</Text>
+              <Icon name="chevDown" size={12} color={colors.textMuted} />
+            </Pressable>
           </ScrollView>
         </View>
       </SafeAreaView>
 
-      <ScrollView
+      <FlatList
+        testID="patient-list"
         style={styles.list}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
-      >
-        {filtered.length === 0 ? (
-          <View style={styles.empty}>
-            <Icon name="user" size={48} color={colors.textMuted} strokeWidth={1.5} />
-            <Text style={styles.emptyTitle}>
-              {total.length === 0 ? "Aucun patient" : "Aucun résultat"}
-            </Text>
-            <Text style={styles.emptySub}>
-              {total.length === 0
-                ? "Ajoutez votre premier patient pour commencer."
-                : "Aucun patient ne correspond aux filtres."}
-            </Text>
-          </View>
-        ) : (
-          filtered.map((p) => (
-            <PatientRow key={p.id} patient={p} onPress={() => onPatientPress?.(p)} />
-          ))
-        )}
-      </ScrollView>
+        data={filtered}
+        keyExtractor={(p) => p.id}
+        renderItem={renderPatientRow}
+        keyboardShouldPersistTaps="handled"
+        ListEmptyComponent={
+          total.length === 0 ? (
+            <EmptyState
+              icon="user"
+              title="Aucun patient"
+              message="Ajoutez votre premier patient pour commencer."
+              actionLabel="Nouveau patient"
+              onAction={onAddPatient}
+              style={styles.empty}
+            />
+          ) : (
+            <EmptyState
+              icon="user"
+              title="Aucun résultat"
+              message="Aucun patient ne correspond aux filtres."
+              style={styles.empty}
+            />
+          )
+        }
+      />
 
       {!hideBottomTab ? (
         <SafeAreaView edges={["bottom"]} style={styles.tabSafe}>
@@ -398,21 +451,19 @@ const styles = StyleSheet.create({
   },
   empty: {
     paddingTop: 80,
+  },
+  sortBtn: {
+    flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 4,
+    height: sizes.chip,
+    paddingHorizontal: 4,
   },
-  emptyTitle: {
+  sortLabel: {
     fontFamily: fonts.sans,
-    fontSize: fontSize.bodyLg,
-    fontWeight: fontWeight.bold,
-    color: colors.textPrimary,
-  },
-  emptySub: {
-    fontFamily: fonts.sans,
-    fontSize: fontSize.caption,
-    color: colors.textSecond,
-    textAlign: "center",
-    paddingHorizontal: 32,
+    fontSize: 12,
+    fontWeight: fontWeight.medium,
+    color: colors.textMuted,
   },
   tabSafe: {
     backgroundColor: colors.bgCard,

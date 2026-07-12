@@ -112,6 +112,26 @@ function ProfileInput({
   );
 }
 
+/** Ligne informative non interactive (label + sous-texte), même gabarit que `SwitchRow`. */
+function InfoRow({
+  label,
+  subtitle,
+  testID,
+}: {
+  readonly label: string;
+  readonly subtitle: string;
+  readonly testID?: string;
+}) {
+  return (
+    <View style={styles.switchRow} testID={testID}>
+      <View style={styles.switchLabelGroup}>
+        <Text style={styles.switchLabel}>{label}</Text>
+        <Text style={styles.switchSubtitle}>{subtitle}</Text>
+      </View>
+    </View>
+  );
+}
+
 /** Ligne à interrupteur (Face ID / Touch ID). */
 function SwitchRow({
   label,
@@ -232,7 +252,16 @@ export function AccountScreen() {
                 testID="calibration-button"
               />
             </>
-          ) : null}
+          ) : (
+            <>
+              <RowDivider />
+              <InfoRow
+                label="Calibration HKA"
+                subtitle="Gérée par votre administrateur — contactez-le pour la modifier."
+                testID="calibration-admin-only-info"
+              />
+            </>
+          )}
           <RowDivider />
           <ListRow
             label="Se déconnecter"
@@ -334,6 +363,12 @@ export function AccountScreen() {
         <SectionLabel>À propos</SectionLabel>
         <Card style={styles.group}>
           <ListRow label="Version" value="1.0.0 (MVP)" chevron={false} />
+          <RowDivider />
+          <ListRow
+            label="Revoir l'introduction"
+            onPress={() => navigation.navigate("Onboarding", { mode: "review" })}
+            testID="review-onboarding-button"
+          />
           <RowDivider />
           <ListRow
             label="Mentions légales"

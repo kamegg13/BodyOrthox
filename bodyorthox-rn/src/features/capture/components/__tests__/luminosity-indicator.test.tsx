@@ -1,6 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
-import { LuminosityIndicator } from '../luminosity-indicator';
+import { LuminosityIndicator, getLuminosityAdvice } from '../luminosity-indicator';
 
 describe('LuminosityIndicator', () => {
   it('renders with testID', () => {
@@ -46,5 +46,23 @@ describe('LuminosityIndicator', () => {
   it('handles boundary value for trop lumineux (> 220)', () => {
     const { getByText } = render(<LuminosityIndicator value={221} />);
     expect(getByText('Trop lumineux')).toBeTruthy();
+  });
+});
+
+describe('getLuminosityAdvice', () => {
+  it('conseille de se rapprocher d\'une source de lumière quand trop sombre', () => {
+    expect(getLuminosityAdvice(20)).toBe("Rapprochez-vous d'une source de lumière");
+  });
+
+  it('conseille de se rapprocher d\'une source de lumière quand faible', () => {
+    expect(getLuminosityAdvice(60)).toBe("Rapprochez-vous d'une source de lumière");
+  });
+
+  it('conseille d\'éviter le contre-jour quand trop lumineux', () => {
+    expect(getLuminosityAdvice(230)).toBe('Évitez le contre-jour ou la lumière directe');
+  });
+
+  it("ne donne aucun conseil quand la luminosité est optimale", () => {
+    expect(getLuminosityAdvice(128)).toBeNull();
   });
 });

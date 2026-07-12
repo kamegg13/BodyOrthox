@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -13,8 +13,10 @@ import {
   type BadgeColor,
   BottomTab,
   Card,
+  EmptyState,
   Icon,
   type IconName,
+  PatientPickerModal,
   SectionLabel,
 } from "../components";
 import { avatarTone, initials } from "../components/avatar-tone";
@@ -38,9 +40,11 @@ interface DashboardProps {
   readonly practitionerName?: string;
   readonly nextAppointment?: { patientName: string; whenLabel: string; subtitle?: string };
   readonly hideBottomTab?: boolean;
-  readonly onQuickAction?: (key: "new-patient" | "capture" | "analysis" | "report") => void;
+  readonly onQuickAction?: (key: "new-patient" | "analysis" | "report") => void;
   readonly onSeeAllPatients?: () => void;
   readonly onPatientPress?: (patient: Patient) => void;
+  /** Sélection depuis le picker rapide de capture — navigation directe vers l'écran Capture. */
+  readonly onCaptureForPatient?: (patient: Patient) => void;
   readonly onTabPress?: (key: "home" | "patients" | "capture" | "reports" | "settings") => void;
 }
 
@@ -51,10 +55,12 @@ export function Dashboard({
   onQuickAction,
   onSeeAllPatients,
   onPatientPress,
+  onCaptureForPatient,
   onTabPress,
 }: DashboardProps) {
   const patients = usePatientsStore((s) => s.patients);
   const loadPatients = usePatientsStore((s) => s.loadPatients);
+  const [pickerVisible, setPickerVisible] = useState(false);
 
   useEffect(() => {
     loadPatients();
@@ -76,11 +82,16 @@ export function Dashboard({
             </View>
             <Pressable
               hitSlop={8}
+              disabled
+              // Cloche décorative : aucun centre de notifications n'existe encore
+              // côté produit — désactivée visuellement plutôt que retirée pour
+              // ne pas casser l'équilibre du header ni promettre une action.
               accessibilityRole="button"
-              accessibilityLabel="Notifications"
-              style={styles.bellBtn}
+              accessibilityLabel="Notifications — bientôt disponible"
+              accessibilityState={{ disabled: true }}
+              style={[styles.bellBtn, styles.bellBtnDisabled]}
             >
-              <Icon name="bell" size={18} color={colors.primary} />
+              <Icon name="bell" size={18} color={colors.textMuted} />
             </Pressable>
           </View>
 
@@ -91,8 +102,8 @@ export function Dashboard({
               highlight
               trend={stats.thisWeek > 0 ? `+${stats.thisWeek} cette semaine` : undefined}
             />
-            <StatCard value={String(stats.today)} label="Aujourd’hui" sub="Sessions" />
-            <StatCard value={String(stats.reports)} label="Rapports" sub="Générés" />
+            <StatCard value={String(stats.newToday)} label="Aujourd’hui" sub="Nouveaux patients" />
+            <StatCard value={String(stats.followUp)} label="Suivis" sub="Avec douleurs" />
           </View>
         </View>
       </SafeAreaView>
@@ -104,7 +115,7 @@ export function Dashboard({
         showsVerticalScrollIndicator={false}
       >
         <Pressable
-          onPress={() => onQuickAction?.("capture")}
+          onPress={() => setPickerVisible(true)}
           style={({ pressed }) => [styles.primaryAction, pressed && styles.pressed]}
           accessibilityRole="button"
           accessibilityLabel="Capture"
@@ -115,7 +126,7 @@ export function Dashboard({
           <View style={{ flex: 1 }}>
             <Text style={styles.primaryActionTitle}>Nouvelle capture</Text>
             <Text style={styles.primaryActionSub}>
-              L’analyse HKA démarre automatiquement
+              Choisissez le patient et la capture démarre
             </Text>
           </View>
           <Icon name="arrowRight" size={16} color={colors.onPrimary} strokeWidth={1.75} />
@@ -157,7 +168,12 @@ export function Dashboard({
 
         <SectionLabel
           right={
-            <Pressable onPress={onSeeAllPatients} hitSlop={6}>
+            <Pressable
+              onPress={onSeeAllPatients}
+              hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel="Voir tous les patients"
+            >
               <Text style={styles.seeAll}>Voir tout</Text>
             </Pressable>
           }
@@ -168,10 +184,14 @@ export function Dashboard({
         <View style={{ gap: 10 }}>
           {recent.length === 0 ? (
             <Card style={styles.emptyCard}>
-              <Text style={styles.emptyTitle}>Aucun patient</Text>
-              <Text style={styles.emptySub}>
-                Ajoutez votre premier patient pour commencer.
-              </Text>
+              <EmptyState
+                icon="plus"
+                title="Aucun patient"
+                message="Ajoutez votre premier patient pour commencer."
+                actionLabel="Ajouter un patient"
+                onAction={() => onQuickAction?.("new-patient")}
+                style={styles.emptyStateInline}
+              />
             </Card>
           ) : (
             recent.map((p) => (
@@ -186,6 +206,20 @@ export function Dashboard({
           <BottomTab active="home" onPress={onTabPress} />
         </SafeAreaView>
       ) : null}
+
+      <PatientPickerModal
+        visible={pickerVisible}
+        patients={patients}
+        onSelectPatient={(patient) => {
+          setPickerVisible(false);
+          onCaptureForPatient?.(patient);
+        }}
+        onCreatePatient={() => {
+          setPickerVisible(false);
+          onQuickAction?.("new-patient");
+        }}
+        onClose={() => setPickerVisible(false)}
+      />
     </View>
   );
 }
@@ -304,12 +338,33 @@ function startOfWeek(date: Date): Date {
   return d;
 }
 
+function startOfToday(date: Date): Date {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+/**
+ * Stats calculées uniquement à partir des données patient déjà chargées.
+ * Il n'existe pas (encore) de source fiable pour des métriques comme
+ * « sessions du jour » ou « rapports générés » — le repo d'analyses n'expose
+ * pas de requête tous-patients, et aucun compteur de rapports PDF n'est
+ * persisté. Plutôt que d'afficher des chiffres inventés, on expose des
+ * stats honnêtes dérivées de `Patient` : nouveaux patients aujourd'hui et
+ * patients actuellement en suivi (douleur déclarée).
+ */
 function computeStats(patients: readonly Patient[]) {
   const now = new Date();
   const monday = startOfWeek(now);
-  const total = patients.filter((p) => !p.archivedAt).length;
+  const today = startOfToday(now);
+  const active = patients.filter((p) => !p.archivedAt);
+  const total = active.length;
   const thisWeek = patients.filter((p) => new Date(p.createdAt) >= monday).length;
-  return { total, thisWeek, today: 0, reports: 0 };
+  const newToday = patients.filter((p) => new Date(p.createdAt) >= today).length;
+  const followUp = active.filter(
+    (p) => (p.morphologicalProfile?.pains?.length ?? 0) > 0,
+  ).length;
+  return { total, thisWeek, newToday, followUp };
 }
 
 function takeRecent(patients: readonly Patient[], n: number): readonly Patient[] {
@@ -392,6 +447,9 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
+  },
+  bellBtnDisabled: {
+    opacity: 0.5,
   },
   statsRow: {
     flexDirection: "row",
@@ -603,18 +661,12 @@ const styles = StyleSheet.create({
     padding: spacing.s16,
     alignItems: "center",
   },
-  emptyTitle: {
-    fontFamily: fonts.sans,
-    fontSize: fontSize.body,
-    fontWeight: fontWeight.bold,
-    color: colors.textPrimary,
-  },
-  emptySub: {
-    fontFamily: fonts.sans,
-    fontSize: fontSize.caption,
-    color: colors.textSecond,
-    marginTop: 4,
-    textAlign: "center",
+  // Neutralise le flex:1 et le fond pleine-page par défaut d'EmptyState —
+  // ici l'état vide est inline dans une Card, pas plein écran.
+  emptyStateInline: {
+    flex: 0,
+    padding: 0,
+    backgroundColor: "transparent",
   },
   tabSafe: {
     backgroundColor: colors.bgCard,

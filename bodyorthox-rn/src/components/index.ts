@@ -17,3 +17,4 @@ export { ListRow } from "./ListRow";
 export { EmptyState, type StateTone } from "./EmptyState";
 export { ErrorState } from "./ErrorState";
 export { LoadingState } from "./LoadingState";
+export { PatientPickerModal } from "./PatientPickerModal";

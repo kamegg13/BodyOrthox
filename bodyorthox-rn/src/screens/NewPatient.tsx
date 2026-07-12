@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Modal,
   Pressable,
@@ -25,8 +25,16 @@ import {
   fontWeight,
   radius,
   shadows,
+  sizes,
   spacing,
 } from "../theme/tokens";
+import { getKeyValueStorage } from "../core/storage/key-value-storage";
+import { PainEditor } from "../features/patients/components/pain-editor";
+import type {
+  ActivityLevel,
+  Laterality,
+  PainEntry,
+} from "../features/patients/domain/patient";
 
 export interface NewPatientFormValues {
   readonly firstName: string;
@@ -38,9 +46,25 @@ export interface NewPatientFormValues {
   readonly diagnosis: string;
   readonly referringPhysician: string;
   readonly observations: string;
+  /** Profil clinique — facultatif, saisi à la création ou complété en édition. */
+  readonly laterality: Laterality | null;
+  readonly activityLevel: ActivityLevel | null;
+  readonly sport: string;
+  readonly pains: PainEntry[];
+  /** Consentement granulaire (RGPD) — preuve par finalité. */
+  readonly consentStorage: boolean;
+  readonly consentPhotoCapture: boolean;
+  readonly consentPdfExport: boolean;
+  /** Horodatage de la collecte de consentement — `null` si non recueilli dans cet écran. */
+  readonly consentDate: string | null;
 }
 
+export type NewPatientMode = "create" | "edit";
+/** Distingue le CTA principal (déclenche la capture) du CTA secondaire (enregistre sans capturer). */
+export type NewPatientSubmitAction = "primary" | "secondary";
+
 interface NewPatientProps {
+  readonly mode?: NewPatientMode;
   readonly title?: string;
   readonly initialValues?: Partial<NewPatientFormValues>;
   readonly skipConsents?: boolean;
@@ -48,7 +72,9 @@ interface NewPatientProps {
   readonly isSubmitting?: boolean;
   readonly errorMessage?: string | null;
   readonly onCancel?: () => void;
-  readonly onSave?: (values: NewPatientFormValues) => void;
+  readonly onSave?: (values: NewPatientFormValues, action: NewPatientSubmitAction) => void;
+  /** Signale à l'écran parent si la saisie contient des changements non enregistrés. */
+  readonly onDirtyChange?: (dirty: boolean) => void;
 }
 
 const SEX_OPTIONS: readonly { value: "male" | "female" | "other"; label: string }[] = [
@@ -68,20 +94,113 @@ const DIAGNOSIS_OPTIONS: readonly string[] = [
   "Autre",
 ];
 
+const LATERALITY_OPTIONS: readonly { value: Laterality; label: string }[] = [
+  { value: "right", label: "Droitier" },
+  { value: "left", label: "Gaucher" },
+  { value: "ambidextrous", label: "Ambidextre" },
+];
+
+const ACTIVITY_OPTIONS: readonly { value: ActivityLevel; label: string }[] = [
+  { value: "sedentary", label: "Sédentaire" },
+  { value: "moderate", label: "Modéré" },
+  { value: "active", label: "Actif" },
+  { value: "athlete", label: "Athlète" },
+];
+
+/** Clé de persistance du brouillon — un seul brouillon de création à la fois. */
+export const NEW_PATIENT_DRAFT_KEY = "new_patient_draft_v1";
+
+/** Délai de debounce avant l'écriture du brouillon (évite d'écrire à chaque frappe). */
+const DRAFT_DEBOUNCE_MS = 1000;
+
+type TouchableFieldKey = "firstName" | "lastName" | "sex" | "dob";
+
+interface NewPatientDraftV1 {
+  readonly firstName: string;
+  readonly lastName: string;
+  readonly sex: NewPatientFormValues["sex"];
+  readonly dob: string;
+  readonly heightCm: string;
+  readonly weightKg: string;
+  readonly diagnosis: string;
+  readonly referring: string;
+  readonly observations: string;
+  readonly laterality: Laterality | null;
+  readonly activityLevel: ActivityLevel | null;
+  readonly sport: string;
+  readonly pains: PainEntry[];
+}
+
+function isDraftEmpty(d: NewPatientDraftV1): boolean {
+  return (
+    !d.firstName &&
+    !d.lastName &&
+    !d.sex &&
+    !d.dob &&
+    !d.heightCm &&
+    !d.weightKg &&
+    !d.diagnosis &&
+    !d.referring &&
+    !d.observations &&
+    !d.laterality &&
+    !d.activityLevel &&
+    !d.sport &&
+    d.pains.length === 0
+  );
+}
+
+function readDraft(): NewPatientDraftV1 | null {
+  const raw = getKeyValueStorage().getItem(NEW_PATIENT_DRAFT_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as Partial<NewPatientDraftV1>;
+    return {
+      firstName: parsed.firstName ?? "",
+      lastName: parsed.lastName ?? "",
+      sex: parsed.sex ?? null,
+      dob: parsed.dob ?? "",
+      heightCm: parsed.heightCm ?? "",
+      weightKg: parsed.weightKg ?? "",
+      diagnosis: parsed.diagnosis ?? "",
+      referring: parsed.referring ?? "",
+      observations: parsed.observations ?? "",
+      laterality: parsed.laterality ?? null,
+      activityLevel: parsed.activityLevel ?? null,
+      sport: parsed.sport ?? "",
+      pains: parsed.pains ?? [],
+    };
+  } catch {
+    // Brouillon corrompu — ignoré silencieusement, comme s'il n'existait pas.
+    return null;
+  }
+}
+
+/** Purge le brouillon — à appeler après une création réussie ou un abandon confirmé. */
+export function clearNewPatientDraft(): void {
+  getKeyValueStorage().removeItem(NEW_PATIENT_DRAFT_KEY);
+}
+
 export function NewPatient({
-  title = "Nouveau patient",
+  mode = "create",
+  title,
   initialValues,
   skipConsents = false,
-  submitLabel = "Creer le patient & demarrer la capture",
+  submitLabel,
   isSubmitting = false,
   errorMessage,
   onCancel,
   onSave,
+  onDirtyChange,
 }: NewPatientProps) {
+  const isEdit = mode === "edit";
+  const resolvedTitle = title ?? (isEdit ? "Modifier le patient" : "Nouveau patient");
+  const resolvedSubmitLabel =
+    submitLabel ?? (isEdit ? "Enregistrer les modifications" : "Créer et capturer");
+
   const [firstName, setFirstName] = useState(initialValues?.firstName ?? "");
   const [lastName, setLastName] = useState(initialValues?.lastName ?? "");
   const [sex, setSex] = useState<NewPatientFormValues["sex"]>(initialValues?.sex ?? null);
-  const [dob, setDob] = useState(formatDobForInput(initialValues?.dateOfBirth));
+  const [dob, setDob] = useState(formatIsoDateForDisplay(initialValues?.dateOfBirth));
   const [heightCm, setHeightCm] = useState(
     initialValues?.heightCm ? String(initialValues.heightCm) : "",
   );
@@ -91,106 +210,433 @@ export function NewPatient({
   const [diagnosis, setDiagnosis] = useState(initialValues?.diagnosis ?? "");
   const [referring, setReferring] = useState(initialValues?.referringPhysician ?? "");
   const [observations, setObservations] = useState(initialValues?.observations ?? "");
-  const [consents, setConsents] = useState<boolean[]>(
-    skipConsents ? [true, true, true] : [false, false, false],
+  const [laterality, setLaterality] = useState<Laterality | null>(
+    initialValues?.laterality ?? null,
   );
+  const [activityLevel, setActivityLevel] = useState<ActivityLevel | null>(
+    initialValues?.activityLevel ?? null,
+  );
+  const [sport, setSport] = useState(initialValues?.sport ?? "");
+  const [pains, setPains] = useState<PainEntry[]>(initialValues?.pains ?? []);
+  const [consents, setConsents] = useState<boolean[]>(() => {
+    if (isEdit) {
+      // Déjà recueillis par ailleurs — l'écran d'édition ne les recapture pas.
+      return [
+        initialValues?.consentStorage ?? true,
+        initialValues?.consentPhotoCapture ?? true,
+        initialValues?.consentPdfExport ?? true,
+      ];
+    }
+    return skipConsents ? [true, true, true] : [false, false, false];
+  });
   const [showSexPicker, setShowSexPicker] = useState(false);
   const [showDxPicker, setShowDxPicker] = useState(false);
+  const [clinicalOpen, setClinicalOpen] = useState<boolean>(
+    isEdit ||
+      Boolean(
+        initialValues?.laterality ||
+          initialValues?.activityLevel ||
+          initialValues?.sport?.trim() ||
+          (initialValues?.pains && initialValues.pains.length > 0),
+      ),
+  );
+
+  const [touched, setTouched] = useState<Partial<Record<TouchableFieldKey, boolean>>>({});
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
+
+  const firstNameRef = useRef<TextInput>(null);
+  const lastNameRef = useRef<TextInput>(null);
+  const dobRef = useRef<TextInput>(null);
+  const scrollRef = useRef<ScrollView>(null);
+  const sexWrapRef = useRef<View>(null);
+  const consentWrapRef = useRef<View>(null);
+
+  // Restaure un éventuel brouillon au montage — jamais en édition, et jamais
+  // pour un formulaire pré-rempli explicitement par l'appelant (duplication).
+  useEffect(() => {
+    if (isEdit || initialValues) return;
+    const draft = readDraft();
+    if (!draft || isDraftEmpty(draft)) return;
+    setFirstName(draft.firstName);
+    setLastName(draft.lastName);
+    setSex(draft.sex);
+    setDob(draft.dob);
+    setHeightCm(draft.heightCm);
+    setWeightKg(draft.weightKg);
+    setDiagnosis(draft.diagnosis);
+    setReferring(draft.referring);
+    setObservations(draft.observations);
+    setLaterality(draft.laterality);
+    setActivityLevel(draft.activityLevel);
+    setSport(draft.sport);
+    setPains(draft.pains);
+    if (draft.laterality || draft.activityLevel || draft.sport || draft.pains.length > 0) {
+      setClinicalOpen(true);
+    }
+    setDraftRestored(true);
+    // Montage uniquement — le brouillon n'est restauré qu'une fois.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persiste le brouillon avec un léger debounce — jamais les consentements
+  // (preuve RGPD à recueillir fraîchement à chaque création), jamais en édition
+  // (un patient existant ne doit ni lire ni écraser le brouillon de création).
+  useEffect(() => {
+    if (isEdit) return;
+    const timer = setTimeout(() => {
+      const draft: NewPatientDraftV1 = {
+        firstName,
+        lastName,
+        sex,
+        dob,
+        heightCm,
+        weightKg,
+        diagnosis,
+        referring,
+        observations,
+        laterality,
+        activityLevel,
+        sport,
+        pains,
+      };
+      if (isDraftEmpty(draft)) {
+        getKeyValueStorage().removeItem(NEW_PATIENT_DRAFT_KEY);
+      } else {
+        getKeyValueStorage().setItem(NEW_PATIENT_DRAFT_KEY, JSON.stringify(draft));
+      }
+    }, DRAFT_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [
+    isEdit,
+    firstName,
+    lastName,
+    sex,
+    dob,
+    heightCm,
+    weightKg,
+    diagnosis,
+    referring,
+    observations,
+    laterality,
+    activityLevel,
+    sport,
+    pains,
+  ]);
+
+  const initialSnapshotRef = useRef(
+    JSON.stringify({
+      firstName: initialValues?.firstName ?? "",
+      lastName: initialValues?.lastName ?? "",
+      sex: initialValues?.sex ?? null,
+      dob: formatIsoDateForDisplay(initialValues?.dateOfBirth),
+      heightCm: initialValues?.heightCm ? String(initialValues.heightCm) : "",
+      weightKg: initialValues?.weightKg ? String(initialValues.weightKg) : "",
+      diagnosis: initialValues?.diagnosis ?? "",
+      referring: initialValues?.referringPhysician ?? "",
+      observations: initialValues?.observations ?? "",
+      laterality: initialValues?.laterality ?? null,
+      activityLevel: initialValues?.activityLevel ?? null,
+      sport: initialValues?.sport ?? "",
+      pains: initialValues?.pains ?? [],
+      consents: isEdit
+        ? [
+            initialValues?.consentStorage ?? true,
+            initialValues?.consentPhotoCapture ?? true,
+            initialValues?.consentPdfExport ?? true,
+          ]
+        : skipConsents
+          ? [true, true, true]
+          : [false, false, false],
+    }),
+  );
+
+  const isDirty = useMemo(() => {
+    const current = JSON.stringify({
+      firstName,
+      lastName,
+      sex,
+      dob,
+      heightCm,
+      weightKg,
+      diagnosis,
+      referring,
+      observations,
+      laterality,
+      activityLevel,
+      sport,
+      pains,
+      consents,
+    });
+    return current !== initialSnapshotRef.current;
+  }, [
+    firstName,
+    lastName,
+    sex,
+    dob,
+    heightCm,
+    weightKg,
+    diagnosis,
+    referring,
+    observations,
+    laterality,
+    activityLevel,
+    sport,
+    pains,
+    consents,
+  ]);
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
 
   const allConsents = consents.every(Boolean);
+  // En édition, les consentements ont déjà été recueillis ailleurs : jamais
+  // requis, jamais ré-affichés sous forme de cases à cocher.
+  const consentsRequired = !isEdit && !skipConsents;
+
+  const fieldErrors = useMemo(() => {
+    const e: Partial<Record<TouchableFieldKey, string>> = {};
+    if (!firstName.trim()) e.firstName = "Le prenom est requis.";
+    if (!lastName.trim()) e.lastName = "Le nom est requis.";
+    if (!sex) e.sex = "Le sexe est requis.";
+    if (!dob.trim()) e.dob = "La date de naissance est requise.";
+    else if (!isValidDob(dob)) e.dob = "Date invalide — format attendu JJ/MM/AAAA.";
+    return e;
+  }, [firstName, lastName, sex, dob]);
+
   const missing = useMemo(() => {
     const m: string[] = [];
-    if (!firstName.trim()) m.push("Prenom");
-    if (!lastName.trim()) m.push("Nom");
-    if (!sex) m.push("Sexe");
-    if (!isValidDob(dob)) m.push("Naissance");
-    if (!skipConsents && !allConsents) m.push("Consentements");
+    if (fieldErrors.firstName) m.push("Prénom");
+    if (fieldErrors.lastName) m.push("Nom");
+    if (fieldErrors.sex) m.push("Sexe");
+    if (fieldErrors.dob) m.push("Naissance");
+    if (consentsRequired && !allConsents) m.push("Consentements");
     return m;
-  }, [firstName, lastName, sex, dob, allConsents, skipConsents]);
+  }, [fieldErrors, allConsents, consentsRequired]);
 
   const formValid = missing.length === 0;
-  const canSubmit = formValid && !isSubmitting;
+
+  function markTouched(key: TouchableFieldKey) {
+    setTouched((t) => (t[key] ? t : { ...t, [key]: true }));
+  }
+
+  function shownError(key: TouchableFieldKey): string | undefined {
+    return touched[key] || submitAttempted ? fieldErrors[key] : undefined;
+  }
 
   function toggleConsent(i: number) {
     setConsents((prev) => prev.map((v, j) => (j === i ? !v : v)));
   }
 
-  function handleSubmit() {
-    if (!canSubmit) return;
+  /** Scroll best-effort vers une section sans TextInput focusable (Sexe, Consentements). */
+  function scrollIntoView(target: React.RefObject<View | null>) {
+    const node = target.current as unknown as {
+      measureLayout?: (
+        relativeNode: number,
+        onSuccess: (x: number, y: number) => void,
+        onFail?: () => void,
+      ) => void;
+    } | null;
+    const scrollNode = scrollRef.current as unknown as {
+      getInnerViewNode?: () => number;
+      scrollTo?: (opts: { y: number; animated: boolean }) => void;
+    } | null;
+    if (!node?.measureLayout || !scrollNode?.getInnerViewNode) return;
+    node.measureLayout(
+      scrollNode.getInnerViewNode(),
+      (_x, y) => scrollNode.scrollTo?.({ y: Math.max(y - 24, 0), animated: true }),
+      () => undefined,
+    );
+  }
+
+  function focusFirstInvalidField() {
+    if (fieldErrors.firstName) {
+      firstNameRef.current?.focus();
+      return;
+    }
+    if (fieldErrors.lastName) {
+      lastNameRef.current?.focus();
+      return;
+    }
+    if (fieldErrors.sex) {
+      scrollIntoView(sexWrapRef);
+      return;
+    }
+    if (fieldErrors.dob) {
+      dobRef.current?.focus();
+      return;
+    }
+    if (consentsRequired && !allConsents) {
+      scrollIntoView(consentWrapRef);
+    }
+  }
+
+  function handleClearDraft() {
+    setFirstName("");
+    setLastName("");
+    setSex(null);
+    setDob("");
+    setHeightCm("");
+    setWeightKg("");
+    setDiagnosis("");
+    setReferring("");
+    setObservations("");
+    setLaterality(null);
+    setActivityLevel(null);
+    setSport("");
+    setPains([]);
+    clearNewPatientDraft();
+    setDraftRestored(false);
+  }
+
+  function handleSubmit(action: NewPatientSubmitAction) {
+    if (isSubmitting) return;
+    setSubmitAttempted(true);
+    setTouched({ firstName: true, lastName: true, sex: true, dob: true });
+    if (!formValid) {
+      focusFirstInvalidField();
+      return;
+    }
     const iso = parseDobToIso(dob);
     if (!iso || !sex) return;
-    onSave?.({
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      sex,
-      dateOfBirth: iso,
-      heightCm: parseNumberOrNull(heightCm),
-      weightKg: parseNumberOrNull(weightKg),
-      diagnosis: diagnosis.trim(),
-      referringPhysician: referring.trim(),
-      observations: observations.trim(),
-    });
+    if (!isEdit) {
+      clearNewPatientDraft();
+      setDraftRestored(false);
+    }
+
+    // En édition, les consentements ne sont jamais recapturés : on renvoie
+    // tels quels ceux déjà recueillis (jamais fabriqués côté formulaire).
+    const consentPayload = isEdit
+      ? {
+          storage: consents[0],
+          photo: consents[1],
+          pdf: consents[2],
+          date: initialValues?.consentDate ?? null,
+        }
+      : skipConsents
+        ? { storage: false, photo: false, pdf: false, date: null }
+        : {
+            storage: consents[0],
+            photo: consents[1],
+            pdf: consents[2],
+            date: allConsents ? new Date().toISOString() : null,
+          };
+
+    onSave?.(
+      {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        sex,
+        dateOfBirth: iso,
+        heightCm: parseNumberOrNull(heightCm),
+        weightKg: parseNumberOrNull(weightKg),
+        diagnosis: diagnosis.trim(),
+        referringPhysician: referring.trim(),
+        observations: observations.trim(),
+        laterality,
+        activityLevel,
+        sport: sport.trim(),
+        pains,
+        consentStorage: consentPayload.storage,
+        consentPhotoCapture: consentPayload.photo,
+        consentPdfExport: consentPayload.pdf,
+        consentDate: consentPayload.date,
+      },
+      action,
+    );
   }
+
+  const showConsentError = submitAttempted && consentsRequired && !allConsents;
 
   return (
     <View style={styles.root}>
       <StatusBar barStyle="dark-content" />
       <SafeAreaView edges={["top"]} style={styles.headerSafe}>
         <NavBar
-          title={title}
+          title={resolvedTitle}
           back
           onBack={onCancel}
           action={isSubmitting ? "..." : "Enregistrer"}
-          onAction={canSubmit ? handleSubmit : undefined}
+          onAction={isSubmitting ? undefined : () => handleSubmit("primary")}
         />
       </SafeAreaView>
 
       <ScrollView
+        ref={scrollRef}
         style={styles.body}
         contentContainerStyle={styles.bodyContent}
         showsVerticalScrollIndicator={false}
       >
-        <SectionLabel>Identite</SectionLabel>
+        {draftRestored ? (
+          <View style={styles.draftBanner} testID="np-draft-banner">
+            <Text style={styles.draftBannerText}>Brouillon restaure</Text>
+            <Pressable onPress={handleClearDraft} hitSlop={8} testID="np-draft-clear">
+              <Text style={styles.draftBannerAction}>Effacer</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        <SectionLabel>Identité</SectionLabel>
         <View style={{ gap: 12 }}>
           <View style={styles.row2}>
             <View style={styles.col}>
               <Field
-                label="Prenom"
+                ref={firstNameRef}
+                label="Prénom"
                 placeholder="Sophie"
                 value={firstName}
                 onChangeText={setFirstName}
+                onBlur={() => markTouched("firstName")}
+                error={shownError("firstName")}
                 autoCapitalize="words"
                 testID="np-first-name"
               />
             </View>
             <View style={styles.col}>
               <Field
+                ref={lastNameRef}
                 label="Nom"
                 placeholder="Leclerc"
                 value={lastName}
                 onChangeText={setLastName}
+                onBlur={() => markTouched("lastName")}
+                error={shownError("lastName")}
                 autoCapitalize="words"
                 testID="np-last-name"
               />
             </View>
           </View>
           <View style={styles.row2}>
-            <View style={styles.col}>
+            <View style={styles.col} ref={sexWrapRef}>
               <SelectField
                 label="Sexe"
-                placeholder="Selectionner"
+                placeholder="Sélectionner"
                 value={sex ? labelForSex(sex) : undefined}
                 onPress={() => setShowSexPicker(true)}
                 testID="np-sex"
               />
+              {shownError("sex") ? (
+                <Text
+                  style={styles.selectError}
+                  accessibilityRole="alert"
+                  accessibilityLiveRegion="polite"
+                  testID="np-sex-error"
+                >
+                  {shownError("sex")}
+                </Text>
+              ) : null}
             </View>
             <View style={styles.col}>
               <Field
+                ref={dobRef}
                 label="Naissance"
                 placeholder="JJ/MM/AAAA"
                 icon="calendar"
                 value={dob}
                 onChangeText={(raw) => setDob(formatDobMask(raw))}
+                onBlur={() => markTouched("dob")}
+                error={shownError("dob")}
                 type="number"
                 testID="np-dob"
               />
@@ -230,11 +676,12 @@ export function NewPatient({
             testID="np-diagnosis"
           />
           <Field
-            label="Medecin referent"
+            label="Médecin référent"
             placeholder="Dr. ..."
             icon="user"
             value={referring}
             onChangeText={setReferring}
+            testID="np-referring-physician"
           />
           <View>
             <Text style={styles.fieldLabel}>Observations initiales</Text>
@@ -251,10 +698,65 @@ export function NewPatient({
           </View>
         </View>
 
-        {!skipConsents ? (
+        <SectionLabel
+          style={styles.sectionGap}
+          right={
+            <Pressable
+              onPress={() => setClinicalOpen((v) => !v)}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: clinicalOpen }}
+              accessibilityLabel={
+                clinicalOpen ? "Réduire le profil clinique" : "Déplier le profil clinique"
+              }
+              testID="np-clinical-toggle"
+            >
+              <View style={{ transform: [{ rotate: clinicalOpen ? "180deg" : "0deg" }] }}>
+                <Icon name="chevDown" size={16} color={colors.textMuted} />
+              </View>
+            </Pressable>
+          }
+        >
+          {isEdit ? "Profil clinique" : "Profil clinique (optionnel)"}
+        </SectionLabel>
+        {clinicalOpen ? (
+          <View style={{ gap: 12 }} testID="np-clinical-section">
+            <View>
+              <Text style={styles.fieldLabel}>Latéralité</Text>
+              <ToggleChips
+                options={LATERALITY_OPTIONS}
+                value={laterality}
+                onSelect={setLaterality}
+                testIDPrefix="np-laterality"
+              />
+            </View>
+            <View>
+              <Text style={styles.fieldLabel}>Niveau d'activité</Text>
+              <ToggleChips
+                options={ACTIVITY_OPTIONS}
+                value={activityLevel}
+                onSelect={setActivityLevel}
+                testIDPrefix="np-activity"
+              />
+            </View>
+            <Field
+              label="Sport pratiqué"
+              placeholder="Tennis, course à pied..."
+              value={sport}
+              onChangeText={setSport}
+              testID="np-sport"
+            />
+            <View>
+              <Text style={styles.fieldLabel}>Douleurs</Text>
+              <PainEditor pains={pains} onChange={setPains} />
+            </View>
+          </View>
+        ) : null}
+
+        {consentsRequired ? (
           <>
             <SectionLabel style={styles.sectionGap}>Consentements patient</SectionLabel>
-            <View style={styles.consentCard}>
+            <View style={styles.consentCard} ref={consentWrapRef}>
               {[
                 "Stockage et traitement des donnees",
                 "Capture photo / video",
@@ -284,6 +786,30 @@ export function NewPatient({
                 );
               })}
             </View>
+            {showConsentError ? (
+              <Text
+                style={styles.consentErrorText}
+                accessibilityRole="alert"
+                accessibilityLiveRegion="polite"
+                testID="np-consent-error"
+              >
+                Les 3 consentements sont requis pour creer le patient.
+              </Text>
+            ) : null}
+          </>
+        ) : null}
+
+        {isEdit ? (
+          <>
+            <SectionLabel style={styles.sectionGap}>Consentement patient</SectionLabel>
+            <View style={styles.consentReadonlyCard} testID="np-consent-readonly">
+              <Icon name="check" size={14} color={colors.green} strokeWidth={2.5} />
+              <Text style={styles.consentReadonlyText}>
+                {initialValues?.consentDate
+                  ? `Consentement recueilli le ${formatIsoDateForDisplay(initialValues.consentDate)}`
+                  : "Consentement recueilli (date non renseignée)"}
+              </Text>
+            </View>
           </>
         ) : null}
 
@@ -293,16 +819,20 @@ export function NewPatient({
       <SafeAreaView edges={["bottom"]} style={styles.actionBar}>
         <View style={styles.actionBarInner}>
           <Btn
-            label={submitLabel}
-            icon="camera"
-            disabled={!canSubmit}
-            onPress={handleSubmit}
+            label={resolvedSubmitLabel}
+            icon={isEdit ? undefined : "camera"}
+            disabled={isSubmitting}
+            onPress={() => handleSubmit("primary")}
             testID="np-submit"
           />
-          {missing.length > 0 ? (
-            <Text style={styles.missingHint} testID="np-missing-hint">
-              Champs requis : {missing.join(" · ")}
-            </Text>
+          {!isEdit ? (
+            <Btn
+              label="Enregistrer sans capturer"
+              variant="secondary"
+              disabled={isSubmitting}
+              onPress={() => handleSubmit("secondary")}
+              testID="np-submit-secondary"
+            />
           ) : null}
         </View>
       </SafeAreaView>
@@ -312,10 +842,14 @@ export function NewPatient({
         title="Sexe"
         options={SEX_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
         selectedValue={sex ?? undefined}
-        onClose={() => setShowSexPicker(false)}
+        onClose={() => {
+          setShowSexPicker(false);
+          markTouched("sex");
+        }}
         onSelect={(v) => {
           setSex(v as NewPatientFormValues["sex"]);
           setShowSexPicker(false);
+          markTouched("sex");
         }}
       />
       <PickerModal
@@ -374,11 +908,51 @@ function PickerModal({ visible, title, options, selectedValue, onSelect, onClose
   );
 }
 
+interface ToggleChipsProps<T extends string> {
+  readonly options: readonly { value: T; label: string }[];
+  readonly value: T | null;
+  readonly onSelect: (value: T | null) => void;
+  readonly testIDPrefix: string;
+}
+
+/** Groupe de puces à sélection unique (déselectionnable) — latéralité, niveau d'activité. */
+function ToggleChips<T extends string>({
+  options,
+  value,
+  onSelect,
+  testIDPrefix,
+}: ToggleChipsProps<T>) {
+  return (
+    <View style={styles.chipsRow}>
+      {options.map((o) => {
+        const active = value === o.value;
+        return (
+          <Pressable
+            key={o.value}
+            onPress={() => onSelect(active ? null : o.value)}
+            style={({ pressed }) => [
+              styles.chip,
+              active && styles.chipActive,
+              pressed && styles.pressed,
+            ]}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: active }}
+            testID={`${testIDPrefix}-${o.value}`}
+          >
+            <Text style={[styles.chipText, active && styles.chipTextActive]}>{o.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 function labelForSex(s: "male" | "female" | "other"): string {
   return s === "female" ? "Femme" : s === "male" ? "Homme" : "Non precise";
 }
 
-function formatDobForInput(iso?: string): string {
+/** Convertit une date ISO (naissance ou consentement) en JJ/MM/AAAA pour affichage/saisie. */
+function formatIsoDateForDisplay(iso?: string | null): string {
   if (!iso) return "";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
@@ -459,6 +1033,34 @@ const styles = StyleSheet.create({
     minHeight: 44,
     textAlignVertical: "top",
   },
+  chipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.s8,
+  },
+  chip: {
+    paddingHorizontal: spacing.s12,
+    height: sizes.chip,
+    borderRadius: radius.chip,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.bgCard,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  chipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  chipText: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    color: colors.textSecond,
+  },
+  chipTextActive: {
+    color: colors.textInverse,
+    fontWeight: fontWeight.semiBold,
+  },
   consentCard: {
     backgroundColor: colors.bgCard,
     borderRadius: radius.cardLg,
@@ -499,6 +1101,56 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.textSecond,
   },
+  consentErrorText: {
+    marginTop: spacing.s8,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    color: colors.red,
+  },
+  consentReadonlyCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: colors.greenLight,
+    borderRadius: radius.cardLg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 14,
+  },
+  consentReadonlyText: {
+    flex: 1,
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    color: colors.textSecond,
+  },
+  selectError: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    color: colors.red,
+  },
+  draftBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: colors.amberLight,
+    borderRadius: radius.field,
+    paddingHorizontal: spacing.s12,
+    paddingVertical: spacing.s10,
+    marginBottom: spacing.s14,
+  },
+  draftBannerText: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.semiBold,
+    color: colors.amber,
+  },
+  draftBannerAction: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.bold,
+    color: colors.amber,
+    textDecorationLine: "underline",
+  },
   actionBar: {
     backgroundColor: colors.bgCard,
     borderTopWidth: StyleSheet.hairlineWidth,
@@ -510,12 +1162,6 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 4,
     gap: 8,
-  },
-  missingHint: {
-    fontFamily: fonts.sans,
-    fontSize: fontSize.eyebrow,
-    color: colors.amber,
-    textAlign: "center",
   },
   errorBanner: {
     marginTop: spacing.s14,

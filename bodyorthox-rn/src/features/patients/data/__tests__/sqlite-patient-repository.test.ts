@@ -157,6 +157,47 @@ describe("SqlitePatientRepository", () => {
         repo.create({ name: "Jean", dateOfBirth: "not-a-date" }),
       ).rejects.toThrow();
     });
+
+    it("persists granular consent fields and referringPhysician", async () => {
+      const db = createMockDb();
+      (db.execute as jest.Mock).mockResolvedValueOnce({
+        rows: [],
+        rowsAffected: 1,
+      });
+      const repo = new SqlitePatientRepository(db);
+
+      const patient = await repo.create({
+        name: "Jean Dupont",
+        referringPhysician: "Dr. Martin",
+        consentStorage: true,
+        consentPhotoCapture: true,
+        consentPdfExport: false,
+        consentDate: "2026-01-01T00:00:00.000Z",
+      });
+
+      expect(patient.referringPhysician).toBe("Dr. Martin");
+      expect(patient.consentStorage).toBe(true);
+      expect(patient.consentPdfExport).toBe(false);
+      expect(db.execute).toHaveBeenCalledWith(
+        expect.stringContaining("referring_physician"),
+        expect.arrayContaining(["Dr. Martin", 1, 1, 0, "2026-01-01T00:00:00.000Z"]),
+      );
+    });
+
+    it("stores null for consent/referringPhysician columns when absent", async () => {
+      const db = createMockDb();
+      (db.execute as jest.Mock).mockResolvedValueOnce({
+        rows: [],
+        rowsAffected: 1,
+      });
+      const repo = new SqlitePatientRepository(db);
+
+      await repo.create({ name: "Jean Dupont" });
+
+      const [, params] = (db.execute as jest.Mock).mock.calls[0];
+      // 4 dernières colonnes : consent_storage, consent_photo_capture, consent_pdf_export, referring_physician
+      expect(params.slice(-4)).toEqual([null, null, null, null]);
+    });
   });
 
   describe("update", () => {
@@ -180,6 +221,29 @@ describe("SqlitePatientRepository", () => {
       });
 
       expect(updated.name).toBe("Jane Dupont");
+    });
+
+    it("persists granular consent fields and referringPhysician on update", async () => {
+      const db = createMockDb([mockPatientRow]);
+      (db.execute as jest.Mock)
+        .mockResolvedValueOnce({ rows: [mockPatientRow], rowsAffected: 0 }) // getById
+        .mockResolvedValueOnce({ rows: [], rowsAffected: 1 }); // update
+
+      const repo = new SqlitePatientRepository(db);
+      const updated = await repo.update("test-patient-id", {
+        referringPhysician: "Dr. Petit",
+        consentStorage: true,
+        consentPhotoCapture: false,
+        consentPdfExport: true,
+      });
+
+      expect(updated.referringPhysician).toBe("Dr. Petit");
+      expect(updated.consentPhotoCapture).toBe(false);
+      expect(db.execute).toHaveBeenNthCalledWith(
+        2,
+        expect.stringContaining("referring_physician"),
+        expect.arrayContaining(["Dr. Petit", 1, 0, 1]),
+      );
     });
   });
 

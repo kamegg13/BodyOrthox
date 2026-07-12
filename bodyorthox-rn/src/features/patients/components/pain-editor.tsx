@@ -9,9 +9,7 @@ import {
 } from "react-native";
 import { PainEntry } from "../domain/patient";
 import { generateId } from "../../../shared/utils/generate-id";
-import { Colors } from "../../../shared/design-system/colors";
-import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
-import { FontSize, FontWeight } from "../../../shared/design-system/typography";
+import { colors, fonts, fontSize, fontWeight, radius, spacing } from "../../../theme/tokens";
 
 interface PainEditorProps {
   pains: PainEntry[];
@@ -238,7 +236,7 @@ export function PainEditor({ pains, onChange }: PainEditorProps) {
             value={draft.notes}
             onChangeText={v => setDraft(d => ({ ...d, notes: v }))}
             placeholder="Ex: douleur à l'effort..."
-            placeholderTextColor={Colors.textDisabled}
+            placeholderTextColor={colors.textMuted}
             multiline
           />
 
@@ -264,148 +262,157 @@ export function PainEditor({ pains, onChange }: PainEditorProps) {
 
 const styles = StyleSheet.create({
   container: {
-    gap: Spacing.sm,
+    gap: spacing.s8,
   },
   pill: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.primaryLight,
-    borderRadius: BorderRadius.full,
-    paddingVertical: Spacing.xs,
-    paddingLeft: Spacing.md,
-    paddingRight: Spacing.sm,
-    gap: Spacing.sm,
+    backgroundColor: colors.primaryLight,
+    borderRadius: radius.pill,
+    paddingVertical: spacing.s4,
+    paddingLeft: spacing.s14,
+    paddingRight: spacing.s8,
+    gap: spacing.s8,
   },
   pillText: {
     flex: 1,
   },
   pillLabel: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.medium,
-    color: Colors.primary,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.medium,
+    color: colors.primary,
   },
   pillRemove: {
-    fontSize: FontSize.xs,
-    color: Colors.textSecondary,
-    paddingHorizontal: Spacing.xs,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.captionXs,
+    color: colors.textSecond,
+    paddingHorizontal: spacing.s4,
   },
   // Bouton secondaire — hairline sur blanc, texte encre (le cyan n'est
   // jamais une couleur de bouton).
   addButton: {
     borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: BorderRadius.md,
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
+    borderColor: colors.border,
+    borderRadius: radius.field,
+    paddingVertical: spacing.s8,
+    paddingHorizontal: spacing.s14,
     alignItems: "center",
   },
   addButtonText: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.medium,
-    color: Colors.textPrimary,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.medium,
+    color: colors.textPrimary,
   },
   form: {
-    backgroundColor: Colors.backgroundCard,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
-    gap: Spacing.sm,
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.cardLg,
+    padding: spacing.s14,
+    gap: spacing.s8,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
   },
   // Eyebrow — micro-label de groupe de champ (façon plaque d'instrument).
   formTitle: {
-    fontSize: FontSize.xs,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.textDisabled,
-    marginTop: Spacing.xs,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.captionXs,
+    fontWeight: fontWeight.semiBold,
+    color: colors.textMuted,
+    marginTop: spacing.s4,
   },
   optionsRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: Spacing.xs,
+    gap: spacing.s4,
   },
   chip: {
     borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: BorderRadius.full,
-    paddingVertical: Spacing.xs,
-    paddingHorizontal: Spacing.sm,
+    borderColor: colors.border,
+    borderRadius: radius.pill,
+    paddingVertical: spacing.s4,
+    paddingHorizontal: spacing.s8,
   },
   chipActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   chipText: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    color: colors.textSecond,
   },
   chipTextActive: {
-    color: Colors.textOnPrimary,
-    fontWeight: FontWeight.medium,
+    color: colors.textInverse,
+    fontWeight: fontWeight.medium,
   },
   sliderRow: {
     flexDirection: "row",
-    gap: Spacing.xxs ?? 4,
+    gap: spacing.s4,
   },
   sliderDot: {
     width: 28,
     height: 28,
-    borderRadius: BorderRadius.full,
+    borderRadius: radius.pill,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
   sliderDotActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   sliderDotText: {
-    fontSize: FontSize.xs,
-    color: Colors.textSecondary,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.captionXs,
+    color: colors.textSecond,
   },
   sliderDotTextActive: {
-    color: Colors.textOnPrimary,
-    fontWeight: FontWeight.bold,
+    color: colors.textInverse,
+    fontWeight: fontWeight.bold,
   },
   notesInput: {
     borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.sm,
-    fontSize: FontSize.sm,
-    color: Colors.textPrimary,
+    borderColor: colors.border,
+    borderRadius: radius.field,
+    padding: spacing.s8,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    color: colors.textPrimary,
     minHeight: 60,
     textAlignVertical: "top",
   },
   formActions: {
     flexDirection: "row",
-    gap: Spacing.sm,
+    gap: spacing.s8,
     justifyContent: "flex-end",
-    marginTop: Spacing.xs,
+    marginTop: spacing.s4,
   },
   cancelBtn: {
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    borderRadius: BorderRadius.md,
+    paddingVertical: spacing.s8,
+    paddingHorizontal: spacing.s14,
+    borderRadius: radius.field,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
   },
   cancelBtnText: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    fontWeight: FontWeight.medium,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    color: colors.textSecond,
+    fontWeight: fontWeight.medium,
   },
   // CTA primaire — encre pleine (le cyan n'est jamais une couleur de bouton).
   confirmBtn: {
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    borderRadius: BorderRadius.md,
-    backgroundColor: Colors.textPrimary,
+    paddingVertical: spacing.s8,
+    paddingHorizontal: spacing.s14,
+    borderRadius: radius.field,
+    backgroundColor: colors.textPrimary,
   },
   confirmBtnText: {
-    fontSize: FontSize.sm,
-    color: Colors.textOnPrimary,
-    fontWeight: FontWeight.semiBold,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    color: colors.textInverse,
+    fontWeight: fontWeight.semiBold,
   },
 });

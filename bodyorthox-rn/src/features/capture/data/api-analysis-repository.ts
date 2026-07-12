@@ -65,6 +65,7 @@ interface ApiAnalysis {
   ankleAngle: number | null;
   mlCorrected: boolean;
   manualCorrectionJoint: string | null;
+  clinicalNotes: string | null;
 }
 
 function parseLandmarks(json: string | null): PoseLandmarks | undefined {
@@ -101,6 +102,7 @@ async function apiToAnalysis(
       (row.manualCorrectionJoint as Analysis["manualCorrectionJoint"]) ?? null,
     capturedImageUrl: image,
     allLandmarks,
+    clinicalNotes: row.clinicalNotes ?? undefined,
   };
 }
 
@@ -140,6 +142,7 @@ export class ApiAnalysisRepository implements IAnalysisRepository {
       ankleAngle: input.angles.ankleAngle,
       mlCorrected: input.manualCorrectionApplied ?? false,
       manualCorrectionJoint: input.manualCorrectionJoint ?? null,
+      clinicalNotes: input.clinicalNotes?.trim() || null,
     };
 
     const row = await apiRequest<ApiAnalysis>(
@@ -164,6 +167,7 @@ export class ApiAnalysisRepository implements IAnalysisRepository {
         | "bilateralAngles"
         | "manualCorrectionApplied"
         | "manualCorrectionJoint"
+        | "clinicalNotes"
       >
     >,
   ): Promise<void> {
@@ -183,6 +187,9 @@ export class ApiAnalysisRepository implements IAnalysisRepository {
     }
     if (partial.manualCorrectionJoint !== undefined) {
       body.manualCorrectionJoint = partial.manualCorrectionJoint;
+    }
+    if (partial.clinicalNotes !== undefined) {
+      body.clinicalNotes = partial.clinicalNotes?.trim() || null;
     }
     await apiRequest(`/analyses/${id}`, {
       method: "PATCH",

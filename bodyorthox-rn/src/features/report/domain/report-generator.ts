@@ -27,7 +27,14 @@ export interface ReportData {
   readonly bilateral?: BilateralAngles;
   readonly notes?: string;
   readonly disclaimer: string;
+  /** Score de confiance ML [0,1] de la détection ayant produit l'analyse. */
+  readonly confidenceScore?: number;
 }
+
+// Seuil de confiance ML basse, cf. LOW_CONFIDENCE_THRESHOLD dans
+// src/features/capture/hooks/use-capture-logic.ts — reprise ici telle
+// quelle, aucune valeur n'est inventée.
+const LOW_CONFIDENCE_THRESHOLD = 0.6;
 
 export interface ReportOptions {
   photoBase64?: string;
@@ -59,6 +66,7 @@ export function buildReportData(
     bilateral: analysis.bilateralAngles,
     notes: options.notes?.trim() || undefined,
     disclaimer: LEGAL_CONSTANTS.mdrDisclaimer,
+    confidenceScore: analysis.confidenceScore,
   };
 }
 
@@ -205,6 +213,17 @@ export function generateReportHtml(data: ReportData): string {
     </div>`;
   })();
 
+  // ── Low ML confidence notice ── discreet, factual, never fabricates a
+  // "reliable" mention when the score is absent or above threshold.
+  const confidenceNotice =
+    data.confidenceScore !== undefined && data.confidenceScore < LOW_CONFIDENCE_THRESHOLD
+      ? `<div class="confidence-notice" style="page-break-inside:avoid">
+          <strong>Confiance faible</strong> — la confiance de détection lors de la
+          capture était basse ; les points de repère ont été vérifiés avant validation
+          par le praticien.
+        </div>`
+      : "";
+
   // ── Clinical interpretation ──
   const interpretation = generateInterpretation(data.bilateral);
   const interpretationSection = `<div class="section" style="page-break-inside:avoid">
@@ -342,6 +361,18 @@ export function generateReportHtml(data: ReportData): string {
       padding: 10px 14px;
     }
 
+    /* ── Low confidence notice ── */
+    .confidence-notice {
+      font-size: 10px;
+      color: #7a4a00;
+      line-height: 1.5;
+      background: #fff8ec;
+      border: 1px solid #f0c987;
+      border-radius: 4px;
+      padding: 8px 12px;
+      margin-bottom: 18px;
+    }
+
     /* ── Notes ── */
     .notes-text {
       font-size: 11px;
@@ -412,6 +443,7 @@ export function generateReportHtml(data: ReportData): string {
     </div>
   </div>
 
+  ${confidenceNotice}
   ${photoSection}
   ${bilateralSection}
   ${interpretationSection}

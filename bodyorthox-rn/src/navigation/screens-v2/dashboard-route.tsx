@@ -14,12 +14,11 @@ export function DashboardRoute() {
   const practitionerName = formatPractitionerName(user);
 
   const handleQuickAction = useCallback(
-    (key: "new-patient" | "capture" | "analysis" | "report") => {
+    (key: "new-patient" | "analysis" | "report") => {
       switch (key) {
         case "new-patient":
           navigation.navigate("CreatePatient");
           return;
-        case "capture":
         case "analysis":
         case "report":
           navigation.navigate("MainTabs", { screen: "PatientsTab" });
@@ -36,6 +35,15 @@ export function DashboardRoute() {
   const handlePatientPress = useCallback(
     (patient: Patient) => {
       navigation.navigate("PatientDetail", { patientId: patient.id });
+    },
+    [navigation],
+  );
+
+  // Sélection depuis le picker rapide de capture — même appel que le bouton
+  // Capture de la fiche patient (patient-detail-route.tsx::handleCapture).
+  const handleCaptureForPatient = useCallback(
+    (patient: Patient) => {
+      navigation.navigate("Capture", { patientId: patient.id });
     },
     [navigation],
   );
@@ -68,6 +76,7 @@ export function DashboardRoute() {
       onQuickAction={handleQuickAction}
       onSeeAllPatients={handleSeeAll}
       onPatientPress={handlePatientPress}
+      onCaptureForPatient={handleCaptureForPatient}
       onTabPress={handleTabPress}
     />
   );

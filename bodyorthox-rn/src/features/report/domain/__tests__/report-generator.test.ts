@@ -120,6 +120,11 @@ describe("buildReportData", () => {
     const data = buildReportData(mockAnalysis, mockPatient, { notes: "   " });
     expect(data.notes).toBeUndefined();
   });
+
+  it("should carry the analysis confidenceScore through", () => {
+    const data = buildReportData(mockAnalysis, mockPatient);
+    expect(data.confidenceScore).toBe(0.92);
+  });
 });
 
 // ─── generateInterpretation ──────────────────────────────────
@@ -223,5 +228,18 @@ describe("generateReportHtml", () => {
     const data = buildReportData(mockAnalysis, mockPatient);
     const html = generateReportHtml(data);
     expect(html).not.toContain("Notes cliniques");
+  });
+
+  it("should mention low confidence when confidenceScore is below threshold", () => {
+    const lowConfidenceAnalysis: Analysis = { ...mockAnalysis, confidenceScore: 0.4 };
+    const data = buildReportData(lowConfidenceAnalysis, mockPatient);
+    const html = generateReportHtml(data);
+    expect(html).toContain("Confiance faible");
+  });
+
+  it("should NOT mention confidence when confidenceScore is above threshold", () => {
+    const data = buildReportData(mockAnalysis, mockPatient);
+    const html = generateReportHtml(data);
+    expect(html).not.toContain("Confiance faible");
   });
 });

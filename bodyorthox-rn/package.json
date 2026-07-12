@@ -29,11 +29,13 @@
     "react-native": "0.79.7",
     "react-native-biometrics": "^3.0.1",
     "react-native-gesture-handler": "^2.24.0",
+    "react-native-html-to-pdf": "^0.12.0",
     "react-native-image-picker": "^8.2.1",
     "react-native-keychain": "^9.2.2",
     "react-native-reanimated": "^3.17.4",
     "react-native-safe-area-context": "^5.4.0",
     "react-native-screens": "^4.10.0",
+    "react-native-share": "^12.3.1",
     "react-native-svg": "^15.8.0",
     "react-native-vision-camera": "^4.6.4",
     "react-native-web": "^0.19.13",
@@ -71,7 +73,7 @@
       "./jest.setup.ts"
     ],
     "transformIgnorePatterns": [
-      "node_modules/(?!(react-native|@react-native|@react-native-async-storage|@react-navigation|@notifee|react-native-vision-camera|react-native-biometrics|react-native-keychain|react-native-reanimated|react-native-gesture-handler|react-native-screens|react-native-safe-area-context|react-native-svg|zustand|immer)/)"
+      "node_modules/(?!(react-native|@react-native|@react-native-async-storage|@react-navigation|@notifee|react-native-vision-camera|react-native-biometrics|react-native-keychain|react-native-reanimated|react-native-gesture-handler|react-native-screens|react-native-safe-area-context|react-native-svg|react-native-html-to-pdf|react-native-share|zustand|immer)/)"
     ],
     "moduleNameMapper": {
       "^@/(.*)$": "<rootDir>/src/$1",

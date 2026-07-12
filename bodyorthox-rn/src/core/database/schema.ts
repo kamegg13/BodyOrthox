@@ -57,6 +57,29 @@ export const ADD_PATIENT_CONSENT_DATE_COLUMN = `
   ALTER TABLE patients ADD COLUMN consent_date TEXT;
 `;
 
+// Consentement granulaire — preuve RGPD par finalité (stockage / capture photo / export PDF).
+export const ADD_PATIENT_CONSENT_STORAGE_COLUMN = `
+  ALTER TABLE patients ADD COLUMN consent_storage INTEGER;
+`;
+
+export const ADD_PATIENT_CONSENT_PHOTO_CAPTURE_COLUMN = `
+  ALTER TABLE patients ADD COLUMN consent_photo_capture INTEGER;
+`;
+
+export const ADD_PATIENT_CONSENT_PDF_EXPORT_COLUMN = `
+  ALTER TABLE patients ADD COLUMN consent_pdf_export INTEGER;
+`;
+
+export const ADD_PATIENT_REFERRING_PHYSICIAN_COLUMN = `
+  ALTER TABLE patients ADD COLUMN referring_physician TEXT;
+`;
+
+// Interprétation clinique du praticien — jamais générée automatiquement,
+// affichée dans Résultats et reprise telle quelle dans le rapport PDF.
+export const ADD_ANALYSIS_CLINICAL_NOTES_COLUMN = `
+  ALTER TABLE analyses ADD COLUMN clinical_notes TEXT;
+`;
+
 export const CREATE_IDX_PATIENTS_NAME = `
   CREATE INDEX IF NOT EXISTS idx_patients_name ON patients(name);
 `;
@@ -78,4 +101,9 @@ export const ALL_MIGRATIONS = [
   ADD_PATIENT_ARCHIVED_AT_COLUMN,
   ADD_PATIENT_CONSENT_GIVEN_COLUMN,
   ADD_PATIENT_CONSENT_DATE_COLUMN,
+  ADD_PATIENT_CONSENT_STORAGE_COLUMN,
+  ADD_PATIENT_CONSENT_PHOTO_CAPTURE_COLUMN,
+  ADD_PATIENT_CONSENT_PDF_EXPORT_COLUMN,
+  ADD_PATIENT_REFERRING_PHYSICIAN_COLUMN,
+  ADD_ANALYSIS_CLINICAL_NOTES_COLUMN,
 ];

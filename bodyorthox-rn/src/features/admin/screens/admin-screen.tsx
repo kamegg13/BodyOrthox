@@ -13,6 +13,8 @@ import {
 import { apiRequest } from '../../../core/api/api-client';
 import { Card } from '../../../components/Card';
 import { SectionLabel } from '../../../components/SectionLabel';
+import { LoadingState } from '../../../components/LoadingState';
+import { EmptyState } from '../../../components/EmptyState';
 import {
   colors,
   fonts,
@@ -86,11 +88,7 @@ export function AdminScreen() {
   };
 
   if (isLoading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.ink} />
-      </View>
-    );
+    return <LoadingState fullScreen testID="admin-loading" />;
   }
 
   return (
@@ -107,6 +105,8 @@ export function AdminScreen() {
           onChangeText={setNewEmail}
           autoCapitalize="none"
           keyboardType="email-address"
+          textContentType="emailAddress"
+          autoComplete="email"
           placeholderTextColor={colors.textMuted}
           testID="admin-new-email"
         />
@@ -117,6 +117,11 @@ export function AdminScreen() {
           value={newPassword}
           onChangeText={setNewPassword}
           secureTextEntry
+          // Compte praticien créé par l'admin : c'est un nouveau mot de passe
+          // (pas la ressaisie du sien) — permet au gestionnaire de mots de
+          // passe de proposer une génération plutôt qu'un remplissage.
+          textContentType="newPassword"
+          autoComplete="new-password"
           placeholderTextColor={colors.textMuted}
           testID="admin-new-password"
         />
@@ -155,7 +160,12 @@ export function AdminScreen() {
           </React.Fragment>
         ))}
         {users.length === 0 && (
-          <Text style={styles.empty}>Aucun compte</Text>
+          <EmptyState
+            title="Aucun compte"
+            message="Créez le premier compte praticien ci-dessus."
+            style={styles.emptyOverride}
+            testID="admin-empty"
+          />
         )}
       </Card>
     </ScrollView>
@@ -163,12 +173,6 @@ export function AdminScreen() {
 }
 
 const styles = StyleSheet.create({
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.bg,
-  },
   container: {
     flex: 1,
     backgroundColor: colors.bg,
@@ -229,11 +233,9 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginTop: 2,
   },
-  empty: {
-    fontFamily: fonts.sans,
-    fontSize: fontSize.bodyLg,
-    color: colors.textMuted,
-    textAlign: 'center',
+  emptyOverride: {
+    flex: 0,
+    backgroundColor: colors.bgCard,
     paddingVertical: spacing.s16,
   },
 });

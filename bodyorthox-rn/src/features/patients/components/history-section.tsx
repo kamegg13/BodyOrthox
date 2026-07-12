@@ -2,7 +2,7 @@ import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Analysis } from "../../capture/domain/analysis";
 import { PatientHistoryTile } from "./patient-history-tile";
-import { LoadingSpinner } from "../../../shared/components/loading-spinner";
+import { LoadingState } from "../../../components/LoadingState";
 import { SectionLabel } from "../../../components/SectionLabel";
 import { Colors } from "../../../shared/design-system/colors";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
@@ -30,7 +30,7 @@ export function HistorySection({
       </SectionLabel>
 
       {analysesLoading && (
-        <LoadingSpinner message="Chargement des analyses..." />
+        <LoadingState message="Chargement des analyses..." />
       )}
 
       {!analysesLoading && analyses.length === 0 && (

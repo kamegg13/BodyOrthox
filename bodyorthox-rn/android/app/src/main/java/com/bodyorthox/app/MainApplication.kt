@@ -1,6 +1,7 @@
 package com.bodyorthox.app
 
 import android.app.Application
+import cl.json.ShareApplication
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
 import com.facebook.react.ReactHost
@@ -12,7 +13,11 @@ import com.facebook.react.defaults.DefaultReactNativeHost
 import com.facebook.react.soloader.OpenSourceMergedSoMapping
 import com.facebook.soloader.SoLoader
 
-class MainApplication : Application(), ReactApplication {
+class MainApplication : Application(), ShareApplication, ReactApplication {
+
+  // Authority du FileProvider déclaré dans AndroidManifest.xml, consommée
+  // par react-native-share pour exposer les PDF générés en content://.
+  override fun getFileProviderAuthority(): String = BuildConfig.APPLICATION_ID + ".provider"
 
   override val reactNativeHost: ReactNativeHost =
       object : DefaultReactNativeHost(this) {

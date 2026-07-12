@@ -55,6 +55,12 @@ export interface Patient {
   /** Consentement patient enregistré par le praticien. */
   readonly consentGiven?: boolean;
   readonly consentDate?: string; // ISO 8601 UTC
+  /** Consentement granulaire — chaque item peut être prouvé séparément (RGPD). */
+  readonly consentStorage?: boolean;
+  readonly consentPhotoCapture?: boolean;
+  readonly consentPdfExport?: boolean;
+  /** Médecin ayant adressé le patient (facultatif). */
+  readonly referringPhysician?: string;
 }
 
 export interface CreatePatientInput {
@@ -65,6 +71,10 @@ export interface CreatePatientInput {
   morphologicalProfile?: MorphologicalProfile;
   consentGiven?: boolean;
   consentDate?: string;
+  consentStorage?: boolean;
+  consentPhotoCapture?: boolean;
+  consentPdfExport?: boolean;
+  referringPhysician?: string;
 }
 
 export interface UpdatePatientInput {
@@ -75,6 +85,10 @@ export interface UpdatePatientInput {
   morphologicalProfile?: MorphologicalProfile;
   consentGiven?: boolean;
   consentDate?: string;
+  consentStorage?: boolean;
+  consentPhotoCapture?: boolean;
+  consentPdfExport?: boolean;
+  referringPhysician?: string;
 }
 
 /** Plancher plausible pour une année de naissance. */
@@ -136,6 +150,7 @@ export function createPatient(input: CreatePatientInput): Patient {
   const id = generateId();
   const name = input.name?.trim() || undefined;
   const displayLabel = input.displayLabel?.trim() || undefined;
+  const referringPhysician = input.referringPhysician?.trim() || undefined;
 
   // Au moins un identifiant d'affichage doit exister : si ni name ni displayLabel,
   // on génère un libellé par défaut non-identifiant à partir de l'id.
@@ -154,6 +169,16 @@ export function createPatient(input: CreatePatientInput): Patient {
       ? { consentGiven: input.consentGiven }
       : {}),
     ...(input.consentDate ? { consentDate: input.consentDate } : {}),
+    ...(input.consentStorage !== undefined
+      ? { consentStorage: input.consentStorage }
+      : {}),
+    ...(input.consentPhotoCapture !== undefined
+      ? { consentPhotoCapture: input.consentPhotoCapture }
+      : {}),
+    ...(input.consentPdfExport !== undefined
+      ? { consentPdfExport: input.consentPdfExport }
+      : {}),
+    ...(referringPhysician ? { referringPhysician } : {}),
   };
 }
 
@@ -185,6 +210,18 @@ export function updatePatient(
       ? { consentGiven: input.consentGiven }
       : {}),
     ...(input.consentDate !== undefined ? { consentDate: input.consentDate } : {}),
+    ...(input.consentStorage !== undefined
+      ? { consentStorage: input.consentStorage }
+      : {}),
+    ...(input.consentPhotoCapture !== undefined
+      ? { consentPhotoCapture: input.consentPhotoCapture }
+      : {}),
+    ...(input.consentPdfExport !== undefined
+      ? { consentPdfExport: input.consentPdfExport }
+      : {}),
+    ...(input.referringPhysician !== undefined
+      ? { referringPhysician: input.referringPhysician.trim() || undefined }
+      : {}),
   };
 }
 

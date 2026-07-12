@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RouteProp } from "@react-navigation/native";
@@ -18,12 +19,15 @@ import {
   isLowConfidence,
 } from "../domain/manual-correction";
 import { bilateralWithCorrection } from "../domain/corrected-bilateral";
-import { LoadingSpinner } from "../../../shared/components/loading-spinner";
-import { ErrorWidget } from "../../../shared/components/error-widget";
-import { Colors } from "../../../shared/design-system/colors";
-import { Spacing } from "../../../shared/design-system/spacing";
-import { Typography } from "../../../shared/design-system/typography";
-import { colors, fonts, radius } from "../../../theme/tokens";
+import { Btn, Card, Icon, LoadingState, ErrorState } from "../../../components";
+import {
+  colors,
+  fonts,
+  fontSize,
+  fontWeight,
+  radius,
+  spacing,
+} from "../../../theme/tokens";
 import { formatDisplayDateTime } from "../../../shared/utils/date-utils";
 import { useAnalysisRepository } from "../../../shared/hooks/use-analysis-repository";
 import { JointPointDisplay } from "../components/joint-point-display";
@@ -136,18 +140,24 @@ export function ReplayScreen() {
 
   if (isLoading)
     return (
-      <LoadingSpinner fullScreen message="Chargement de la relecture..." />
+      <LoadingState fullScreen message="Chargement de la relecture..." />
     );
   if (error)
-    return <ErrorWidget message={error} onRetry={() => navigation.goBack()} />;
-  if (!analysis) return <ErrorWidget message="Analyse introuvable." />;
+    return (
+      <ErrorState
+        message={error}
+        actionLabel="Réessayer"
+        onAction={() => navigation.goBack()}
+      />
+    );
+  if (!analysis) return <ErrorState message="Analyse introuvable." />;
 
   const confidenceColor =
     analysis.confidenceScore >= 0.85
-      ? Colors.confidenceHigh
+      ? colors.green
       : analysis.confidenceScore >= 0.6
-        ? Colors.confidenceMedium
-        : Colors.confidenceLow;
+        ? colors.amberMid
+        : colors.red;
 
   const lowConfidence = isLowConfidence(analysis.confidenceScore);
 
@@ -158,98 +168,102 @@ export function ReplayScreen() {
   ];
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      testID="replay-screen"
-    >
-      <View style={styles.headerRow}>
-        <TouchableOpacity
-          onPress={handleBack}
-          testID="back-button"
-          accessibilityRole="button"
-          accessibilityLabel="Retour aux résultats"
-        >
-          <Text style={styles.backText}>← Retour</Text>
-        </TouchableOpacity>
-        <Text style={[Typography.h3, styles.headerTitle]}>
-          Relecture experte
-        </Text>
-      </View>
-
-      <View style={styles.metaCard}>
-        <Text style={styles.metaDate}>
-          {formatDisplayDateTime(new Date(analysis.createdAt))}
-        </Text>
-        <View
-          style={[styles.confidenceBadge, { borderColor: confidenceColor }]}
-        >
-          <Text style={[styles.confidenceText, { color: confidenceColor }]}>
-            Confiance {confidenceLabel(analysis.confidenceScore)} –{" "}
-            {Math.round(analysis.confidenceScore * 100)}%
+    <View style={styles.root}>
+      <SafeAreaView edges={["top"]} style={styles.headerSafe}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            onPress={handleBack}
+            testID="back-button"
+            accessibilityRole="button"
+            accessibilityLabel="Retour aux résultats"
+            style={styles.backBtn}
+            hitSlop={8}
+          >
+            <Icon name="back" size={16} color={colors.accent} strokeWidth={1.75} />
+            <Text style={styles.backText}>Retour</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            Relecture experte
           </Text>
         </View>
-      </View>
+      </SafeAreaView>
 
-      <JointPointDisplay
-        joints={joints}
-        selectedJoint={selectedJoint}
-        lowConfidence={lowConfidence}
-        onJointSelect={handleJointSelect}
-      />
-
-      {selectedJoint && (
-        <CorrectionPanel
-          selectedJoint={selectedJoint}
-          joints={joints}
-          confidenceScore={analysis.confidenceScore}
-          manualCorrectionApplied={analysis.manualCorrectionApplied}
-          manualCorrectionJoint={analysis.manualCorrectionJoint}
-          lowConfidence={lowConfidence}
-          correctionInput={correctionInput}
-          correctionError={correctionError}
-          correctionSuccess={correctionSuccess}
-          disclaimerText={disclaimerText}
-          onCorrectionInputChange={handleCorrectionInputChange}
-          onSaveCorrection={handleSaveCorrection}
-        />
-      )}
-
-      <View style={styles.section}>
-        <Text style={[Typography.h3, styles.sectionTitle]}>Données brutes</Text>
-        <View style={styles.rawDataCard}>
-          <RawRow
-            label="Genou"
-            value={`${analysis.angles.kneeAngle.toFixed(1)}°`}
-          />
-          <RawRow
-            label="Hanche"
-            value={`${analysis.angles.hipAngle.toFixed(1)}°`}
-          />
-          <RawRow
-            label="Cheville"
-            value={`${analysis.angles.ankleAngle.toFixed(1)}°`}
-          />
-          <RawRow
-            label="Confiance ML"
-            value={`${(analysis.confidenceScore * 100).toFixed(1)}%`}
-          />
-          <RawRow label="ID analyse" value={analysis.id} />
-        </View>
-      </View>
-
-      <TouchableOpacity
-        style={styles.actionButton}
-        onPress={() =>
-          navigation.navigate("Results", { analysisId, patientId })
-        }
-        testID="results-button"
-        accessibilityRole="button"
-        accessibilityLabel="Voir les résultats"
+      <ScrollView
+        style={styles.body}
+        contentContainerStyle={styles.content}
+        testID="replay-screen"
       >
-        <Text style={styles.actionButtonText}>Voir les résultats</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        <Card style={styles.metaCard}>
+          <Text style={styles.metaDate}>
+            {formatDisplayDateTime(new Date(analysis.createdAt))}
+          </Text>
+          <View
+            style={[styles.confidenceBadge, { borderColor: confidenceColor }]}
+          >
+            <Text style={[styles.confidenceText, { color: confidenceColor }]}>
+              Confiance {confidenceLabel(analysis.confidenceScore)} –{" "}
+              {Math.round(analysis.confidenceScore * 100)}%
+            </Text>
+          </View>
+        </Card>
+
+        <JointPointDisplay
+          joints={joints}
+          selectedJoint={selectedJoint}
+          lowConfidence={lowConfidence}
+          onJointSelect={handleJointSelect}
+        />
+
+        {selectedJoint && (
+          <CorrectionPanel
+            selectedJoint={selectedJoint}
+            joints={joints}
+            confidenceScore={analysis.confidenceScore}
+            manualCorrectionApplied={analysis.manualCorrectionApplied}
+            manualCorrectionJoint={analysis.manualCorrectionJoint}
+            lowConfidence={lowConfidence}
+            correctionInput={correctionInput}
+            correctionError={correctionError}
+            correctionSuccess={correctionSuccess}
+            disclaimerText={disclaimerText}
+            onCorrectionInputChange={handleCorrectionInputChange}
+            onSaveCorrection={handleSaveCorrection}
+          />
+        )}
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Données brutes</Text>
+          <Card style={styles.rawDataCard}>
+            <RawRow
+              label="Genou"
+              value={`${analysis.angles.kneeAngle.toFixed(1)}°`}
+            />
+            <RawRow
+              label="Hanche"
+              value={`${analysis.angles.hipAngle.toFixed(1)}°`}
+            />
+            <RawRow
+              label="Cheville"
+              value={`${analysis.angles.ankleAngle.toFixed(1)}°`}
+            />
+            <RawRow
+              label="Confiance ML"
+              value={`${(analysis.confidenceScore * 100).toFixed(1)}%`}
+            />
+            <RawRow label="ID analyse" value={analysis.id} />
+          </Card>
+        </View>
+
+        <Btn
+          label="Voir les résultats"
+          variant="primary"
+          onPress={() =>
+            navigation.navigate("Results", { analysisId, patientId })
+          }
+          testID="results-button"
+        />
+      </ScrollView>
+    </View>
   );
 }
 
@@ -263,71 +277,90 @@ function RawRow({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  content: {
-    padding: Spacing.lg,
-    gap: Spacing.md,
-    paddingBottom: Spacing.xxxl,
+  root: { flex: 1, backgroundColor: colors.bg },
+  headerSafe: {
+    backgroundColor: colors.bgCard,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.md,
-    marginBottom: Spacing.sm,
+    gap: spacing.s10,
+    paddingHorizontal: spacing.s16,
+    paddingVertical: spacing.s12,
   },
-  backText: { color: Colors.primary, fontSize: 16 },
-  headerTitle: { color: Colors.textPrimary },
+  backBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.s6,
+  },
+  backText: {
+    fontFamily: fonts.sans,
+    fontWeight: fontWeight.semiBold,
+    fontSize: fontSize.body,
+    color: colors.accent,
+  },
+  headerTitle: {
+    flex: 1,
+    fontFamily: fonts.display,
+    fontSize: fontSize.h2,
+    fontWeight: fontWeight.semiBold,
+    color: colors.textPrimary,
+    textAlign: "center",
+    marginRight: 44,
+  },
+  body: { flex: 1 },
+  content: {
+    padding: spacing.s16,
+    gap: spacing.s14,
+    paddingBottom: spacing.s24,
+  },
   metaCard: {
-    backgroundColor: Colors.backgroundCard,
-    borderRadius: radius.cardLg,
-    padding: Spacing.md,
-    gap: Spacing.sm,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    padding: spacing.s14,
+    gap: spacing.s10,
   },
-  metaDate: { fontFamily: fonts.mono, color: Colors.textSecondary, fontSize: 14 },
+  metaDate: { fontFamily: fonts.mono, color: colors.textSecond, fontSize: fontSize.body },
   confidenceBadge: {
     alignSelf: "flex-start",
     borderWidth: 1,
     borderRadius: radius.pill,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
+    paddingHorizontal: spacing.s12,
+    paddingVertical: spacing.s6,
   },
-  confidenceText: { fontFamily: fonts.mono, fontSize: 13, fontWeight: "600" },
-  section: { gap: Spacing.sm },
-  sectionTitle: { color: Colors.textPrimary },
+  confidenceText: {
+    fontFamily: fonts.mono,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.semiBold,
+  },
+  section: { gap: spacing.s10 },
+  sectionTitle: {
+    fontFamily: fonts.display,
+    fontSize: fontSize.h2,
+    fontWeight: fontWeight.semiBold,
+    color: colors.textPrimary,
+  },
   rawDataCard: {
-    backgroundColor: Colors.backgroundCard,
-    borderRadius: radius.cardLg,
-    padding: Spacing.md,
-    gap: Spacing.xs,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    padding: spacing.s14,
+    gap: spacing.s4,
   },
   rawRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: Spacing.xs,
+    paddingVertical: spacing.s8,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
   rawLabel: {
     fontFamily: fonts.sans,
-    fontSize: 13,
+    fontSize: fontSize.body,
     color: colors.textMuted,
   },
-  rawValue: { fontFamily: fonts.mono, color: Colors.textPrimary, fontSize: 13, fontWeight: "500" },
-  // CTA primaire : encre pleine — le cyan n'est jamais un fond de bouton.
-  actionButton: {
-    backgroundColor: colors.ink,
-    paddingVertical: Spacing.md,
-    borderRadius: radius.button,
-    alignItems: "center",
-  },
-  actionButtonText: {
-    color: Colors.textOnPrimary,
-    fontWeight: "700",
-    fontSize: 15,
+  rawValue: {
+    fontFamily: fonts.mono,
+    color: colors.textPrimary,
+    fontSize: fontSize.body,
+    fontWeight: fontWeight.medium,
   },
 });

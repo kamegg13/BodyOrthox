@@ -88,6 +88,35 @@ describe("createAnalysis", () => {
     expect(() => new Date(analysis.createdAt)).not.toThrow();
   });
 
+  it("defaults clinicalNotes to undefined", () => {
+    const analysis = createAnalysis({
+      patientId: "p1",
+      angles: validAngles,
+      confidenceScore: 0.9,
+    });
+    expect(analysis.clinicalNotes).toBeUndefined();
+  });
+
+  it("stores a trimmed clinicalNotes value", () => {
+    const analysis = createAnalysis({
+      patientId: "p1",
+      angles: validAngles,
+      confidenceScore: 0.9,
+      clinicalNotes: "  Suivi recommandé dans 3 mois.  ",
+    });
+    expect(analysis.clinicalNotes).toBe("Suivi recommandé dans 3 mois.");
+  });
+
+  it("never stores a blank clinicalNotes as an empty string", () => {
+    const analysis = createAnalysis({
+      patientId: "p1",
+      angles: validAngles,
+      confidenceScore: 0.9,
+      clinicalNotes: "   ",
+    });
+    expect(analysis.clinicalNotes).toBeUndefined();
+  });
+
   it("accepts boundary values for confidence (0 and 1)", () => {
     expect(() =>
       createAnalysis({

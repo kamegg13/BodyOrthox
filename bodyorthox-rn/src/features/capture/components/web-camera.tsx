@@ -10,6 +10,7 @@ import { Platform, StyleSheet, Text, View } from "react-native";
 import { Btn } from "../../../components/Btn";
 import { Icon } from "../../../components/icons";
 import { colors, fonts, spacing } from "../../../theme/tokens";
+import { startLuminositySampling, type LumaCanvas } from "../data/luminosity-sampler";
 
 export interface WebCameraRef {
   takePhoto: () => string | null;
@@ -19,10 +20,14 @@ export interface WebCameraRef {
 interface WebCameraProps {
   onPermissionDenied?: (message: string) => void;
   onReady?: () => void;
+  /** Luminosité moyenne (0-255) échantillonnée ~2×/s sur le flux live. Web
+   * uniquement — aucune mesure n'est fabriquée sur les plateformes sans
+   * flux exploitable. */
+  onLuminositySample?: (value: number) => void;
 }
 
 export const WebCamera = forwardRef<WebCameraRef, WebCameraProps>(
-  function WebCamera({ onPermissionDenied, onReady }, ref) {
+  function WebCamera({ onPermissionDenied, onReady, onLuminositySample }, ref) {
     const containerRef = useRef<View>(null);
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
@@ -59,8 +64,10 @@ export const WebCamera = forwardRef<WebCameraRef, WebCameraProps>(
     // Store callbacks in refs to avoid re-running the effect when they change
     const onPermissionDeniedRef = useRef(onPermissionDenied);
     const onReadyRef = useRef(onReady);
+    const onLuminositySampleRef = useRef(onLuminositySample);
     onPermissionDeniedRef.current = onPermissionDenied;
     onReadyRef.current = onReady;
+    onLuminositySampleRef.current = onLuminositySample;
 
     useEffect(() => {
       if (Platform.OS !== "web") return;
@@ -78,6 +85,8 @@ export const WebCamera = forwardRef<WebCameraRef, WebCameraProps>(
       container.appendChild(video);
       videoRef.current = video;
 
+      let stopLuminositySampling: (() => void) | null = null;
+
       navigator.mediaDevices
         .getUserMedia({
           video: {
@@ -91,6 +100,22 @@ export const WebCamera = forwardRef<WebCameraRef, WebCameraProps>(
           video.srcObject = stream;
           video.onloadedmetadata = () => {
             onReadyRef.current?.();
+            // Canvas hors-écran, jamais attaché au DOM — même idiome que
+            // takePhoto() ci-dessus, réutilisé ici pour l'échantillonnage
+            // périodique de luminosité (web uniquement, ~2 Hz).
+            if (onLuminositySampleRef.current) {
+              // `HTMLCanvasElement.getContext("2d")` a un type DOM plus
+              // riche (overloads drawImage) que l'interface minimale et
+              // portable `LumaCanvas` — même idiome de cast que
+              // `containerRef` ci-dessus, la forme réelle est un sur-ensemble
+              // compatible à l'exécution.
+              const samplingCanvas = document.createElement("canvas") as unknown as LumaCanvas;
+              stopLuminositySampling = startLuminositySampling(
+                video,
+                samplingCanvas,
+                (value) => onLuminositySampleRef.current?.(value),
+              );
+            }
           };
         })
         .catch((err) => {
@@ -105,6 +130,8 @@ export const WebCamera = forwardRef<WebCameraRef, WebCameraProps>(
         });
 
       return () => {
+        stopLuminositySampling?.();
+        stopLuminositySampling = null;
         if (streamRef.current) {
           streamRef.current.getTracks().forEach((t) => t.stop());
           streamRef.current = null;

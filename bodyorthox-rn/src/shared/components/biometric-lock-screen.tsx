@@ -13,12 +13,14 @@ import { Spacing, BorderRadius } from '../design-system/spacing';
 
 interface BiometricLockScreenProps {
   onUnlock: () => void;
+  onLogout: () => void;
   isAuthenticating: boolean;
   error?: string | null;
 }
 
 export function BiometricLockScreen({
   onUnlock,
+  onLogout,
   isAuthenticating,
   error,
 }: BiometricLockScreenProps) {
@@ -42,6 +44,10 @@ export function BiometricLockScreen({
         {error && (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>{error}</Text>
+            <Text style={styles.errorHint}>
+              Réessayez la biométrie ci-dessous, ou déconnectez-vous pour revenir à
+              l'écran de connexion.
+            </Text>
           </View>
         )}
 
@@ -60,6 +66,16 @@ export function BiometricLockScreen({
               ? 'Face ID / Touch ID'
               : 'Empreinte digitale'}
           </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.logoutLink}
+          onPress={onLogout}
+          accessibilityRole="button"
+          accessibilityLabel="Se déconnecter"
+          testID="lock-logout-button"
+        >
+          <Text style={styles.logoutText}>Se déconnecter</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -105,6 +121,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 14,
   },
+  errorHint: {
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    fontSize: 12,
+    marginTop: Spacing.xs,
+  },
   button: {
     backgroundColor: Colors.primary,
     paddingHorizontal: Spacing.xl,
@@ -122,5 +144,15 @@ const styles = StyleSheet.create({
     color: Colors.textOnPrimary,
     fontWeight: '600',
     fontSize: 16,
+  },
+  logoutLink: {
+    marginTop: Spacing.sm,
+    padding: Spacing.xs,
+  },
+  logoutText: {
+    color: Colors.textSecondary,
+    fontSize: 14,
+    fontWeight: '500',
+    textDecorationLine: 'underline',
   },
 });

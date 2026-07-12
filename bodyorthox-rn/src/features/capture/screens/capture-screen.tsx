@@ -16,7 +16,7 @@ import { useCaptureLogic } from "../hooks/use-capture-logic";
 import { CapturePreview } from "../components/capture-preview";
 import { CaptureSuccess } from "../components/capture-success";
 import { GuidedCameraOverlay } from "../components/guided-camera-overlay";
-import { LoadingSpinner } from "../../../shared/components/loading-spinner";
+import { LoadingState } from "../../../components/LoadingState";
 import { Btn } from "../../../components/Btn";
 import { Icon } from "../../../components/icons";
 import {
@@ -32,6 +32,22 @@ import { WebCamera } from "../components/web-camera";
 import { PhotoUpload } from "../components/photo-upload";
 
 type Route = RouteProp<RootStackParamList, "Capture">;
+
+/**
+ * Capture est sur le stack racine, mais l'écran Protocols est déclaré à
+ * l'intérieur d'AnalysesStack (MainTabs > AnalysesTab > Protocols). Le
+ * typage de BottomTabParamList n'exprime pas les écrans imbriqués des
+ * onglets (chaque tab est `undefined`) — cast local nécessaire pour cette
+ * navigation imbriquée, comme le reset() de processing-route.tsx.
+ */
+function navigateToProtocols(navigation: {
+  navigate: (screen: string, params?: object) => void;
+}): void {
+  navigation.navigate("MainTabs", {
+    screen: "AnalysesTab",
+    params: { screen: "Protocols" },
+  });
+}
 
 export function CaptureScreen() {
   const { params } = useRoute<Route>();
@@ -51,8 +67,11 @@ export function CaptureScreen() {
     previewUrl,
     mlLoading,
     detectionError,
+    platformLimitation,
     lowConfidenceWarning,
+    restorableDraft,
     webCameraRef,
+    handleLuminositySample,
     handleWebCameraPermissionDenied,
     handlePhotoUploaded,
     handleNativeCamera,
@@ -62,6 +81,8 @@ export function CaptureScreen() {
     handleStartCapture,
     handleSave,
     handleDiscard,
+    handleRestoreDraft,
+    handleDiscardDraft,
   } = useCaptureLogic(patientId);
 
   if (phase.type === "success") {
@@ -90,6 +111,7 @@ export function CaptureScreen() {
         isRecording={phase.type === "recording"}
         mlLoading={mlLoading}
         detectionError={detectionError}
+        platformLimitation={platformLimitation}
         lowConfidenceWarning={lowConfidenceWarning}
         onAnalyze={handleAnalyze}
         onRetake={handleRetake}
@@ -114,7 +136,7 @@ export function CaptureScreen() {
 
   if (phase.type === "idle" || phase.type === "requesting_permission") {
     return (
-      <LoadingSpinner fullScreen message="Initialisation de la caméra..." />
+      <LoadingState fullScreen message="Initialisation de la caméra..." />
     );
   }
 
@@ -135,9 +157,51 @@ export function CaptureScreen() {
           <Text style={styles.topTitle} numberOfLines={1}>
             {topTitle}
           </Text>
-          <View style={styles.roundSpacer} />
+          <Pressable
+            onPress={() => navigateToProtocols(navigation)}
+            style={({ pressed }) => [styles.roundBtn, pressed && styles.pressed]}
+            accessibilityRole="button"
+            accessibilityLabel="Protocole de positionnement"
+            hitSlop={6}
+          >
+            <Icon name="file" size={16} color={colors.white70} strokeWidth={1.75} />
+          </Pressable>
         </View>
       </SafeAreaView>
+
+      {restorableDraft ? (
+        <View style={styles.draftBanner} testID="capture-draft-banner">
+          <View style={styles.draftBannerHead}>
+            <Icon name="alert" size={16} color={colors.white70} strokeWidth={1.6} />
+            <Text style={styles.draftBannerTitle}>Capture en cours restaurée</Text>
+          </View>
+          <Text style={styles.draftBannerText}>
+            Une photo non sauvegardée a été retrouvée pour ce patient.
+          </Text>
+          <View style={styles.draftBannerActions}>
+            <Pressable
+              onPress={handleDiscardDraft}
+              style={({ pressed }) => [styles.draftBannerBtn, pressed && styles.pressed]}
+              accessibilityRole="button"
+              testID="capture-draft-discard"
+            >
+              <Text style={styles.draftBannerBtnText}>Refaire</Text>
+            </Pressable>
+            <Pressable
+              onPress={handleRestoreDraft}
+              style={({ pressed }) => [
+                styles.draftBannerBtn,
+                styles.draftBannerBtnPrimary,
+                pressed && styles.pressed,
+              ]}
+              accessibilityRole="button"
+              testID="capture-draft-restore"
+            >
+              <Text style={styles.draftBannerBtnTextPrimary}>Reprendre</Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
 
       {/* Viseur contenu — caméra + overlay guidé */}
       <View style={styles.viewfinder}>
@@ -145,6 +209,7 @@ export function CaptureScreen() {
           <WebCamera
             ref={webCameraRef}
             onPermissionDenied={handleWebCameraPermissionDenied}
+            onLuminositySample={handleLuminositySample}
           />
         ) : (
           <View style={[StyleSheet.absoluteFill, styles.nativePlaceholder]}>
@@ -196,7 +261,7 @@ export function CaptureScreen() {
                 </View>
               </>
             ) : (
-              <LoadingSpinner message="Capture en cours..." />
+              <LoadingState message="Capture en cours..." />
             )}
           </View>
         )}
@@ -257,9 +322,59 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  roundSpacer: {
-    width: sizes.tap,
-    height: sizes.tap,
+  draftBanner: {
+    marginHorizontal: spacing.s16,
+    marginBottom: spacing.s12,
+    padding: spacing.s12,
+    borderRadius: radius.field,
+    borderWidth: 1.5,
+    borderColor: colors.white20,
+    backgroundColor: colors.white12,
+    gap: spacing.s8,
+  },
+  draftBannerHead: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.s8,
+  },
+  draftBannerTitle: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.body,
+    fontWeight: fontWeight.semiBold,
+    color: colors.textInverse,
+  },
+  draftBannerText: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    color: colors.white70,
+  },
+  draftBannerActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: spacing.s10,
+  },
+  draftBannerBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: radius.button,
+    borderWidth: 1,
+    borderColor: colors.white20,
+  },
+  draftBannerBtnPrimary: {
+    backgroundColor: colors.textInverse,
+    borderColor: colors.textInverse,
+  },
+  draftBannerBtnText: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.semiBold,
+    color: colors.textInverse,
+  },
+  draftBannerBtnTextPrimary: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.semiBold,
+    color: colors.ink,
   },
   viewfinder: {
     flex: 1,

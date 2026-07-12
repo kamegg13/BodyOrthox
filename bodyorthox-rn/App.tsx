@@ -1,4 +1,4 @@
-import React, { useEffect, Component, ErrorInfo } from "react";
+import React, { useCallback, useEffect, useState, Component, ErrorInfo } from "react";
 import {
   Alert,
   Platform,
@@ -9,7 +9,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { NavigationContainer } from "@react-navigation/native";
+import {
+  NavigationContainer,
+  createNavigationContainerRef,
+} from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppNavigator } from "./src/navigation/app-navigator";
@@ -21,7 +24,6 @@ import { Dashboard } from "./src/screens/Dashboard";
 import { PatientList } from "./src/screens/PatientList";
 import { PatientDetail, SAMPLE_PATIENT_DETAIL } from "./src/screens/PatientDetail";
 import { NewPatient } from "./src/screens/NewPatient";
-import { Capture } from "./src/screens/Capture";
 import { Processing } from "./src/screens/Processing";
 import { Results, SAMPLE_RESULTS } from "./src/screens/Results";
 import { Report, SAMPLE_REPORT } from "./src/screens/Report";
@@ -164,7 +166,22 @@ const errorStyles = StyleSheet.create({
   },
 });
 
+const navigationRef = createNavigationContainerRef();
+
+// Écrans plein écran où le FAB de feedback masquerait le contenu critique
+// (viseur caméra, confirmation d'enregistrement).
+const FAB_HIDDEN_ROUTES = new Set(["Capture", "Processing", "Lock"]);
+
 function AppContent() {
+  const [fabHidden, setFabHidden] = useState(true);
+
+  const syncFabWithRoute = useCallback(() => {
+    const routeName = navigationRef.isReady()
+      ? navigationRef.getCurrentRoute()?.name
+      : undefined;
+    setFabHidden(routeName === undefined || FAB_HIDDEN_ROUTES.has(routeName));
+  }, []);
+
   useEffect(() => {
     if (isDevMode()) return;
     initializeDatabase().catch((err) => {
@@ -179,10 +196,14 @@ function AppContent() {
           barStyle="dark-content"
           backgroundColor={Colors.backgroundCard}
         />
-        <NavigationContainer>
+        <NavigationContainer
+          ref={navigationRef}
+          onReady={syncFabWithRoute}
+          onStateChange={syncFabWithRoute}
+        >
           <AppNavigator />
         </NavigationContainer>
-        <FeedbackFab />
+        {!fabHidden && <FeedbackFab />}
         <FeedbackModal />
       </SafeAreaProvider>
     </GestureHandlerRootView>
@@ -199,8 +220,6 @@ function PreviewScreen({ name }: { name: string }) {
       return <PatientDetail data={SAMPLE_PATIENT_DETAIL} />;
     case "new-patient":
       return <NewPatient />;
-    case "capture":
-      return <Capture />;
     case "processing":
       return <Processing />;
     case "results":

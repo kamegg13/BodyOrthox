@@ -5,10 +5,11 @@ import {
   StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Badge, type BadgeColor, Icon, SectionLabel } from "../components";
+import { Badge, type BadgeColor, EmptyState, Icon, SectionLabel } from "../components";
 import {
   colors,
   fonts,
@@ -16,6 +17,7 @@ import {
   fontWeight,
   radius,
   shadows,
+  sizes,
   spacing,
 } from "../theme/tokens";
 
@@ -28,13 +30,40 @@ export interface ReportListItem {
   readonly severity: "normal" | "moderate" | "severe";
 }
 
+export type ReportSeverityFilter = "all" | "normal" | "moderate" | "severe";
+
+interface SeverityChipDef {
+  readonly value: ReportSeverityFilter;
+  readonly label: string;
+}
+
+const SEVERITY_CHIPS: readonly SeverityChipDef[] = [
+  { value: "all", label: "Tous" },
+  { value: "normal", label: "Normal" },
+  { value: "moderate", label: "Modéré" },
+  { value: "severe", label: "Sévère" },
+];
+
 interface ReportsListProps {
   readonly items: readonly ReportListItem[];
-  readonly isLoading?: boolean;
+  /** Distingue « aucun rapport du tout » de « recherche/filtre sans résultat ». */
+  readonly hasAnyReports: boolean;
+  readonly searchQuery: string;
+  readonly onSearchChange: (query: string) => void;
+  readonly severityFilter: ReportSeverityFilter;
+  readonly onSeverityFilterChange: (filter: ReportSeverityFilter) => void;
   readonly onItemPress?: (item: ReportListItem) => void;
 }
 
-export function ReportsList({ items, isLoading = false, onItemPress }: ReportsListProps) {
+export function ReportsList({
+  items,
+  hasAnyReports,
+  searchQuery,
+  onSearchChange,
+  severityFilter,
+  onSeverityFilterChange,
+  onItemPress,
+}: ReportsListProps) {
   return (
     <View style={styles.root}>
       <StatusBar barStyle="dark-content" />
@@ -45,6 +74,51 @@ export function ReportsList({ items, isLoading = false, onItemPress }: ReportsLi
             <Text style={styles.count}>{items.length}</Text>
           ) : null}
         </View>
+
+        <View style={styles.searchBar}>
+          <Icon name="search" size={16} color={colors.textMuted} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Rechercher un nom ou un ID…"
+            placeholderTextColor={colors.textMuted}
+            defaultValue={searchQuery}
+            onChangeText={onSearchChange}
+            returnKeyType="search"
+            clearButtonMode="while-editing"
+            accessibilityLabel="Rechercher un rapport"
+            testID="reports-search-input"
+          />
+        </View>
+
+        <View style={styles.chipsRow}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipsContent}
+          >
+            {SEVERITY_CHIPS.map((chip) => {
+              const active = severityFilter === chip.value;
+              return (
+                <Pressable
+                  key={chip.value}
+                  onPress={() => onSeverityFilterChange(chip.value)}
+                  style={({ pressed }) => [
+                    styles.chip,
+                    active && styles.chipActive,
+                    pressed && styles.pressed,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                  testID={`reports-severity-chip-${chip.value}`}
+                >
+                  <Text style={[styles.chipLabel, active && styles.chipLabelActive]}>
+                    {chip.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
       </SafeAreaView>
 
       <ScrollView
@@ -52,24 +126,27 @@ export function ReportsList({ items, isLoading = false, onItemPress }: ReportsLi
         contentContainerStyle={styles.bodyContent}
         showsVerticalScrollIndicator={false}
       >
-        {isLoading ? (
-          <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>Chargement…</Text>
-          </View>
-        ) : items.length === 0 ? (
-          <View style={styles.empty}>
-            <View style={styles.emptyIcon}>
-              <Icon name="file" size={36} color={colors.textMuted} strokeWidth={1.25} />
-            </View>
-            <Text style={styles.emptyTitle}>Aucun rapport</Text>
-            <Text style={styles.emptySub}>
-              Les rapports d’analyse generes apparaitront ici. Demarrez une capture
-              depuis la fiche d’un patient pour produire le premier.
-            </Text>
-          </View>
+        {items.length === 0 ? (
+          hasAnyReports ? (
+            <EmptyState
+              icon="search"
+              title="Aucun résultat"
+              message="Aucun rapport ne correspond à la recherche ou au filtre choisi."
+              style={styles.empty}
+              testID="reports-empty-search"
+            />
+          ) : (
+            <EmptyState
+              icon="file"
+              title="Aucun rapport"
+              message="Les rapports d’analyse générés apparaîtront ici. Démarrez une capture depuis la fiche d’un patient pour produire le premier."
+              style={styles.empty}
+              testID="reports-empty-none"
+            />
+          )
         ) : (
           <View style={{ gap: 10 }}>
-            <SectionLabel>Rapports recents</SectionLabel>
+            <SectionLabel>Rapports récents</SectionLabel>
             {items.map((item) => (
               <ReportRow key={item.analysisId} item={item} onPress={() => onItemPress?.(item)} />
             ))}
@@ -90,7 +167,7 @@ function ReportRow({
   const sevColor: BadgeColor =
     item.severity === "normal" ? "green" : item.severity === "moderate" ? "amber" : "red";
   const sevLabel =
-    item.severity === "normal" ? "Normal" : item.severity === "moderate" ? "Modere" : "Severe";
+    item.severity === "normal" ? "Normal" : item.severity === "moderate" ? "Modéré" : "Sévère";
   return (
     <Pressable
       onPress={onPress}
@@ -143,6 +220,60 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
     color: colors.textMuted,
   },
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.s8,
+    height: sizes.search,
+    marginHorizontal: spacing.s16,
+    marginBottom: spacing.s10,
+    paddingHorizontal: spacing.s12,
+    backgroundColor: colors.bgSubtle,
+    borderRadius: radius.field,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  searchInput: {
+    flex: 1,
+    fontFamily: fonts.sans,
+    fontSize: fontSize.bodyLg,
+    color: colors.textPrimary,
+    padding: 0,
+  },
+  chipsRow: {
+    paddingBottom: spacing.s10,
+  },
+  chipsContent: {
+    paddingHorizontal: spacing.s16,
+    gap: spacing.s8,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  chip: {
+    height: sizes.chip,
+    paddingHorizontal: 13,
+    borderRadius: radius.chip,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: "transparent",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  chipActive: {
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
+  },
+  chipLabel: {
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    fontWeight: fontWeight.medium,
+    color: colors.textSecond,
+  },
+  chipLabelActive: {
+    fontWeight: fontWeight.bold,
+    color: colors.textInverse,
+  },
+  pressed: { opacity: 0.85 },
   body: { flex: 1 },
   bodyContent: {
     paddingHorizontal: spacing.s16,
@@ -151,30 +282,6 @@ const styles = StyleSheet.create({
   },
   empty: {
     paddingTop: 64,
-    alignItems: "center",
-    gap: spacing.s12,
-  },
-  emptyIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: radius.cardLg,
-    backgroundColor: colors.bgSubtle,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  emptyTitle: {
-    fontFamily: fonts.sans,
-    fontSize: fontSize.bodyLg,
-    fontWeight: fontWeight.bold,
-    color: colors.textPrimary,
-  },
-  emptySub: {
-    fontFamily: fonts.sans,
-    fontSize: fontSize.caption,
-    color: colors.textSecond,
-    textAlign: "center",
-    lineHeight: 18,
-    paddingHorizontal: spacing.s24,
   },
   row: {
     flexDirection: "row",
@@ -188,7 +295,6 @@ const styles = StyleSheet.create({
     gap: 12,
     ...shadows.sm,
   },
-  pressed: { opacity: 0.85 },
   iconWrap: {
     width: 40,
     height: 40,

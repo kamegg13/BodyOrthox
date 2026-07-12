@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useCallback } from "react";
 import {
+  Alert,
   Pressable,
   ScrollView,
   StatusBar,
@@ -47,6 +48,12 @@ export interface PatientDetailData {
   readonly diagnosisLabel: string;
   readonly diagnosisDescription: string;
   readonly history: readonly AnalysisHistoryItem[];
+  /** Nombre total d'analyses du patient — peut dépasser `history.length` (tronqué à 5). */
+  readonly analysisCount: number;
+  /** Médecin ayant adressé le patient — affiché seulement si renseigné. */
+  readonly referringPhysician?: string;
+  /** Date de consentement RGPD (déjà formatée pour l'affichage) — preuve de collecte. */
+  readonly consentDate?: string;
 }
 
 interface PatientDetailProps {
@@ -56,8 +63,14 @@ interface PatientDetailProps {
   readonly onEdit?: () => void;
   readonly onCapture?: () => void;
   readonly onGeneratePdf?: () => void;
+  /** Ouvre la sélection des analyses pour le rapport de progression — masqué si <2 analyses. */
+  readonly onProgressionReport?: () => void;
   readonly onHistoryPress?: (item: AnalysisHistoryItem) => void;
   readonly onTabPress?: (key: "home" | "patients" | "capture" | "reports" | "settings") => void;
+  /** Archivage RGPD — masque le patient de la liste principale sans le supprimer. */
+  readonly onArchive?: () => void;
+  /** Suppression RGPD (droit à l'effacement) — irréversible. */
+  readonly onDelete?: () => void;
 }
 
 export function PatientDetail({
@@ -67,9 +80,34 @@ export function PatientDetail({
   onEdit,
   onCapture,
   onGeneratePdf,
+  onProgressionReport,
   onHistoryPress,
   onTabPress,
+  onArchive,
+  onDelete,
 }: PatientDetailProps) {
+  const handleArchivePress = useCallback(() => {
+    Alert.alert(
+      "Archiver le patient",
+      `Voulez-vous archiver ${data.name} ? Il ne sera plus visible dans la liste principale des patients actifs, mais ses données sont conservées.`,
+      [
+        { text: "Annuler", style: "cancel" },
+        { text: "Archiver", onPress: () => onArchive?.() },
+      ],
+    );
+  }, [data.name, onArchive]);
+
+  const handleDeletePress = useCallback(() => {
+    Alert.alert(
+      "Supprimer le patient",
+      `Voulez-vous vraiment supprimer définitivement ${data.name} ? Cette action est irréversible : toutes les données et analyses associées seront effacées (droit à l'effacement RGPD).`,
+      [
+        { text: "Annuler", style: "cancel" },
+        { text: "Supprimer", style: "destructive", onPress: () => onDelete?.() },
+      ],
+    );
+  }, [data.name, onDelete]);
+
   return (
     <View style={styles.root}>
       <StatusBar barStyle="dark-content" />
@@ -131,6 +169,22 @@ export function PatientDetail({
           <Text style={styles.diagnosisDesc}>{data.diagnosisDescription}</Text>
         </Card>
 
+        {data.referringPhysician || data.consentDate ? (
+          <Card style={styles.diagnosisCard}>
+            <Text style={styles.eyebrow}>Suivi</Text>
+            {data.referringPhysician ? (
+              <Text style={styles.diagnosisDesc} testID="patient-referring-physician">
+                Medecin referent : {data.referringPhysician}
+              </Text>
+            ) : null}
+            {data.consentDate ? (
+              <Text style={styles.diagnosisDesc} testID="patient-consent-date">
+                Consentement RGPD enregistre le {data.consentDate}
+              </Text>
+            ) : null}
+          </Card>
+        ) : null}
+
         <View style={styles.actionsRow}>
           <View style={{ flex: 1 }}>
             <Btn label="Nouvelle capture" icon="camera" small onPress={onCapture} />
@@ -147,11 +201,49 @@ export function PatientDetail({
         </View>
 
         <View>
-          <SectionLabel>Historique d’analyses</SectionLabel>
+          <SectionLabel
+            right={
+              data.analysisCount >= 2 && onProgressionReport ? (
+                <Pressable
+                  onPress={onProgressionReport}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Rapport de progression"
+                  testID="progression-report-link"
+                  style={styles.progressionLink}
+                >
+                  <Text style={styles.progressionLinkText}>Rapport de progression</Text>
+                  <Icon name="chevRight" size={14} color={colors.accent} />
+                </Pressable>
+              ) : undefined
+            }
+          >
+            Historique d’analyses
+          </SectionLabel>
           <View style={{ gap: 10 }}>
             {data.history.map((item) => (
               <HistoryRow key={item.id} item={item} onPress={() => onHistoryPress?.(item)} />
             ))}
+          </View>
+        </View>
+
+        <View style={styles.dangerZone}>
+          <SectionLabel>Zone dangereuse</SectionLabel>
+          <View style={{ gap: 10 }}>
+            <Btn
+              label="Archiver le patient"
+              variant="secondary"
+              small
+              onPress={handleArchivePress}
+              testID="archive-button"
+            />
+            <Btn
+              label="Supprimer le patient"
+              variant="danger"
+              small
+              onPress={handleDeletePress}
+              testID="delete-button"
+            />
           </View>
         </View>
       </ScrollView>
@@ -350,6 +442,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 10,
   },
+  progressionLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+  },
+  progressionLinkText: {
+    fontFamily: fonts.sans,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.semiBold,
+    color: colors.accent,
+  },
+  dangerZone: {
+    marginTop: spacing.s8,
+    paddingTop: spacing.s16,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
   historyRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -414,4 +523,5 @@ export const SAMPLE_PATIENT_DETAIL: PatientDetailData = {
     { id: "h2", date: "10 mars 2026", type: "Sagittal seul", severity: "normal" },
     { id: "h3", date: "05 janv 2026", type: "Posture complète · 4 vues", hka: "172° / 177°", severity: "severe" },
   ],
+  analysisCount: 3,
 };

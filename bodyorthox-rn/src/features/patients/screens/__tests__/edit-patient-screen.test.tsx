@@ -11,7 +11,11 @@ const mockPatient = {
 };
 
 jest.mock("@react-navigation/native", () => ({
-  useNavigation: () => ({ goBack: jest.fn() }),
+  useNavigation: () => ({
+    goBack: jest.fn(),
+    dispatch: jest.fn(),
+    addListener: jest.fn(() => jest.fn()),
+  }),
   useRoute: () => ({ params: { patientId: "p1" } }),
 }));
 
@@ -24,8 +28,8 @@ jest.mock("../../store/patients-store", () => ({
   ),
 }));
 
-jest.mock("../patient-form-screen", () => ({
-  PatientFormScreen: ({ mode, initialValues }: any) =>
+jest.mock("../../../../screens/NewPatient", () => ({
+  NewPatient: ({ mode, initialValues }: any) =>
     require("react").createElement(require("react-native").View, {
       testID: `patient-form-${mode}`,
       accessibilityLabel: initialValues?.firstName,
@@ -33,7 +37,7 @@ jest.mock("../patient-form-screen", () => ({
 }));
 
 describe("EditPatientScreen", () => {
-  it("renders PatientFormScreen in edit mode with pre-filled values", () => {
+  it("renders NewPatient in edit mode with pre-filled values", () => {
     const { getByTestId } = render(<EditPatientScreen />);
     expect(getByTestId("patient-form-edit")).toBeTruthy();
   });

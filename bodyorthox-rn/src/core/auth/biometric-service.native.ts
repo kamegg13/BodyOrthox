@@ -2,7 +2,10 @@ import ReactNativeBiometrics from 'react-native-biometrics';
 import { IBiometricService, BiometricResult } from './biometric-service';
 
 export class NativeBiometricService implements IBiometricService {
-  private rnBiometrics = new ReactNativeBiometrics();
+  // allowDeviceCredentials : autorise le code/schéma/mot de passe de l'appareil
+  // en repli si la biométrie échoue ou n'est pas configurée (iOS : après 2
+  // échecs biométriques ; Android : nécessite API 30+, sinon ignoré silencieusement).
+  private rnBiometrics = new ReactNativeBiometrics({ allowDeviceCredentials: true });
 
   async isAvailable(): Promise<boolean> {
     try {

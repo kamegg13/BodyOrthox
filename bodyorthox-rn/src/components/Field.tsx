@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { forwardRef, useState } from "react";
 import {
   Platform,
   Pressable,
@@ -28,31 +28,59 @@ interface FieldProps {
   readonly value?: string;
   readonly defaultValue?: string;
   readonly onChangeText?: (v: string) => void;
+  readonly onBlur?: () => void;
   readonly icon?: IconName;
   readonly hint?: string;
   readonly error?: string;
   readonly type?: "text" | "password" | "email" | "number";
   readonly disabled?: boolean;
   readonly autoCapitalize?: TextInputProps["autoCapitalize"];
+  /** Surcharge du type d'autofill iOS (déduit de `type` sinon). */
+  readonly textContentType?: TextInputProps["textContentType"];
+  /** Surcharge du type d'autofill Android/web (déduit de `type` sinon). */
+  readonly autoComplete?: TextInputProps["autoComplete"];
   readonly style?: StyleProp<ViewStyle>;
   readonly testID?: string;
 }
 
-export function Field({
-  label,
-  placeholder,
-  value,
-  defaultValue,
-  onChangeText,
-  icon,
-  hint,
-  error,
-  type = "text",
-  disabled = false,
-  autoCapitalize,
-  style,
-  testID,
-}: FieldProps) {
+/** Déduit les props d'autofill (gestionnaire de mots de passe) du `type` du champ. */
+function defaultTextContentType(
+  type: FieldProps["type"],
+): TextInputProps["textContentType"] {
+  if (type === "email") return "emailAddress";
+  if (type === "password") return "password";
+  return "none";
+}
+
+function defaultAutoComplete(
+  type: FieldProps["type"],
+): TextInputProps["autoComplete"] {
+  if (type === "email") return "email";
+  if (type === "password") return "current-password";
+  return "off";
+}
+
+export const Field = forwardRef<TextInput, FieldProps>(function Field(
+  {
+    label,
+    placeholder,
+    value,
+    defaultValue,
+    onChangeText,
+    onBlur,
+    icon,
+    hint,
+    error,
+    type = "text",
+    disabled = false,
+    autoCapitalize,
+    textContentType,
+    autoComplete,
+    style,
+    testID,
+  },
+  ref,
+) {
   const [hidden, setHidden] = useState(type === "password");
   const [focused, setFocused] = useState(false);
   const isPwd = type === "password";
@@ -76,6 +104,7 @@ export function Field({
           <Icon name={icon} size={16} color={colors.textMuted} />
         ) : null}
         <TextInput
+          ref={ref}
           style={styles.textInput}
           placeholder={placeholder}
           placeholderTextColor={colors.textMuted}
@@ -85,10 +114,15 @@ export function Field({
           secureTextEntry={isPwd && hidden}
           editable={!disabled}
           onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
+          onBlur={() => {
+            setFocused(false);
+            onBlur?.();
+          }}
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize ?? (type === "email" ? "none" : undefined)}
           autoCorrect={type !== "email" && type !== "password"}
+          textContentType={textContentType ?? defaultTextContentType(type)}
+          autoComplete={autoComplete ?? defaultAutoComplete(type)}
           testID={testID}
         />
         {isPwd ? (
@@ -103,10 +137,14 @@ export function Field({
         ) : null}
       </View>
       {hint && !hasError ? <Text style={styles.hint}>{hint}</Text> : null}
-      {hasError ? <Text style={styles.error}>{error}</Text> : null}
+      {hasError ? (
+        <Text style={styles.error} accessibilityRole="alert">
+          {error}
+        </Text>
+      ) : null}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   wrap: {

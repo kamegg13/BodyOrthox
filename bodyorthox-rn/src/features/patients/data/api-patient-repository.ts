@@ -11,6 +11,10 @@ interface ApiPatient {
   birthYear?: number;
   consentGiven?: boolean;
   consentDate?: string;
+  consentStorage?: boolean;
+  consentPhotoCapture?: boolean;
+  consentPdfExport?: boolean;
+  referringPhysician?: string;
   heightCm?: number;
   weightKg?: number;
   bmi?: number;
@@ -46,6 +50,10 @@ function toPatient(p: ApiPatient): Patient {
     ...(p.birthYear != null ? { birthYear: p.birthYear } : {}),
     ...(p.consentGiven != null ? { consentGiven: p.consentGiven } : {}),
     ...(p.consentDate ? { consentDate: p.consentDate } : {}),
+    ...(p.consentStorage != null ? { consentStorage: p.consentStorage } : {}),
+    ...(p.consentPhotoCapture != null ? { consentPhotoCapture: p.consentPhotoCapture } : {}),
+    ...(p.consentPdfExport != null ? { consentPdfExport: p.consentPdfExport } : {}),
+    ...(p.referringPhysician ? { referringPhysician: p.referringPhysician } : {}),
     morphologicalProfile: hasMorpho ? {
       heightCm: p.heightCm,
       weightKg: p.weightKg,
@@ -111,6 +119,10 @@ export class ApiPatientRepository implements IPatientRepository {
         birthYear: input.birthYear,
         consentGiven: input.consentGiven,
         consentDate: input.consentDate,
+        consentStorage: input.consentStorage,
+        consentPhotoCapture: input.consentPhotoCapture,
+        consentPdfExport: input.consentPdfExport,
+        referringPhysician: input.referringPhysician,
         ...morphoToBody(input.morphologicalProfile ?? null),
       }),
     }));
@@ -126,6 +138,10 @@ export class ApiPatientRepository implements IPatientRepository {
         birthYear: input.birthYear,
         consentGiven: input.consentGiven,
         consentDate: input.consentDate,
+        consentStorage: input.consentStorage,
+        consentPhotoCapture: input.consentPhotoCapture,
+        consentPdfExport: input.consentPdfExport,
+        referringPhysician: input.referringPhysician,
         ...morphoToBody(input.morphologicalProfile ?? null),
       }),
     }));

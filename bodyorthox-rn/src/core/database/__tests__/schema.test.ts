@@ -5,6 +5,11 @@ import {
   CREATE_IDX_ANALYSES_PATIENT,
   ADD_LANDMARKS_JSON_COLUMN,
   ADD_CAPTURED_IMAGE_URL_COLUMN,
+  ADD_PATIENT_CONSENT_STORAGE_COLUMN,
+  ADD_PATIENT_CONSENT_PHOTO_CAPTURE_COLUMN,
+  ADD_PATIENT_CONSENT_PDF_EXPORT_COLUMN,
+  ADD_PATIENT_REFERRING_PHYSICIAN_COLUMN,
+  ADD_ANALYSIS_CLINICAL_NOTES_COLUMN,
   ALL_MIGRATIONS,
 } from "../schema";
 
@@ -66,13 +71,23 @@ describe("Database Schema", () => {
 
   describe("ALL_MIGRATIONS", () => {
     it("contains all migration statements", () => {
-      expect(ALL_MIGRATIONS).toHaveLength(11);
+      expect(ALL_MIGRATIONS).toHaveLength(16);
       expect(ALL_MIGRATIONS).toContain(CREATE_PATIENTS_TABLE);
       expect(ALL_MIGRATIONS).toContain(CREATE_ANALYSES_TABLE);
       expect(ALL_MIGRATIONS).toContain(CREATE_IDX_PATIENTS_NAME);
       expect(ALL_MIGRATIONS).toContain(CREATE_IDX_ANALYSES_PATIENT);
       expect(ALL_MIGRATIONS).toContain(ADD_LANDMARKS_JSON_COLUMN);
       expect(ALL_MIGRATIONS).toContain(ADD_CAPTURED_IMAGE_URL_COLUMN);
+      expect(ALL_MIGRATIONS).toContain(ADD_PATIENT_CONSENT_STORAGE_COLUMN);
+      expect(ALL_MIGRATIONS).toContain(ADD_PATIENT_CONSENT_PHOTO_CAPTURE_COLUMN);
+      expect(ALL_MIGRATIONS).toContain(ADD_PATIENT_CONSENT_PDF_EXPORT_COLUMN);
+      expect(ALL_MIGRATIONS).toContain(ADD_PATIENT_REFERRING_PHYSICIAN_COLUMN);
+      expect(ALL_MIGRATIONS).toContain(ADD_ANALYSIS_CLINICAL_NOTES_COLUMN);
+    });
+
+    it("clinical_notes migration targets the analyses table", () => {
+      expect(ADD_ANALYSIS_CLINICAL_NOTES_COLUMN).toContain("ALTER TABLE analyses");
+      expect(ADD_ANALYSIS_CLINICAL_NOTES_COLUMN).toContain("clinical_notes TEXT");
     });
 
     it("patients table comes before analyses table", () => {

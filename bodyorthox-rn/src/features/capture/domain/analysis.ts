@@ -18,6 +18,8 @@ export interface Analysis {
   readonly manualCorrectionJoint: "knee" | "hip" | "ankle" | null;
   readonly capturedImageUrl?: string; // base64 data URL, optional
   readonly allLandmarks?: PoseLandmarks; // all 33 landmarks, optional
+  /** Interprétation clinique du praticien — jamais générée automatiquement. */
+  readonly clinicalNotes?: string;
 }
 
 export interface CreateAnalysisInput {
@@ -29,6 +31,7 @@ export interface CreateAnalysisInput {
   manualCorrectionJoint?: "knee" | "hip" | "ankle" | null;
   capturedImageUrl?: string;
   allLandmarks?: PoseLandmarks;
+  clinicalNotes?: string;
 }
 
 export function createAnalysis(input: CreateAnalysisInput): Analysis {
@@ -51,6 +54,8 @@ export function createAnalysis(input: CreateAnalysisInput): Analysis {
     manualCorrectionJoint: input.manualCorrectionJoint ?? null,
     capturedImageUrl: input.capturedImageUrl,
     allLandmarks: input.allLandmarks,
+    // Jamais de chaîne vide stockée : une note blanche équivaut à "pas de note".
+    clinicalNotes: input.clinicalNotes?.trim() || undefined,
   };
 }
 

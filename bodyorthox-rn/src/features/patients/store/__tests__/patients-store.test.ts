@@ -158,6 +158,22 @@ describe('usePatientsStore', () => {
 
       expect(usePatientsStore.getState().patients[0].name).toBe('Jane Dupont');
     });
+
+    it('sets error and re-throws on failure (caller must not proceed as if it succeeded)', async () => {
+      const repo = createMockRepo({
+        update: jest.fn().mockRejectedValue(new Error('Update failed')),
+      });
+      usePatientsStore.setState({ patients: [mockPatient] });
+      usePatientsStore.getState().setRepository(repo);
+
+      await expect(
+        usePatientsStore.getState().updatePatient('p1', { name: 'Jane Dupont' }),
+      ).rejects.toThrow('Update failed');
+
+      expect(usePatientsStore.getState().error).toBe('Update failed');
+      // Le patient en mémoire ne doit pas être modifié si la persistance a échoué.
+      expect(usePatientsStore.getState().patients[0].name).toBe('Jean Dupont');
+    });
   });
 
   describe('setSearchQuery', () => {
@@ -185,7 +201,7 @@ describe('usePatientsStore', () => {
     it('clearFilters removes all active filters', () => {
       usePatientsStore.setState({
         patients: [mockPatient, mockPatient2],
-        activeFilters: new Set<import('../patients-store').PatientFilter>(['male', 'active']),
+        activeFilters: new Set<import('../patients-store').PatientFilter>(['male', 'notArchived']),
         filteredPatients: [],
       });
       usePatientsStore.getState().clearFilters();
@@ -266,6 +282,78 @@ describe('usePatientsStore', () => {
     it('sorts by most recent (createdAt desc)', () => {
       usePatientsStore.getState().setSortBy('recent');
       const { filteredPatients } = usePatientsStore.getState();
+      expect(filteredPatients[0].id).toBe('p2');
+    });
+
+    // Le chip "Actifs" doit refléter le statut non-archivé, pas le niveau
+    // d'activité sportive (`morphologicalProfile.activityLevel`).
+    it('"notArchived" filter is consistent with the default (non-archived) view', () => {
+      const archived = { ...mockPatient, id: 'p3', archivedAt: '2024-01-01T00:00:00Z' };
+      usePatientsStore.setState({
+        patients: [mockPatient, mockPatient2, archived],
+        activeFilters: new Set(),
+        filteredPatients: [],
+      });
+      usePatientsStore.getState().toggleFilter('notArchived');
+      const { filteredPatients } = usePatientsStore.getState();
+      expect(filteredPatients.every((p) => !p.archivedAt)).toBe(true);
+      expect(filteredPatients.find((p) => p.id === 'p3')).toBeUndefined();
+    });
+
+    it('does not confuse "notArchived" with a sport activity-level filter', () => {
+      // mockPatient has activityLevel "active" and mockPatient2 has none set —
+      // the old (buggy) "active" filter used to key off this field and would
+      // have excluded mockPatient2. It must have no bearing anymore: both
+      // non-archived patients are kept regardless of activityLevel.
+      usePatientsStore.getState().toggleFilter('notArchived');
+      const { filteredPatients } = usePatientsStore.getState();
+      expect(filteredPatients.map((p) => p.id).sort()).toEqual(['p1', 'p2']);
+    });
+  });
+
+  describe('search by patient id', () => {
+    it('matches on the raw id (case-insensitive)', () => {
+      usePatientsStore.setState({
+        patients: [mockPatient, mockPatient2],
+        activeFilters: new Set(),
+        sortBy: 'alpha',
+        filteredPatients: [],
+      });
+      usePatientsStore.getState().setSearchQuery('P1');
+      const { filteredPatients } = usePatientsStore.getState();
+      expect(filteredPatients).toHaveLength(1);
+      expect(filteredPatients[0].id).toBe('p1');
+    });
+
+    it('matches on the short id shown on the fiche (P-XXXX derived from a long id)', () => {
+      const longIdPatient = {
+        ...mockPatient,
+        id: 'a1b2c3d4-e5f6-4789-a012-b34c56d78e90',
+        name: 'Marc Petit',
+      };
+      usePatientsStore.setState({
+        patients: [longIdPatient, mockPatient2],
+        activeFilters: new Set(),
+        sortBy: 'alpha',
+        filteredPatients: [],
+      });
+      // Fiche affiche "P-A1B2" pour cet id (4 premiers caractères, majuscules).
+      usePatientsStore.getState().setSearchQuery('P-A1B2');
+      const { filteredPatients } = usePatientsStore.getState();
+      expect(filteredPatients).toHaveLength(1);
+      expect(filteredPatients[0].id).toBe(longIdPatient.id);
+    });
+
+    it('still matches by name', () => {
+      usePatientsStore.setState({
+        patients: [mockPatient, mockPatient2],
+        activeFilters: new Set(),
+        sortBy: 'alpha',
+        filteredPatients: [],
+      });
+      usePatientsStore.getState().setSearchQuery('alice');
+      const { filteredPatients } = usePatientsStore.getState();
+      expect(filteredPatients).toHaveLength(1);
       expect(filteredPatients[0].id).toBe('p2');
     });
   });

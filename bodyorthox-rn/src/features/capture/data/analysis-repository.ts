@@ -13,6 +13,7 @@ export interface IAnalysisRepository {
         | "bilateralAngles"
         | "manualCorrectionApplied"
         | "manualCorrectionJoint"
+        | "clinicalNotes"
       >
     >,
   ): Promise<void>;

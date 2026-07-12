@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Alert } from "react-native";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../types";
@@ -7,8 +8,8 @@ import {
   type AnalysisHistoryItem,
   type PatientDetailData,
 } from "../../screens/PatientDetail";
-import { LoadingSpinner } from "../../shared/components/loading-spinner";
-import { ErrorWidget } from "../../shared/components/error-widget";
+import { LoadingState } from "../../components/LoadingState";
+import { ErrorState } from "../../components/ErrorState";
 import { usePatientsStore } from "../../features/patients/store/patients-store";
 import { useAnalysisRepository } from "../../shared/hooks/use-analysis-repository";
 import {
@@ -31,6 +32,8 @@ export function PatientDetailRoute() {
   );
   const patientsLoading = usePatientsStore((s) => s.isLoading);
   const patientsCount = usePatientsStore((s) => s.patients.length);
+  const deletePatient = usePatientsStore((s) => s.deletePatient);
+  const archivePatient = usePatientsStore((s) => s.archivePatient);
   const repo = useAnalysisRepository();
   const [analyses, setAnalyses] = useState<readonly Analysis[]>([]);
   const [loadingAnalyses, setLoadingAnalyses] = useState(true);
@@ -62,17 +65,11 @@ export function PatientDetailRoute() {
   }, [patient, analyses]);
 
   const handleBack = useCallback(() => {
-    // Sur PatientDetail, le `<` doit toujours revenir a la racine du tab
-    // (Accueil dans AnalysesTab, PatientsList dans PatientsTab).
-    // popToTop evite la boucle Results <-> PatientDetail.
-    const popToTop = (navigation as unknown as { popToTop?: () => void }).popToTop;
-    if (typeof popToTop === "function") {
-      popToTop.call(navigation);
-      return;
-    }
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-    }
+    // Sur PatientDetail, le `<` revient toujours à la racine du tab (Accueil
+    // dans AnalysesTab, PatientsList dans PatientsTab), quel que soit le
+    // point d'entrée sur cette fiche. `popToTop` fait partie de l'API
+    // typée du navigateur natif (StackActionHelpers) : pas besoin de cast.
+    navigation.popToTop();
   }, [navigation]);
   const handleEdit = useCallback(
     () => navigation.navigate("EditPatient", { patientId }),
@@ -91,12 +88,35 @@ export function PatientDetailRoute() {
     if (!last) return;
     navigation.navigate("Report", { analysis: last, patient });
   }, [navigation, patient, analyses]);
+  const handleProgressionReport = useCallback(() => {
+    if (!patient) return;
+    if (analyses.length < 2) return;
+    navigation.navigate("ProgressionSelection", { patient, analyses: [...analyses] });
+  }, [navigation, patient, analyses]);
   const handleHistoryPress = useCallback(
     (item: AnalysisHistoryItem) => {
       navigation.navigate("Results", { analysisId: item.id, patientId });
     },
     [navigation, patientId],
   );
+  const handleDelete = useCallback(async () => {
+    await deletePatient(patientId);
+    const err = usePatientsStore.getState().error;
+    if (err) {
+      Alert.alert("Erreur", err);
+      return;
+    }
+    navigation.navigate("MainTabs", { screen: "PatientsTab" });
+  }, [deletePatient, patientId, navigation]);
+  const handleArchive = useCallback(async () => {
+    await archivePatient(patientId);
+    const err = usePatientsStore.getState().error;
+    if (err) {
+      Alert.alert("Erreur", err);
+      return;
+    }
+    navigation.navigate("MainTabs", { screen: "PatientsTab" });
+  }, [archivePatient, patientId, navigation]);
   const handleTabPress = useCallback(
     (key: "home" | "patients" | "capture" | "reports" | "settings") => {
       switch (key) {
@@ -119,19 +139,26 @@ export function PatientDetailRoute() {
   if (!patient) {
     // Si on attend les patients (initial load), afficher loading plutot que "introuvable"
     if (patientsLoading || patientsCount === 0 || loadingAnalyses) {
-      return <LoadingSpinner message="Chargement..." />;
+      return <LoadingState message="Chargement..." />;
     }
     return (
-      <ErrorWidget
+      <ErrorState
         message="Patient introuvable."
-        onRetry={() => navigation.goBack()}
+        actionLabel="Réessayer"
+        onAction={() => navigation.goBack()}
       />
     );
   }
   if (error && !data) {
-    return <ErrorWidget message={error} onRetry={() => navigation.goBack()} />;
+    return (
+      <ErrorState
+        message={error}
+        actionLabel="Réessayer"
+        onAction={() => navigation.goBack()}
+      />
+    );
   }
-  if (!data) return <LoadingSpinner message="Chargement…" />;
+  if (!data) return <LoadingState message="Chargement…" />;
 
   return (
     <PatientDetail
@@ -141,13 +168,16 @@ export function PatientDetailRoute() {
       onEdit={handleEdit}
       onCapture={handleCapture}
       onGeneratePdf={handleGeneratePdf}
+      onProgressionReport={handleProgressionReport}
       onHistoryPress={handleHistoryPress}
       onTabPress={handleTabPress}
+      onArchive={handleArchive}
+      onDelete={handleDelete}
     />
   );
 }
 
-function buildDetailData(patient: Patient, analyses: readonly Analysis[]): PatientDetailData {
+export function buildDetailData(patient: Patient, analyses: readonly Analysis[]): PatientDetailData {
   const sex: "F" | "M" | "X" =
     patient.morphologicalProfile?.sex === "female"
       ? "F"
@@ -181,6 +211,9 @@ function buildDetailData(patient: Patient, analyses: readonly Analysis[]): Patie
     diagnosisLabel: "Diagnostic principal",
     diagnosisDescription,
     history: buildHistory(analyses),
+    analysisCount: analyses.length,
+    ...(patient.referringPhysician ? { referringPhysician: patient.referringPhysician } : {}),
+    ...(patient.consentDate ? { consentDate: formatShortDate(patient.consentDate) } : {}),
   };
 }
 

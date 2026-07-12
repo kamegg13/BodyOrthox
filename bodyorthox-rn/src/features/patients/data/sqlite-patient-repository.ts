@@ -18,6 +18,10 @@ interface PatientRow {
   archived_at: string | null;
   consent_given: number | null;
   consent_date: string | null;
+  consent_storage: number | null;
+  consent_photo_capture: number | null;
+  consent_pdf_export: number | null;
+  referring_physician: string | null;
 }
 
 /**
@@ -51,7 +55,22 @@ function rowToPatient(row: Record<string, unknown>): Patient {
       ? { consentGiven: Boolean(r.consent_given) }
       : {}),
     ...(r.consent_date ? { consentDate: r.consent_date } : {}),
+    ...(r.consent_storage != null
+      ? { consentStorage: Boolean(r.consent_storage) }
+      : {}),
+    ...(r.consent_photo_capture != null
+      ? { consentPhotoCapture: Boolean(r.consent_photo_capture) }
+      : {}),
+    ...(r.consent_pdf_export != null
+      ? { consentPdfExport: Boolean(r.consent_pdf_export) }
+      : {}),
+    ...(r.referring_physician ? { referringPhysician: r.referring_physician } : {}),
   };
+}
+
+/** Convertit un booléen optionnel en 0/1/null pour une colonne SQLite. */
+function boolToColumn(value: boolean | undefined): number | null {
+  return value == null ? null : value ? 1 : 0;
 }
 
 export class SqlitePatientRepository implements IPatientRepository {
@@ -88,8 +107,9 @@ export class SqlitePatientRepository implements IPatientRepository {
     await this.db.execute(
       `INSERT INTO patients
          (id, name, display_label, date_of_birth, birth_year,
-          morphological_profile, created_at, consent_given, consent_date)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          morphological_profile, created_at, consent_given, consent_date,
+          consent_storage, consent_photo_capture, consent_pdf_export, referring_physician)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         patient.id,
         // NOT NULL legacy column — '' représente l'absence d'identité.
@@ -103,6 +123,10 @@ export class SqlitePatientRepository implements IPatientRepository {
         patient.createdAt,
         patient.consentGiven == null ? null : patient.consentGiven ? 1 : 0,
         patient.consentDate ?? null,
+        boolToColumn(patient.consentStorage),
+        boolToColumn(patient.consentPhotoCapture),
+        boolToColumn(patient.consentPdfExport),
+        patient.referringPhysician ?? null,
       ],
     );
     return patient;
@@ -136,12 +160,25 @@ export class SqlitePatientRepository implements IPatientRepository {
       ...(partial.consentDate !== undefined
         ? { consentDate: partial.consentDate }
         : {}),
+      ...(partial.consentStorage !== undefined
+        ? { consentStorage: partial.consentStorage }
+        : {}),
+      ...(partial.consentPhotoCapture !== undefined
+        ? { consentPhotoCapture: partial.consentPhotoCapture }
+        : {}),
+      ...(partial.consentPdfExport !== undefined
+        ? { consentPdfExport: partial.consentPdfExport }
+        : {}),
+      ...(partial.referringPhysician !== undefined
+        ? { referringPhysician: partial.referringPhysician.trim() || undefined }
+        : {}),
     };
 
     await this.db.execute(
       `UPDATE patients SET name = ?, display_label = ?, date_of_birth = ?,
          birth_year = ?, morphological_profile = ?, consent_given = ?,
-         consent_date = ? WHERE id = ?`,
+         consent_date = ?, consent_storage = ?, consent_photo_capture = ?,
+         consent_pdf_export = ?, referring_physician = ? WHERE id = ?`,
       [
         updated.name ?? "",
         updated.displayLabel ?? null,
@@ -152,6 +189,10 @@ export class SqlitePatientRepository implements IPatientRepository {
           : null,
         updated.consentGiven == null ? null : updated.consentGiven ? 1 : 0,
         updated.consentDate ?? null,
+        boolToColumn(updated.consentStorage),
+        boolToColumn(updated.consentPhotoCapture),
+        boolToColumn(updated.consentPdfExport),
+        updated.referringPhysician ?? null,
         id,
       ],
     );

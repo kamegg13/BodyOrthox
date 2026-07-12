@@ -20,8 +20,8 @@ import { AccountScreen } from "../features/account/screens/account-screen";
 import { AdminScreen } from "../features/admin/screens/admin-screen";
 import { CalibrationScreen } from "../features/capture/calibration/calibration-screen";
 import { ProtocolsScreen } from "../features/resources/screens/protocols-screen";
-import { ReportsScreen } from "../features/resources/screens/reports-screen";
 import { ProgressionReportScreen } from "../features/report/screens/progression-report-screen";
+import { ProgressionSelectionScreen } from "../features/report/screens/progression-selection-screen";
 // Screens v2 (refonte design)
 import {
   DashboardRoute,
@@ -97,13 +97,13 @@ function AnalysesStackScreen() {
         options={{ title: "Protocoles" }}
       />
       <AnalysesStack.Screen
-        name="Reports"
-        component={ReportsScreen}
-        options={{ title: "Rapports PDF" }}
-      />
-      <AnalysesStack.Screen
         name="Report"
         component={ReportRoute}
+        options={{ headerShown: false }}
+      />
+      <AnalysesStack.Screen
+        name="ProgressionSelection"
+        component={ProgressionSelectionScreen}
         options={{ headerShown: false }}
       />
       <AnalysesStack.Screen
@@ -145,6 +145,11 @@ function PatientsTabStackScreen() {
         options={{ headerShown: false }}
       />
       <PatientsTabStack.Screen
+        name="Replay"
+        component={ReplayScreen}
+        options={{ title: "Relecture experte" }}
+      />
+      <PatientsTabStack.Screen
         name="Timeline"
         component={PatientTimelineScreen}
         options={{ title: "Progression clinique" }}
@@ -152,6 +157,11 @@ function PatientsTabStackScreen() {
       <PatientsTabStack.Screen
         name="Report"
         component={ReportRoute}
+        options={{ headerShown: false }}
+      />
+      <PatientsTabStack.Screen
+        name="ProgressionSelection"
+        component={ProgressionSelectionScreen}
         options={{ headerShown: false }}
       />
       <PatientsTabStack.Screen
@@ -230,7 +240,6 @@ export function AppNavigator() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isAuthLoading = useAuthStore((s) => s.isLoading);
   const checkOnboarding = useOnboardingStore((s) => s.checkOnboarding);
-  const isOnboardingCompleted = useOnboardingStore((s) => s.isCompleted);
   const isOnboardingLoading = useOnboardingStore((s) => s.isLoading);
 
   useEffect(() => {
@@ -271,13 +280,14 @@ export function AppNavigator() {
         component={BiometricLockScreen}
         options={{ headerShown: false }}
       />
-      {!isOnboardingCompleted && (
-        <Stack.Screen
-          name="Onboarding"
-          component={OnboardingScreen}
-          options={{ headerShown: false }}
-        />
-      )}
+      {/* Toujours montée (pas seulement tant que !isOnboardingCompleted) :
+          "Revoir l'introduction" dans Compte doit pouvoir y naviguer même
+          après complétion, en mode révision (voir OnboardingScreen). */}
+      <Stack.Screen
+        name="Onboarding"
+        component={OnboardingScreen}
+        options={{ headerShown: false }}
+      />
       <Stack.Screen
         name="MainTabs"
         component={MainTabs}

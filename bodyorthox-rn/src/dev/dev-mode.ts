@@ -113,6 +113,7 @@ class InMemoryAnalysisRepo implements IAnalysisRepository {
         | "bilateralAngles"
         | "manualCorrectionApplied"
         | "manualCorrectionJoint"
+        | "clinicalNotes"
       >
     >,
   ): Promise<void> {

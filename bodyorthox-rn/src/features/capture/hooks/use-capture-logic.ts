@@ -13,15 +13,29 @@ import {
 } from "../services/native-image-picker";
 import type { IPoseDetector } from "../data/pose-detector";
 import type { PoseLandmarks } from "../data/angle-calculator";
+import {
+  saveCaptureDraft,
+  loadCaptureDraft,
+  clearCaptureDraft,
+} from "../data/capture-draft-storage";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 /** Low confidence threshold — warn the user below this */
 const LOW_CONFIDENCE_THRESHOLD = 0.6;
 
-/** Honest message shown when no real pose detector is available (native). */
-const NO_DETECTOR_MESSAGE =
-  "L'analyse automatique n'est pas encore disponible sur cette plateforme.";
+/**
+ * Message affiché sur mobile natif : ce n'est pas une erreur mais une
+ * limite produit connue (pas de détecteur de pose embarqué hors web) —
+ * distingué de `detectionError` pour ne pas s'afficher avec le style
+ * "erreur" et pour orienter vers l'alternative qui fonctionne.
+ */
+const NATIVE_PLATFORM_LIMITATION_MESSAGE =
+  "L'analyse automatique n'est pas disponible sur mobile pour le moment. Utilisez BodyOrthox sur navigateur pour analyser cette capture.";
+
+/** Erreur réelle : le modèle ML n'a pas pu être chargé sur le web. */
+const ML_UNAVAILABLE_MESSAGE =
+  "Le modèle d'analyse n'a pas pu être chargé. Réessayez ou rechargez la page.";
 
 export function useCaptureLogic(patientId: string) {
   const navigation = useNavigation<Nav>();
@@ -43,6 +57,7 @@ export function useCaptureLogic(patientId: string) {
     setError,
     processFrames,
     setCapturedImageUrl,
+    setLuminosity,
   } = useCaptureStore();
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -51,10 +66,18 @@ export function useCaptureLogic(patientId: string) {
   const poseDetectorRef = useRef<IPoseDetector | null>(null);
   const [mlLoading, setMlLoading] = useState(false);
   const [detectionError, setDetectionError] = useState<string | null>(null);
+  const [platformLimitation, setPlatformLimitation] = useState<string | null>(null);
   const [lowConfidenceWarning, setLowConfidenceWarning] = useState<{
     message: string;
     onContinue: () => void;
   } | null>(null);
+  // Preview d'une capture interrompue (appel entrant, arrière-plan prolongé)
+  // retrouvée en stockage pour CE patient au remontage de l'écran — jamais
+  // appliquée automatiquement, l'utilisateur choisit via le bandeau
+  // (Reprendre / Refaire, cf. handleRestoreDraft / handleDiscardDraft).
+  const [restorableDraft, setRestorableDraft] = useState<string | null>(
+    () => loadCaptureDraft(patientId)?.previewUrl ?? null,
+  );
 
   useEffect(() => {
     // Clear any state left over from a previous patient/session before starting.
@@ -98,29 +121,40 @@ export function useCaptureLogic(patientId: string) {
     if (dataUrl) {
       setPreviewUrl(dataUrl);
       setCapturedImageUrl(dataUrl);
+      saveCaptureDraft(patientId, dataUrl);
     }
-  }, [phase, setCapturedImageUrl]);
+  }, [phase, setCapturedImageUrl, patientId]);
 
   const handlePhotoUploaded = useCallback(
     (dataUrl: string) => {
       setPreviewUrl(dataUrl);
       setCapturedImageUrl(dataUrl);
+      saveCaptureDraft(patientId, dataUrl);
     },
-    [setCapturedImageUrl],
+    [setCapturedImageUrl, patientId],
   );
 
   const handleAnalyze = useCallback(async () => {
     if (!previewUrl) return;
     setDetectionError(null);
+    setPlatformLimitation(null);
     setLowConfidenceWarning(null);
 
     const detector = poseDetectorRef.current;
 
-    // No real pose detector (native without frame processor, or web ML failed
-    // to load): block honestly instead of fabricating landmarks. We must never
-    // present or persist a simulated analysis as a real measurement.
-    if (Platform.OS !== "web" || !detector || !detector.isReady()) {
-      setDetectionError(NO_DETECTOR_MESSAGE);
+    // Mobile natif : pas de détecteur de pose embarqué. C'est une limite
+    // produit connue, pas une erreur — distingué de `detectionError` pour un
+    // affichage informatif plutôt qu'un style "erreur".
+    if (Platform.OS !== "web") {
+      setPlatformLimitation(NATIVE_PLATFORM_LIMITATION_MESSAGE);
+      return;
+    }
+
+    // Web mais le modèle ML n'a pas pu être chargé : ceci est une vraie
+    // erreur (pas une limite de plateforme) — on ne fabrique jamais de
+    // landmarks simulés pour la masquer.
+    if (!detector || !detector.isReady()) {
+      setDetectionError(ML_UNAVAILABLE_MESSAGE);
       return;
     }
 
@@ -170,8 +204,25 @@ export function useCaptureLogic(patientId: string) {
     setPreviewUrl(null);
     setCapturedImageUrl(null);
     setDetectionError(null);
+    setPlatformLimitation(null);
     setLowConfidenceWarning(null);
-  }, [setCapturedImageUrl]);
+    clearCaptureDraft(patientId);
+  }, [setCapturedImageUrl, patientId]);
+
+  /** Applique la preview d'une capture interrompue restaurée depuis le stockage. */
+  const handleRestoreDraft = useCallback(() => {
+    if (restorableDraft) {
+      setPreviewUrl(restorableDraft);
+      setCapturedImageUrl(restorableDraft);
+    }
+    setRestorableDraft(null);
+  }, [restorableDraft, setCapturedImageUrl]);
+
+  /** Refus explicite de la restauration : purge le brouillon, repart de zéro. */
+  const handleDiscardDraft = useCallback(() => {
+    clearCaptureDraft(patientId);
+    setRestorableDraft(null);
+  }, [patientId]);
 
   const handleNativeCamera = useCallback(async () => {
     try {
@@ -205,7 +256,7 @@ export function useCaptureLogic(patientId: string) {
 
     // Native has no real pose detector yet — block honestly rather than
     // fabricating a "straight legs" analysis from simulated landmarks.
-    setDetectionError(NO_DETECTOR_MESSAGE);
+    setPlatformLimitation(NATIVE_PLATFORM_LIMITATION_MESSAGE);
   }, [phase, handleTakeWebPhoto]);
 
   const handleSave = useCallback(
@@ -213,6 +264,7 @@ export function useCaptureLogic(patientId: string) {
       if (phase.type !== "success") return;
       const analysis = await saveAnalysis(patientId, correctedLandmarks);
       if (analysis) {
+        clearCaptureDraft(patientId);
         const { capturedImageUrl: imgUrl, allDetectedLandmarks: allLm } =
           useCaptureStore.getState();
         // On passe par l'écran Processing v2 qui auto-advance vers Results.
@@ -253,11 +305,12 @@ export function useCaptureLogic(patientId: string) {
         onPress: () => {
           reset();
           setPreviewUrl(null);
+          clearCaptureDraft(patientId);
           navigation.goBack();
         },
       },
     ]);
-  }, [reset, navigation]);
+  }, [reset, navigation, patientId]);
 
   return {
     phase,
@@ -270,8 +323,11 @@ export function useCaptureLogic(patientId: string) {
     previewUrl,
     mlLoading,
     detectionError,
+    platformLimitation,
     lowConfidenceWarning,
+    restorableDraft,
     webCameraRef,
+    handleLuminositySample: setLuminosity,
     handleWebCameraPermissionDenied,
     handleTakeWebPhoto,
     handlePhotoUploaded,
@@ -282,5 +338,7 @@ export function useCaptureLogic(patientId: string) {
     handleStartCapture,
     handleSave,
     handleDiscard,
+    handleRestoreDraft,
+    handleDiscardDraft,
   };
 }
