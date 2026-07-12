@@ -236,10 +236,12 @@ export const shadows: Record<
  * mono système (IDs, dates techniques — chiffres tabulaires).
  *
  * Web : Google Fonts chargées via `<link>` dans `web/index.html`.
- * Native : fontes VARIABLES bundlées (assets/fonts/Lexend.ttf, SourceSans3.ttf)
- * — mêmes fichiers d'axes wght que Google Fonts, donc les graisses 400-700
- * rendent identiques au web (Android résout par nom de fichier et applique
- * fontWeight via Typeface.create — vraie graisse sur API 28+).
+ * iOS : fontes VARIABLES bundlées (assets/fonts) — instances nommées résolues
+ * par famille + fontWeight.
+ * Android : familles déclarées dans res/font/lexend.xml et sourcesans3.xml
+ * (fontVariationSettings par graisse) et enregistrées via
+ * ReactFontManager.addCustomFont dans MainApplication — seul montage où
+ * fontWeight 400-700 rend la vraie graisse (assets/fonts figerait à 400).
  */
 export const fonts = {
   /** Titres, valeurs héro, boutons — Lexend (lisibilité). */
