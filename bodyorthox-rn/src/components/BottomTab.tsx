@@ -38,7 +38,10 @@ export function BottomTab({ active, onPress }: BottomTabProps) {
               onPress={() => onPress?.(tab.key)}
               style={styles.item}
               accessibilityRole="button"
-              accessibilityLabel="Nouvelle capture"
+              // Doit rester le texte visible du tab (label-in-name) : un libellé
+              // « Nouvelle capture » entrait en collision avec le CTA du même nom
+              // sur la fiche patient (lecteurs d'écran et sélecteurs E2E).
+              accessibilityLabel="Capture"
               testID="tab-capture"
             >
               <View style={styles.captureBtn}>

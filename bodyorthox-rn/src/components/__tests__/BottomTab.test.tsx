@@ -31,6 +31,11 @@ describe("BottomTab — bouton capture central", () => {
     expect(onPress).toHaveBeenCalledWith("capture");
   });
 
+  it("garde « Capture » comme label accessible du bouton central (pas « Nouvelle capture », qui collisionne avec le CTA de la fiche patient)", () => {
+    const { getByTestId } = render(<BottomTab active="home" />);
+    expect(getByTestId("tab-capture").props.accessibilityLabel).toBe("Capture");
+  });
+
   it("marque l'onglet actif comme sélectionné pour l'accessibilité", () => {
     const { getByLabelText } = render(<BottomTab active="patients" />);
     expect(getByLabelText("Patients").props.accessibilityState).toEqual({
