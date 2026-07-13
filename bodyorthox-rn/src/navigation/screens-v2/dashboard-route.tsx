@@ -14,14 +14,14 @@ export function DashboardRoute() {
   const practitionerName = formatPractitionerName(user);
 
   const handleQuickAction = useCallback(
-    (key: "new-patient" | "analysis" | "report") => {
+    (key: "new-patient" | "protocols") => {
       switch (key) {
         case "new-patient":
           navigation.navigate("CreatePatient");
           return;
-        case "analysis":
-        case "report":
-          navigation.navigate("MainTabs", { screen: "PatientsTab" });
+        case "protocols":
+          // Écran du stack Analyses courant (guide de positionnement).
+          navigation.navigate("Protocols");
           return;
       }
     },

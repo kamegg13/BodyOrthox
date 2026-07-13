@@ -1,67 +1,74 @@
 /**
- * BodyOrthox Design System – Color Palette (v1 → v2 « Navy » alias)
+ * BodyOrthox Design System – Color Palette (couche legacy → tokens v4)
  *
  * Ce module conserve exactement les mêmes clés publiques que la v1 legacy
  * (rétro-compat totale pour les ~40 écrans qui l'importent), mais chaque
- * valeur est désormais mappée sur les design tokens v2 « Navy »
- * (`src/theme/tokens.ts`). Aucun écran n'a besoin d'être modifié : ils
- * adoptent visuellement la palette navy en important les mêmes noms.
+ * valeur est mappée sur les design tokens v4 « Accessible & Ethical »
+ * (`src/theme/tokens.ts` — primaire cyan, vert santé, encre #164E63), via
+ * leurs alias historiques (`navyMid`, `accent`… pointent vers les valeurs
+ * v4 dans tokens.ts). Aucun écran n'a besoin d'être modifié : ils adoptent
+ * la palette v4 en important les mêmes noms.
  *
- * NE PAS ré-introduire de valeurs hex ad hoc ici : toute couleur vient de
- * `tokens` (les rares littéraux restants sont des dérivés directs des tokens
- * v2 — fin de gradient, overlays navy — absents de la table de base).
+ * Les valeurs exactes vivent UNIQUEMENT dans tokens.ts — pas de hex en
+ * commentaire ici (ils dérivaient à chaque refonte). NE PAS ré-introduire
+ * de valeurs ad hoc : toute couleur vient de `tokens` (les rares littéraux
+ * restants sont des dérivés absents de la table de base, ex. overlays).
+ *
+ * Dette documentée : les écrans v2+ importent `colors` depuis theme/tokens
+ * directement — les nouveaux écrans doivent faire de même, cette couche
+ * n'existe que pour l'existant.
  */
-import { colors as v2 } from "../../theme/tokens";
+import { colors as v4 } from "../../theme/tokens";
 
 export const Colors = {
-  // Brand — navy/blue v2 (CTAs, liens, accents)
-  primary: v2.navyMid, // accent Instrument (#0891B2) — liens/actifs
-  primaryDark: v2.accentDeep, // accent pressed (#0E7490)
-  primaryLight: v2.navyLight, // #EAF0FE — fond cards résultat
+  // Brand — primaire cyan v4 (CTAs, liens, accents)
+  primary: v4.navyMid, // alias legacy → primaire v4
+  primaryDark: v4.accentDeep, // primaire pressed
+  primaryLight: v4.navyLight, // fond cards résultat
 
-  // Semantic — palette clinique v2 (handoff)
-  success: v2.green, // #0A6E52 (dans la norme)
-  warning: v2.amberMid, // #B45309 (écart léger)
-  error: v2.red, // #B91C1C (hors norme)
-  warningModerate: v2.amber, // #92510A (écart modéré)
-  info: v2.navyMid,
+  // Semantic — palette clinique v4
+  success: v4.green, // dans la norme
+  warning: v4.amberMid, // écart léger
+  error: v4.red, // hors norme
+  warningModerate: v4.amber, // écart modéré
+  info: v4.navyMid,
 
-  // Confidence — alignée sur la palette sémantique v2
-  confidenceHigh: v2.green,
-  confidenceMedium: v2.amber,
-  confidenceLow: v2.red,
+  // Confidence — alignée sur la palette sémantique
+  confidenceHigh: v4.green,
+  confidenceMedium: v4.amber,
+  confidenceLow: v4.red,
 
-  // Background — Navy v2
-  background: v2.bg, // #F4F7FB
-  backgroundCard: v2.bgCard, // #FFFFFF
-  backgroundElevated: v2.bgCard,
-  surface: v2.bgSubtle, // #EDF1F7
+  // Background
+  background: v4.bg,
+  backgroundCard: v4.bgCard,
+  backgroundElevated: v4.bgCard,
+  surface: v4.bgSubtle,
 
-  // Text — navy sur fond clair
-  textPrimary: v2.textPrimary, // #0C1F35
-  textSecondary: v2.textSecond, // #3D5470
-  textDisabled: v2.textMuted, // #5A7290 (AA)
-  textOnPrimary: v2.textInverse, // #FFFFFF
+  // Text — encre sur fond clair
+  textPrimary: v4.textPrimary,
+  textSecondary: v4.textSecond,
+  textDisabled: v4.textMuted,
+  textOnPrimary: v4.textInverse,
 
   // Border
-  border: v2.border, // rgba(15,40,80,0.10)
-  borderFocus: v2.navyMid,
+  border: v4.border,
+  borderFocus: v4.navyMid,
 
   // Neutral
-  white: v2.white,
-  black: v2.black,
-  darkGrey: v2.textPrimary,
-  warningAmber: v2.amber,
+  white: v4.white,
+  black: v4.black,
+  darkGrey: v4.textPrimary,
+  warningAmber: v4.amber,
 
-  // Overlay — navy plutôt que noir pur
+  // Overlay — encre plutôt que noir pur (pas de token alpha équivalent)
   overlay: "rgba(12,35,64,0.45)",
   overlayLight: "rgba(12,35,64,0.20)",
 
-  // Chart — mappé sur la palette v2
-  chartKnee: v2.navyMid,
-  chartHip: v2.red,
-  chartAnkle: v2.teal,
-  chartReference: v2.border,
+  // Chart — mappé sur la palette v4
+  chartKnee: v4.navyMid,
+  chartHip: v4.red,
+  chartAnkle: v4.teal,
+  chartReference: v4.border,
 } as const;
 
 export type ColorKey = keyof typeof Colors;

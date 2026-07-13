@@ -1,15 +1,16 @@
 /**
- * BodyOrthox Design System – Typography (v1 → v2 « Navy » alias)
+ * BodyOrthox Design System – Typography (couche legacy → tokens v4)
  *
  * Mêmes clés publiques que la v1 (FontSize xs…xxxl, FontWeight, Typography) :
  * rétro-compat totale pour les écrans qui importent ces styles. Les valeurs
- * sont désormais alignées sur les tokens v2 (`src/theme/tokens.ts`) :
- *  - police DM Sans (au lieu de la police système) via `FontFamily` ;
- *  - poids et tailles référencent les tokens v2 dès qu'un équivalent existe
- *    (les rares valeurs sans équivalent v2 exact restent sur l'échelle v1).
+ * suivent les tokens v4 (`src/theme/tokens.ts`) :
+ *  - `FontFamily` = `fonts.sans` du DS (Source Sans 3 ; les titres v4
+ *    utilisent Lexend via `fonts.display`, non exposé par cette couche) ;
+ *  - poids et tailles référencent les tokens dès qu'un équivalent existe
+ *    (les rares valeurs sans équivalent exact restent sur l'échelle v1).
  *
  * NE PAS ré-introduire de police système ni de tailles ad hoc : tout vient de
- * `tokens`.
+ * `tokens`. Nouveaux écrans : importer directement theme/tokens.
  */
 import { StyleSheet, TextStyle } from "react-native";
 import { Colors } from "./colors";
@@ -19,7 +20,7 @@ import {
   fontWeight as v2Weight,
 } from "../../theme/tokens";
 
-/** Police de l'app — DM Sans (tokens v2), fallback système par plateforme. */
+/** Police de corps de l'app — `fonts.sans` des tokens (Source Sans 3). */
 export const FontFamily = fonts.sans;
 
 export const FontSize = {

@@ -1,9 +1,9 @@
 /**
- * BodyOrthox Design System – Shared Card Styles (v1 → v2 « Navy » alias)
+ * BodyOrthox Design System – Shared Card Styles (couche legacy → tokens v4)
  *
  * Mêmes clés publiques (CardShadow, Shadows sm/md/lg/primary), mais les ombres
- * référencent désormais les tokens v2 (`src/theme/tokens.ts` → `shadows`) :
- * teinte navy (au lieu de noir pur) + décomposition iOS `shadow*` / Android
+ * référencent les tokens v4 (`src/theme/tokens.ts` → `shadows`) :
+ * teinte encre (au lieu de noir pur) + décomposition iOS `shadow*` / Android
  * `elevation` par plateforme. Aucun écran n'a besoin d'être modifié.
  *
  * NE PAS ré-introduire d'ombres noires ad hoc : tout vient de `tokens.shadows`.

@@ -1,11 +1,11 @@
 /**
- * BodyOrthox Design System – Spacing (v1 → v2 « Navy » alias)
+ * BodyOrthox Design System – Spacing (couche legacy → tokens v4)
  *
- * Mêmes clés publiques que la v1 (xxs…xxxl), mappées sur la grille v2.
- * Les valeurs v1 (4/8/16/24/32/48/64) sont déjà alignées sur la grille v2 ;
- * on référence les tokens v2 quand un équivalent exact existe, sinon on garde
- * la valeur de grille (multiples de 8 hors table v2 ponctuelle).
- * Le radius `button` est unifié sur la valeur v2 (13, était 14).
+ * Mêmes clés publiques que la v1 (xxs…xxxl), mappées sur la grille des tokens v4.
+ * Les valeurs v1 (4/8/16/24/32/48/64) sont déjà alignées sur la grille des tokens ;
+ * on référence les tokens quand un équivalent exact existe, sinon on garde
+ * la valeur de grille (multiples de 8 hors table ponctuelle).
+ * Le radius `button` est unifié sur la valeur des tokens (13, était 14).
  */
 import { spacing as v2Spacing, radius as v2Radius } from "../../theme/tokens";
 

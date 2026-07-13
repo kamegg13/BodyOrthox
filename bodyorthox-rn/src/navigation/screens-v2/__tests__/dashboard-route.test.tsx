@@ -21,7 +21,7 @@ describe("DashboardRoute", () => {
 
   it("ouvre le sélecteur rapide de patient au tap sur « Nouvelle capture » (sans naviguer)", () => {
     const { getByLabelText } = render(<DashboardRoute />);
-    fireEvent.press(getByLabelText("Capture"));
+    fireEvent.press(getByLabelText("Nouvelle capture"));
     expect(getByLabelText("Rechercher un patient")).toBeTruthy();
     expect(mockNavigate).not.toHaveBeenCalled();
   });
@@ -36,7 +36,7 @@ describe("DashboardRoute", () => {
       searchQuery: "",
     } as any);
     const { getByLabelText, getAllByLabelText } = render(<DashboardRoute />);
-    fireEvent.press(getByLabelText("Capture"));
+    fireEvent.press(getByLabelText("Nouvelle capture"));
     // Le même patient apparaît aussi dans « Patients récents » : on cible la
     // ligne du picker, la dernière dans l'arbre rendu.
     const rows = getAllByLabelText("Jean Dupont");
@@ -46,7 +46,7 @@ describe("DashboardRoute", () => {
 
   it("« Nouveau patient » depuis le sélecteur navigue vers CreatePatient", () => {
     const { getByLabelText, getAllByLabelText } = render(<DashboardRoute />);
-    fireEvent.press(getByLabelText("Capture"));
+    fireEvent.press(getByLabelText("Nouvelle capture"));
     const newPatientButtons = getAllByLabelText("Nouveau patient");
     fireEvent.press(newPatientButtons[newPatientButtons.length - 1]!);
     expect(mockNavigate).toHaveBeenCalledWith("CreatePatient");
