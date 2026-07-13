@@ -82,15 +82,20 @@ export function DashboardRoute() {
   );
 }
 
-function formatPractitionerName(user: { firstName?: string; lastName?: string; email: string } | null): string {
+export function formatPractitionerName(user: { firstName?: string; lastName?: string; email: string } | null): string {
   if (!user) return "Praticien";
   if (user.firstName || user.lastName) {
     const full = [user.firstName, user.lastName].filter(Boolean).join(" ");
-    return `Dr. ${full}`;
+    return withDoctorPrefix(full);
   }
   const local = user.email.split("@")[0] ?? "";
   if (!local) return "Praticien";
   const parts = local.split(/[._\-]/).filter(Boolean);
   const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
-  return `Dr. ${parts.map(cap).join(" ")}`;
+  return withDoctorPrefix(parts.map(cap).join(" "));
+}
+
+/** Préfixe « Dr. » sans le doubler si le nom le porte déjà (« Dr. Martin »). */
+function withDoctorPrefix(name: string): string {
+  return /^dr\.?(\s|$)/i.test(name) ? name : `Dr. ${name}`;
 }

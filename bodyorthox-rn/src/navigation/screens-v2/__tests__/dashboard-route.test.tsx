@@ -1,6 +1,6 @@
 import React from "react";
 import { render, fireEvent } from "@testing-library/react-native";
-import { DashboardRoute } from "../dashboard-route";
+import { DashboardRoute, formatPractitionerName } from "../dashboard-route";
 import { useAuthStore } from "../../../core/auth/auth-store";
 import { usePatientsStore } from "../../../features/patients/store/patients-store";
 
@@ -56,5 +56,30 @@ describe("DashboardRoute", () => {
     const { getByLabelText } = render(<DashboardRoute />);
     fireEvent.press(getByLabelText("Nouveau patient"));
     expect(mockNavigate).toHaveBeenCalledWith("CreatePatient");
+  });
+});
+
+describe("formatPractitionerName", () => {
+  it("préfixe Dr. sur un nom simple", () => {
+    expect(
+      formatPractitionerName({ firstName: "Marie", lastName: "Curie", email: "m@x.fr" }),
+    ).toBe("Dr. Marie Curie");
+  });
+
+  it("ne double pas le préfixe quand le prénom contient déjà « Dr. »", () => {
+    expect(
+      formatPractitionerName({ firstName: "Dr.", lastName: "Orthopédiste", email: "o@x.fr" }),
+    ).toBe("Dr. Orthopédiste");
+    expect(
+      formatPractitionerName({ firstName: "Dr. Jean", lastName: "Martin", email: "j@x.fr" }),
+    ).toBe("Dr. Jean Martin");
+  });
+
+  it("ne double pas le préfixe dérivé de l'email", () => {
+    expect(formatPractitionerName({ email: "dr.martin@exemple.fr" })).toBe("Dr Martin");
+  });
+
+  it("retombe sur « Praticien » sans utilisateur", () => {
+    expect(formatPractitionerName(null)).toBe("Praticien");
   });
 });

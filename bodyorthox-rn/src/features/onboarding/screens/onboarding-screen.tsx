@@ -122,17 +122,17 @@ function PdfExportIllustration() {
 
 const PAGE_1_FEATURES = [
   {
-    icon: "📷",
+    icon: "camera",
     title: "Photo debout en 1 tap",
-    description: "Appareil photo iOS natif, aucun guidage requis",
+    description: "Appareil photo du téléphone, aucun guidage requis",
   },
   {
-    icon: "📐",
+    icon: "angle",
     title: "Angle HKA automatique",
-    description: "ML Kit détecte hanche, genou et cheville",
+    description: "Hanche, genou et cheville détectés sur l'appareil",
   },
   {
-    icon: "📄",
+    icon: "file",
     title: "Rapport PDF nommé",
     description: "DupontJean_AnalyseHKA_2026-03-08.pdf",
   },
@@ -246,10 +246,10 @@ export function OnboardingScreen() {
 
         {/* Page 2: Capture (kept simpler) */}
         <OnboardingPage
-          title="Filmez la marche du patient"
-          subtitle="Positionnez le patient de profil et filmez 12 secondes."
-          description="BodyOrthox utilise la camera uniquement pour filmer la marche. La video n'est jamais stockee ni transmise."
-          icon="📷"
+          title="Photographiez le patient debout"
+          subtitle="Patient de face, corps entier visible, des hanches aux chevilles."
+          description="BodyOrthox utilise l'appareil photo uniquement pour cette capture. La photo est analysée sur votre appareil et n'est jamais transmise."
+          icon="camera"
           testID="onboarding-page-capture"
         />
 

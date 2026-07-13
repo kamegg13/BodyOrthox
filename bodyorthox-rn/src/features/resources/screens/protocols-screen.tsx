@@ -9,28 +9,29 @@ import {
   shadows,
   spacing,
 } from "../../../theme/tokens";
+import { Icon, type IconName } from "../../../components/icons";
 
 interface ProtocolCard {
-  readonly icon: string;
+  readonly icon: IconName;
   readonly title: string;
   readonly description: string;
 }
 
 const PROTOCOLS: readonly ProtocolCard[] = [
   {
-    icon: "📐",
+    icon: "angle",
     title: "Vue frontale HKA",
     description:
       "Patient debout, face à vous, pieds écartés largeur épaules. Corps entier visible.",
   },
   {
-    icon: "📐",
+    icon: "user",
     title: "Vue de profil",
     description:
       "Patient de profil strict. Bras le long du corps. Marche naturelle.",
   },
   {
-    icon: "💡",
+    icon: "bulb",
     title: "Conditions optimales",
     description: "Éclairage uniforme. Fond neutre. Distance 2-3 mètres.",
   },
@@ -39,7 +40,9 @@ const PROTOCOLS: readonly ProtocolCard[] = [
 function ProtocolCardItem({ card }: { readonly card: ProtocolCard }) {
   return (
     <View style={styles.card} testID={`protocol-card-${card.title}`}>
-      <Text style={styles.cardIcon}>{card.icon}</Text>
+      <View style={styles.cardIcon}>
+        <Icon name={card.icon} size={20} color={colors.primary} />
+      </View>
       <Text style={styles.cardTitle}>{card.title}</Text>
       <Text style={styles.cardDescription}>{card.description}</Text>
     </View>
@@ -98,7 +101,12 @@ const styles = StyleSheet.create({
     gap: spacing.s8,
   },
   cardIcon: {
-    fontSize: 32,
+    width: 36,
+    height: 36,
+    borderRadius: radius.iconSm,
+    backgroundColor: colors.primaryLight,
+    alignItems: "center",
+    justifyContent: "center",
   },
   cardTitle: {
     fontFamily: fonts.sans,
