@@ -42,10 +42,11 @@ export interface PatientDetailData {
   readonly age: number;
   readonly id: string;
   readonly status: { label: string; color: BadgeColor };
-  readonly heightCm: number;
-  readonly weightKg: number;
+  /** Taille en cm — null si non renseignée (affichée « — », jamais 0). */
+  readonly heightCm: number | null;
+  /** Poids en kg — null si non renseigné (affiché « — », jamais 0). */
+  readonly weightKg: number | null;
   readonly dob: string;
-  readonly diagnosisLabel: string;
   readonly diagnosisDescription: string;
   readonly history: readonly AnalysisHistoryItem[];
   /** Nombre total d'analyses du patient — peut dépasser `history.length` (tronqué à 5). */
@@ -142,17 +143,23 @@ export function PatientDetail({
             <View style={{ flex: 1 }}>
               <Text style={styles.heroName}>{data.name}</Text>
               <View style={styles.heroMetaRow}>
-                <Text style={styles.heroMeta}>
-                  {data.sex} · {data.age}a · #{data.id}
-                </Text>
+                <Text style={styles.heroMeta}>{buildHeroMeta(data)}</Text>
                 <Badge label={data.status.label} color={data.status.color} />
               </View>
             </View>
           </View>
 
           <View style={styles.metricsGrid}>
-            <Metric value={`${data.heightCm}`} unit=" cm" label="Taille" />
-            <Metric value={`${data.weightKg}`} unit=" kg" label="Poids" />
+            <Metric
+              value={data.heightCm !== null ? `${data.heightCm}` : "—"}
+              unit={data.heightCm !== null ? " cm" : undefined}
+              label="Taille"
+            />
+            <Metric
+              value={data.weightKg !== null ? `${data.weightKg}` : "—"}
+              unit={data.weightKg !== null ? " kg" : undefined}
+              label="Poids"
+            />
             <Metric value={data.dob} label="Naissance" />
           </View>
         </View>
@@ -165,7 +172,6 @@ export function PatientDetail({
       >
         <Card style={styles.diagnosisCard}>
           <Text style={styles.eyebrow}>Diagnostic principal</Text>
-          <Text style={styles.diagnosisLabel}>{data.diagnosisLabel}</Text>
           <Text style={styles.diagnosisDesc}>{data.diagnosisDescription}</Text>
         </Card>
 
@@ -258,6 +264,18 @@ export function PatientDetail({
 }
 
 // ────────────────────────────────────────────────────────────
+
+/**
+ * Méta d'identité — n'affiche que les informations réellement renseignées :
+ * sexe « X » (inconnu) et âge 0 sont omis plutôt que montrés tels quels.
+ */
+export function buildHeroMeta(data: Pick<PatientDetailData, "sex" | "age" | "id">): string {
+  const parts: string[] = [];
+  if (data.sex !== "X") parts.push(data.sex);
+  if (data.age > 0) parts.push(`${data.age} ans`);
+  parts.push(`#${data.id}`);
+  return parts.join(" · ");
+}
 
 function Metric({ value, unit, label }: { value: string; unit?: string; label: string }) {
   return (
@@ -425,17 +443,11 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginBottom: 4,
   },
-  diagnosisLabel: {
-    fontFamily: fonts.sans,
-    fontSize: fontSize.body,
-    fontWeight: fontWeight.medium,
-    color: colors.textPrimary,
-    lineHeight: 20,
-  },
   diagnosisDesc: {
     fontFamily: fonts.sans,
-    fontSize: fontSize.caption,
+    fontSize: fontSize.body,
     color: colors.textSecond,
+    lineHeight: 20,
     marginTop: 2,
   },
   actionsRow: {
@@ -515,7 +527,6 @@ export const SAMPLE_PATIENT_DETAIL: PatientDetailData = {
   heightCm: 165,
   weightKg: 58,
   dob: "12/03/91",
-  diagnosisLabel: "Diagnostic principal",
   diagnosisDescription:
     "Scoliose idiopathique adolescente — Cobb 18° suivi longitudinal.",
   history: [

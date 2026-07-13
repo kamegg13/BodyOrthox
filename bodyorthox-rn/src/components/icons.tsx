@@ -36,7 +36,8 @@ export type IconName =
   | "image"
   | "alert"
   | "angle"
-  | "bulb";
+  | "bulb"
+  | "chat";
 
 interface IconProps {
   readonly name: IconName;
@@ -281,6 +282,12 @@ export function Icon({ name, size = 16, color = colors.textPrimary, strokeWidth 
         <Svg width={size} height={size} viewBox="0 0 16 16">
           <Path d="M5.2 10.3 a 4.2 4.2 0 1 1 5.6 0 c -0.7 0.7 -1 1.2 -1 2.2 h -3.6 c 0 -1 -0.3 -1.5 -1 -2.2 Z" {...stroke} />
           <Line x1={6.4} y1={14.3} x2={9.6} y2={14.3} {...stroke} />
+        </Svg>
+      );
+    case "chat":
+      return (
+        <Svg width={size} height={size} viewBox="0 0 16 16">
+          <Path d="M3 2.5 H 13 A 1.5 1.5 0 0 1 14.5 4 V 9.5 A 1.5 1.5 0 0 1 13 11 H 8 L 4.5 13.8 V 11 H 3 A 1.5 1.5 0 0 1 1.5 9.5 V 4 A 1.5 1.5 0 0 1 3 2.5 Z" {...stroke} />
         </Svg>
       );
     default:

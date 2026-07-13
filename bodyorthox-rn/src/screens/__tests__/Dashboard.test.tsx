@@ -2,7 +2,14 @@ import React from "react";
 import { render, fireEvent } from "@testing-library/react-native";
 import { Dashboard } from "../Dashboard";
 import { usePatientsStore } from "../../features/patients/store/patients-store";
+import { countAnalysesToday } from "../../features/capture/data/analysis-metrics";
 import type { Patient } from "../../features/patients/domain/patient";
+
+jest.mock("../../features/capture/data/analysis-metrics", () => ({
+  countAnalysesToday: jest.fn(() => Promise.resolve(0)),
+}));
+
+const mockCountAnalysesToday = countAnalysesToday as jest.Mock;
 
 function isoDaysAgo(days: number): string {
   const d = new Date();
@@ -41,7 +48,7 @@ describe("Dashboard", () => {
   it("ouvre le sélecteur rapide de patient au tap sur le CTA hero « Capture »", () => {
     const { getByLabelText, queryByLabelText } = render(<Dashboard />);
     expect(queryByLabelText("Rechercher un patient")).toBeNull();
-    fireEvent.press(getByLabelText("Capture"));
+    fireEvent.press(getByLabelText("Nouvelle capture"));
     expect(getByLabelText("Rechercher un patient")).toBeTruthy();
   });
 
@@ -53,7 +60,7 @@ describe("Dashboard", () => {
     const { getByLabelText, getAllByLabelText, queryByLabelText } = render(
       <Dashboard onCaptureForPatient={onCaptureForPatient} />,
     );
-    fireEvent.press(getByLabelText("Capture"));
+    fireEvent.press(getByLabelText("Nouvelle capture"));
     // Le même patient apparaît aussi dans « Patients récents » : on cible la
     // ligne du picker, la dernière dans l'arbre rendu.
     const rows = getAllByLabelText("Jean Dupont");
@@ -69,7 +76,7 @@ describe("Dashboard", () => {
     const { getByLabelText, queryByLabelText, getAllByLabelText } = render(
       <Dashboard onQuickAction={onQuickAction} />,
     );
-    fireEvent.press(getByLabelText("Capture"));
+    fireEvent.press(getByLabelText("Nouvelle capture"));
     const newPatientButtons = getAllByLabelText("Nouveau patient");
     // Le dernier est celui du picker (le premier est la grille d'actions).
     fireEvent.press(newPatientButtons[newPatientButtons.length - 1]!);
@@ -77,16 +84,14 @@ describe("Dashboard", () => {
     expect(queryByLabelText("Rechercher un patient")).toBeNull();
   });
 
-  it("calcule les nouveaux patients du jour à partir des vrais timestamps", () => {
-    usePatientsStore.setState({
-      patients: [
-        makePatient({ id: "today-1", createdAt: isoDaysAgo(0) }),
-        makePatient({ id: "old-1", createdAt: isoDaysAgo(15) }),
-      ],
-    });
-    const { getByText } = render(<Dashboard />);
-    expect(getByText("1")).toBeTruthy();
-    expect(getByText("Nouveaux patients")).toBeTruthy();
+  it("affiche le nombre d'analyses du jour (vraie métrique du cabinet, pas les nouveaux patients)", async () => {
+    mockCountAnalysesToday.mockResolvedValueOnce(3);
+    const { findByText, getByText, queryByText } = render(<Dashboard />);
+    expect(await findByText("3")).toBeTruthy();
+    expect(getByText("Analyses")).toBeTruthy();
+    expect(getByText("Aujourd’hui")).toBeTruthy();
+    // L'ancienne stat « Nouveaux patients » (souvent 0, faible valeur) a disparu.
+    expect(queryByText("Nouveaux patients")).toBeNull();
   });
 
   it("remplace la carte Rapports (aucune source fiable) par une stat honnête de patients suivis", () => {
@@ -120,10 +125,24 @@ describe("Dashboard", () => {
     expect(onQuickAction).toHaveBeenCalledWith("new-patient");
   });
 
-  it("désactive visuellement la cloche de notifications (aucun handler disponible)", () => {
-    const { getByLabelText } = render(<Dashboard />);
-    const bell = getByLabelText("Notifications — bientôt disponible");
-    expect(bell.props.accessibilityState?.disabled).toBe(true);
+  it("n'affiche plus la cloche de notifications (promesse morte : aucun centre de notifications)", () => {
+    const { queryByLabelText } = render(<Dashboard />);
+    expect(queryByLabelText("Notifications — bientôt disponible")).toBeNull();
+  });
+
+  it("propose « Nouveau patient » et « Protocoles » en actions rapides, sans doublons de la tab bar", () => {
+    const onQuickAction = jest.fn();
+    const { getByText, queryByText, getAllByLabelText } = render(
+      <Dashboard onQuickAction={onQuickAction} />,
+    );
+    // « Rapport » doublait l'onglet Rapports ; « Analyse » doublait le bouton
+    // capture central. Remplacés par Protocoles (guide de positionnement).
+    expect(queryByText("Rapport")).toBeNull();
+    expect(queryByText("Analyse")).toBeNull();
+    fireEvent.press(getByText("Protocoles"));
+    expect(onQuickAction).toHaveBeenCalledWith("protocols");
+    fireEvent.press(getAllByLabelText("Nouveau patient")[0]!);
+    expect(onQuickAction).toHaveBeenCalledWith("new-patient");
   });
 
   it("expose « Voir tout » comme un bouton accessible", () => {

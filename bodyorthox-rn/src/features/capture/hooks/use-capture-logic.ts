@@ -18,6 +18,7 @@ import {
   loadCaptureDraft,
   clearCaptureDraft,
 } from "../data/capture-draft-storage";
+import { showToast } from "../../../shared/toast/toast-store";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -241,6 +242,7 @@ export function useCaptureLogic(patientId: string) {
       const analysis = await saveAnalysis(patientId, correctedLandmarks);
       if (analysis) {
         clearCaptureDraft(patientId);
+        showToast("Analyse sauvegardée", "success");
         const { capturedImageUrl: imgUrl, allDetectedLandmarks: allLm } =
           useCaptureStore.getState();
         // On passe par l'écran Processing v2 qui auto-advance vers Results.

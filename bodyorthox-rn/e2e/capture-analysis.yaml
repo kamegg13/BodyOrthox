@@ -47,6 +47,13 @@ appId: com.bodyorthox.app
       - tapOn:
           id: "onboarding-skip"
       - waitForAnimationToEnd
+# Le dialogue trousseau peut apparaître avec retard (course avec le premier
+# check ci-dessus) : re-tenter la fermeture juste avant d'asserter l'accueil.
+- runFlow:
+    when:
+      visible: "Enregistrer le mot de passe ?"
+    commands:
+      - tapOn: "Plus tard"
 - extendedWaitUntil:
     visible: "Patients"
     timeout: 15000

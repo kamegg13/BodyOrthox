@@ -139,7 +139,6 @@ export function ProgressionSelectionScreen() {
         ) : null}
         <Btn
           label={`Générer le rapport (${selectedCount})`}
-          variant="success"
           disabled={!canValidate}
           onPress={handleValidate}
           testID="progression-selection-submit"

@@ -44,3 +44,4 @@ android/app/.cxx/
 # Xcode user state
 ios/**/xcuserdata/
 e2e/shots/
+e2e/shots-android/

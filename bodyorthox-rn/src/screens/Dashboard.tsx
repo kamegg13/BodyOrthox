@@ -30,6 +30,7 @@ import {
   spacing,
 } from "../theme/tokens";
 import { usePatientsStore } from "../features/patients/store/patients-store";
+import { countAnalysesToday } from "../features/capture/data/analysis-metrics";
 import {
   patientAge,
   patientDisplayName,
@@ -40,7 +41,7 @@ interface DashboardProps {
   readonly practitionerName?: string;
   readonly nextAppointment?: { patientName: string; whenLabel: string; subtitle?: string };
   readonly hideBottomTab?: boolean;
-  readonly onQuickAction?: (key: "new-patient" | "analysis" | "report") => void;
+  readonly onQuickAction?: (key: "new-patient" | "protocols") => void;
   readonly onSeeAllPatients?: () => void;
   readonly onPatientPress?: (patient: Patient) => void;
   /** Sélection depuis le picker rapide de capture — navigation directe vers l'écran Capture. */
@@ -61,10 +62,21 @@ export function Dashboard({
   const patients = usePatientsStore((s) => s.patients);
   const loadPatients = usePatientsStore((s) => s.loadPatients);
   const [pickerVisible, setPickerVisible] = useState(false);
+  const [analysesToday, setAnalysesToday] = useState(0);
 
   useEffect(() => {
     loadPatients();
   }, [loadPatients]);
+
+  useEffect(() => {
+    let cancelled = false;
+    countAnalysesToday().then((n) => {
+      if (!cancelled) setAnalysesToday(n);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const stats = useMemo(() => computeStats(patients), [patients]);
   const recent = useMemo(() => takeRecent(patients, 3), [patients]);
@@ -75,24 +87,13 @@ export function Dashboard({
       {/* HEADER — papier */}
       <SafeAreaView edges={["top"]} style={styles.headerSafe}>
         <View style={styles.headerInner}>
+          {/* Pas de cloche notifications : aucune fonctionnalité derrière —
+              un contrôle désactivé en permanence est une promesse morte. */}
           <View style={styles.headerTopRow}>
             <View>
               <Text style={styles.greeting}>{todayLabel()}</Text>
               <Text style={styles.practitioner}>{practitionerName}</Text>
             </View>
-            <Pressable
-              hitSlop={8}
-              disabled
-              // Cloche décorative : aucun centre de notifications n'existe encore
-              // côté produit — désactivée visuellement plutôt que retirée pour
-              // ne pas casser l'équilibre du header ni promettre une action.
-              accessibilityRole="button"
-              accessibilityLabel="Notifications — bientôt disponible"
-              accessibilityState={{ disabled: true }}
-              style={[styles.bellBtn, styles.bellBtnDisabled]}
-            >
-              <Icon name="bell" size={18} color={colors.textMuted} />
-            </Pressable>
           </View>
 
           <View style={styles.statsRow}>
@@ -102,7 +103,7 @@ export function Dashboard({
               highlight
               trend={stats.thisWeek > 0 ? `+${stats.thisWeek} cette semaine` : undefined}
             />
-            <StatCard value={String(stats.newToday)} label="Aujourd’hui" sub="Nouveaux patients" />
+            <StatCard value={String(analysesToday)} label="Analyses" sub="Aujourd’hui" />
             <StatCard value={String(stats.followUp)} label="Suivis" sub="Avec douleurs" />
           </View>
         </View>
@@ -118,7 +119,9 @@ export function Dashboard({
           onPress={() => setPickerVisible(true)}
           style={({ pressed }) => [styles.primaryAction, pressed && styles.pressed]}
           accessibilityRole="button"
-          accessibilityLabel="Capture"
+          // Texte visible du CTA (label-in-name) — « Capture » seul entrait en
+          // collision avec le bouton central de la tab bar sur le même écran.
+          accessibilityLabel="Nouvelle capture"
         >
           <View style={styles.primaryActionIcon}>
             <Icon name="camera" size={20} color={colors.onPrimary} strokeWidth={1.75} />
@@ -131,6 +134,9 @@ export function Dashboard({
           </View>
           <Icon name="arrowRight" size={16} color={colors.onPrimary} strokeWidth={1.75} />
         </Pressable>
+        {/* Deux actions à valeur propre : « Analyse » doublait le bouton
+            capture central de la tab bar, « Rapport » doublait l'onglet
+            Rapports. Protocoles (guide de positionnement) était enterré. */}
         <View style={styles.actionsGrid}>
           <ActionCard
             icon="plus"
@@ -138,14 +144,9 @@ export function Dashboard({
             onPress={() => onQuickAction?.("new-patient")}
           />
           <ActionCard
-            icon="chart"
-            label="Analyse"
-            onPress={() => onQuickAction?.("analysis")}
-          />
-          <ActionCard
-            icon="file"
-            label="Rapport"
-            onPress={() => onQuickAction?.("report")}
+            icon="angle"
+            label="Protocoles"
+            onPress={() => onQuickAction?.("protocols")}
           />
         </View>
 
@@ -338,33 +339,21 @@ function startOfWeek(date: Date): Date {
   return d;
 }
 
-function startOfToday(date: Date): Date {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
 /**
- * Stats calculées uniquement à partir des données patient déjà chargées.
- * Il n'existe pas (encore) de source fiable pour des métriques comme
- * « sessions du jour » ou « rapports générés » — le repo d'analyses n'expose
- * pas de requête tous-patients, et aucun compteur de rapports PDF n'est
- * persisté. Plutôt que d'afficher des chiffres inventés, on expose des
- * stats honnêtes dérivées de `Patient` : nouveaux patients aujourd'hui et
- * patients actuellement en suivi (douleur déclarée).
+ * Stats dérivées des données patient déjà chargées : total actif, créations
+ * de la semaine (tendance) et patients en suivi (douleur déclarée). Les
+ * analyses du jour viennent de `countAnalysesToday` (requête SQL dédiée).
  */
 function computeStats(patients: readonly Patient[]) {
   const now = new Date();
   const monday = startOfWeek(now);
-  const today = startOfToday(now);
   const active = patients.filter((p) => !p.archivedAt);
   const total = active.length;
   const thisWeek = patients.filter((p) => new Date(p.createdAt) >= monday).length;
-  const newToday = patients.filter((p) => new Date(p.createdAt) >= today).length;
   const followUp = active.filter(
     (p) => (p.morphologicalProfile?.pains?.length ?? 0) > 0,
   ).length;
-  return { total, thisWeek, newToday, followUp };
+  return { total, thisWeek, followUp };
 }
 
 function takeRecent(patients: readonly Patient[], n: number): readonly Patient[] {
@@ -437,19 +426,6 @@ const styles = StyleSheet.create({
     color: colors.ink,
     letterSpacing: -0.4,
     marginTop: 4,
-  },
-  bellBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: radius.iconSm,
-    backgroundColor: colors.bgCard,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  bellBtnDisabled: {
-    opacity: 0.5,
   },
   statsRow: {
     flexDirection: "row",
