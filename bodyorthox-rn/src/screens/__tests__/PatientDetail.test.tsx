@@ -1,7 +1,7 @@
 import React from "react";
 import { Alert } from "react-native";
 import { render, fireEvent } from "@testing-library/react-native";
-import { PatientDetail, SAMPLE_PATIENT_DETAIL } from "../PatientDetail";
+import { PatientDetail, SAMPLE_PATIENT_DETAIL, buildHeroMeta } from "../PatientDetail";
 
 describe("PatientDetail — zone dangereuse", () => {
   it("renders the archive and delete actions, separated from normal actions", () => {
@@ -117,5 +117,33 @@ describe("PatientDetail — entrée vers le rapport de progression", () => {
     fireEvent.press(getByTestId("progression-report-link"));
 
     expect(onProgressionReport).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("PatientDetail — données non renseignées", () => {
+  it("affiche « — » sans unité pour taille et poids null (jamais 0 cm / 0 kg)", () => {
+    const { getAllByText, queryByText } = render(
+      <PatientDetail
+        data={{ ...SAMPLE_PATIENT_DETAIL, heightCm: null, weightKg: null }}
+      />,
+    );
+    expect(getAllByText("—").length).toBeGreaterThanOrEqual(2);
+    expect(queryByText(/0\s*cm/)).toBeNull();
+    expect(queryByText(/0\s*kg/)).toBeNull();
+  });
+
+  it("n'affiche « Diagnostic principal » qu'une seule fois (eyebrow, pas de doublon)", () => {
+    const { getAllByText } = render(<PatientDetail data={SAMPLE_PATIENT_DETAIL} />);
+    expect(getAllByText("Diagnostic principal")).toHaveLength(1);
+  });
+});
+
+describe("buildHeroMeta — méta d'identité sans valeurs cryptiques", () => {
+  it("écrit l'âge en toutes lettres et garde l'identifiant", () => {
+    expect(buildHeroMeta({ sex: "F", age: 34, id: "P-0041" })).toBe("F · 34 ans · #P-0041");
+  });
+
+  it("omet le sexe inconnu (X) et l'âge nul au lieu de les afficher", () => {
+    expect(buildHeroMeta({ sex: "X", age: 0, id: "P-42DF" })).toBe("#P-42DF");
   });
 });

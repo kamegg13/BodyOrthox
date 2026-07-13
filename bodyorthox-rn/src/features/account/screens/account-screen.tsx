@@ -23,6 +23,7 @@ import {
   spacing,
 } from "../../../theme/tokens";
 import { useAuthStore } from "../../../core/auth/auth-store";
+import { useFeedbackStore } from "../../feedback/store/feedback-store";
 
 // ---------------------------------------------------------------------------
 // localStorage helpers (web-safe)
@@ -171,6 +172,7 @@ export function AccountScreen() {
   const [faceIdEnabled, setFaceIdEnabled] = useState(false);
   const logout = useAuthStore((s) => s.logout);
   const user = useAuthStore((s) => s.user);
+  const openFeedback = useFeedbackStore((s) => s.openModal);
   const navigation = useNavigation<any>();
 
   useEffect(() => {
@@ -395,6 +397,12 @@ export function AccountScreen() {
               )
             }
             testID="privacy-button"
+          />
+          <RowDivider />
+          <ListRow
+            label="Envoyer un feedback"
+            onPress={() => openFeedback()}
+            testID="feedback-button"
           />
           <RowDivider />
           <ListRow

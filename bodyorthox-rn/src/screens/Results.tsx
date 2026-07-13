@@ -10,13 +10,16 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
-  AngleScale,
   Badge,
   type BadgeColor,
   Btn,
+  HkaMeasureCard,
+  HKA_REF_MIN,
+  HKA_REF_MAX,
   Icon,
   NavBar,
   SectionLabel,
+  sevTone,
   ZoomableImage,
 } from "../components";
 import {
@@ -241,13 +244,10 @@ export function Results({
           )}
         </View>
 
-        <View style={styles.measureCard}>
-          <Text style={styles.measureCardLabel}>
-            Angle HKA · norme {HKA_REF_MIN}°–{HKA_REF_MAX}°
-          </Text>
-          <HkaBullet m={data.hka.left} sideLabel="Genou gauche" />
-          <HkaBullet m={data.hka.right} sideLabel="Genou droit" />
-        </View>
+        <HkaMeasureCard
+          left={{ key: data.hka.left.key, label: "Genou gauche", value: data.hka.left.value }}
+          right={{ key: data.hka.right.key, label: "Genou droit", value: data.hka.right.value }}
+        />
 
         <SectionLabel style={{ marginTop: spacing.s8 }}>Angles posturaux</SectionLabel>
         <View style={[styles.measureCard, styles.listCard]}>
@@ -309,7 +309,6 @@ export function Results({
           <Btn
             label="Générer le rapport PDF"
             icon="file"
-            variant="success"
             onPress={onGenerateReport}
           />
         </View>
@@ -319,13 +318,6 @@ export function Results({
 }
 
 // ────────────────────────────────────────────────────────────
-
-function severity(delta: number): "normal" | "moderate" | "severe" {
-  const a = Math.abs(delta);
-  if (a < 2) return "normal";
-  if (a < 6) return "moderate";
-  return "severe";
-}
 
 /** Détail des genoux hors plage de référence — « — genou gauche hors norme ». */
 function outOfNormDetail(data: ResultsData): string {
@@ -339,76 +331,10 @@ function outOfNormDetail(data: ResultsData): string {
   return "";
 }
 
-// Plage de référence HKA (175°–180°), cf. classifyHKA dans
-// src/features/capture/data/angle-calculator.ts — reprise ici telle quelle,
-// aucune valeur n'est inventée.
-const HKA_REF_MIN = 175;
-const HKA_REF_MAX = 180;
-
 // Seuil de confiance ML basse, cf. LOW_CONFIDENCE_THRESHOLD dans
 // src/features/capture/hooks/use-capture-logic.ts — reprise ici telle
 // quelle, aucune valeur n'est inventée.
 const LOW_CONFIDENCE_THRESHOLD = 0.6;
-
-/** Sévérité d'une mesure → couleur sémantique (texte + icône, jamais seule). */
-function sevTone(
-  value: number | null,
-  norm: number,
-  unit: "°" | "mm",
-): {
-  readonly color: string;
-  readonly icon: "check" | "alert";
-  readonly deltaLabel: string;
-} {
-  if (value === null) {
-    return { color: colors.textMuted, icon: "alert", deltaLabel: "indisponible" };
-  }
-  const delta = +(value - norm).toFixed(1);
-  const sev = severity(delta);
-  const color =
-    sev === "normal" ? colors.green : sev === "moderate" ? colors.amberMid : colors.red;
-  const deltaLabel =
-    sev === "normal"
-      ? "dans la norme"
-      : `${delta >= 0 ? `+${delta}` : `${delta}`}${unit} vs norme`;
-  return { color, icon: sev === "normal" ? "check" : "alert", deltaLabel };
-}
-
-/** Ligne bullet chart HKA — valeur en texte + échelle de norme (reco DS). */
-function HkaBullet({ m, sideLabel }: { m: AngleMeasurement; sideLabel: string }) {
-  const tone = sevTone(m.value, m.norm, m.unit);
-  return (
-    <View style={angleStyles.bullet}>
-      <View style={angleStyles.bulletHead}>
-        <Text style={angleStyles.bulletSide}>{sideLabel}</Text>
-        <View style={angleStyles.bulletValueWrap}>
-          {m.value !== null ? (
-            <>
-              <Text style={[angleStyles.value, { color: tone.color }]}>
-                {m.value}
-                {m.unit}
-              </Text>
-              <Text style={angleStyles.bulletDelta}>{tone.deltaLabel}</Text>
-            </>
-          ) : (
-            <Text style={angleStyles.bulletDelta}>indisponible</Text>
-          )}
-        </View>
-      </View>
-      <AngleScale
-        value={m.value}
-        min={170}
-        max={190}
-        refMin={HKA_REF_MIN}
-        refMax={HKA_REF_MAX}
-        compact
-        showReadout={false}
-        style={angleStyles.scale}
-        testID={`angle-scale-${m.key}`}
-      />
-    </View>
-  );
-}
 
 /** Ligne de mesure posturale bilatérale — icône d'état + valeur par côté. */
 function PosturalRow({ m, first }: { m: PosturalMeasurement; first: boolean }) {
@@ -555,12 +481,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.s14,
     paddingHorizontal: spacing.s16,
   },
-  measureCardLabel: {
-    fontFamily: fonts.sans,
-    fontSize: fontSize.caption,
-    fontWeight: fontWeight.semiBold,
-    color: colors.textMuted,
-  },
   listCard: {
     paddingVertical: spacing.s4,
   },
@@ -609,42 +529,6 @@ const styles = StyleSheet.create({
 });
 
 const angleStyles = StyleSheet.create({
-  bullet: {
-    marginTop: spacing.s14,
-  },
-  bulletHead: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    marginBottom: spacing.s8,
-  },
-  bulletSide: {
-    fontFamily: fonts.sans,
-    fontSize: fontSize.body,
-    fontWeight: fontWeight.semiBold,
-    color: colors.textPrimary,
-  },
-  bulletValueWrap: {
-    alignItems: "flex-end",
-  },
-  value: {
-    fontFamily: fonts.display,
-    fontSize: fontSize.statMd,
-    fontWeight: fontWeight.semiBold,
-    letterSpacing: -0.5,
-    lineHeight: fontSize.statMd + 2,
-    fontVariant: ["tabular-nums"],
-  },
-  bulletDelta: {
-    fontFamily: fonts.sans,
-    fontSize: fontSize.captionXs,
-    fontWeight: fontWeight.semiBold,
-    color: colors.textMuted,
-    fontVariant: ["tabular-nums"],
-  },
-  scale: {
-    marginTop: 2,
-  },
   row: {
     flexDirection: "row",
     alignItems: "center",

@@ -18,7 +18,7 @@ import {
   spacing,
 } from "../theme/tokens";
 
-export type BtnVariant = "primary" | "secondary" | "ghost" | "teal" | "danger" | "success";
+export type BtnVariant = "primary" | "secondary" | "ghost" | "teal" | "danger";
 
 interface BtnProps {
   readonly label: string;
@@ -34,9 +34,9 @@ interface BtnProps {
 
 /**
  * Bouton v4 « Accessible & Ethical ».
- * - primaire : cyan primaire plein, texte blanc ;
- * - success : vert santé plein (#059669) — réservé aux CTA de complétion
- *   (générer le rapport, valider) conformément au design system ;
+ * - primaire : cyan primaire plein, texte blanc — seule couleur de CTA
+ *   primaire de l'app (le vert santé est réservé aux badges/statuts, il
+ *   porte déjà le sens sémantique « Normal ») ;
  * - secondaire : bordure teintée sur blanc, texte encre ;
  * - destructive (`danger`) : bordure rouge, texte rouge ;
  * - ghost : transparent, texte encre.
@@ -57,13 +57,12 @@ export function Btn({
   const fontSizePx = small ? 13 : fontSize.bodyLg;
   const paddingH = small ? spacing.s16 : spacing.s20;
 
-  const isFilled = variant === "primary" || variant === "teal" || variant === "success";
+  const isFilled = variant === "primary" || variant === "teal";
 
   const textColor = (() => {
     switch (variant) {
       case "primary":
       case "teal":
-      case "success":
         return colors.textInverse;
       case "secondary":
       case "ghost":
@@ -82,7 +81,6 @@ export function Btn({
       alignSelf: full ? "stretch" : "flex-start",
     },
     isFilled && styles.filled,
-    variant === "success" && styles.success,
     variant === "secondary" && styles.secondary,
     variant === "ghost" && styles.ghost,
     variant === "danger" && styles.danger,
@@ -120,9 +118,6 @@ const styles = StyleSheet.create({
   },
   filled: {
     backgroundColor: colors.primary,
-  },
-  success: {
-    backgroundColor: colors.green,
   },
   secondary: {
     backgroundColor: colors.bgCard,

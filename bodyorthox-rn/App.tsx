@@ -16,6 +16,8 @@ import {
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppNavigator } from "./src/navigation/app-navigator";
+import { linking } from "./src/navigation/linking";
+import { ToastHost } from "./src/components/ToastHost";
 import { Colors } from "./src/shared/design-system/colors";
 import { initializeDatabase } from "./src/core/database/init";
 import { FeedbackFab } from "./src/features/feedback/components/feedback-fab";
@@ -168,9 +170,11 @@ const errorStyles = StyleSheet.create({
 
 const navigationRef = createNavigationContainerRef();
 
-// Écrans plein écran où le FAB de feedback masquerait le contenu critique
-// (viseur caméra, confirmation d'enregistrement).
-const FAB_HIDDEN_ROUTES = new Set(["Capture", "Processing", "Lock"]);
+// Le FAB de feedback n'apparaît que sur l'accueil : partout ailleurs il
+// recouvrait des actions critiques (CTA « Générer le rapport PDF » des
+// résultats, « Archiver le patient » de la fiche). L'accès permanent au
+// feedback reste garanti par l'entrée « Envoyer un feedback » des Réglages.
+const FAB_VISIBLE_ROUTES = new Set(["AnalysesHome"]);
 
 function AppContent() {
   const [fabHidden, setFabHidden] = useState(true);
@@ -179,7 +183,7 @@ function AppContent() {
     const routeName = navigationRef.isReady()
       ? navigationRef.getCurrentRoute()?.name
       : undefined;
-    setFabHidden(routeName === undefined || FAB_HIDDEN_ROUTES.has(routeName));
+    setFabHidden(routeName === undefined || !FAB_VISIBLE_ROUTES.has(routeName));
   }, []);
 
   useEffect(() => {
@@ -198,6 +202,7 @@ function AppContent() {
         />
         <NavigationContainer
           ref={navigationRef}
+          linking={linking}
           onReady={syncFabWithRoute}
           onStateChange={syncFabWithRoute}
         >
@@ -205,6 +210,7 @@ function AppContent() {
         </NavigationContainer>
         {!fabHidden && <FeedbackFab />}
         <FeedbackModal />
+        <ToastHost />
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

@@ -18,6 +18,7 @@ import {
   type Patient,
 } from "../../features/patients/domain/patient";
 import type { Analysis } from "../../features/capture/domain/analysis";
+import { showToast } from "../../shared/toast/toast-store";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, "PatientDetail">;
@@ -106,6 +107,7 @@ export function PatientDetailRoute() {
       Alert.alert("Erreur", err);
       return;
     }
+    showToast("Patient supprimé", "success");
     navigation.navigate("MainTabs", { screen: "PatientsTab" });
   }, [deletePatient, patientId, navigation]);
   const handleArchive = useCallback(async () => {
@@ -115,6 +117,7 @@ export function PatientDetailRoute() {
       Alert.alert("Erreur", err);
       return;
     }
+    showToast("Patient archivé", "success");
     navigation.navigate("MainTabs", { screen: "PatientsTab" });
   }, [archivePatient, patientId, navigation]);
   const handleTabPress = useCallback(
@@ -205,10 +208,11 @@ export function buildDetailData(patient: Patient, analyses: readonly Analysis[])
     age: patientAge(patient) ?? 0,
     id,
     status,
-    heightCm: patient.morphologicalProfile?.heightCm ?? 0,
-    weightKg: patient.morphologicalProfile?.weightKg ?? 0,
+    // null (jamais 0) quand la mesure n'est pas renseignée : afficher
+    // « 0 cm » serait une donnée clinique fausse.
+    heightCm: patient.morphologicalProfile?.heightCm || null,
+    weightKg: patient.morphologicalProfile?.weightKg || null,
     dob,
-    diagnosisLabel: "Diagnostic principal",
     diagnosisDescription,
     history: buildHistory(analyses),
     analysisCount: analyses.length,

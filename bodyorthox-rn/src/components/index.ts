@@ -9,6 +9,14 @@ export { BottomTab, TABS, type TabKey } from "./BottomTab";
 export { Logo } from "./Logo";
 export { Steps } from "./Steps";
 export { AngleScale } from "./AngleScale";
+export {
+  HkaMeasureCard,
+  HKA_REF_MIN,
+  HKA_REF_MAX,
+  severity,
+  sevTone,
+  type HkaSideMeasure,
+} from "./HkaMeasureCard";
 export { ZoomableImage } from "./ZoomableImage";
 export { Gradient } from "./gradient";
 export { Icon, type IconName } from "./icons";

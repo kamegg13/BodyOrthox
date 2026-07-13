@@ -198,3 +198,46 @@ describe("PatientDetailRoute — états unifiés (LoadingState/ErrorState)", () 
     expect(mockGoBack).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("buildDetailData — mesures non renseignées", () => {
+  it("mappe taille/poids absents vers null (jamais 0)", () => {
+    const data = buildDetailData(
+      { ...mockPatient, morphologicalProfile: undefined },
+      [],
+    );
+    expect(data.heightCm).toBeNull();
+    expect(data.weightKg).toBeNull();
+  });
+
+  it("mappe taille/poids à 0 (valeur sentinelle legacy) vers null", () => {
+    const data = buildDetailData(
+      {
+        ...mockPatient,
+        morphologicalProfile: {
+          ...(mockPatient.morphologicalProfile ?? {}),
+          heightCm: 0,
+          weightKg: 0,
+        },
+      },
+      [],
+    );
+    expect(data.heightCm).toBeNull();
+    expect(data.weightKg).toBeNull();
+  });
+
+  it("conserve les mesures réellement renseignées", () => {
+    const data = buildDetailData(
+      {
+        ...mockPatient,
+        morphologicalProfile: {
+          ...(mockPatient.morphologicalProfile ?? {}),
+          heightCm: 172,
+          weightKg: 64,
+        },
+      },
+      [],
+    );
+    expect(data.heightCm).toBe(172);
+    expect(data.weightKg).toBe(64);
+  });
+});
