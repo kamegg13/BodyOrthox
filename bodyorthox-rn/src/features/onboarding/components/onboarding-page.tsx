@@ -6,16 +6,17 @@ import {
   ScrollView,
   useWindowDimensions,
 } from "react-native";
-import { colors, fonts, fontSize, fontWeight, spacing } from "../../../theme/tokens";
+import { colors, fonts, fontSize, fontWeight, radius, spacing } from "../../../theme/tokens";
+import { Icon, type IconName } from "../../../components/icons";
 
 export interface OnboardingPageProps {
-  icon?: string;
+  icon?: IconName;
   title: string;
   subtitle?: string;
   description?: string;
   illustration?: React.ReactNode;
   features?: ReadonlyArray<{
-    readonly icon: string;
+    readonly icon: IconName;
     readonly title: string;
     readonly description: string;
   }>;
@@ -47,11 +48,11 @@ export function OnboardingPage({
         {/* Subtitle */}
         {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
 
-        {/* Icon (legacy fallback) */}
+        {/* Icon (pages sans illustration dédiée) */}
         {icon && !illustration && (
-          <Text style={styles.icon} accessibilityLabel={title}>
-            {icon}
-          </Text>
+          <View style={styles.iconBadge} accessibilityLabel={title}>
+            <Icon name={icon} size={56} color={colors.primary} strokeWidth={1} />
+          </View>
         )}
 
         {/* Custom illustration */}
@@ -66,7 +67,9 @@ export function OnboardingPage({
         {features &&
           features.map((feature, index) => (
             <View key={index} style={styles.featureRow}>
-              <Text style={styles.featureIcon}>{feature.icon}</Text>
+              <View style={styles.featureIcon}>
+                <Icon name={feature.icon} size={18} color={colors.primary} />
+              </View>
               <View style={styles.featureTextContainer}>
                 <Text style={styles.featureTitle}>{feature.title}</Text>
                 <Text style={styles.featureDescription}>
@@ -115,8 +118,13 @@ const styles = StyleSheet.create({
     marginBottom: spacing.s24,
     lineHeight: 22,
   },
-  icon: {
-    fontSize: 80,
+  iconBadge: {
+    width: 112,
+    height: 112,
+    borderRadius: 56,
+    backgroundColor: colors.primaryLight,
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: spacing.s28,
   },
   illustrationWrapper: {
@@ -141,9 +149,12 @@ const styles = StyleSheet.create({
     gap: spacing.s16,
   },
   featureIcon: {
-    fontSize: 24,
     width: 32,
-    textAlign: "center",
+    height: 32,
+    borderRadius: radius.iconSm,
+    backgroundColor: colors.primaryLight,
+    alignItems: "center",
+    justifyContent: "center",
   },
   featureTextContainer: {
     flex: 1,

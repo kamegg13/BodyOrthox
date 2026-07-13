@@ -34,7 +34,9 @@ export type IconName =
   | "trendUp"
   | "arrowRight"
   | "image"
-  | "alert";
+  | "alert"
+  | "angle"
+  | "bulb";
 
 interface IconProps {
   readonly name: IconName;
@@ -264,6 +266,21 @@ export function Icon({ name, size = 16, color = colors.textPrimary, strokeWidth 
           <Path d="M8 2 L 14.5 13.5 L 1.5 13.5 Z" {...stroke} />
           <Line x1={8} y1={6.5} x2={8} y2={9.5} {...stroke} />
           <Line x1={8} y1={11.4} x2={8} y2={11.5} {...stroke} />
+        </Svg>
+      );
+    case "angle":
+      return (
+        <Svg width={size} height={size} viewBox="0 0 16 16">
+          <Line x1={2.5} y1={13.5} x2={13.5} y2={13.5} {...stroke} />
+          <Line x1={2.5} y1={13.5} x2={10.5} y2={3} {...stroke} />
+          <Path d="M7.5 13.5 A 5 5 0 0 0 5.5 9.5" {...stroke} />
+        </Svg>
+      );
+    case "bulb":
+      return (
+        <Svg width={size} height={size} viewBox="0 0 16 16">
+          <Path d="M5.2 10.3 a 4.2 4.2 0 1 1 5.6 0 c -0.7 0.7 -1 1.2 -1 2.2 h -3.6 c 0 -1 -0.3 -1.5 -1 -2.2 Z" {...stroke} />
+          <Line x1={6.4} y1={14.3} x2={9.6} y2={14.3} {...stroke} />
         </Svg>
       );
     default:

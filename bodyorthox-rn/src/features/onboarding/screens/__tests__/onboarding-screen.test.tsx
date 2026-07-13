@@ -109,7 +109,20 @@ describe("OnboardingScreen", () => {
 
   it("renders capture page with camera context text", () => {
     const { getByText } = render(<OnboardingScreen />);
-    expect(getByText("Filmez la marche du patient")).toBeTruthy();
+    expect(getByText("Photographiez le patient debout")).toBeTruthy();
+  });
+
+  it("la copy est neutre en plateforme et sans fausse mention technique", () => {
+    const { queryByText } = render(<OnboardingScreen />);
+    expect(queryByText(/iOS natif/)).toBeNull();
+    expect(queryByText(/ML Kit/)).toBeNull();
+    expect(queryByText(/Filmez|vidéo|video/i)).toBeNull();
+  });
+
+  it("la page capture porte le message RGPD d'analyse on-device", () => {
+    const { getByText } = render(<OnboardingScreen />);
+    expect(getByText(/analysée sur votre appareil/)).toBeTruthy();
+    expect(getByText(/jamais transmise/)).toBeTruthy();
   });
 
   it("renders page 3 with export title (mockup 11)", () => {
