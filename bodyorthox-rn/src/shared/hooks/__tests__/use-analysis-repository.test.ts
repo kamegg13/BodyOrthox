@@ -1,3 +1,8 @@
+/**
+ * Le hook doit retourner le repository d'analyses ON-DEVICE câblé par
+ * initializeDatabase() (store capture) — plus jamais d'ApiAnalysisRepository :
+ * les données de santé ne quittent pas l'appareil (décision 2026-07-15).
+ */
 import { renderHook } from "@testing-library/react-native";
 
 jest.mock("../../../dev/dev-mode", () => ({
@@ -6,40 +11,41 @@ jest.mock("../../../dev/dev-mode", () => ({
 }));
 
 import { useAnalysisRepository } from "../use-analysis-repository";
-import { ApiAnalysisRepository } from "../../../features/capture/data/api-analysis-repository";
+import { useCaptureStore } from "../../../features/capture/store/capture-store";
+import { IAnalysisRepository } from "../../../features/capture/data/analysis-repository";
+
+const fakeRepo: IAnalysisRepository = {
+  getForPatient: jest.fn(),
+  getById: jest.fn(),
+  create: jest.fn(),
+  update: jest.fn(),
+  delete: jest.fn(),
+} as unknown as IAnalysisRepository;
 
 describe("useAnalysisRepository", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
+  // Ce cas doit passer AVANT tout setRepository : le repository du store
+  // capture est un état de module, non réinitialisable entre tests.
+  it("jette une erreur explicite quand aucun repository n'est câblé (fail closed)", () => {
+    expect(() => renderHook(() => useAnalysisRepository())).toThrow(
+      /non initialisé/i,
+    );
   });
 
-  it("returns an IAnalysisRepository instance", () => {
+  it("retourne le repository câblé par initializeDatabase (store capture)", () => {
+    useCaptureStore.getState().setRepository(fakeRepo);
+
     const { result } = renderHook(() => useAnalysisRepository());
-    expect(result.current).toBeDefined();
-    expect(result.current.getForPatient).toBeDefined();
-    expect(result.current.getById).toBeDefined();
-    expect(result.current.create).toBeDefined();
-    expect(result.current.update).toBeDefined();
-    expect(result.current.delete).toBeDefined();
+
+    expect(result.current).toBe(fakeRepo);
   });
 
-  it("returns an ApiAnalysisRepository instance outside dev mode", () => {
-    const { result } = renderHook(() => useAnalysisRepository());
-    expect(result.current).toBeInstanceOf(ApiAnalysisRepository);
-  });
-
-  it("returns the same instance on re-render (memoized)", () => {
+  it("retourne la même instance à chaque re-render", () => {
+    useCaptureStore.getState().setRepository(fakeRepo);
     const { result, rerender } = renderHook(() => useAnalysisRepository());
     const first = result.current;
-    rerender({});
-    expect(result.current).toBe(first);
-  });
 
-  it("does not recreate the repository across re-renders", () => {
-    const { result, rerender } = renderHook(() => useAnalysisRepository());
-    const first = result.current;
     rerender({});
-    rerender({});
+
     expect(result.current).toBe(first);
   });
 });

@@ -41,14 +41,8 @@ export const useAuthStore = create<AuthState & AuthActions>()((set) => ({
   login: async (email, password) => {
     const { user } = await authService.login(email, password);
     set({ isAuthenticated: true, user });
-    // Migration en arrière-plan (ne bloque pas le login). Une fois terminée, on
-    // rafraîchit la liste patients : sinon un chargement démarré avant la fin de
-    // la migration afficherait une liste incomplète (patients migrés manquants).
-    import('../../features/patients/data/migration')
-      .then(({ migrateLocalPatients }) => migrateLocalPatients())
-      .then(() => import('../../features/patients/store/patients-store'))
-      .then(({ usePatientsStore }) => usePatientsStore.getState().loadPatients())
-      .catch(() => { /* ignore — la migration réessaiera au prochain login */ });
+    // Plus de migration des patients locaux vers l'API au login : mode
+    // on-device pur (2026-07-15), les données de santé restent sur l'appareil.
   },
 
   logout: async () => {
