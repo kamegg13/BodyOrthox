@@ -46,9 +46,12 @@ export function V2TabBar({ state, navigation }: BottomTabBarProps) {
       setPickerVisible(false);
       // « Capture » vit sur le stack racine : l'appel remonte du tab
       // navigator vers son parent (résolution ascendante React Navigation).
-      navigation.navigate("Capture", { patientId: patient.id });
+      // Le tab courant est transmis pour que Processing reconstruise la pile
+      // dans l'onglet d'origine (Rapports/Compte retombent sur Accueil).
+      const originTab = current === "PatientsTab" ? "PatientsTab" : "AnalysesTab";
+      navigation.navigate("Capture", { patientId: patient.id, originTab });
     },
-    [navigation],
+    [navigation, current],
   );
 
   const handleCreatePatient = useCallback(() => {

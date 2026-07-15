@@ -1,92 +1,170 @@
 /**
- * Tests for the native (Android/iOS) in-memory database shim.
- * Mirrors the web shim; localStorage is absent on native so persistence is
- * best-effort only — these tests cover the SQL parsing paths that matter for
- * RGPD erasure and patient search.
+ * Adaptateur SQLite natif réel (op-sqlite) — remplace l'ancien shim Map en
+ * mémoire. Les chemins SQL du shim restent couverts par database-web.test.ts
+ * (le web conserve le shim localStorage).
+ *
+ * Couvre : ouverture (avec/sans clé SQLCipher), migrations versionnées via
+ * PRAGMA user_version (idempotence — les ALTER TABLE ne doivent jamais être
+ * rejoués sur un vrai SQLite), mapping des résultats, cycle de vie.
  */
-
+import { open } from "@op-engineering/op-sqlite";
 import { createDatabase } from "../database.native";
+import { ALL_MIGRATIONS } from "../schema";
+import { getOrCreateEncryptionKey } from "../encryption-key";
 
-describe("NativeDatabase", () => {
-  let db: ReturnType<typeof createDatabase>;
+jest.mock("@op-engineering/op-sqlite", () => ({ open: jest.fn() }));
+jest.mock("../encryption-key", () => ({
+  getOrCreateEncryptionKey: jest.fn().mockResolvedValue("f".repeat(64)),
+}));
 
-  beforeEach(async () => {
-    db = createDatabase("test.db");
-    await db.initialize();
+const mockedOpen = jest.mocked(open);
+const mockedGetKey = jest.mocked(getOrCreateEncryptionKey);
+
+interface MockDb {
+  execute: jest.Mock;
+  close: jest.Mock;
+}
+
+/** Simule une base op-sqlite dont PRAGMA user_version vaut `userVersion`. */
+function mockOpSqliteDb(userVersion = 0): MockDb {
+  const execute = jest.fn(async (sql: string) => {
+    const trimmed = sql.trim();
+    if (/^PRAGMA user_version$/i.test(trimmed)) {
+      return { rows: [{ user_version: userVersion }], rowsAffected: 0 };
+    }
+    return { rows: [], rowsAffected: 0 };
+  });
+  return { execute, close: jest.fn() };
+}
+
+function migrationCalls(db: MockDb): string[] {
+  return db.execute.mock.calls
+    .map(([sql]: [string]) => sql)
+    .filter((sql) => ALL_MIGRATIONS.includes(sql));
+}
+
+describe("NativeDatabase (op-sqlite)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
-  afterEach(async () => {
-    await db.close();
+  it("ouvre la base avec le nom fourni, sans clé quand non chiffrée", async () => {
+    const db = mockOpSqliteDb();
+    mockedOpen.mockReturnValueOnce(db as never);
+
+    await createDatabase("bodyorthox_dev.db").initialize();
+
+    expect(mockedOpen).toHaveBeenCalledWith({ name: "bodyorthox_dev.db" });
+    expect(mockedGetKey).not.toHaveBeenCalled();
   });
 
-  it("deletes analyses by patient_id (right to erasure cascade)", async () => {
-    await db.execute(
-      `INSERT INTO analyses
-         (id, patient_id, knee_angle, hip_angle, ankle_angle,
-          confidence_score, ml_corrected, manual_correction_joint, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      ["a1", "patient-1", 170, 175, 90, 0.85, 0, null, "2024-01-01T00:00:00Z"],
-    );
-    await db.execute(
-      `INSERT INTO analyses
-         (id, patient_id, knee_angle, hip_angle, ankle_angle,
-          confidence_score, ml_corrected, manual_correction_joint, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      ["a2", "patient-2", 168, 174, 89, 0.9, 0, null, "2024-01-02T00:00:00Z"],
-    );
+  it("ouvre la base avec la clé Keychain quand le chiffrement est activé", async () => {
+    const db = mockOpSqliteDb();
+    mockedOpen.mockReturnValueOnce(db as never);
 
-    await db.execute("DELETE FROM analyses WHERE patient_id = ?", ["patient-1"]);
+    await createDatabase("bodyorthox.db", { encrypted: true }).initialize();
 
-    const result = await db.execute("SELECT * FROM analyses");
-    expect(result.rows).toHaveLength(1);
-    expect(result.rows[0]["id"]).toBe("a2");
+    expect(mockedGetKey).toHaveBeenCalled();
+    expect(mockedOpen).toHaveBeenCalledWith({
+      name: "bodyorthox.db",
+      encryptionKey: "f".repeat(64),
+    });
   });
 
-  it("deletes a patient by id", async () => {
-    await db.execute(
-      "INSERT INTO patients (id, name, created_at) VALUES (?, ?, ?)",
-      ["p1", "Jean", "2024-01-01T00:00:00Z"],
+  it("exécute toutes les migrations sur une base vierge puis fixe user_version", async () => {
+    const db = mockOpSqliteDb(0);
+    mockedOpen.mockReturnValueOnce(db as never);
+
+    await createDatabase("test.db").initialize();
+
+    expect(migrationCalls(db)).toEqual(ALL_MIGRATIONS);
+    expect(db.execute).toHaveBeenCalledWith(
+      `PRAGMA user_version = ${ALL_MIGRATIONS.length}`,
     );
-
-    await db.execute("DELETE FROM patients WHERE id = ?", ["p1"]);
-
-    const result = await db.execute("SELECT * FROM patients");
-    expect(result.rows).toHaveLength(0);
   });
 
-  it("selects with OR conditions (search on name or display_label)", async () => {
-    await db.execute(
-      "INSERT INTO patients (id, name, display_label, created_at) VALUES (?, ?, ?, ?)",
-      ["p1", "Jean Dupont", "PAT-0001", "2024-01-01T00:00:00Z"],
-    );
-    await db.execute(
-      "INSERT INTO patients (id, name, display_label, created_at) VALUES (?, ?, ?, ?)",
-      ["p2", "Marie Martin", "PAT-0002", "2024-01-02T00:00:00Z"],
-    );
+  it("ne rejoue aucune migration quand user_version est à jour", async () => {
+    const db = mockOpSqliteDb(ALL_MIGRATIONS.length);
+    mockedOpen.mockReturnValueOnce(db as never);
 
-    const result = await db.execute(
-      "SELECT * FROM patients WHERE name LIKE ? OR display_label LIKE ?",
-      ["%zzz%", "%PAT-0002%"],
+    await createDatabase("test.db").initialize();
+
+    expect(migrationCalls(db)).toEqual([]);
+    // user_version ne doit pas être réécrit inutilement.
+    expect(db.execute).not.toHaveBeenCalledWith(
+      `PRAGMA user_version = ${ALL_MIGRATIONS.length}`,
     );
-    expect(result.rows).toHaveLength(1);
-    expect(result.rows[0]["id"]).toBe("p2");
   });
 
-  it("selects with compound AND conditions", async () => {
-    await db.execute(
-      "INSERT INTO patients (id, name, morphological_profile, created_at) VALUES (?, ?, ?, ?)",
-      ["p1", "Jean", "normal", "2024-01-01T00:00:00Z"],
-    );
-    await db.execute(
-      "INSERT INTO patients (id, name, morphological_profile, created_at) VALUES (?, ?, ?, ?)",
-      ["p2", "Jean", "autre", "2024-01-02T00:00:00Z"],
-    );
+  it("rejoue uniquement les migrations manquantes (idempotence des ALTER TABLE)", async () => {
+    const db = mockOpSqliteDb(ALL_MIGRATIONS.length - 2);
+    mockedOpen.mockReturnValueOnce(db as never);
 
-    const result = await db.execute(
-      "SELECT * FROM patients WHERE name = ? AND morphological_profile = ?",
-      ["Jean", "normal"],
+    await createDatabase("test.db").initialize();
+
+    expect(migrationCalls(db)).toEqual(ALL_MIGRATIONS.slice(-2));
+  });
+
+  it("active les clés étrangères sur la connexion", async () => {
+    const db = mockOpSqliteDb();
+    mockedOpen.mockReturnValueOnce(db as never);
+
+    await createDatabase("test.db").initialize();
+
+    expect(db.execute).toHaveBeenCalledWith("PRAGMA foreign_keys = ON");
+  });
+
+  it("mappe rows / rowsAffected / insertId vers QueryResult", async () => {
+    const db = mockOpSqliteDb();
+    mockedOpen.mockReturnValueOnce(db as never);
+    const database = createDatabase("test.db");
+    await database.initialize();
+    // Après initialize() : le mockResolvedValueOnce ne doit pas être consommé
+    // par les PRAGMA/migrations de l'ouverture.
+    db.execute.mockResolvedValueOnce({
+      rows: [{ id: "p1" }],
+      rowsAffected: 1,
+      insertId: 7,
+    });
+
+    const result = await database.execute("SELECT * FROM patients WHERE id = ?", [
+      "p1",
+    ]);
+
+    expect(result.rows).toEqual([{ id: "p1" }]);
+    expect(result.rowsAffected).toBe(1);
+    expect(result.insertId).toBe(7);
+    expect(db.execute).toHaveBeenCalledWith(
+      "SELECT * FROM patients WHERE id = ?",
+      ["p1"],
     );
-    expect(result.rows).toHaveLength(1);
-    expect(result.rows[0]["id"]).toBe("p1");
+  });
+
+  it("refuse execute() avant initialize()", async () => {
+    await expect(
+      createDatabase("test.db").execute("SELECT 1"),
+    ).rejects.toThrow(/not initialized/i);
+  });
+
+  it("initialize() est idempotent (une seule ouverture)", async () => {
+    const db = mockOpSqliteDb();
+    mockedOpen.mockReturnValue(db as never);
+    const database = createDatabase("test.db");
+
+    await database.initialize();
+    await database.initialize();
+
+    expect(mockedOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it("close() ferme la connexion op-sqlite", async () => {
+    const db = mockOpSqliteDb();
+    mockedOpen.mockReturnValueOnce(db as never);
+    const database = createDatabase("test.db");
+    await database.initialize();
+
+    await database.close();
+
+    expect(db.close).toHaveBeenCalled();
   });
 });

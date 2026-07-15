@@ -3,7 +3,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -19,7 +18,7 @@ import {
   isLowConfidence,
 } from "../domain/manual-correction";
 import { bilateralWithCorrection } from "../domain/corrected-bilateral";
-import { Btn, Card, Icon, LoadingState, ErrorState } from "../../../components";
+import { Btn, Card, LoadingState, NavBar, ErrorState } from "../../../components";
 import {
   colors,
   fonts,
@@ -170,22 +169,7 @@ export function ReplayScreen() {
   return (
     <View style={styles.root}>
       <SafeAreaView edges={["top"]} style={styles.headerSafe}>
-        <View style={styles.headerRow}>
-          <TouchableOpacity
-            onPress={handleBack}
-            testID="back-button"
-            accessibilityRole="button"
-            accessibilityLabel="Retour aux résultats"
-            style={styles.backBtn}
-            hitSlop={8}
-          >
-            <Icon name="back" size={16} color={colors.accent} strokeWidth={1.75} />
-            <Text style={styles.backText}>Retour</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle} numberOfLines={1}>
-            Relecture experte
-          </Text>
-        </View>
+        <NavBar title="Relecture experte" back onBack={handleBack} />
       </SafeAreaView>
 
       <ScrollView
@@ -282,33 +266,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bgCard,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.s10,
-    paddingHorizontal: spacing.s16,
-    paddingVertical: spacing.s12,
-  },
-  backBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.s6,
-  },
-  backText: {
-    fontFamily: fonts.sans,
-    fontWeight: fontWeight.semiBold,
-    fontSize: fontSize.body,
-    color: colors.accent,
-  },
-  headerTitle: {
-    flex: 1,
-    fontFamily: fonts.display,
-    fontSize: fontSize.h2,
-    fontWeight: fontWeight.semiBold,
-    color: colors.textPrimary,
-    textAlign: "center",
-    marginRight: 44,
   },
   body: { flex: 1 },
   content: {

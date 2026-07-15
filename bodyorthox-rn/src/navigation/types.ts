@@ -2,6 +2,13 @@ import { Analysis } from "../features/capture/domain/analysis";
 import { Patient } from "../features/patients/domain/patient";
 import type { NavigatorScreenParams } from "@react-navigation/native";
 
+/**
+ * Tab d'où la capture a été lancée — Processing y reconstruit la pile
+ * (Accueil ou Liste patients → PatientDetail → Results) pour que le retour
+ * post-analyse ne perde pas le contexte de navigation d'origine.
+ */
+export type CaptureOriginTab = "AnalysesTab" | "PatientsTab";
+
 /** Paramètres d'un écran d'analyse (résultats, processing). */
 export type AnalysisScreenParams = {
   analysisId: string;
@@ -59,10 +66,11 @@ export type RootStackParamList = {
   CreatePatient: undefined;
   EditPatient: { patientId: string };
   PatientDetail: { patientId: string };
-  Capture: { patientId: string };
+  Capture: { patientId: string; originTab?: CaptureOriginTab };
   Processing: {
     analysisId: string;
     patientId: string;
+    originTab?: CaptureOriginTab;
     capturedImageUrl?: string;
     allLandmarks?: Record<
       number,

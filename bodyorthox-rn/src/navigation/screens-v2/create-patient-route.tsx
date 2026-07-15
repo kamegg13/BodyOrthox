@@ -62,6 +62,10 @@ export function CreatePatientRoute() {
       try {
         const input = formValuesToCreateInput(values);
         const patient = await createPatient(input);
+        // Le patient est enregistré : la saisie n'est plus « à perdre ». Sans
+        // ça, cet écran (resté dans la pile sous la fiche) redemandait
+        // « Abandonner la saisie ? » quand le reset post-analyse le démontait.
+        setDirty(false);
         if (action === "secondary") {
           // « Enregistrer sans capturer » — retour direct sur la fiche du
           // patient créé : son arrivée sur la fiche à jour vaut confirmation,
@@ -70,7 +74,13 @@ export function CreatePatientRoute() {
         } else {
           // Capture est sur le stack racine. On navigate via le navigator courant :
           // React Navigation remonte automatiquement la chaine pour trouver la route.
-          navigation.navigate("Capture", { patientId: patient.id });
+          // Le tab d'origine est transmis pour que Processing reconstruise la
+          // pile dans l'onglet de départ (cet écran existe dans les deux tabs).
+          const tabState = navigation.getParent?.()?.getState();
+          const tabName = tabState?.routes[tabState.index]?.name;
+          const originTab =
+            tabName === "PatientsTab" ? "PatientsTab" : "AnalysesTab";
+          navigation.navigate("Capture", { patientId: patient.id, originTab });
         }
       } catch (e: unknown) {
         setErrorMsg(e instanceof Error ? e.message : "Erreur lors de la creation");

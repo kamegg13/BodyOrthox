@@ -1,6 +1,11 @@
 /**
  * Database schema definitions (SQL DDL).
- * Shared between native (expo-sqlite) and web (IndexedDB) implementations.
+ * Shared between native (op-sqlite) and web (shim localStorage) implementations.
+ *
+ * IMPORTANT — ALL_MIGRATIONS est APPEND-ONLY : le natif versionne via
+ * `PRAGMA user_version` = nombre de migrations appliquées (database.native.ts).
+ * Ne jamais réordonner, modifier ou supprimer une entrée existante ; toute
+ * évolution du schéma s'ajoute EN FIN de liste.
  */
 
 export const CREATE_PATIENTS_TABLE = `

@@ -391,10 +391,10 @@ describe("ReplayScreen", () => {
       renderScreen();
 
       await waitFor(() => {
-        expect(screen.getByTestId("back-button")).toBeTruthy();
+        expect(screen.getByLabelText("Retour")).toBeTruthy();
       });
 
-      fireEvent.press(screen.getByTestId("back-button"));
+      fireEvent.press(screen.getByLabelText("Retour"));
 
       expect(mockNavigate).toHaveBeenCalledWith("Results", {
         analysisId: "analysis-001",

@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RouteProp } from "@react-navigation/native";
@@ -14,6 +15,7 @@ import { useAnalysisRepository } from "../../../shared/hooks/use-analysis-reposi
 import { useAsyncData } from "../../../shared/hooks/use-async-data";
 import { ProgressionChart } from "../components/progression-chart";
 import { LoadingState } from "../../../components/LoadingState";
+import { NavBar } from "../../../components";
 import { Colors } from "../../../shared/design-system/colors";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
 import { Typography } from "../../../shared/design-system/typography";
@@ -39,94 +41,103 @@ export function PatientTimelineScreen() {
   const needsMoreAnalyses = analyses.length < 2;
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      testID="timeline-screen"
-    >
-      <Text style={[Typography.h2, styles.title]}>Progression clinique</Text>
+    <View style={styles.root}>
+      <SafeAreaView edges={["top"]} style={styles.headerSafe}>
+        <NavBar title="Progression clinique" back onBack={() => navigation.goBack()} />
+      </SafeAreaView>
 
-      {needsMoreAnalyses ? (
-        <View style={styles.emptyState} testID="empty-timeline">
-          <Text style={styles.emptyIcon}>📊</Text>
-          <Text style={[Typography.h3, styles.emptyTitle]}>
-            {analyses.length === 0 ? "Aucune analyse" : "Données insuffisantes"}
-          </Text>
-          <Text style={styles.emptyText}>
-            {analyses.length === 0
-              ? "Effectuez une première analyse pour visualiser la progression."
-              : "Effectuez une deuxième analyse pour visualiser la progression."}
-          </Text>
-          <TouchableOpacity
-            style={styles.captureButton}
-            onPress={() => navigation.navigate("Capture", { patientId })}
-            testID="start-analysis-button"
-            accessibilityRole="button"
-            accessibilityLabel="Démarrer une analyse"
-          >
-            <Text style={styles.captureButtonText}>Démarrer une analyse</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <>
-          <ProgressionChart analyses={analyses} />
-
-          {analyses.map((analysis, index) => (
-            <TouchableOpacity
-              key={analysis.id}
-              style={styles.timelineItem}
-              onPress={() =>
-                navigation.navigate("Results", {
-                  analysisId: analysis.id,
-                  patientId,
-                })
-              }
-              testID={`timeline-item-${analysis.id}`}
-              accessibilityRole="button"
-              accessibilityLabel={`Voir l'analyse du ${formatDisplayDateTime(new Date(analysis.createdAt))}`}
-            >
-              <View style={styles.timelineIndicator}>
-                <View style={styles.timelineDot} />
-                {index < analyses.length - 1 && (
-                  <View style={styles.timelineLine} />
-                )}
-              </View>
-              <View style={styles.timelineContent}>
-                <Text style={styles.timelineDate}>
-                  {formatDisplayDateTime(new Date(analysis.createdAt))}
-                </Text>
-                <Text style={styles.timelineAngles}>
-                  G: {analysis.angles.kneeAngle.toFixed(1)}° H:{" "}
-                  {analysis.angles.hipAngle.toFixed(1)}° C:{" "}
-                  {analysis.angles.ankleAngle.toFixed(1)}°
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </>
-      )}
-
-      {/* Quick navigation back to patients list */}
-      <TouchableOpacity
-        style={styles.backToPatients}
-        onPress={() => navigation.navigate("MainTabs" as never)}
-        accessibilityRole="button"
-        accessibilityLabel="Retour à la liste des patients"
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        testID="timeline-screen"
       >
-        <Text style={styles.backToPatientsText}>← Retour aux patients</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        {needsMoreAnalyses ? (
+          <View style={styles.emptyState} testID="empty-timeline">
+            <Text style={styles.emptyIcon}>📊</Text>
+            <Text style={[Typography.h3, styles.emptyTitle]}>
+              {analyses.length === 0 ? "Aucune analyse" : "Données insuffisantes"}
+            </Text>
+            <Text style={styles.emptyText}>
+              {analyses.length === 0
+                ? "Effectuez une première analyse pour visualiser la progression."
+                : "Effectuez une deuxième analyse pour visualiser la progression."}
+            </Text>
+            <TouchableOpacity
+              style={styles.captureButton}
+              onPress={() => navigation.navigate("Capture", { patientId })}
+              testID="start-analysis-button"
+              accessibilityRole="button"
+              accessibilityLabel="Démarrer une analyse"
+            >
+              <Text style={styles.captureButtonText}>Démarrer une analyse</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <>
+            <ProgressionChart analyses={analyses} />
+
+            {analyses.map((analysis, index) => (
+              <TouchableOpacity
+                key={analysis.id}
+                style={styles.timelineItem}
+                onPress={() =>
+                  navigation.navigate("Results", {
+                    analysisId: analysis.id,
+                    patientId,
+                  })
+                }
+                testID={`timeline-item-${analysis.id}`}
+                accessibilityRole="button"
+                accessibilityLabel={`Voir l'analyse du ${formatDisplayDateTime(new Date(analysis.createdAt))}`}
+              >
+                <View style={styles.timelineIndicator}>
+                  <View style={styles.timelineDot} />
+                  {index < analyses.length - 1 && (
+                    <View style={styles.timelineLine} />
+                  )}
+                </View>
+                <View style={styles.timelineContent}>
+                  <Text style={styles.timelineDate}>
+                    {formatDisplayDateTime(new Date(analysis.createdAt))}
+                  </Text>
+                  <Text style={styles.timelineAngles}>
+                    G: {analysis.angles.kneeAngle.toFixed(1)}° H:{" "}
+                    {analysis.angles.hipAngle.toFixed(1)}° C:{" "}
+                    {analysis.angles.ankleAngle.toFixed(1)}°
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </>
+        )}
+
+        {/* Quick navigation back to patients list */}
+        <TouchableOpacity
+          style={styles.backToPatients}
+          onPress={() => navigation.navigate("MainTabs" as never)}
+          accessibilityRole="button"
+          accessibilityLabel="Retour à la liste des patients"
+        >
+          <Text style={styles.backToPatientsText}>← Retour aux patients</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: Colors.background },
+  headerSafe: {
+    backgroundColor: Colors.backgroundCard,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.border,
+  },
   container: { flex: 1, backgroundColor: Colors.background },
   content: {
     padding: Spacing.lg,
     gap: Spacing.md,
     paddingBottom: Spacing.xxxl,
   },
-  title: { color: Colors.textPrimary, marginBottom: Spacing.md },
   emptyState: { alignItems: "center", gap: Spacing.md, paddingTop: Spacing.xl },
   emptyIcon: { fontSize: 64 },
   emptyTitle: { color: Colors.textPrimary },

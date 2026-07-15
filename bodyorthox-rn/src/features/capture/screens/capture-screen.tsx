@@ -51,7 +51,7 @@ function navigateToProtocols(navigation: {
 
 export function CaptureScreen() {
   const { params } = useRoute<Route>();
-  const { patientId } = params;
+  const { patientId, originTab } = params;
   const navigation = useNavigation();
   const patient = usePatientsStore((s) => s.patients.find((p) => p.id === patientId));
   const topTitle = patient ? `Capture — ${patientDisplayName(patient)}` : "Capture";
@@ -82,7 +82,7 @@ export function CaptureScreen() {
     handleDiscard,
     handleRestoreDraft,
     handleDiscardDraft,
-  } = useCaptureLogic(patientId);
+  } = useCaptureLogic(patientId, originTab);
 
   if (phase.type === "success") {
     return (

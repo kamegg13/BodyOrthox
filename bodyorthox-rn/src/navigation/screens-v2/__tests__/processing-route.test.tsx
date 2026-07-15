@@ -3,17 +3,19 @@ import { render, act, cleanup } from "@testing-library/react-native";
 import { ProcessingRoute } from "../processing-route";
 
 const mockReset = jest.fn();
+// Params mutables : chaque test définit son point d'entrée (originTab).
+let mockParams: Record<string, unknown> = {};
 
 jest.mock("@react-navigation/native", () => ({
   useNavigation: () => ({ reset: mockReset }),
-  useRoute: () => ({
-    params: {
-      analysisId: "a1",
-      patientId: "p1",
-      capturedImageUrl: "data:image/png;base64,xxx",
-    },
-  }),
+  useRoute: () => ({ params: mockParams }),
 }));
+
+function advanceToNavigation() {
+  act(() => {
+    jest.advanceTimersByTime(999);
+  });
+}
 
 describe("ProcessingRoute", () => {
   beforeEach(() => {
@@ -24,6 +26,11 @@ describe("ProcessingRoute", () => {
       doNotFake: ["nextTick", "queueMicrotask", "setImmediate"],
     });
     jest.clearAllMocks();
+    mockParams = {
+      analysisId: "a1",
+      patientId: "p1",
+      capturedImageUrl: "data:image/png;base64,xxx",
+    };
   });
 
   afterEach(() => {
@@ -42,9 +49,7 @@ describe("ProcessingRoute", () => {
     render(<ProcessingRoute />);
     expect(mockReset).not.toHaveBeenCalled();
 
-    act(() => {
-      jest.advanceTimersByTime(999);
-    });
+    advanceToNavigation();
 
     expect(mockReset).toHaveBeenCalledTimes(1);
     const call = mockReset.mock.calls[0][0];
@@ -52,6 +57,29 @@ describe("ProcessingRoute", () => {
     const resultsRoute = analysesRoutes.find((r: { name: string }) => r.name === "Results");
     expect(resultsRoute.params).toEqual(
       expect.objectContaining({ analysisId: "a1", patientId: "p1" }),
+    );
+  });
+
+  it("cible AnalysesTab (Accueil → PatientDetail → Results) par défaut", () => {
+    render(<ProcessingRoute />);
+    advanceToNavigation();
+
+    const tabRoute = mockReset.mock.calls[0][0].routes[0].state.routes[0];
+    expect(tabRoute.name).toBe("AnalysesTab");
+    expect(tabRoute.state.routes.map((r: { name: string }) => r.name)).toEqual(
+      ["AnalysesHome", "PatientDetail", "Results"],
+    );
+  });
+
+  it("préserve le tab d'origine : capture lancée depuis PatientsTab", () => {
+    mockParams = { ...mockParams, originTab: "PatientsTab" };
+    render(<ProcessingRoute />);
+    advanceToNavigation();
+
+    const tabRoute = mockReset.mock.calls[0][0].routes[0].state.routes[0];
+    expect(tabRoute.name).toBe("PatientsTab");
+    expect(tabRoute.state.routes.map((r: { name: string }) => r.name)).toEqual(
+      ["PatientsList", "PatientDetail", "Results"],
     );
   });
 

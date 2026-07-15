@@ -69,7 +69,7 @@ function AnalysesStackScreen() {
       <AnalysesStack.Screen
         name="EditPatient"
         component={EditPatientScreen}
-        options={{ title: "Modifier le patient" }}
+        options={{ headerShown: false }}
       />
       <AnalysesStack.Screen
         name="PatientDetail"
@@ -84,17 +84,17 @@ function AnalysesStackScreen() {
       <AnalysesStack.Screen
         name="Replay"
         component={ReplayScreen}
-        options={{ title: "Relecture experte" }}
+        options={{ headerShown: false }}
       />
       <AnalysesStack.Screen
         name="Timeline"
         component={PatientTimelineScreen}
-        options={{ title: "Progression clinique" }}
+        options={{ headerShown: false }}
       />
       <AnalysesStack.Screen
         name="Protocols"
         component={ProtocolsScreen}
-        options={{ title: "Protocoles" }}
+        options={{ headerShown: false }}
       />
       <AnalysesStack.Screen
         name="Report"
@@ -109,7 +109,7 @@ function AnalysesStackScreen() {
       <AnalysesStack.Screen
         name="ProgressionReport"
         component={ProgressionReportScreen}
-        options={{ title: "Rapport de progression" }}
+        options={{ headerShown: false }}
       />
     </AnalysesStack.Navigator>
   );
@@ -132,7 +132,7 @@ function PatientsTabStackScreen() {
       <PatientsTabStack.Screen
         name="EditPatient"
         component={EditPatientScreen}
-        options={{ title: "Modifier le patient" }}
+        options={{ headerShown: false }}
       />
       <PatientsTabStack.Screen
         name="PatientDetail"
@@ -147,12 +147,12 @@ function PatientsTabStackScreen() {
       <PatientsTabStack.Screen
         name="Replay"
         component={ReplayScreen}
-        options={{ title: "Relecture experte" }}
+        options={{ headerShown: false }}
       />
       <PatientsTabStack.Screen
         name="Timeline"
         component={PatientTimelineScreen}
-        options={{ title: "Progression clinique" }}
+        options={{ headerShown: false }}
       />
       <PatientsTabStack.Screen
         name="Report"
@@ -167,7 +167,7 @@ function PatientsTabStackScreen() {
       <PatientsTabStack.Screen
         name="ProgressionReport"
         component={ProgressionReportScreen}
-        options={{ title: "Rapport de progression" }}
+        options={{ headerShown: false }}
       />
     </PatientsTabStack.Navigator>
   );
@@ -203,12 +203,12 @@ function CompteStackScreen() {
       <CompteStack.Screen
         name="Admin"
         component={AdminScreen}
-        options={{ title: 'Administration' }}
+        options={{ headerShown: false }}
       />
       <CompteStack.Screen
         name="Calibration"
         component={CalibrationScreen}
-        options={{ title: 'Calibration HKA' }}
+        options={{ headerShown: false }}
       />
     </CompteStack.Navigator>
   );

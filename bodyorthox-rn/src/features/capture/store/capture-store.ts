@@ -101,6 +101,15 @@ let _pendingConfidence = 0;
 // resolution from one patient contaminating the next.
 let _sessionToken = 0;
 
+/**
+ * Repository d'analyses câblé par initializeDatabase() (on-device). Exposé
+ * pour `useAnalysisRepository` : les écrans partagent la même instance que le
+ * store — aucune donnée de santé ne repart vers l'API.
+ */
+export function getWiredAnalysisRepository(): IAnalysisRepository | null {
+  return _repository;
+}
+
 export const useCaptureStore = create<CaptureState & CaptureActions>()(
   immer((set, _get) => ({
     phase: { type: "idle" },

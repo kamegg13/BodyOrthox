@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { useRoute } from "@react-navigation/native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RouteProp } from "@react-navigation/native";
 import type { RootStackParamList } from "../../../navigation/types";
 import {
@@ -11,6 +13,7 @@ import {
   radius,
   spacing,
 } from "../../../theme/tokens";
+import { NavBar } from "../../../components/NavBar";
 import { LoadingState } from "../../../components/LoadingState";
 import { ErrorState } from "../../../components/ErrorState";
 import { ExportButton } from "../components/export-button";
@@ -25,9 +28,11 @@ import {
   type ProgressionPreviewRow,
 } from "../domain/progression-report-generator";
 
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, "ProgressionReport">;
 
 export function ProgressionReportScreen() {
+  const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
   const { patient, analyses } = route.params;
 
@@ -64,12 +69,11 @@ export function ProgressionReportScreen() {
     generate();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  let body: React.ReactNode;
   if (status === "generating") {
-    return <LoadingState fullScreen message="Préparation du rapport..." />;
-  }
-
-  if (status === "error") {
-    return (
+    body = <LoadingState fullScreen message="Préparation du rapport..." />;
+  } else if (status === "error") {
+    body = (
       <ErrorState
         message={errorMessage ?? "Une erreur est survenue"}
         actionLabel="Réessayer"
@@ -77,101 +81,110 @@ export function ProgressionReportScreen() {
         testID="progression-report-error"
       />
     );
+  } else {
+    const sortedAnalyses = [...analyses].sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    );
+    const firstDate = sortedAnalyses[0]?.createdAt.slice(0, 10) ?? "—";
+    const lastDate =
+      sortedAnalyses[sortedAnalyses.length - 1]?.createdAt.slice(0, 10) ?? "—";
+    const previewRows = buildProgressionPreviewRows(sortedAnalyses);
+    const synthesis = buildProgressionSynthesisSummary(sortedAnalyses);
+
+    body = (
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        testID="progression-report-screen"
+      >
+        <Text style={styles.title} testID="progression-report-title">
+          Rapport de Progression Clinique
+        </Text>
+
+        {/* Summary card */}
+        <View style={styles.card} testID="progression-report-summary">
+          <Text style={styles.cardLabel}>Résumé du rapport</Text>
+          <View style={styles.metaRow}>
+            <Text style={styles.metaLabel}>Patient</Text>
+            <Text style={styles.metaValue}>{patient.name}</Text>
+          </View>
+          <View style={styles.metaRow}>
+            <Text style={styles.metaLabel}>Nombre de séances</Text>
+            <Text style={[styles.metaValue, styles.metaValueMono]}>
+              {analyses.length}
+            </Text>
+          </View>
+          <View style={styles.metaRow}>
+            <Text style={styles.metaLabel}>Période</Text>
+            <Text style={[styles.metaValue, styles.metaValueMono]}>
+              {firstDate} → {lastDate}
+            </Text>
+          </View>
+        </View>
+
+        {/* Real data preview — reflects exactly the selected analyses, never
+            a static description of what the PDF will contain. */}
+        <View style={styles.card} testID="progression-report-data-table">
+          <Text style={styles.cardLabel}>Données des analyses sélectionnées</Text>
+          <View style={styles.tableHeaderRow}>
+            <Text style={[styles.tableHeaderCell, styles.tableCellDate]}>Date</Text>
+            <Text style={[styles.tableHeaderCell, styles.tableCellValue]}>HKA G</Text>
+            <Text style={[styles.tableHeaderCell, styles.tableCellValue]}>Δ G</Text>
+            <Text style={[styles.tableHeaderCell, styles.tableCellValue]}>HKA D</Text>
+            <Text style={[styles.tableHeaderCell, styles.tableCellValue]}>Δ D</Text>
+          </View>
+          {previewRows.map((row, index) => (
+            <DataRow key={row.date + index} row={row} />
+          ))}
+        </View>
+
+        {/* Honest evolution synthesis, computed from the same data as the
+            exported PDF — never a fabricated appreciation. */}
+        <View style={styles.card} testID="progression-report-synthesis">
+          <Text style={styles.cardLabel}>Synthèse d'évolution</Text>
+          {synthesis.available ? (
+            <>
+              {synthesis.leftTrendText ? (
+                <Text style={styles.contentDesc}>
+                  HKA Gauche : {synthesis.leftTrendText}
+                </Text>
+              ) : null}
+              {synthesis.rightTrendText ? (
+                <Text style={styles.contentDesc}>
+                  HKA Droite : {synthesis.rightTrendText}
+                </Text>
+              ) : null}
+            </>
+          ) : (
+            <Text style={styles.contentDesc}>
+              Synthèse indisponible : au moins deux analyses avec une mesure
+              HKA sont nécessaires pour comparer une évolution.
+            </Text>
+          )}
+        </View>
+
+        {/* Disclaimer */}
+        <Text style={styles.disclaimer} testID="progression-report-disclaimer">
+          {LEGAL_CONSTANTS.mdrDisclaimer}
+        </Text>
+
+        {/* Export */}
+        {reportHtml && fileName && (
+          <View style={styles.exportContainer}>
+            <ExportButton htmlContent={reportHtml} fileName={fileName} />
+          </View>
+        )}
+      </ScrollView>
+    );
   }
 
-  const sortedAnalyses = [...analyses].sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-  );
-  const firstDate = sortedAnalyses[0]?.createdAt.slice(0, 10) ?? "—";
-  const lastDate =
-    sortedAnalyses[sortedAnalyses.length - 1]?.createdAt.slice(0, 10) ?? "—";
-  const previewRows = buildProgressionPreviewRows(sortedAnalyses);
-  const synthesis = buildProgressionSynthesisSummary(sortedAnalyses);
-
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      testID="progression-report-screen"
-    >
-      <Text style={styles.title} testID="progression-report-title">
-        Rapport de Progression Clinique
-      </Text>
-
-      {/* Summary card */}
-      <View style={styles.card} testID="progression-report-summary">
-        <Text style={styles.cardLabel}>Résumé du rapport</Text>
-        <View style={styles.metaRow}>
-          <Text style={styles.metaLabel}>Patient</Text>
-          <Text style={styles.metaValue}>{patient.name}</Text>
-        </View>
-        <View style={styles.metaRow}>
-          <Text style={styles.metaLabel}>Nombre de séances</Text>
-          <Text style={[styles.metaValue, styles.metaValueMono]}>
-            {analyses.length}
-          </Text>
-        </View>
-        <View style={styles.metaRow}>
-          <Text style={styles.metaLabel}>Période</Text>
-          <Text style={[styles.metaValue, styles.metaValueMono]}>
-            {firstDate} → {lastDate}
-          </Text>
-        </View>
-      </View>
-
-      {/* Real data preview — reflects exactly the selected analyses, never
-          a static description of what the PDF will contain. */}
-      <View style={styles.card} testID="progression-report-data-table">
-        <Text style={styles.cardLabel}>Données des analyses sélectionnées</Text>
-        <View style={styles.tableHeaderRow}>
-          <Text style={[styles.tableHeaderCell, styles.tableCellDate]}>Date</Text>
-          <Text style={[styles.tableHeaderCell, styles.tableCellValue]}>HKA G</Text>
-          <Text style={[styles.tableHeaderCell, styles.tableCellValue]}>Δ G</Text>
-          <Text style={[styles.tableHeaderCell, styles.tableCellValue]}>HKA D</Text>
-          <Text style={[styles.tableHeaderCell, styles.tableCellValue]}>Δ D</Text>
-        </View>
-        {previewRows.map((row, index) => (
-          <DataRow key={row.date + index} row={row} />
-        ))}
-      </View>
-
-      {/* Honest evolution synthesis, computed from the same data as the
-          exported PDF — never a fabricated appreciation. */}
-      <View style={styles.card} testID="progression-report-synthesis">
-        <Text style={styles.cardLabel}>Synthèse d'évolution</Text>
-        {synthesis.available ? (
-          <>
-            {synthesis.leftTrendText ? (
-              <Text style={styles.contentDesc}>
-                HKA Gauche : {synthesis.leftTrendText}
-              </Text>
-            ) : null}
-            {synthesis.rightTrendText ? (
-              <Text style={styles.contentDesc}>
-                HKA Droite : {synthesis.rightTrendText}
-              </Text>
-            ) : null}
-          </>
-        ) : (
-          <Text style={styles.contentDesc}>
-            Synthèse indisponible : au moins deux analyses avec une mesure HKA
-            sont nécessaires pour comparer une évolution.
-          </Text>
-        )}
-      </View>
-
-      {/* Disclaimer */}
-      <Text style={styles.disclaimer} testID="progression-report-disclaimer">
-        {LEGAL_CONSTANTS.mdrDisclaimer}
-      </Text>
-
-      {/* Export */}
-      {reportHtml && fileName && (
-        <View style={styles.exportContainer}>
-          <ExportButton htmlContent={reportHtml} fileName={fileName} />
-        </View>
-      )}
-    </ScrollView>
+    <View style={styles.root}>
+      <SafeAreaView edges={["top"]} style={styles.headerSafe}>
+        <NavBar title="Rapport de progression" back onBack={navigation.goBack} />
+      </SafeAreaView>
+      {body}
+    </View>
   );
 }
 
@@ -206,9 +219,15 @@ function DataRow({ row }: { row: ProgressionPreviewRow }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
     backgroundColor: colors.bg,
+  },
+  headerSafe: {
+    backgroundColor: colors.bgCard,
+  },
+  container: {
+    flex: 1,
   },
   content: {
     padding: spacing.s16,

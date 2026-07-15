@@ -29,9 +29,13 @@ export function ProcessingRoute() {
     if (navigatedRef.current) return;
     navigatedRef.current = true;
     const p = paramsRef.current;
-    // Stack cible : Dashboard -> PatientDetail -> Results
-    // Garantit que `goBack` depuis Results pop vers PatientDetail,
-    // et `popToTop` depuis PatientDetail revient au Dashboard.
+    // Stack cible dans le TAB D'ORIGINE de la capture : racine du tab ->
+    // PatientDetail -> Results. Garantit que `goBack` depuis Results pop vers
+    // PatientDetail, et `popToTop` depuis PatientDetail revient à la racine
+    // du tab d'où la capture avait été lancée (Accueil ou Liste patients).
+    const originTab = p.originTab ?? "AnalysesTab";
+    const tabRoot =
+      originTab === "PatientsTab" ? "PatientsList" : "AnalysesHome";
     navigation.reset({
       index: 0,
       routes: [
@@ -40,10 +44,10 @@ export function ProcessingRoute() {
           state: {
             routes: [
               {
-                name: "AnalysesTab",
+                name: originTab,
                 state: {
                   routes: [
-                    { name: "AnalysesHome" },
+                    { name: tabRoot },
                     {
                       name: "PatientDetail",
                       params: { patientId: p.patientId },

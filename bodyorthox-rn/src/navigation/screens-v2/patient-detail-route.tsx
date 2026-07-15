@@ -76,10 +76,15 @@ export function PatientDetailRoute() {
     () => navigation.navigate("EditPatient", { patientId }),
     [navigation, patientId],
   );
-  const handleCapture = useCallback(
-    () => navigation.navigate("Capture", { patientId }),
-    [navigation, patientId],
-  );
+  const handleCapture = useCallback(() => {
+    // Cette fiche est montée dans AnalysesTab OU PatientsTab : on transmet le
+    // tab d'origine pour que Processing reconstruise la pile au bon endroit
+    // (sinon le retour post-analyse retombait toujours sur Accueil).
+    const tabState = navigation.getParent?.()?.getState();
+    const tabName = tabState?.routes[tabState.index]?.name;
+    const originTab = tabName === "PatientsTab" ? "PatientsTab" : "AnalysesTab";
+    navigation.navigate("Capture", { patientId, originTab });
+  }, [navigation, patientId]);
   const handleGeneratePdf = useCallback(() => {
     if (!patient) return;
     if (analyses.length === 0) return;

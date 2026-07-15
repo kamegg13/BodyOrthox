@@ -10,14 +10,14 @@
 		0297448BF7F1F5DA96528F4F /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 		0C80B921A6F3F58F76C31292 /* libPods-BodyOrthox.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5DCACB8F33CDC322A6C60F78 /* libPods-BodyOrthox.a */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		216DE2376BA5425C8D1E6D54 /* SourceSans3.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3F13A682D01E43989F1E7756 /* SourceSans3.ttf */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		8353C8686FA64A8290079681 /* Lexend.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3293B5B6238D483EB4AB460A /* Lexend.ttf */; };
 		94A24E0833194DC78B117DF8 /* pose_landmarker_full.task in Resources */ = {isa = PBXBuildFile; fileRef = 80210483B3EF4A20AC366858 /* pose_landmarker_full.task */; };
 		C607AA8257074919A15F4151 /* PoseLandmarkerImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = B65935EBE35B4587BAF83607 /* PoseLandmarkerImpl.swift */; };
 		C9D70C2AD9554AA3BF46D285 /* pose_landmarker_heavy.task in Resources */ = {isa = PBXBuildFile; fileRef = ABC0820987174F8EB7D64E34 /* pose_landmarker_heavy.task */; };
 		E17E2EF3254840C5B09E70EA /* RCTPoseLandmarker.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0589486FE62549429BA9AAF4 /* RCTPoseLandmarker.mm */; };
-		8353C8686FA64A8290079681 /* Lexend.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3293B5B6238D483EB4AB460A /* Lexend.ttf */; };
-		216DE2376BA5425C8D1E6D54 /* SourceSans3.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3F13A682D01E43989F1E7756 /* SourceSans3.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,7 +26,9 @@
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = BodyOrthox/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = BodyOrthox/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = BodyOrthox/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		3293B5B6238D483EB4AB460A /* Lexend.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = Lexend.ttf; path = ../assets/fonts/Lexend.ttf; sourceTree = "<group>"; };
 		3B4392A12AC88292D35C810B /* Pods-BodyOrthox.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BodyOrthox.debug.xcconfig"; path = "Target Support Files/Pods-BodyOrthox/Pods-BodyOrthox.debug.xcconfig"; sourceTree = "<group>"; };
+		3F13A682D01E43989F1E7756 /* SourceSans3.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = SourceSans3.ttf; path = ../assets/fonts/SourceSans3.ttf; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-BodyOrthox.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BodyOrthox.release.xcconfig"; path = "Target Support Files/Pods-BodyOrthox/Pods-BodyOrthox.release.xcconfig"; sourceTree = "<group>"; };
 		5DCACB8F33CDC322A6C60F78 /* libPods-BodyOrthox.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-BodyOrthox.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = BodyOrthox/AppDelegate.swift; sourceTree = "<group>"; };
@@ -36,8 +38,6 @@
 		ABC0820987174F8EB7D64E34 /* pose_landmarker_heavy.task */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = pose_landmarker_heavy.task; path = BodyOrthox/Resources/pose_landmarker_heavy.task; sourceTree = "<group>"; };
 		B65935EBE35B4587BAF83607 /* PoseLandmarkerImpl.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = PoseLandmarkerImpl.swift; path = PoseLandmarkerImpl.swift; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
-		3293B5B6238D483EB4AB460A /* Lexend.ttf */ = {isa = PBXFileReference; name = "Lexend.ttf"; path = "../assets/fonts/Lexend.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
-		3F13A682D01E43989F1E7756 /* SourceSans3.ttf */ = {isa = PBXFileReference; name = "SourceSans3.ttf"; path = "../assets/fonts/SourceSans3.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */

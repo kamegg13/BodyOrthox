@@ -237,7 +237,10 @@ describe("CreatePatientRoute — enregistrer sans capturer", () => {
     fireEvent.press(getByTestId("np-submit"));
 
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith("Capture", { patientId: "patient-1" });
+      expect(mockNavigate).toHaveBeenCalledWith("Capture", {
+        patientId: "patient-1",
+        originTab: "AnalysesTab",
+      });
     });
   });
 
@@ -255,5 +258,30 @@ describe("CreatePatientRoute — enregistrer sans capturer", () => {
       expect(mockNavigate).toHaveBeenCalledWith("PatientDetail", { patientId: "patient-2" });
     });
     expect(mockNavigate).not.toHaveBeenCalledWith("Capture", expect.anything());
+  });
+
+  it("ne bloque plus la sortie après une création réussie (patient déjà enregistré)", async () => {
+    // Bug vu en E2E : l'écran de création reste dans la pile sous la fiche
+    // patient ; le reset post-analyse le démonte et déclenchait « Abandonner
+    // la saisie ? » alors que le patient était bien enregistré.
+    mockCreatePatient.mockResolvedValue({ id: "patient-4" });
+    const alertSpy = jest.spyOn(Alert, "alert").mockImplementation(() => {});
+    const { getByTestId, getByText } = render(<CreatePatientRoute />);
+    fillRequiredFields(getByTestId, getByText);
+    fireEvent.press(getByTestId("np-consent-0"));
+    fireEvent.press(getByTestId("np-consent-1"));
+    fireEvent.press(getByTestId("np-consent-2"));
+
+    fireEvent.press(getByTestId("np-submit-secondary"));
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith("PatientDetail", { patientId: "patient-4" });
+    });
+
+    const preventDefault = jest.fn();
+    capturedListener?.({ preventDefault, data: { action: { type: "GO_BACK" } } });
+
+    expect(preventDefault).not.toHaveBeenCalled();
+    expect(alertSpy).not.toHaveBeenCalled();
+    alertSpy.mockRestore();
   });
 });

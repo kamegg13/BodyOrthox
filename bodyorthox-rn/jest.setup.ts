@@ -6,7 +6,28 @@ jest.mock("react-native-keychain", () => ({
   setGenericPassword: jest.fn().mockResolvedValue(true),
   getGenericPassword: jest.fn().mockResolvedValue({ password: "mock-key" }),
   resetGenericPassword: jest.fn().mockResolvedValue(true),
+  ACCESSIBLE: {
+    AFTER_FIRST_UNLOCK: "AccessibleAfterFirstUnlock",
+    WHEN_UNLOCKED: "AccessibleWhenUnlocked",
+  },
 }));
+
+// Mock op-sqlite (module natif absent sous Jest). Base vierge par défaut
+// (user_version 0) ; les suites database re-mockent finement.
+jest.mock("@op-engineering/op-sqlite", () => ({
+  open: jest.fn(() => ({
+    execute: jest.fn(async (sql: string) => {
+      if (/^PRAGMA user_version$/i.test(sql.trim())) {
+        return { rows: [{ user_version: 0 }], rowsAffected: 0 };
+      }
+      return { rows: [], rowsAffected: 0 };
+    }),
+    close: jest.fn(),
+  })),
+}));
+
+// Polyfill natif de crypto.getRandomValues — inutile sous Node (déjà global).
+jest.mock("react-native-get-random-values", () => ({}));
 
 // Mock react-native-biometrics
 jest.mock("react-native-biometrics", () => {

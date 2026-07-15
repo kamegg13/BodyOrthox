@@ -1,15 +1,35 @@
-# Parcours E2E natif : login → patient → import galerie → analyse HKA on-device → sauvegarde.
-# Prérequis : API locale (services/bodyorthox-api, PORT=3002, npm run seed),
-# Metro lancé, photo de test dans la galerie du simulateur (simctl addmedia),
-# patient « Vitruve Test » existant (créé via POST /patients).
+# Parcours E2E natif : login → création patient IN-APP → import galerie →
+# analyse HKA on-device → sauvegarde. Mode on-device pur : les patients vivent
+# dans le SQLite local de l'appareil — plus de seed patient côté API, le flow
+# crée « Vitruve Test » dans l'app.
+#
+# PAS de clearState : l'écran d'onboarding a une animation reanimated
+# perpétuelle (mockup animé) qui empêche XCUITest de considérer l'app « idle »
+# → Maestro lit une hiérarchie vide et TOUTE assertion échoue. On garde donc
+# l'onboarding déjà complété (écrans statiques, hiérarchie lisible).
+#
+# DÉTERMINISME : la base SQLite est PERSISTANTE (on-device). Pour un parcours
+# reproductible, réinitialiser SEULEMENT la base AVANT chaque run (le flag
+# onboarding vit dans AsyncStorage, séparé — il survit) :
+#   iOS :   C=$(xcrun simctl get_app_container <UDID> com.bodyorthox.app data)
+#           xcrun simctl terminate <UDID> com.bodyorthox.app
+#           rm -f "$C"/Library/bodyorthox_dev.db*
+#   Android: adb shell run-as com.bodyorthox.app rm -f \
+#           databases/bodyorthox_dev.db*   (ou reinstall)
+# Base vide → le flow crée toujours « Vitruve Test » (chemin unique, pas de
+# branche « patient déjà là » aux sélecteurs ambigus).
+#
+# Prérequis : API locale pour le LOGIN uniquement (services/bodyorthox-api,
+# PORT=3002, npm run seed → compte ortho), Metro lancé, photo de test dans la
+# galerie du simulateur (simctl addmedia), onboarding déjà complété une fois.
 # Lancer : maestro test e2e/capture-analysis.yaml
 appId: com.bodyorthox.app
 ---
 - launchApp
 # Premier lancement : Metro peut bundler 1-2 min avant d'afficher l'UI
 - extendedWaitUntil:
-    visible: "Se connecter|Patients|Accueil|Passer"
-    timeout: 120000
+    visible: "Se connecter|Patients|Accueil"
+    timeout: 180000
 - runFlow:
     when:
       visible:
@@ -59,13 +79,96 @@ appId: com.bodyorthox.app
     timeout: 15000
 - takeScreenshot: e2e/shots/01-apres-login
 - tapOn: "Patients"
+# Base locale vierge au premier run : créer le patient dans l'app.
+# Si le patient existe déjà (run précédent), sauter la création.
+- runFlow:
+    when:
+      notVisible: "Vitruve.*"
+    commands:
+      - tapOn: "Nouveau patient"
+      # Un run précédent peut avoir laissé un brouillon : champs pré-remplis
+      # → inputText concatènerait. On repart d'une saisie vierge.
+      - runFlow:
+          when:
+            visible:
+              id: "np-draft-banner"
+          commands:
+            - tapOn:
+                id: "np-draft-clear"
+      # Sexe d'abord, clavier encore fermé : une fois la saisie du nom
+      # commencée, le clavier iOS recouvre np-sex et absorbe le tap.
+      - tapOn:
+          id: "np-sex"
+      - waitForAnimationToEnd
+      - extendedWaitUntil:
+          visible:
+            id: "picker-option-male"
+          timeout: 5000
+      - tapOn:
+          id: "picker-option-male"
+      - tapOn:
+          id: "np-first-name"
+      - inputText: "Vitruve"
+      - tapOn:
+          id: "np-last-name"
+      - inputText: "Test"
+      - tapOn:
+          id: "np-dob"
+      - inputText: "01011990"
+      - runFlow:
+          when:
+            platform: Android
+          commands:
+            - hideKeyboard
+      # Les 3 consentements RGPD sont requis (sous le pli → scroll)
+      # Un seul scroll jusqu'au dernier consentement : la carte tient entière
+      # à l'écran. Des scrolls entre les taps laissaient une inertie qui
+      # rendait les coordonnées périmées (taps 0/1 perdus).
+      - scrollUntilVisible:
+          element:
+            id: "np-consent-2"
+      - waitForAnimationToEnd
+      # Tap neutre : le premier tap après un scroll iOS est absorbé par
+      # l'arrêt d'inertie — on le sacrifie sur le titre de section.
+      - tapOn: "Consentements patient"
+      - tapOn:
+          id: "np-consent-0"
+      - tapOn:
+          id: "np-consent-1"
+      - tapOn:
+          id: "np-consent-2"
+      - extendedWaitUntil:
+          visible:
+            id: "np-submit-secondary"
+          timeout: 5000
+      # « Enregistrer sans capturer » → fiche patient (préserve les étapes
+      # suivantes du parcours : fiche → Nouvelle capture)
+      - tapOn:
+          id: "np-submit-secondary"
 - extendedWaitUntil:
     visible: "Vitruve.*"
     timeout: 10000
-- tapOn: "Vitruve.*"
+# Premier run : la création atterrit déjà sur la fiche ; re-run : on y entre
+# depuis la liste. Le CTA « Nouvelle capture » n'existe que sur la fiche.
+- runFlow:
+    when:
+      notVisible: "Nouvelle capture"
+    commands:
+      - tapOn: "Vitruve.*"
 - takeScreenshot: e2e/shots/02-fiche-patient
 - tapOn: "Nouvelle capture"
 - takeScreenshot: e2e/shots/03-ecran-capture
+# iOS peut afficher le tutoriel clavier « QuickPath » (overlay système) après
+# la première saisie — le fermer s'il masque l'écran capture.
+- runFlow:
+    when:
+      visible: "Continue"
+    commands:
+      - tapOn: "Continue"
+- extendedWaitUntil:
+    visible:
+      id: "native-gallery-button"
+    timeout: 10000
 - tapOn:
     id: "native-gallery-button"
 # PHPicker (process système) : la première photo de la grille
@@ -90,7 +193,16 @@ appId: com.bodyorthox.app
 - takeScreenshot: e2e/shots/05-analyse-hka
 - tapOn:
     id: "save-analysis-button"
-# Processing v2 auto-avance vers Résultats
+# Processing v2 (récap ~900 ms) auto-avance vers Résultats. Laisser la
+# transition se stabiliser AVANT d'interroger la hiérarchie : lire l'arbre
+# XCUITest en plein changement d'écran lève kAXErrorInvalidUIElement et fait
+# planter le run. Le toast « Analyse sauvegardée » confirme la persistance
+# on-device sans dépendre du timing de la transition.
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "Analyse sauvegardée|Générer le rapport PDF|Résultats"
+    timeout: 30000
+- waitForAnimationToEnd
 - extendedWaitUntil:
     visible: "Générer le rapport PDF"
     timeout: 30000
