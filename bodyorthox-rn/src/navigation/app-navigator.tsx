@@ -237,20 +237,21 @@ const rootScreenOptions = {
 
 export function AppNavigator() {
   const initialize = useAuthStore((s) => s.initialize);
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const isAuthLoading = useAuthStore((s) => s.isLoading);
   const checkOnboarding = useOnboardingStore((s) => s.checkOnboarding);
   const isOnboardingLoading = useOnboardingStore((s) => s.isLoading);
 
   useEffect(() => {
     if (isDevMode()) return;
+    // La session est revalidée en arrière-plan (résilience : plus de logout sur
+    // panne réseau) — elle ne bloque PLUS l'entrée dans l'app. Le compte est
+    // optionnel (données locales), donc l'auth ne gate plus la navigation.
     initialize();
     // L'onboarding lit le stockage persistant : attendre l'hydratation du
     // backend natif pour ne pas re-proposer l'onboarding déjà complété.
     whenStorageReady().then(checkOnboarding);
   }, [initialize, checkOnboarding]);
 
-  if (isAuthLoading || isOnboardingLoading) {
+  if (isOnboardingLoading) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.background }}>
         <ActivityIndicator size="large" color={Colors.primary} />
@@ -258,21 +259,9 @@ export function AppNavigator() {
     );
   }
 
-  if (!isAuthenticated) {
-    return (
-      <Stack.Navigator
-        screenOptions={rootScreenOptions}
-        initialRouteName="Login"
-      >
-        <Stack.Screen
-          name="Login"
-          component={LoginScreen}
-          options={{ headerShown: false }}
-        />
-      </Stack.Navigator>
-    );
-  }
-
+  // Plus de mur de login : l'app s'ouvre directement en mode local (verrou
+  // biométrique opt-in via Lock). « Se connecter » est un écran optionnel,
+  // présenté en modal depuis Réglages › Compte (activera les sauvegardes).
   return (
     <Stack.Navigator screenOptions={rootScreenOptions} initialRouteName="Lock">
       <Stack.Screen
@@ -292,6 +281,11 @@ export function AppNavigator() {
         name="MainTabs"
         component={MainTabs}
         options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="Login"
+        component={LoginScreen}
+        options={{ headerShown: false, presentation: "modal" }}
       />
       {/* Capture is fullscreen — NO tab bar */}
       <Stack.Screen

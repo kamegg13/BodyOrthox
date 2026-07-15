@@ -24,6 +24,10 @@ import {
 } from "../../../theme/tokens";
 import { useAuthStore } from "../../../core/auth/auth-store";
 import { useFeedbackStore } from "../../feedback/store/feedback-store";
+import {
+  isBiometricLockEnabled,
+  setBiometricLockEnabled,
+} from "../../../core/security/biometric-lock-setting";
 
 // ---------------------------------------------------------------------------
 // localStorage helpers (web-safe)
@@ -169,11 +173,19 @@ function SwitchRow({
 export function AccountScreen() {
   const [patientCount, setPatientCount] = useState<number>(0);
   const [analysisCount, setAnalysisCount] = useState<number>(0);
-  const [faceIdEnabled, setFaceIdEnabled] = useState(false);
+  const [faceIdEnabled, setFaceIdEnabled] = useState(() =>
+    isBiometricLockEnabled(),
+  );
   const logout = useAuthStore((s) => s.logout);
   const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const openFeedback = useFeedbackStore((s) => s.openModal);
   const navigation = useNavigation<any>();
+
+  const handleToggleBiometricLock = useCallback((next: boolean) => {
+    setFaceIdEnabled(next);
+    setBiometricLockEnabled(next);
+  }, []);
 
   useEffect(() => {
     loadCounts();
@@ -229,48 +241,71 @@ export function AccountScreen() {
         showsVerticalScrollIndicator={false}
         testID="account-screen"
       >
-        {/* SESSION */}
-        <SectionLabel>Session</SectionLabel>
+        {/* COMPTE — optionnel : les données vivent en local, le compte ne sert
+            qu'aux sauvegardes chiffrées (à venir). */}
+        <SectionLabel>Compte</SectionLabel>
         <Card style={styles.group}>
-          <ListRow label="Email" value={user?.email ?? "—"} chevron={false} />
-          <RowDivider />
-          <ListRow
-            label="Rôle"
-            value={user?.role === "admin" ? "Administrateur" : "Praticien"}
-            chevron={false}
-          />
-          {user?.role === "admin" ? (
+          {isAuthenticated ? (
             <>
-              <RowDivider />
               <ListRow
-                label="Administration des comptes"
-                onPress={() => navigation.navigate("Admin")}
-                testID="admin-button"
+                label="Email"
+                value={user?.email ?? "—"}
+                chevron={false}
               />
               <RowDivider />
               <ListRow
-                label="Calibration HKA"
-                onPress={() => navigation.navigate("Calibration")}
-                testID="calibration-button"
+                label="Rôle"
+                value={user?.role === "admin" ? "Administrateur" : "Praticien"}
+                chevron={false}
+              />
+              {user?.role === "admin" ? (
+                <>
+                  <RowDivider />
+                  <ListRow
+                    label="Administration des comptes"
+                    onPress={() => navigation.navigate("Admin")}
+                    testID="admin-button"
+                  />
+                  <RowDivider />
+                  <ListRow
+                    label="Calibration HKA"
+                    onPress={() => navigation.navigate("Calibration")}
+                    testID="calibration-button"
+                  />
+                </>
+              ) : (
+                <>
+                  <RowDivider />
+                  <InfoRow
+                    label="Calibration HKA"
+                    subtitle="Gérée par votre administrateur — contactez-le pour la modifier."
+                    testID="calibration-admin-only-info"
+                  />
+                </>
+              )}
+              <RowDivider />
+              <ListRow
+                label="Se déconnecter"
+                destructive
+                onPress={handleLogout}
+                testID="logout-button"
               />
             </>
           ) : (
             <>
-              <RowDivider />
               <InfoRow
-                label="Calibration HKA"
-                subtitle="Gérée par votre administrateur — contactez-le pour la modifier."
-                testID="calibration-admin-only-info"
+                label="Non connecté"
+                subtitle="Vos données sont enregistrées uniquement sur cet appareil. La connexion activera les sauvegardes chiffrées (à venir)."
+                testID="account-signed-out-info"
+              />
+              <RowDivider />
+              <ListRow
+                label="Se connecter"
+                onPress={() => navigation.navigate("Login")}
+                testID="login-button"
               />
             </>
           )}
-          <RowDivider />
-          <ListRow
-            label="Se déconnecter"
-            destructive
-            onPress={handleLogout}
-            testID="logout-button"
-          />
         </Card>
 
         {/* PROFIL PRATICIEN */}
@@ -324,9 +359,9 @@ export function AccountScreen() {
         <Card style={styles.group}>
           <SwitchRow
             label="Face ID / Touch ID"
-            subtitle="Verrouillage automatique"
+            subtitle="Verrouiller l'accès à l'app (les données restent chiffrées)"
             value={faceIdEnabled}
-            onValueChange={setFaceIdEnabled}
+            onValueChange={handleToggleBiometricLock}
             testID="faceid-toggle"
           />
         </Card>

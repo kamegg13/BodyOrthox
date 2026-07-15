@@ -4,18 +4,15 @@ import { BiometricLockScreen } from '../biometric-lock-screen';
 
 describe('BiometricLockScreen', () => {
   const mockOnUnlock = jest.fn();
-  const mockOnLogout = jest.fn();
 
   beforeEach(() => {
     mockOnUnlock.mockClear();
-    mockOnLogout.mockClear();
   });
 
   it('renders correctly', () => {
     const { getByTestId } = render(
       <BiometricLockScreen
         onUnlock={mockOnUnlock}
-        onLogout={mockOnLogout}
         isAuthenticating={false}
         error={null}
       />
@@ -27,11 +24,7 @@ describe('BiometricLockScreen', () => {
 
   it('shows BodyOrthox title', () => {
     const { getByText } = render(
-      <BiometricLockScreen
-        onUnlock={mockOnUnlock}
-        onLogout={mockOnLogout}
-        isAuthenticating={false}
-      />
+      <BiometricLockScreen onUnlock={mockOnUnlock} isAuthenticating={false} />
     );
 
     expect(getByText('BodyOrthox')).toBeTruthy();
@@ -39,11 +32,7 @@ describe('BiometricLockScreen', () => {
 
   it('calls onUnlock when button is pressed', () => {
     const { getByTestId } = render(
-      <BiometricLockScreen
-        onUnlock={mockOnUnlock}
-        onLogout={mockOnLogout}
-        isAuthenticating={false}
-      />
+      <BiometricLockScreen onUnlock={mockOnUnlock} isAuthenticating={false} />
     );
 
     fireEvent.press(getByTestId('unlock-button'));
@@ -52,11 +41,7 @@ describe('BiometricLockScreen', () => {
 
   it('does not call onUnlock when authenticating', () => {
     const { getByTestId } = render(
-      <BiometricLockScreen
-        onUnlock={mockOnUnlock}
-        onLogout={mockOnLogout}
-        isAuthenticating={true}
-      />
+      <BiometricLockScreen onUnlock={mockOnUnlock} isAuthenticating={true} />
     );
 
     fireEvent.press(getByTestId('unlock-button'));
@@ -67,7 +52,6 @@ describe('BiometricLockScreen', () => {
     const { getByText } = render(
       <BiometricLockScreen
         onUnlock={mockOnUnlock}
-        onLogout={mockOnLogout}
         isAuthenticating={false}
         error="Authentification échouée"
       />
@@ -80,7 +64,6 @@ describe('BiometricLockScreen', () => {
     const { queryByText } = render(
       <BiometricLockScreen
         onUnlock={mockOnUnlock}
-        onLogout={mockOnLogout}
         isAuthenticating={false}
         error={null}
       />
@@ -91,11 +74,7 @@ describe('BiometricLockScreen', () => {
 
   it('shows authenticating text when loading', () => {
     const { getByText } = render(
-      <BiometricLockScreen
-        onUnlock={mockOnUnlock}
-        onLogout={mockOnLogout}
-        isAuthenticating={true}
-      />
+      <BiometricLockScreen onUnlock={mockOnUnlock} isAuthenticating={true} />
     );
 
     expect(getByText('Authentification...')).toBeTruthy();
@@ -103,66 +82,33 @@ describe('BiometricLockScreen', () => {
 
   it('is accessible with correct role', () => {
     const { getByTestId } = render(
-      <BiometricLockScreen
-        onUnlock={mockOnUnlock}
-        onLogout={mockOnLogout}
-        isAuthenticating={false}
-      />
+      <BiometricLockScreen onUnlock={mockOnUnlock} isAuthenticating={false} />
     );
 
     const button = getByTestId('unlock-button');
     expect(button.props.accessibilityRole).toBe('button');
   });
 
-  // Régression : le lock n'a aucune autre issue en cas d'échec biométrique
-  // répété — le lien de déconnexion doit toujours être présent et actif.
-  it('always shows a logout link, even without error', () => {
-    const { getByTestId } = render(
-      <BiometricLockScreen
-        onUnlock={mockOnUnlock}
-        onLogout={mockOnLogout}
-        isAuthenticating={false}
-      />
+  // Verrou opt-in découplé du compte : plus d'échappatoire « Se déconnecter »
+  // (le compte est optionnel, géré dans Réglages). L'écran ne présente que le
+  // déverrouillage biométrique.
+  it('ne présente aucune échappatoire de déconnexion', () => {
+    const { queryByTestId } = render(
+      <BiometricLockScreen onUnlock={mockOnUnlock} isAuthenticating={false} />
     );
 
-    expect(getByTestId('lock-logout-button')).toBeTruthy();
+    expect(queryByTestId('lock-logout-button')).toBeNull();
   });
 
-  it('calls onLogout when the logout link is pressed', () => {
-    const { getByTestId } = render(
-      <BiometricLockScreen
-        onUnlock={mockOnUnlock}
-        onLogout={mockOnLogout}
-        isAuthenticating={false}
-      />
-    );
-
-    fireEvent.press(getByTestId('lock-logout-button'));
-    expect(mockOnLogout).toHaveBeenCalledTimes(1);
-  });
-
-  it('still shows the logout link while authenticating', () => {
-    const { getByTestId } = render(
-      <BiometricLockScreen
-        onUnlock={mockOnUnlock}
-        onLogout={mockOnLogout}
-        isAuthenticating={true}
-      />
-    );
-
-    expect(getByTestId('lock-logout-button')).toBeTruthy();
-  });
-
-  it('shows a clear hint (cause + options) alongside the error message', () => {
+  it("invite à réessayer la biométrie en cas d'erreur", () => {
     const { getByText } = render(
       <BiometricLockScreen
         onUnlock={mockOnUnlock}
-        onLogout={mockOnLogout}
         isAuthenticating={false}
         error="Authentification échouée"
       />
     );
 
-    expect(getByText(/déconnectez-vous/i)).toBeTruthy();
+    expect(getByText(/réessayez la biométrie/i)).toBeTruthy();
   });
 });
