@@ -280,6 +280,11 @@ class WebDatabase implements IDatabase {
   }
 }
 
-export function createDatabase(_dbName: string): IDatabase {
+// `_options` (chiffrement) est ignoré sur web : le shim localStorage est
+// réservé au dev — les données de santé réelles vivent sur le natif chiffré.
+export function createDatabase(
+  _dbName: string,
+  _options?: { readonly encrypted?: boolean },
+): IDatabase {
   return new WebDatabase();
 }

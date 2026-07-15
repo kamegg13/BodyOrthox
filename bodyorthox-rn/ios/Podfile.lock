@@ -11,6 +11,32 @@ PODS:
   - MediaPipeTasksCommon (0.10.35)
   - MediaPipeTasksVision (0.10.35):
     - MediaPipeTasksCommon (= 0.10.35)
+  - op-sqlite (17.1.2):
+    - DoubleConversion
+    - glog
+    - hermes-engine
+    - OpenSSL-Universal
+    - RCT-Folly (= 2024.11.18.00)
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - Yoga
+  - OpenSSL-Universal (3.6.2000)
   - RCT-Folly (2024.11.18.00):
     - boost
     - DoubleConversion
@@ -1335,6 +1361,8 @@ PODS:
     - React-jsiexecutor
     - React-RCTFBReactNativeSpec
     - ReactCommon/turbomodule/core
+  - react-native-get-random-values (1.11.0):
+    - React-Core
   - react-native-html-to-pdf (0.12.0):
     - React-Core
   - react-native-image-picker (8.2.1):
@@ -2114,6 +2142,7 @@ DEPENDENCIES:
   - glog (from `../node_modules/react-native/third-party-podspecs/glog.podspec`)
   - hermes-engine (from `../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
   - MediaPipeTasksVision (= 0.10.35)
+  - "op-sqlite (from `../node_modules/@op-engineering/op-sqlite`)"
   - RCT-Folly (from `../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec`)
   - RCT-Folly/Fabric (from `../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec`)
   - RCTDeprecation (from `../node_modules/react-native/ReactApple/Libraries/RCTFoundation/RCTDeprecation`)
@@ -2147,6 +2176,7 @@ DEPENDENCIES:
   - React-logger (from `../node_modules/react-native/ReactCommon/logger`)
   - React-Mapbuffer (from `../node_modules/react-native/ReactCommon`)
   - React-microtasksnativemodule (from `../node_modules/react-native/ReactCommon/react/nativemodule/microtasks`)
+  - react-native-get-random-values (from `../node_modules/react-native-get-random-values`)
   - react-native-html-to-pdf (from `../node_modules/react-native-html-to-pdf`)
   - react-native-image-picker (from `../node_modules/react-native-image-picker`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
@@ -2195,6 +2225,7 @@ SPEC REPOS:
   trunk:
     - MediaPipeTasksCommon
     - MediaPipeTasksVision
+    - OpenSSL-Universal
     - SocketRocket
 
 EXTERNAL SOURCES:
@@ -2213,6 +2244,8 @@ EXTERNAL SOURCES:
   hermes-engine:
     :podspec: "../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec"
     :tag: hermes-2025-06-04-RNv0.79.3-7f9a871eefeb2c3852365ee80f0b6733ec12ac3b
+  op-sqlite:
+    :path: "../node_modules/@op-engineering/op-sqlite"
   RCT-Folly:
     :podspec: "../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec"
   RCTDeprecation:
@@ -2275,6 +2308,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon"
   React-microtasksnativemodule:
     :path: "../node_modules/react-native/ReactCommon/react/nativemodule/microtasks"
+  react-native-get-random-values:
+    :path: "../node_modules/react-native-get-random-values"
   react-native-html-to-pdf:
     :path: "../node_modules/react-native-html-to-pdf"
   react-native-image-picker:
@@ -2372,6 +2407,8 @@ SPEC CHECKSUMS:
   hermes-engine: 13c84524b3b6e884b2cf3b3b1e002ffd147d88a3
   MediaPipeTasksCommon: ae27d88c4d185db114a1a768c504f8270dda79b5
   MediaPipeTasksVision: 1d6c3efa89830a131dbd0dc4fb80dea283fac521
+  op-sqlite: 4e75522b2e1dc2407136920ac625e0b6556aba55
+  OpenSSL-Universal: ecee7b138fa75a74ecf00d7ffd248fb584739b9e
   RCT-Folly: e78785aa9ba2ed998ea4151e314036f6c49e6d82
   RCTDeprecation: b9b1716eec53aaeaa859aa45e27de7b615cff732
   RCTRequired: 862acb469086f601f81aab298e00c2a13d572099
@@ -2403,6 +2440,7 @@ SPEC CHECKSUMS:
   React-logger: fbdc0814b62fefa412a90af7cacc666387f1bc9a
   React-Mapbuffer: cfe4726ba1929b9dab4645c78376a9165375d62f
   React-microtasksnativemodule: c99b8f1240609566de105b73f2569c0f22880ee1
+  react-native-get-random-values: d16467cf726c618e9c7a8c3c39c31faa2244bbba
   react-native-html-to-pdf: 7a49e6c58ac5221bcc093027b195f4b214f27a9d
   react-native-image-picker: db0b3e3c7ae57680876318d4f42e7dbedd72244a
   react-native-safe-area-context: 562163222d999b79a51577eda2ea8ad2c32b4d06

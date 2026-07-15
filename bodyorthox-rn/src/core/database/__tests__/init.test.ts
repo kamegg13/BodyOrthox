@@ -1,16 +1,17 @@
 /**
  * Tests for database initialization wiring.
  *
- * The API repositories are independent of the on-device shim, so a failure of
- * the shim's `initialize()` must NOT leave the stores without a repository
+ * The API repositories are independent of the on-device database, so a failure
+ * of the database `initialize()` must NOT leave the stores without a repository
  * (silent empty screens). The error must still propagate to the caller.
+ *
+ * Sous Jest, `./database` se résout vers database.native.ts (résolution
+ * plateforme du preset react-native) — c'est donc lui qu'on mocke.
  */
-
-import { Platform } from 'react-native';
 
 const mockInitialize = jest.fn();
 
-jest.mock('../database.web', () => ({
+jest.mock('../database.native', () => ({
   createDatabase: () => ({
     initialize: mockInitialize,
     execute: jest.fn(),
@@ -25,18 +26,17 @@ import { useFeedbackStore } from '../../../features/feedback/store/feedback-stor
 
 describe('initializeDatabase', () => {
   beforeEach(() => {
-    (Platform as any).OS = 'web';
     mockInitialize.mockReset();
     jest.clearAllMocks();
   });
 
-  it('wires the API repositories even when the shim initialize() rejects', async () => {
-    mockInitialize.mockRejectedValueOnce(new Error('shim boom'));
+  it('wires the API repositories even when the database initialize() rejects', async () => {
+    mockInitialize.mockRejectedValueOnce(new Error('db boom'));
     const patientsSpy = jest.spyOn(usePatientsStore.getState(), 'setRepository');
     const captureSpy = jest.spyOn(useCaptureStore.getState(), 'setRepository');
     const feedbackSpy = jest.spyOn(useFeedbackStore.getState(), 'setRepository');
 
-    await expect(initializeDatabase()).rejects.toThrow('shim boom');
+    await expect(initializeDatabase()).rejects.toThrow('db boom');
 
     expect(patientsSpy).toHaveBeenCalledTimes(1);
     expect(captureSpy).toHaveBeenCalledTimes(1);

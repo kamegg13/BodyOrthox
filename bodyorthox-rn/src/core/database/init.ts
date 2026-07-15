@@ -1,6 +1,8 @@
-import { Platform } from 'react-native';
 import { AppConfiguration } from '../config/app-config';
-import { IDatabase } from './database';
+// Metro résout `./database` vers database.native.ts (op-sqlite persistant,
+// SQLCipher) et webpack vers database.web.ts (shim localStorage, dev) — plus
+// besoin de require conditionnel, et op-sqlite reste hors du bundle web.
+import { createDatabase, IDatabase } from './database';
 import { ApiPatientRepository } from '../../features/patients/data/api-patient-repository';
 import { ApiAnalysisRepository } from '../../features/capture/data/api-analysis-repository';
 import { ApiFeedbackRepository } from '../../features/feedback/data/api-feedback-repository';
@@ -36,12 +38,9 @@ let _db: IDatabase | null = null;
 export async function initializeDatabase(): Promise<IDatabase> {
   if (_db) return _db;
 
-  const { createDatabase } =
-    Platform.OS === 'web'
-      ? require('./database.web')
-      : require('./database.native');
-
-  const db = createDatabase(AppConfiguration.databaseName) as IDatabase;
+  const db: IDatabase = createDatabase(AppConfiguration.databaseName, {
+    encrypted: AppConfiguration.useEncryptedDatabase,
+  });
 
   // Les repositories API ne dépendent pas du shim on-device : on les câble
   // d'abord pour qu'un échec d'`initialize()` (shim indisponible) ne laisse pas
