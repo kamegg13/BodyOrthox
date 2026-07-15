@@ -421,7 +421,7 @@ export function generateReportHtml(data: ReportData): string {
   <!-- Header bar -->
   <div class="header-bar">
     <div>
-      <div class="clinic-name">Antidote Sport</div>
+      <div class="clinic-name">Antidote Boost</div>
       <div class="report-title">Analyse morphologique de l'axe mécanique — Membres inférieurs</div>
     </div>
     <div class="report-date">Généré le ${escapeHtml(reportDate)}</div>

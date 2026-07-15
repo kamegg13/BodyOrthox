@@ -637,7 +637,7 @@ export function generateProgressionReportHtml(
   <!-- PAGE 1 : Graphes + Synthèse -->
   <div class="header">
     <h1>Rapport de Progression Clinique — ${escapeHtml(data.patientName)}</h1>
-    <div class="subtitle">Antidote Sport — Suivi HKA sur ${sessionCount} séance${sessionCount > 1 ? "s" : ""}</div>
+    <div class="subtitle">Antidote Boost — Suivi HKA sur ${sessionCount} séance${sessionCount > 1 ? "s" : ""}</div>
   </div>
 
   <div class="meta">
@@ -655,7 +655,7 @@ export function generateProgressionReportHtml(
 
   <div class="header">
     <h1>Tableau Chronologique — ${escapeHtml(data.patientName)}</h1>
-    <div class="subtitle">Antidote Sport — Données complètes par séance</div>
+    <div class="subtitle">Antidote Boost — Données complètes par séance</div>
   </div>
 
   ${chronologicalTable}

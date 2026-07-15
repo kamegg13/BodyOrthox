@@ -213,7 +213,7 @@ describe("generateReportHtml", () => {
   it("should include clinic name", () => {
     const data = buildReportData(mockAnalysis, mockPatient);
     const html = generateReportHtml(data);
-    expect(html).toContain("Antidote Sport");
+    expect(html).toContain("Antidote Boost");
   });
 
   it("should include notes when provided", () => {

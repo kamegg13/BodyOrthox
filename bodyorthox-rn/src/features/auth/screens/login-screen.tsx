@@ -11,7 +11,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../../core/auth/auth-store';
 import { Btn } from '../../../components/Btn';
 import { Field } from '../../../components/Field';
-import { Logo } from '../../../components/Logo';
 import {
   colors,
   fonts,
@@ -61,7 +60,7 @@ export function LoginScreen() {
           <View style={styles.hero}>
             <SafeAreaView edges={['top']} style={styles.heroSafe}>
               <View style={styles.heroInner}>
-                <Logo size={34} light />
+                <Text style={styles.title}>Antidote Boost</Text>
                 <Text style={styles.tagline}>
                   Orthopédie · Performance · Réathlétisation
                 </Text>
@@ -139,6 +138,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.heroPadH,
     paddingTop: spacing.s28,
     paddingBottom: spacing.s28,
+  },
+  title: {
+    fontFamily: fonts.display,
+    fontSize: fontSize.h1,
+    fontWeight: fontWeight.bold,
+    color: colors.textInverse,
+    textAlign: 'center',
   },
   tagline: {
     fontFamily: fonts.sans,
