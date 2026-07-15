@@ -62,6 +62,10 @@ export function CreatePatientRoute() {
       try {
         const input = formValuesToCreateInput(values);
         const patient = await createPatient(input);
+        // Le patient est enregistré : la saisie n'est plus « à perdre ». Sans
+        // ça, cet écran (resté dans la pile sous la fiche) redemandait
+        // « Abandonner la saisie ? » quand le reset post-analyse le démontait.
+        setDirty(false);
         if (action === "secondary") {
           // « Enregistrer sans capturer » — retour direct sur la fiche du
           // patient créé : son arrivée sur la fiche à jour vaut confirmation,

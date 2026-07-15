@@ -879,8 +879,15 @@ interface PickerModalProps {
 function PickerModal({ visible, title, options, selectedValue, onSelect, onClose }: PickerModalProps) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={styles.modalBackdrop} onPress={onClose}>
-        <Pressable style={styles.modalCard} onPress={() => undefined}>
+      {/* accessible={false} sur backdrop et carte : un Pressable est accessible
+          par défaut et APLATIT ses descendants en un seul élément — VoiceOver
+          (et Maestro) ne voyaient aucune option individuellement. */}
+      <Pressable style={styles.modalBackdrop} onPress={onClose} accessible={false}>
+        <Pressable
+          style={styles.modalCard}
+          onPress={() => undefined}
+          accessible={false}
+        >
           <Text style={styles.modalTitle}>{title}</Text>
           {options.map((opt) => {
             const selected = opt.value === selectedValue;
@@ -892,6 +899,9 @@ function PickerModal({ visible, title, options, selectedValue, onSelect, onClose
                   styles.modalRow,
                   pressed && styles.pressed,
                 ]}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                testID={`picker-option-${opt.value}`}
               >
                 <Text style={[styles.modalRowLabel, selected && styles.modalRowLabelSelected]}>
                   {opt.label}
