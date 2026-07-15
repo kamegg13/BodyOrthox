@@ -1,5 +1,7 @@
 import React from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
 import {
   colors,
   fonts,
@@ -10,6 +12,7 @@ import {
   spacing,
 } from "../../../theme/tokens";
 import { Icon, type IconName } from "../../../components/icons";
+import { NavBar } from "../../../components";
 
 interface ProtocolCard {
   readonly icon: IconName;
@@ -50,25 +53,41 @@ function ProtocolCardItem({ card }: { readonly card: ProtocolCard }) {
 }
 
 export function ProtocolsScreen() {
-  return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      testID="protocols-screen"
-    >
-      <Text style={styles.headerTitle}>Protocoles de capture</Text>
-      <Text style={styles.headerSubtitle}>
-        Guides de positionnement pour des mesures précises.
-      </Text>
+  const navigation = useNavigation();
 
-      {PROTOCOLS.map((card) => (
-        <ProtocolCardItem key={card.title} card={card} />
-      ))}
-    </ScrollView>
+  return (
+    <View style={styles.root}>
+      <SafeAreaView edges={["top"]} style={styles.headerSafe}>
+        <NavBar title="Protocoles" back onBack={() => navigation.goBack()} />
+      </SafeAreaView>
+
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        testID="protocols-screen"
+      >
+        <Text style={styles.headerSubtitle}>
+          Guides de positionnement pour des mesures précises.
+        </Text>
+
+        {PROTOCOLS.map((card) => (
+          <ProtocolCardItem key={card.title} card={card} />
+        ))}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: colors.bg,
+  },
+  headerSafe: {
+    backgroundColor: colors.bgCard,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
   container: {
     flex: 1,
     backgroundColor: colors.bg,
@@ -76,13 +95,6 @@ const styles = StyleSheet.create({
   content: {
     padding: spacing.s20,
     gap: spacing.s16,
-  },
-  headerTitle: {
-    fontFamily: fonts.display,
-    fontSize: fontSize.h1,
-    fontWeight: fontWeight.bold,
-    color: colors.textPrimary,
-    marginBottom: spacing.s4,
   },
   headerSubtitle: {
     fontFamily: fonts.sans,

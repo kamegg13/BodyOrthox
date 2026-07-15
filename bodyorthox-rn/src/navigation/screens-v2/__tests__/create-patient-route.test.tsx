@@ -237,7 +237,10 @@ describe("CreatePatientRoute — enregistrer sans capturer", () => {
     fireEvent.press(getByTestId("np-submit"));
 
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith("Capture", { patientId: "patient-1" });
+      expect(mockNavigate).toHaveBeenCalledWith("Capture", {
+        patientId: "patient-1",
+        originTab: "AnalysesTab",
+      });
     });
   });
 

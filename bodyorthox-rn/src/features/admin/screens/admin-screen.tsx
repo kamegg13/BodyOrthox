@@ -10,8 +10,13 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../../../navigation/types';
 import { apiRequest } from '../../../core/api/api-client';
 import { Card } from '../../../components/Card';
+import { NavBar } from '../../../components/NavBar';
 import { SectionLabel } from '../../../components/SectionLabel';
 import { LoadingState } from '../../../components/LoadingState';
 import { EmptyState } from '../../../components/EmptyState';
@@ -23,6 +28,8 @@ import {
   radius,
   spacing,
 } from '../../../theme/tokens';
+
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 interface UserItem {
   id: string;
@@ -42,6 +49,7 @@ function showAlert(title: string, message: string) {
 }
 
 export function AdminScreen() {
+  const navigation = useNavigation<Nav>();
   const [users, setUsers] = useState<UserItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newEmail, setNewEmail] = useState('');
@@ -87,95 +95,104 @@ export function AdminScreen() {
     }
   };
 
-  if (isLoading) {
-    return <LoadingState fullScreen testID="admin-loading" />;
-  }
-
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Administration</Text>
+    <View style={styles.root}>
+      <SafeAreaView edges={['top']} style={styles.headerSafe}>
+        <NavBar title="Administration" back onBack={navigation.goBack} />
+      </SafeAreaView>
+      {isLoading ? (
+        <LoadingState fullScreen testID="admin-loading" />
+      ) : (
+        <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+          {/* Créer praticien */}
+          <SectionLabel>NOUVEAU PRATICIEN</SectionLabel>
+          <Card style={styles.card}>
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              value={newEmail}
+              onChangeText={setNewEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              textContentType="emailAddress"
+              autoComplete="email"
+              placeholderTextColor={colors.textMuted}
+              testID="admin-new-email"
+            />
+            <View style={styles.separator} />
+            <TextInput
+              style={styles.input}
+              placeholder="Mot de passe"
+              value={newPassword}
+              onChangeText={setNewPassword}
+              secureTextEntry
+              // Compte praticien créé par l'admin : c'est un nouveau mot de passe
+              // (pas la ressaisie du sien) — permet au gestionnaire de mots de
+              // passe de proposer une génération plutôt qu'un remplissage.
+              textContentType="newPassword"
+              autoComplete="new-password"
+              placeholderTextColor={colors.textMuted}
+              testID="admin-new-password"
+            />
+            <View style={styles.separator} />
+            <TouchableOpacity
+              style={[
+                styles.button,
+                (!newEmail.trim() || !newPassword || isCreating) && styles.buttonDisabled,
+              ]}
+              onPress={createPractitioner}
+              disabled={!newEmail.trim() || !newPassword || isCreating}
+              testID="admin-create-button"
+            >
+              {isCreating ? (
+                <ActivityIndicator color={colors.white} />
+              ) : (
+                <Text style={styles.buttonText}>Créer le compte</Text>
+              )}
+            </TouchableOpacity>
+          </Card>
 
-      {/* Créer praticien */}
-      <SectionLabel>NOUVEAU PRATICIEN</SectionLabel>
-      <Card style={styles.card}>
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={newEmail}
-          onChangeText={setNewEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          textContentType="emailAddress"
-          autoComplete="email"
-          placeholderTextColor={colors.textMuted}
-          testID="admin-new-email"
-        />
-        <View style={styles.separator} />
-        <TextInput
-          style={styles.input}
-          placeholder="Mot de passe"
-          value={newPassword}
-          onChangeText={setNewPassword}
-          secureTextEntry
-          // Compte praticien créé par l'admin : c'est un nouveau mot de passe
-          // (pas la ressaisie du sien) — permet au gestionnaire de mots de
-          // passe de proposer une génération plutôt qu'un remplissage.
-          textContentType="newPassword"
-          autoComplete="new-password"
-          placeholderTextColor={colors.textMuted}
-          testID="admin-new-password"
-        />
-        <View style={styles.separator} />
-        <TouchableOpacity
-          style={[
-            styles.button,
-            (!newEmail.trim() || !newPassword || isCreating) && styles.buttonDisabled,
-          ]}
-          onPress={createPractitioner}
-          disabled={!newEmail.trim() || !newPassword || isCreating}
-          testID="admin-create-button"
-        >
-          {isCreating ? (
-            <ActivityIndicator color={colors.white} />
-          ) : (
-            <Text style={styles.buttonText}>Créer le compte</Text>
-          )}
-        </TouchableOpacity>
-      </Card>
-
-      {/* Liste comptes */}
-      <SectionLabel>{`COMPTES (${users.length})`}</SectionLabel>
-      <Card style={styles.card}>
-        {users.map((item, index) => (
-          <React.Fragment key={item.id}>
-            {index > 0 && <View style={styles.separator} />}
-            <View style={styles.userRow}>
-              <Text style={styles.userEmail}>{item.email}</Text>
-              <Text style={styles.userMeta}>
-                {item.role === 'admin' ? 'Administrateur' : 'Praticien'}
-                {' · '}
-                {item.isActive ? 'Actif' : 'Désactivé'}
-              </Text>
-            </View>
-          </React.Fragment>
-        ))}
-        {users.length === 0 && (
-          <EmptyState
-            title="Aucun compte"
-            message="Créez le premier compte praticien ci-dessus."
-            style={styles.emptyOverride}
-            testID="admin-empty"
-          />
-        )}
-      </Card>
-    </ScrollView>
+          {/* Liste comptes */}
+          <SectionLabel>{`COMPTES (${users.length})`}</SectionLabel>
+          <Card style={styles.card}>
+            {users.map((item, index) => (
+              <React.Fragment key={item.id}>
+                {index > 0 && <View style={styles.separator} />}
+                <View style={styles.userRow}>
+                  <Text style={styles.userEmail}>{item.email}</Text>
+                  <Text style={styles.userMeta}>
+                    {item.role === 'admin' ? 'Administrateur' : 'Praticien'}
+                    {' · '}
+                    {item.isActive ? 'Actif' : 'Désactivé'}
+                  </Text>
+                </View>
+              </React.Fragment>
+            ))}
+            {users.length === 0 && (
+              <EmptyState
+                title="Aucun compte"
+                message="Créez le premier compte praticien ci-dessus."
+                style={styles.emptyOverride}
+                testID="admin-empty"
+              />
+            )}
+          </Card>
+        </ScrollView>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
     backgroundColor: colors.bg,
+  },
+  headerSafe: {
+    backgroundColor: colors.bgCard,
+  },
+  container: {
+    flex: 1,
   },
   content: {
     padding: spacing.s16,

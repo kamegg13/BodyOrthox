@@ -9,7 +9,12 @@ import {
   Platform,
   Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "../../../navigation/types";
 import { Btn } from "../../../components/Btn";
+import { NavBar } from "../../../components/NavBar";
 import {
   colors,
   fonts,
@@ -33,12 +38,15 @@ import {
 import { useCalibrationStore } from "./calibration-store";
 import type { Side } from "./calibration-types";
 
+type Nav = NativeStackNavigationProp<RootStackParamList>;
+
 function showAlert(title: string, message: string): void {
   if (Platform.OS === "web") window.alert(`${title}\n\n${message}`);
   else Alert.alert(title, message);
 }
 
 export function CalibrationScreen() {
+  const navigation = useNavigation<Nav>();
   const activeModel = useCalibrationStore((s) => s.activeModel);
   const activate = useCalibrationStore((s) => s.activate);
   const deactivate = useCalibrationStore((s) => s.deactivate);
@@ -96,141 +104,145 @@ export function CalibrationScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Calibration HKA</Text>
-      <Text style={styles.subtitle}>
-        Affine la mesure HKA en apprenant une correction depuis des paires
-        (mesure photo → HKA radiographique). Évaluation en validation croisée
-        leave-one-out.
-      </Text>
+    <View style={styles.root}>
+      <SafeAreaView edges={["top"]} style={styles.headerSafe}>
+        <NavBar title="Calibration HKA" back onBack={navigation.goBack} />
+      </SafeAreaView>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <Text style={styles.subtitle}>
+          Affine la mesure HKA en apprenant une correction depuis des paires
+          (mesure photo → HKA radiographique). Évaluation en validation croisée
+          leave-one-out.
+        </Text>
 
-      {/* Statut du modèle actif */}
-      <Text style={styles.sectionTitle}>MODÈLE ACTIF</Text>
-      <View style={styles.card}>
-        {activeModel ? (
-          <>
-            <Text style={styles.statusActive}>● Calibration active</Text>
-            <Text style={styles.statusMeta}>
-              Gauche : {activeModel.left.kind} (n={activeModel.left.n}) · Droite :{" "}
-              {activeModel.right.kind} (n={activeModel.right.n})
+        {/* Statut du modèle actif */}
+        <Text style={styles.sectionTitle}>MODÈLE ACTIF</Text>
+        <View style={styles.card}>
+          {activeModel ? (
+            <>
+              <Text style={styles.statusActive}>● Calibration active</Text>
+              <Text style={styles.statusMeta}>
+                Gauche : {activeModel.left.kind} (n={activeModel.left.n}) · Droite :{" "}
+                {activeModel.right.kind} (n={activeModel.right.n})
+              </Text>
+              <Text style={styles.statusMeta}>
+                Ajusté le {activeModel.createdAt.slice(0, 10)}
+              </Text>
+              <Btn
+                label="Désactiver"
+                variant="danger"
+                onPress={deactivate}
+                testID="calibration-deactivate"
+                style={styles.buttonSpacing}
+              />
+            </>
+          ) : (
+            <Text style={styles.statusInactive}>
+              Aucun modèle actif — les mesures HKA sont brutes (non corrigées).
             </Text>
-            <Text style={styles.statusMeta}>
-              Ajusté le {activeModel.createdAt.slice(0, 10)}
-            </Text>
-            <Btn
-              label="Désactiver"
-              variant="danger"
-              onPress={deactivate}
-              testID="calibration-deactivate"
-              style={styles.buttonSpacing}
-            />
-          </>
-        ) : (
-          <Text style={styles.statusInactive}>
-            Aucun modèle actif — les mesures HKA sont brutes (non corrigées).
-          </Text>
-        )}
-      </View>
-
-      {/* Tableau éditable */}
-      <Text style={styles.sectionTitle}>PAIRES DE MESURE</Text>
-      <View style={styles.card}>
-        <View style={styles.headerRow}>
-          <Text style={[styles.headerCell, styles.sideCol]}>Côté</Text>
-          <Text style={[styles.headerCell, styles.numCol]}>Prédit °</Text>
-          <Text style={[styles.headerCell, styles.numCol]}>Radio °</Text>
-          <View style={styles.delCol} />
+          )}
         </View>
 
-        {rows.map((row) => (
-          <View key={row.id} style={styles.dataRow}>
-            <View style={styles.sideCol}>
-              <SideToggle
-                side={row.side}
-                onChange={(side) => updateRow(row.id, { side })}
+        {/* Tableau éditable */}
+        <Text style={styles.sectionTitle}>PAIRES DE MESURE</Text>
+        <View style={styles.card}>
+          <View style={styles.headerRow}>
+            <Text style={[styles.headerCell, styles.sideCol]}>Côté</Text>
+            <Text style={[styles.headerCell, styles.numCol]}>Prédit °</Text>
+            <Text style={[styles.headerCell, styles.numCol]}>Radio °</Text>
+            <View style={styles.delCol} />
+          </View>
+
+          {rows.map((row) => (
+            <View key={row.id} style={styles.dataRow}>
+              <View style={styles.sideCol}>
+                <SideToggle
+                  side={row.side}
+                  onChange={(side) => updateRow(row.id, { side })}
+                />
+              </View>
+              <TextInput
+                style={[styles.input, styles.numCol]}
+                value={row.predicted}
+                onChangeText={(predicted) => updateRow(row.id, { predicted })}
+                keyboardType="decimal-pad"
+                placeholder="—"
+                placeholderTextColor={colors.textMuted}
+                testID={`calibration-predicted-${row.id}`}
               />
+              <TextInput
+                style={[styles.input, styles.numCol]}
+                value={row.groundTruth}
+                onChangeText={(groundTruth) => updateRow(row.id, { groundTruth })}
+                keyboardType="decimal-pad"
+                placeholder="—"
+                placeholderTextColor={colors.textMuted}
+                testID={`calibration-radio-${row.id}`}
+              />
+              <TouchableOpacity
+                style={styles.delCol}
+                onPress={() => removeRow(row.id)}
+                testID={`calibration-remove-${row.id}`}
+              >
+                <Text style={styles.delText}>✕</Text>
+              </TouchableOpacity>
             </View>
-            <TextInput
-              style={[styles.input, styles.numCol]}
-              value={row.predicted}
-              onChangeText={(predicted) => updateRow(row.id, { predicted })}
-              keyboardType="decimal-pad"
-              placeholder="—"
-              placeholderTextColor={colors.textMuted}
-              testID={`calibration-predicted-${row.id}`}
-            />
-            <TextInput
-              style={[styles.input, styles.numCol]}
-              value={row.groundTruth}
-              onChangeText={(groundTruth) => updateRow(row.id, { groundTruth })}
-              keyboardType="decimal-pad"
-              placeholder="—"
-              placeholderTextColor={colors.textMuted}
-              testID={`calibration-radio-${row.id}`}
-            />
-            <TouchableOpacity
-              style={styles.delCol}
-              onPress={() => removeRow(row.id)}
-              testID={`calibration-remove-${row.id}`}
-            >
-              <Text style={styles.delText}>✕</Text>
+          ))}
+
+          <View style={styles.rowActions}>
+            <TouchableOpacity onPress={addRow} testID="calibration-add-row">
+              <Text style={styles.linkText}>+ Ajouter une ligne</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={loadExample} testID="calibration-example">
+              <Text style={styles.linkMuted}>Charger l'exemple</Text>
             </TouchableOpacity>
           </View>
-        ))}
 
-        <View style={styles.rowActions}>
-          <TouchableOpacity onPress={addRow} testID="calibration-add-row">
-            <Text style={styles.linkText}>+ Ajouter une ligne</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={loadExample} testID="calibration-example">
-            <Text style={styles.linkMuted}>Charger l'exemple</Text>
-          </TouchableOpacity>
+          <Text style={styles.counter}>
+            {parsed.samples.length} paire(s) valides · G={parsed.leftCount} D=
+            {parsed.rightCount}
+            {parsed.invalidCount > 0
+              ? ` · ${parsed.invalidCount} incomplète(s)`
+              : ""}
+          </Text>
+          {smallSample && (
+            <Text style={styles.warn}>
+              ⚠ Moins de 3 paires d'un côté : la validation croisée sera instable.
+            </Text>
+          )}
         </View>
 
-        <Text style={styles.counter}>
-          {parsed.samples.length} paire(s) valides · G={parsed.leftCount} D=
-          {parsed.rightCount}
-          {parsed.invalidCount > 0
-            ? ` · ${parsed.invalidCount} incomplète(s)`
-            : ""}
-        </Text>
-        {smallSample && (
-          <Text style={styles.warn}>
-            ⚠ Moins de 3 paires d'un côté : la validation croisée sera instable.
-          </Text>
-        )}
-      </View>
+        <Btn
+          label="Calculer la calibration"
+          variant="primary"
+          onPress={compute}
+          disabled={!canCompute}
+          testID="calibration-compute"
+        />
 
-      <Btn
-        label="Calculer la calibration"
-        variant="primary"
-        onPress={compute}
-        disabled={!canCompute}
-        testID="calibration-compute"
-      />
-
-      {/* Rapport */}
-      {report && (
-        <>
-          <Text style={styles.sectionTitle}>RAPPORT</Text>
-          <View style={styles.card}>
-            <GainSummary report={report} />
-            <View style={styles.reportBox}>
-              <Text style={styles.reportText} selectable>
-                {formatCalibrationReport(report)}
-              </Text>
+        {/* Rapport */}
+        {report && (
+          <>
+            <Text style={styles.sectionTitle}>RAPPORT</Text>
+            <View style={styles.card}>
+              <GainSummary report={report} />
+              <View style={styles.reportBox}>
+                <Text style={styles.reportText} selectable>
+                  {formatCalibrationReport(report)}
+                </Text>
+              </View>
+              <Btn
+                label="Activer ce modèle"
+                variant="primary"
+                onPress={activateModel}
+                testID="calibration-activate"
+                style={styles.buttonSpacing}
+              />
             </View>
-            <Btn
-              label="Activer ce modèle"
-              variant="primary"
-              onPress={activateModel}
-              testID="calibration-activate"
-              style={styles.buttonSpacing}
-            />
-          </View>
-        </>
-      )}
-    </ScrollView>
+          </>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
@@ -286,7 +298,9 @@ function GainSummary({ report }: { report: CalibrationReport }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  root: { flex: 1, backgroundColor: colors.bg },
+  headerSafe: { backgroundColor: colors.bgCard },
+  container: { flex: 1 },
   content: { padding: spacing.s16, paddingBottom: 48 },
   title: {
     fontFamily: fonts.display,

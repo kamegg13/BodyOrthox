@@ -70,7 +70,13 @@ export function CreatePatientRoute() {
         } else {
           // Capture est sur le stack racine. On navigate via le navigator courant :
           // React Navigation remonte automatiquement la chaine pour trouver la route.
-          navigation.navigate("Capture", { patientId: patient.id });
+          // Le tab d'origine est transmis pour que Processing reconstruise la
+          // pile dans l'onglet de départ (cet écran existe dans les deux tabs).
+          const tabState = navigation.getParent?.()?.getState();
+          const tabName = tabState?.routes[tabState.index]?.name;
+          const originTab =
+            tabName === "PatientsTab" ? "PatientsTab" : "AnalysesTab";
+          navigation.navigate("Capture", { patientId: patient.id, originTab });
         }
       } catch (e: unknown) {
         setErrorMsg(e instanceof Error ? e.message : "Erreur lors de la creation");

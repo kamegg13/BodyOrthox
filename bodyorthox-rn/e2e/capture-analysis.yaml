@@ -1,7 +1,11 @@
-# Parcours E2E natif : login → patient → import galerie → analyse HKA on-device → sauvegarde.
-# Prérequis : API locale (services/bodyorthox-api, PORT=3002, npm run seed),
-# Metro lancé, photo de test dans la galerie du simulateur (simctl addmedia),
-# patient « Vitruve Test » existant (créé via POST /patients).
+# Parcours E2E natif : login → création patient IN-APP → import galerie →
+# analyse HKA on-device → sauvegarde. Mode on-device pur : les patients vivent
+# dans le SQLite local de l'appareil — plus de seed patient côté API, le flow
+# crée « Vitruve Test » dans l'app (ré-exécution : le picker retombe sur la
+# fiche existante si le patient est déjà là).
+# Prérequis : API locale pour le LOGIN uniquement (services/bodyorthox-api,
+# PORT=3002, npm run seed → compte ortho), Metro lancé, photo de test dans la
+# galerie du simulateur (simctl addmedia).
 # Lancer : maestro test e2e/capture-analysis.yaml
 appId: com.bodyorthox.app
 ---
@@ -59,10 +63,57 @@ appId: com.bodyorthox.app
     timeout: 15000
 - takeScreenshot: e2e/shots/01-apres-login
 - tapOn: "Patients"
+# Base locale vierge au premier run : créer le patient dans l'app.
+# Si le patient existe déjà (run précédent), sauter la création.
+- runFlow:
+    when:
+      notVisible: "Vitruve.*"
+    commands:
+      - tapOn: "Nouveau patient"
+      - tapOn:
+          id: "np-first-name"
+      - inputText: "Vitruve"
+      - tapOn:
+          id: "np-last-name"
+      - inputText: "Test"
+      - tapOn:
+          id: "np-sex"
+      - tapOn: "Homme"
+      - tapOn:
+          id: "np-dob"
+      - inputText: "01011990"
+      - runFlow:
+          when:
+            platform: Android
+          commands:
+            - hideKeyboard
+      # Les 3 consentements RGPD sont requis (sous le pli → scroll)
+      - scrollUntilVisible:
+          element:
+            id: "np-consent-0"
+      - tapOn:
+          id: "np-consent-0"
+      - tapOn:
+          id: "np-consent-1"
+      - tapOn:
+          id: "np-consent-2"
+      - scrollUntilVisible:
+          element:
+            id: "np-submit-secondary"
+      # « Enregistrer sans capturer » → fiche patient (préserve les étapes
+      # suivantes du parcours : fiche → Nouvelle capture)
+      - tapOn:
+          id: "np-submit-secondary"
 - extendedWaitUntil:
     visible: "Vitruve.*"
     timeout: 10000
-- tapOn: "Vitruve.*"
+# Premier run : la création atterrit déjà sur la fiche ; re-run : on y entre
+# depuis la liste. Le CTA « Nouvelle capture » n'existe que sur la fiche.
+- runFlow:
+    when:
+      notVisible: "Nouvelle capture"
+    commands:
+      - tapOn: "Vitruve.*"
 - takeScreenshot: e2e/shots/02-fiche-patient
 - tapOn: "Nouvelle capture"
 - takeScreenshot: e2e/shots/03-ecran-capture

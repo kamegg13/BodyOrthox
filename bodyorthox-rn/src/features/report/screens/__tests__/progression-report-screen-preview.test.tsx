@@ -41,8 +41,11 @@ const mockAnalyses: Analysis[] = [
   },
 ];
 
+const mockGoBack = jest.fn();
+
 jest.mock("@react-navigation/native", () => ({
   ...jest.requireActual("@react-navigation/native"),
+  useNavigation: () => ({ goBack: mockGoBack }),
   useRoute: () => ({
     params: { patient: mockPatient, analyses: mockAnalyses },
   }),
