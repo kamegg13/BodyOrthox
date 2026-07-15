@@ -2,7 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, Platform } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import type { RootStackParamList } from "../../../navigation/types";
+import type {
+  CaptureOriginTab,
+  RootStackParamList,
+} from "../../../navigation/types";
 import { useCaptureStore } from "../store/capture-store";
 import { WebCameraRef } from "../components/web-camera";
 import { getPoseDetector } from "../data/pose-detector";
@@ -29,7 +32,10 @@ const LOW_CONFIDENCE_THRESHOLD = 0.6;
 const ML_UNAVAILABLE_MESSAGE =
   "Le modèle d'analyse n'a pas pu être chargé. Réessayez plus tard.";
 
-export function useCaptureLogic(patientId: string) {
+export function useCaptureLogic(
+  patientId: string,
+  originTab?: CaptureOriginTab,
+) {
   const navigation = useNavigation<Nav>();
 
   const {
@@ -255,6 +261,7 @@ export function useCaptureLogic(patientId: string) {
               params: {
                 analysisId: analysis.id,
                 patientId,
+                ...(originTab ? { originTab } : {}),
                 ...(imgUrl ? { capturedImageUrl: imgUrl } : {}),
                 ...(correctedLandmarks ?? allLm
                   ? { allLandmarks: correctedLandmarks ?? allLm ?? undefined }
@@ -271,7 +278,7 @@ export function useCaptureLogic(patientId: string) {
         }
       }
     },
-    [phase, patientId, saveAnalysis, navigation, setError],
+    [phase, patientId, originTab, saveAnalysis, navigation, setError],
   );
 
   const handleDiscard = useCallback(() => {
