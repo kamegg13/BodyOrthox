@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Platform } from 'react-native';
 import { BiometricState } from './biometric-service';
+import { isBiometricLockEnabled } from '../security/biometric-lock-setting';
 
 let _serviceModule: { createBiometricService: () => import('./biometric-service').IBiometricService };
 
@@ -21,10 +22,17 @@ export function useBiometricAuth() {
 
   useEffect(() => {
     async function checkAvailability() {
+      // Verrou opt-in (désactivé par défaut) : sans activation explicite, on
+      // déverrouille d'emblée — l'app s'ouvre directement sur ses données
+      // locales (déjà chiffrées au repos). Idem si le matériel est absent.
+      if (!isBiometricLockEnabled()) {
+        setState({ type: 'unlocked' });
+        return;
+      }
       const service = getService();
       const available = await service.isAvailable();
       if (!available) {
-        // On web or unavailable hardware, auto-unlock
+        // Verrou demandé mais matériel indisponible : ne pas enfermer.
         setState({ type: 'unlocked' });
       }
     }
