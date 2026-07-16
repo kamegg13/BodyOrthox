@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { Alert } from "react-native";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -14,7 +14,6 @@ import {
 import { confirmPrivacyBeforeShare } from "../../features/report/data/privacy-confirm";
 import { useAuthStore } from "../../core/auth/auth-store";
 import { calculateBilateralAngles, classifyHKA } from "../../features/capture/data/angle-calculator";
-import { composeSkeletonImage } from "../../features/capture/data/skeleton-canvas";
 import type { Analysis } from "../../features/capture/domain/analysis";
 import {
   patientDisplayName,
@@ -37,27 +36,14 @@ export function ReportRoute() {
   const generateReport = useReportStore((s) => s.generateReport);
   const reset = useReportStore((s) => s.reset);
 
-  // Compose photo + skeleton + labels (web). Sert au preview ET au PDF.
-  const [photoBase64, setPhotoBase64] = useState<string | undefined>(analysis.capturedImageUrl);
-  useEffect(() => {
-    let cancelled = false;
-    const url = analysis.capturedImageUrl;
-    setPhotoBase64(url);
-    if (!url) return;
-    const bilateral =
-      analysis.bilateralAngles ??
-      (analysis.allLandmarks ? calculateBilateralAngles(analysis.allLandmarks) : undefined);
-    composeSkeletonImage(url, analysis.allLandmarks, bilateral).then((composed) => {
-      if (!cancelled) setPhotoBase64(composed);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [analysis]);
+  // Photo BRUTE : le squelette n'est plus incrusté (canvas web-only) mais
+  // superposé — SVG dans le HTML du PDF, PhotoSkeletonOverlay en preview.
+  // Même mécanisme sur web et natif.
+  const photoBase64 = analysis.capturedImageUrl;
 
-  // (Re-)génère le HTML du rapport quand la photo composée est prête. Les
-  // notes cliniques du praticien (Résultats) sont reprises telles quelles —
-  // le PDF remis au patient doit contenir la même conclusion clinique.
+  // Les notes cliniques du praticien (Résultats) sont reprises telles
+  // quelles — le PDF remis au patient doit contenir la même conclusion
+  // clinique.
   useEffect(() => {
     reset();
     generateReport(analysis, patient, {
@@ -66,6 +52,7 @@ export function ReportRoute() {
     });
     return () => reset();
   }, [analysis, patient, photoBase64, generateReport, reset]);
+
 
   const data = useMemo<ReportData>(
     () => buildReportData(analysis, patient, user, photoBase64),
@@ -175,6 +162,15 @@ function buildReportData(
     buildRow("Cheville", round(analysis.angles.ankleAngle), 0, "°"),
   ];
 
+  const skeleton =
+    capturedImageUrl && analysis.allLandmarks
+      ? {
+          landmarks: analysis.allLandmarks,
+          allLandmarks: analysis.allLandmarks,
+          ...(bilateral ? { bilateralAngles: bilateral } : {}),
+        }
+      : undefined;
+
   const severity = severityFrom(leftHKA, rightHKA);
   const sevColor =
     severity === "unavailable"
@@ -209,6 +205,7 @@ function buildReportData(
     rows,
     confidenceScore: analysis.confidenceScore,
     ...(capturedImageUrl ? { capturedImageUrl } : {}),
+    ...(skeleton ? { skeleton } : {}),
     ...(analysis.clinicalNotes ? { clinicalNotes: analysis.clinicalNotes } : {}),
   };
 }

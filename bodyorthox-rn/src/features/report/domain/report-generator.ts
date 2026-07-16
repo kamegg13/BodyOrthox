@@ -1,9 +1,11 @@
 import { Analysis } from "../../capture/domain/analysis";
 import {
   BilateralAngles,
+  PoseLandmarks,
   classifyHKA,
   hkaLabel,
 } from "../../capture/data/angle-calculator";
+import { generateSkeletonOverlayHtml } from "../../capture/data/skeleton-svg";
 import { Patient, patientDisplayName } from "../../patients/domain/patient";
 import { LEGAL_CONSTANTS } from "../../../core/legal/legal-constants";
 
@@ -24,6 +26,8 @@ export interface ReportData {
   readonly patientName: string;
   readonly analysisDate: string;
   readonly photoBase64?: string;
+  /** Landmarks 33 points : squelette SVG superposé à la photo du PDF. */
+  readonly allLandmarks?: PoseLandmarks;
   readonly bilateral?: BilateralAngles;
   readonly notes?: string;
   readonly disclaimer: string;
@@ -63,6 +67,7 @@ export function buildReportData(
     patientName: patientDisplayName(patient),
     analysisDate: analysis.createdAt,
     photoBase64: options.photoBase64,
+    allLandmarks: analysis.allLandmarks,
     bilateral: analysis.bilateralAngles,
     notes: options.notes?.trim() || undefined,
     disclaimer: LEGAL_CONSTANTS.mdrDisclaimer,
@@ -146,9 +151,18 @@ export function generateReportHtml(data: ReportData): string {
   const analysisDateFmt = data.analysisDate.slice(0, 10);
 
   // ── Photo section ──
+  // Squelette superposé en SVG : rendu par le moteur web du PDF sur toutes
+  // les plateformes (l'incrustation canvas n'existe que sur web).
+  const skeletonSvg =
+    data.allLandmarks && data.bilateral
+      ? generateSkeletonOverlayHtml(data.allLandmarks, data.bilateral)
+      : "";
   const photoSection = data.photoBase64
     ? `<div class="photo-section">
-        <img src="${data.photoBase64}" alt="Analyse HKA" class="analysis-photo" />
+        <div class="photo-wrap">
+          <img src="${data.photoBase64}" alt="Analyse HKA" class="analysis-photo" />
+          ${skeletonSvg}
+        </div>
       </div>`
     : "";
 
@@ -305,13 +319,53 @@ export function generateReportHtml(data: ReportData): string {
       text-align: center;
       page-break-inside: avoid;
     }
+    /* Le wrapper épouse exactement la boîte de l'image : le SVG en
+       coordonnées % reste aligné sur la photo quel que soit son ratio. */
+    .photo-wrap {
+      position: relative;
+      display: inline-block;
+    }
+    /* JAMAIS d'unités vh ici : elles valent 0 dans le contexte de rendu
+       print de WKWebView (react-native-html-to-pdf) et effondrent la photo. */
     .analysis-photo {
       max-width: 100%;
-      max-height: 45vh;
+      max-height: 420px;
       object-fit: contain;
       display: block;
       margin: 0 auto;
       border: 1px solid #ddd;
+    }
+    .skeleton-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      /* INDISPENSABLE : sans ce clip, un badge qui déborde de la boîte
+         (ex. cheville près du bord bas) fait échouer la pagination print
+         d'Android — « Error occurred generating the pdf ». */
+      overflow: hidden;
+    }
+    /* Labels d'angles : HTML positionné (PAS de <text> SVG — le rendu
+       print Android échoue dessus). Badge sombre, texte coloré par côté. */
+    .skl-label {
+      /* WKWebView (iOS) supprime les fonds à l'impression sans ceci. */
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      position: absolute;
+      background: rgba(0, 0, 0, 0.72);
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: -apple-system, Helvetica, sans-serif;
+      white-space: nowrap;
+      line-height: 1.5;
+    }
+    .skl-label-big {
+      font-size: 14px;
+      padding: 2px 7px;
     }
 
     /* ── Sections ── */
@@ -411,7 +465,7 @@ export function generateReportHtml(data: ReportData): string {
     @media print {
       body { padding: 0; margin: 0; }
       @page { size: A4 portrait; margin: 15mm 15mm 12mm; }
-      .analysis-photo { max-height: 40vh; }
+      .analysis-photo { max-height: 130mm; }
       table { page-break-inside: avoid; }
       .section { page-break-inside: avoid; }
     }
