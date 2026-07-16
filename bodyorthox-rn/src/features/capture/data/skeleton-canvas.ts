@@ -139,6 +139,15 @@ export function drawSkeletonOnCanvas(
 }
 
 /**
+ * Répartition web/natif du rendu squelette sur l'écran Résultats : sur web le
+ * squelette est incrusté dans l'image (canvas, `composeSkeletonImage`) ; sur
+ * natif le canvas est indisponible, on superpose un SkeletonOverlay vivant.
+ */
+export function shouldOverlayLiveSkeleton(): boolean {
+  return Platform.OS !== "web";
+}
+
+/**
  * Compose une nouvelle dataURL JPEG = photo + skeleton + labels d'angles.
  * Sur native, retourne `imageDataUrl` inchange (canvas indispo).
  */

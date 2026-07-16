@@ -31,6 +31,18 @@ import {
   shadows,
   spacing,
 } from "../theme/tokens";
+import { PhotoSkeletonOverlay } from "../features/capture/components/photo-skeleton-overlay";
+import type {
+  PoseLandmarks,
+  BilateralAngles,
+} from "../features/capture/data/angle-calculator";
+
+/** Squelette à superposer sur la photo (natif — sur web il est incrusté). */
+export interface ResultsSkeleton {
+  readonly landmarks: PoseLandmarks;
+  readonly allLandmarks?: PoseLandmarks;
+  readonly bilateralAngles?: BilateralAngles;
+}
 
 export interface AngleMeasurement {
   readonly key: string;
@@ -59,6 +71,8 @@ export interface ResultsData {
   readonly hka: { readonly left: AngleMeasurement; readonly right: AngleMeasurement };
   readonly postural: readonly PosturalMeasurement[];
   readonly capturedImageUrl?: string;
+  /** Fourni quand le squelette doit être superposé à la photo (natif). */
+  readonly skeleton?: ResultsSkeleton;
   readonly clinicalNotes?: string;
   /** Score de confiance ML [0,1] de la détection ayant produit l'analyse. */
   readonly confidenceScore?: number;
@@ -148,6 +162,10 @@ export function Results({
     };
   }, [data.capturedImageUrl]);
 
+  // Locaux stables pour le narrowing TS à l'intérieur du renderOverlay.
+  const imageUrl = data.capturedImageUrl;
+  const skeleton = data.skeleton;
+
   return (
     <View style={styles.root}>
       <StatusBar barStyle="dark-content" />
@@ -230,11 +248,25 @@ export function Results({
             { aspectRatio: imageAspect ?? (data.capturedImageUrl ? 3 / 4 : 4 / 3) },
           ]}
         >
-          {data.capturedImageUrl ? (
+          {imageUrl ? (
             <ZoomableImage
-              uri={data.capturedImageUrl}
+              uri={imageUrl}
               caption={`Capture · ${data.date}`}
               style={StyleSheet.absoluteFill}
+              renderOverlay={
+                skeleton
+                  ? ({ width, height }) => (
+                      <PhotoSkeletonOverlay
+                        imageUri={imageUrl}
+                        landmarks={skeleton.landmarks}
+                        allLandmarks={skeleton.allLandmarks}
+                        bilateralAngles={skeleton.bilateralAngles}
+                        containerWidth={width}
+                        containerHeight={height}
+                      />
+                    )
+                  : undefined
+              }
             />
           ) : (
             <>

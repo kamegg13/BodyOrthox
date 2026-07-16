@@ -1,6 +1,24 @@
 import React from "react";
-import { render, fireEvent } from "@testing-library/react-native";
+import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import { Results, SAMPLE_RESULTS } from "../Results";
+import type { PoseLandmarks } from "../../features/capture/data/angle-calculator";
+
+jest.mock("../../shared/utils/image-dimensions", () => {
+  const actual = jest.requireActual("../../shared/utils/image-dimensions");
+  return {
+    ...actual,
+    getNaturalImageSize: jest.fn().mockResolvedValue({ width: 300, height: 400 }),
+  };
+});
+
+const SKELETON_LANDMARKS: PoseLandmarks = {
+  23: { x: 0.4, y: 0.5, z: 0, visibility: 0.95 },
+  24: { x: 0.6, y: 0.5, z: 0, visibility: 0.95 },
+  25: { x: 0.4, y: 0.7, z: 0, visibility: 0.95 },
+  26: { x: 0.6, y: 0.7, z: 0, visibility: 0.95 },
+  27: { x: 0.4, y: 0.9, z: 0, visibility: 0.95 },
+  28: { x: 0.6, y: 0.9, z: 0, visibility: 0.95 },
+};
 
 describe("Results", () => {
   it("rend un AngleScale sous chaque mesure HKA", () => {
@@ -47,6 +65,37 @@ describe("Results", () => {
     const { getByTestId } = render(<Results data={data} />);
     expect(getByTestId("zoomable-image")).toBeTruthy();
     expect(getByTestId("zoomable-image-slider")).toBeTruthy();
+  });
+
+  it("superpose le squelette sur la photo quand les landmarks sont fournis", async () => {
+    const data = {
+      ...SAMPLE_RESULTS,
+      capturedImageUrl: "data:image/png;base64,abc",
+      skeleton: { landmarks: SKELETON_LANDMARKS },
+    };
+    const { getByTestId } = render(<Results data={data} />);
+
+    fireEvent(getByTestId("zoomable-image-root"), "layout", {
+      nativeEvent: { layout: { width: 320, height: 240 } },
+    });
+
+    await waitFor(() => {
+      expect(getByTestId("skeleton-overlay")).toBeTruthy();
+    });
+  });
+
+  it("n'affiche pas de squelette sans landmarks", () => {
+    const data = {
+      ...SAMPLE_RESULTS,
+      capturedImageUrl: "data:image/png;base64,abc",
+    };
+    const { getByTestId, queryByTestId } = render(<Results data={data} />);
+
+    fireEvent(getByTestId("zoomable-image-root"), "layout", {
+      nativeEvent: { layout: { width: 320, height: 240 } },
+    });
+
+    expect(queryByTestId("skeleton-overlay")).toBeNull();
   });
 
   describe("notes cliniques", () => {

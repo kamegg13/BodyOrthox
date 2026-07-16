@@ -23,7 +23,10 @@ import { usePatientsStore } from "../../features/patients/store/patients-store";
 import { patientDisplayName } from "../../features/patients/domain/patient";
 import { calculateBilateralAngles, classifyHKA } from "../../features/capture/data/angle-calculator";
 import type { PoseLandmarks, BilateralAngles } from "../../features/capture/data/angle-calculator";
-import { composeSkeletonImage } from "../../features/capture/data/skeleton-canvas";
+import {
+  composeSkeletonImage,
+  shouldOverlayLiveSkeleton,
+} from "../../features/capture/data/skeleton-canvas";
 import type { Analysis } from "../../features/capture/domain/analysis";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -137,8 +140,24 @@ export function ResultsRoute() {
 
   const data = useMemo<ResultsData | null>(() => {
     if (!analysis || !patient) return null;
-    return buildResultsData(analysis, patientDisplayName(patient), effectiveLandmarks, composedImage);
-  }, [analysis, patient, effectiveLandmarks, composedImage]);
+    // Sur natif, le canvas web n'existe pas : le squelette est superposé
+    // vivant à la photo au lieu d'y être incrusté.
+    const skeleton =
+      shouldOverlayLiveSkeleton() && effectiveLandmarks && bilateral
+        ? {
+            landmarks: effectiveLandmarks,
+            allLandmarks: effectiveLandmarks,
+            bilateralAngles: bilateral,
+          }
+        : undefined;
+    return buildResultsData(
+      analysis,
+      patientDisplayName(patient),
+      effectiveLandmarks,
+      composedImage,
+      skeleton,
+    );
+  }, [analysis, patient, effectiveLandmarks, composedImage, bilateral]);
 
   const handleBack = useCallback(() => {
     // popTo revient à l'instance PatientDetail déjà présente dans la pile
@@ -203,6 +222,7 @@ function buildResultsData(
   patientName: string,
   fallbackLandmarks?: PoseLandmarks,
   imageUrl?: string,
+  skeleton?: ResultsData["skeleton"],
 ): ResultsData {
   const bilateral =
     analysis.bilateralAngles ??
@@ -259,6 +279,7 @@ function buildResultsData(
     postural,
     confidenceScore: analysis.confidenceScore,
     ...(imageUrl ? { capturedImageUrl: imageUrl } : {}),
+    ...(imageUrl && skeleton ? { skeleton } : {}),
     ...(analysis.clinicalNotes ? { clinicalNotes: analysis.clinicalNotes } : {}),
   };
 }

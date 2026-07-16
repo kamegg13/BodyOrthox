@@ -190,6 +190,9 @@ appId: com.bodyorthox.app
     visible:
       id: "bilateral-section"
     timeout: 300000
+# Sans cette attente, le screenshot part avant que le SkeletonOverlay ne soit
+# monté (layout asynchrone de l'image) : photo nue → faux négatif visuel.
+- waitForAnimationToEnd
 - takeScreenshot: e2e/shots/05-analyse-hka
 - tapOn:
     id: "save-analysis-button"
