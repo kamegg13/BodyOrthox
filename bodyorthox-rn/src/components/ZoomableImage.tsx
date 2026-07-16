@@ -20,6 +20,15 @@ interface ZoomableImageProps {
   /** Légende affichée dans le bandeau bas, à gauche du curseur. */
   readonly caption?: string;
   readonly style?: StyleProp<ViewStyle>;
+  /**
+   * Calque optionnel dessiné PAR-DESSUS l'image, dans le même conteneur
+   * transformé : il suit le zoom et le glissement sans calcul supplémentaire.
+   * Appelé seulement une fois le conteneur mesuré (width/height > 0).
+   */
+  readonly renderOverlay?: (size: {
+    readonly width: number;
+    readonly height: number;
+  }) => React.ReactNode;
 }
 
 const MIN_ZOOM = 1;
@@ -46,6 +55,7 @@ export function ZoomableImage({
   maxZoom = 3,
   caption,
   style,
+  renderOverlay,
 }: ZoomableImageProps) {
   const [scale, setScale] = useState(MIN_ZOOM);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -131,15 +141,19 @@ export function ZoomableImage({
   const thumbX = ((scale - MIN_ZOOM) / (maxZoom - MIN_ZOOM)) * (TRACK_WIDTH - THUMB_SIZE);
 
   return (
-    <View style={[styles.root, style]} onLayout={handleLayout}>
+    <View
+      style={[styles.root, style]}
+      onLayout={handleLayout}
+      testID="zoomable-image-root"
+    >
       <View
         style={StyleSheet.absoluteFill}
         {...imagePan.panHandlers}
         testID="zoomable-image-pan"
       >
-        <Image
-          source={{ uri }}
-          resizeMode="contain"
+        {/* Wrapper transformé commun : l'image ET l'overlay subissent le même
+            zoom/glissement, l'overlay reste donc aligné sur la photo. */}
+        <View
           style={[
             StyleSheet.absoluteFill,
             {
@@ -150,8 +164,18 @@ export function ZoomableImage({
               ],
             },
           ]}
-          testID="zoomable-image"
-        />
+          testID="zoomable-image-transform"
+        >
+          <Image
+            source={{ uri }}
+            resizeMode="contain"
+            style={StyleSheet.absoluteFill}
+            testID="zoomable-image"
+          />
+          {renderOverlay && size.width > 0 && size.height > 0
+            ? renderOverlay(size)
+            : null}
+        </View>
       </View>
 
       <View style={styles.band} pointerEvents="box-none">
@@ -170,7 +194,14 @@ export function ZoomableImage({
             accessible
             accessibilityRole="adjustable"
             accessibilityLabel="Zoom sur la photo"
-            accessibilityValue={{ min: MIN_ZOOM, max: maxZoom, now: scale }}
+            // `now` DOIT être entier : Fabric convertit min/max/now en Int32
+            // et une valeur fractionnaire (1.5×) crashe le rendu natif
+            // (« Loss of precision during arithmetic conversion »).
+            accessibilityValue={{
+              min: MIN_ZOOM,
+              max: maxZoom,
+              now: Math.round(scale),
+            }}
             accessibilityActions={[{ name: "increment" }, { name: "decrement" }]}
             onAccessibilityAction={handleAccessibilityAction}
             testID="zoomable-image-slider"
