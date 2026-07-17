@@ -1,5 +1,14 @@
-import React from "react";
-import { Image, Platform, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
+import React, { useCallback, useState } from "react";
+import {
+  Image,
+  LayoutChangeEvent,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AngleScale, Badge, Btn, Icon, Logo, NavBar } from "../components";
 import {
@@ -10,6 +19,18 @@ import {
   shadows,
   spacing,
 } from "../theme/tokens";
+import { PhotoSkeletonOverlay } from "../features/capture/components/photo-skeleton-overlay";
+import type {
+  PoseLandmarks,
+  BilateralAngles,
+} from "../features/capture/data/angle-calculator";
+
+/** Squelette à superposer sur la capture de la preview (parité avec le PDF). */
+export interface ReportSkeleton {
+  readonly landmarks: PoseLandmarks;
+  readonly allLandmarks?: PoseLandmarks;
+  readonly bilateralAngles?: BilateralAngles;
+}
 
 export interface ReportRow {
   readonly label: string;
@@ -38,6 +59,8 @@ export interface ReportData {
   readonly severityColor: "green" | "amber" | "red" | "navy";
   readonly rows: readonly ReportRow[];
   readonly capturedImageUrl?: string;
+  /** Fourni quand le squelette doit être superposé à la capture. */
+  readonly skeleton?: ReportSkeleton;
   readonly clinicalNotes?: string;
   /** Score de confiance ML [0,1] de la détection ayant produit l'analyse. */
   readonly confidenceScore?: number;
@@ -57,6 +80,17 @@ interface ReportProps {
 }
 
 export function Report({ data, onBack, onShare, onDownload, onSend }: ReportProps) {
+  // Taille mesurée du bloc capture — nécessaire au calcul "contain" de
+  // l'overlay squelette.
+  const [captureLayout, setCaptureLayout] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
+  const handleCaptureLayout = useCallback((e: LayoutChangeEvent) => {
+    const { width, height } = e.nativeEvent.layout;
+    setCaptureLayout({ width, height });
+  }, []);
+
   return (
     <View style={styles.root}>
       <StatusBar barStyle="dark-content" />
@@ -114,7 +148,11 @@ export function Report({ data, onBack, onShare, onDownload, onSend }: ReportProp
 
           <View style={[styles.section, styles.sectionBorder]}>
             <Text style={styles.eyebrow}>Capture</Text>
-            <View style={styles.captureBlock}>
+            <View
+              style={styles.captureBlock}
+              testID="report-capture-block"
+              onLayout={handleCaptureLayout}
+            >
               {data.capturedImageUrl ? (
                 <>
                   <Image
@@ -122,6 +160,16 @@ export function Report({ data, onBack, onShare, onDownload, onSend }: ReportProp
                     style={styles.captureImage}
                     resizeMode="contain"
                   />
+                  {data.skeleton && captureLayout ? (
+                    <PhotoSkeletonOverlay
+                      imageUri={data.capturedImageUrl}
+                      landmarks={data.skeleton.landmarks}
+                      allLandmarks={data.skeleton.allLandmarks}
+                      bilateralAngles={data.skeleton.bilateralAngles}
+                      containerWidth={captureLayout.width}
+                      containerHeight={captureLayout.height}
+                    />
+                  ) : null}
                   <View style={styles.captureCaptionOverlay}>
                     <Text style={styles.captureCaptionLight}>
                       Capture sujet · annotée ML

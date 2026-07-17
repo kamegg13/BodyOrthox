@@ -242,4 +242,63 @@ describe("generateReportHtml", () => {
     const html = generateReportHtml(data);
     expect(html).not.toContain("Confiance faible");
   });
+
+  // ── Squelette SVG superposé à la photo ──
+  // Le SVG est rendu par le moteur web du PDF sur TOUTES les plateformes,
+  // contrairement à l'ancienne incrustation canvas (web-only).
+  const mockLandmarks = {
+    23: { x: 0.4, y: 0.5, z: 0, visibility: 0.95 },
+    24: { x: 0.6, y: 0.5, z: 0, visibility: 0.95 },
+    25: { x: 0.4, y: 0.7, z: 0, visibility: 0.95 },
+    26: { x: 0.6, y: 0.7, z: 0, visibility: 0.95 },
+    27: { x: 0.4, y: 0.9, z: 0, visibility: 0.95 },
+    28: { x: 0.6, y: 0.9, z: 0, visibility: 0.95 },
+  };
+
+  it("superpose le squelette SVG à la photo quand les landmarks existent", () => {
+    const analysisWithLandmarks: Analysis = {
+      ...mockAnalysis,
+      allLandmarks: mockLandmarks,
+    };
+    const data = buildReportData(analysisWithLandmarks, mockPatient, {
+      photoBase64: "data:image/png;base64,abc",
+    });
+    const html = generateReportHtml(data);
+
+    expect(html).toContain('<div class="skeleton-overlay"');
+    expect(html).toContain("G HKA: 176.2°");
+    expect(html).toContain("D HKA: 177.5°");
+  });
+
+  it("n'ajoute pas de squelette sans landmarks (photo seule)", () => {
+    const data = buildReportData(mockAnalysis, mockPatient, {
+      photoBase64: "data:image/png;base64,abc",
+    });
+    const html = generateReportHtml(data);
+
+    expect(html).toContain("analysis-photo");
+    // La classe CSS existe toujours dans la feuille de style : c'est
+    // l'ÉLÉMENT svg qui doit être absent.
+    expect(html).not.toContain('<div class="skeleton-overlay"');
+  });
+
+  it("ne dimensionne JAMAIS la photo en vh (vaut 0 dans le rendu print WKWebView → photo invisible)", () => {
+    const data = buildReportData(mockAnalysis, mockPatient, {
+      photoBase64: "data:image/png;base64,abc",
+    });
+    const html = generateReportHtml(data);
+
+    expect(html).not.toMatch(/max-height:\s*[\d.]+vh/);
+  });
+
+  it("n'ajoute pas de squelette sans photo, même avec landmarks", () => {
+    const analysisWithLandmarks: Analysis = {
+      ...mockAnalysis,
+      allLandmarks: mockLandmarks,
+    };
+    const data = buildReportData(analysisWithLandmarks, mockPatient);
+    const html = generateReportHtml(data);
+
+    expect(html).not.toContain('<div class="skeleton-overlay"');
+  });
 });
