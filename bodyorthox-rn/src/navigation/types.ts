@@ -48,6 +48,7 @@ export type CompteStackParamList = {
   CompteHome: undefined;
   Admin: undefined;
   Calibration: undefined;
+  Legal: undefined;
 };
 
 export type BottomTabParamList = {

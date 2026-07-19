@@ -180,7 +180,7 @@ describe("ReportRoute — conclusion clinique", () => {
     const { findByTestId, queryByTestId } = render(<ReportRoute />);
 
     expect(await findByTestId("report-conclusion-empty")).toHaveTextContent(
-      "Aucune interprétation clinique saisie.",
+      "Aucune note du praticien saisie.",
     );
     expect(queryByTestId("report-conclusion-text")).toBeNull();
   });

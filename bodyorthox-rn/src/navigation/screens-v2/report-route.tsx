@@ -14,6 +14,12 @@ import {
 import { confirmPrivacyBeforeShare } from "../../features/report/data/privacy-confirm";
 import { useAuthStore } from "../../core/auth/auth-store";
 import { calculateBilateralAngles, classifyHKA } from "../../features/capture/data/angle-calculator";
+import {
+  HKA_REF_MAX,
+  HKA_REF_MIN,
+  hkaRangeLabel,
+  hkaRangeStatus,
+} from "../../shared/domain/hka-range";
 import type { Analysis } from "../../features/capture/domain/analysis";
 import {
   patientDisplayName,
@@ -171,23 +177,9 @@ function buildReportData(
         }
       : undefined;
 
-  const severity = severityFrom(leftHKA, rightHKA);
-  const sevColor =
-    severity === "unavailable"
-      ? "navy"
-      : severity === "normal"
-      ? "green"
-      : severity === "moderate"
-      ? "amber"
-      : "red";
-  const sevLabel =
-    severity === "unavailable"
-      ? "Indisponible"
-      : severity === "normal"
-      ? "Normal"
-      : severity === "moderate"
-      ? "Modéré"
-      : "Sévère";
+  // Position factuelle par rapport à la plage de référence — aucune
+  // classification de gravité (positionnement non-DM).
+  const rangeLabel = hkaRangeLabel(hkaRangeStatus(leftHKA, rightHKA));
 
   const practitioner = formatPractitioner(user);
   const practitionerId = "—";
@@ -200,8 +192,7 @@ function buildReportData(
     date,
     practitioner,
     practitionerId,
-    severityLabel: sevLabel,
-    severityColor: sevColor,
+    rangeLabel,
     rows,
     confidenceScore: analysis.confidenceScore,
     ...(capturedImageUrl ? { capturedImageUrl } : {}),
@@ -212,22 +203,15 @@ function buildReportData(
 
 function buildRow(label: string, value: number, norm: number, unit: "°" | "mm"): ReportRow {
   const delta = round(value - norm);
-  const sev = severityFromDelta(delta);
   const sign = delta >= 0 ? "+" : "";
   return {
     label,
     value: `${value}${unit}`,
     norm: `${norm}${unit}`,
     delta: `${sign}${delta}${unit}`,
-    severity: sev,
+    status: "measured",
   };
 }
-
-// Plage de référence HKA (175°–180°), cf. classifyHKA dans
-// src/features/capture/data/angle-calculator.ts — reprise ici telle quelle,
-// aucune valeur n'est inventée.
-const HKA_REF_MIN = 175;
-const HKA_REF_MAX = 180;
 
 /** HKA row that shows "—" instead of a fabricated value when unmeasured. */
 function buildHkaRow(label: string, value: number | null): ReportRow {
@@ -237,7 +221,7 @@ function buildHkaRow(label: string, value: number | null): ReportRow {
       value: "—",
       norm: "180°",
       delta: "—",
-      severity: "unavailable",
+      status: "unavailable",
       angleValue: null,
       angleRefMin: HKA_REF_MIN,
       angleRefMax: HKA_REF_MAX,
@@ -255,27 +239,6 @@ function buildHkaRow(label: string, value: number | null): ReportRow {
 function hkaValueOrNull(value: number | undefined): number | null {
   if (value === undefined || classifyHKA(value) === "unavailable") return null;
   return round(value);
-}
-
-function severityFromDelta(delta: number): "normal" | "moderate" | "severe" {
-  const a = Math.abs(delta);
-  if (a < 2) return "normal";
-  if (a < 6) return "moderate";
-  return "severe";
-}
-
-function severityFrom(
-  leftHKA: number | null,
-  rightHKA: number | null,
-): "normal" | "moderate" | "severe" | "unavailable" {
-  const deltas = [leftHKA, rightHKA]
-    .filter((v): v is number => v !== null)
-    .map((v) => Math.abs(180 - v));
-  if (deltas.length === 0) return "unavailable";
-  const worst = Math.max(...deltas);
-  if (worst < 2) return "normal";
-  if (worst < 6) return "moderate";
-  return "severe";
 }
 
 function round(value: number): number {

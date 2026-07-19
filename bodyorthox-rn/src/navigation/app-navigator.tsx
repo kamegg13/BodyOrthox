@@ -19,6 +19,7 @@ import { PatientTimelineScreen } from "../features/patients/screens/patient-time
 import { AccountScreen } from "../features/account/screens/account-screen";
 import { AdminScreen } from "../features/admin/screens/admin-screen";
 import { CalibrationScreen } from "../features/capture/calibration/calibration-screen";
+import { LegalScreen } from "../features/account/screens/legal-screen";
 import { ProtocolsScreen } from "../features/resources/screens/protocols-screen";
 import { ProgressionReportScreen } from "../features/report/screens/progression-report-screen";
 import { ProgressionSelectionScreen } from "../features/report/screens/progression-selection-screen";
@@ -208,6 +209,11 @@ function CompteStackScreen() {
       <CompteStack.Screen
         name="Calibration"
         component={CalibrationScreen}
+        options={{ headerShown: false }}
+      />
+      <CompteStack.Screen
+        name="Legal"
+        component={LegalScreen}
         options={{ headerShown: false }}
       />
     </CompteStack.Navigator>

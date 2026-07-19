@@ -2,43 +2,36 @@ import React from "react";
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
 import { AngleScale } from "./AngleScale";
 import { colors, fonts, fontSize, fontWeight, radius, spacing } from "../theme/tokens";
+import {
+  HKA_REF_MAX,
+  HKA_REF_MIN,
+  hkaDeviation,
+} from "../shared/domain/hka-range";
 
-// Plage de référence HKA (175°–180°), cf. classifyHKA dans
-// src/features/capture/data/angle-calculator.ts — reprise telle quelle,
-// aucune valeur n'est inventée.
-export const HKA_REF_MIN = 175;
-export const HKA_REF_MAX = 180;
+// Réexport pour les consommateurs historiques (Results, capture-success…).
+export { HKA_REF_MAX, HKA_REF_MIN };
 
-/** Sévérité d'un écart à la norme — mêmes seuils que severityFromAnalysis. */
-export function severity(delta: number): "normal" | "moderate" | "severe" {
-  const a = Math.abs(delta);
-  if (a < 2) return "normal";
-  if (a < 6) return "moderate";
-  return "severe";
-}
-
-/** Sévérité d'une mesure → couleur sémantique (texte + icône, jamais seule). */
-export function sevTone(
-  value: number | null,
-  norm: number,
-  unit: "°" | "mm",
-): {
+/**
+ * Présentation neutre d'une mesure : valeur et écart factuel à la plage de
+ * référence — aucune couleur ni icône de gravité (positionnement non-DM,
+ * cf. docs/audit-rgpd-dm-2026-07-17.md).
+ */
+export function measureTone(value: number | null): {
   readonly color: string;
-  readonly icon: "check" | "alert";
   readonly deltaLabel: string;
 } {
   if (value === null) {
-    return { color: colors.textMuted, icon: "alert", deltaLabel: "indisponible" };
+    return { color: colors.textMuted, deltaLabel: "indisponible" };
   }
-  const delta = +(value - norm).toFixed(1);
-  const sev = severity(delta);
-  const color =
-    sev === "normal" ? colors.green : sev === "moderate" ? colors.amberMid : colors.red;
+  const deviation = hkaDeviation(value);
+  if (deviation === null) {
+    return { color: colors.textMuted, deltaLabel: "indisponible" };
+  }
   const deltaLabel =
-    sev === "normal"
-      ? "dans la norme"
-      : `${delta >= 0 ? `+${delta}` : `${delta}`}${unit} vs norme`;
-  return { color, icon: sev === "normal" ? "check" : "alert", deltaLabel };
+    deviation === 0
+      ? "dans la plage"
+      : `${deviation > 0 ? `+${deviation}` : `${deviation}`}° vs plage`;
+  return { color: colors.textPrimary, deltaLabel };
 }
 
 export interface HkaSideMeasure {
@@ -63,7 +56,7 @@ function formatDegrees(value: number): string {
 
 /** Ligne bullet chart HKA — valeur en texte + échelle de norme (reco DS). */
 function HkaBullet({ m }: { m: HkaSideMeasure }) {
-  const tone = sevTone(m.value, 180, "°");
+  const tone = measureTone(m.value);
   return (
     <View style={styles.bullet}>
       <View style={styles.bulletHead}>
@@ -98,7 +91,7 @@ function HkaBullet({ m }: { m: HkaSideMeasure }) {
 
 /**
  * Carte « Angle HKA » partagée — présentation unique des mesures bilatérales
- * (échelle de norme 175°–180°, valeur colorée par sévérité), utilisée par
+ * (échelle de référence 175°–180°, présentation neutre), utilisée par
  * l'écran Résultats et par la confirmation post-capture pour que le praticien
  * voie la même grammaire visuelle aux deux étapes.
  */
@@ -106,7 +99,7 @@ export function HkaMeasureCard({ left, right, style }: HkaMeasureCardProps) {
   return (
     <View style={[styles.card, style]} testID="hka-measure-card">
       <Text style={styles.cardLabel}>
-        Angle HKA · norme {HKA_REF_MIN}°–{HKA_REF_MAX}°
+        Angle HKA · réf. {HKA_REF_MIN}°–{HKA_REF_MAX}°
       </Text>
       <HkaBullet m={left} />
       <HkaBullet m={right} />

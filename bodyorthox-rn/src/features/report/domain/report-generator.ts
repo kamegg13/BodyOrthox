@@ -248,7 +248,7 @@ export function generateReportHtml(data: ReportData): string {
   // ── Notes section ──
   const notesSection = data.notes
     ? `<div class="section" style="page-break-inside:avoid">
-        <h2 class="section-title">Notes cliniques</h2>
+        <h2 class="section-title">Notes du praticien</h2>
         <p class="notes-text">${escapeHtml(data.notes)}</p>
       </div>`
     : "";

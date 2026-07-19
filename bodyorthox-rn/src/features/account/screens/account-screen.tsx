@@ -321,13 +321,13 @@ export function AccountScreen() {
             label="Cabinet"
             storageKey="practitioner_cabinet"
             defaultValue=""
-            placeholder="Cabinet d'orthopédie"
+            placeholder="Nom du cabinet / structure"
           />
           <ProfileInput
             label="Spécialité"
             storageKey="practitioner_specialty"
-            defaultValue="Orthopédie"
-            placeholder="Orthopédie"
+            defaultValue=""
+            placeholder="Ex. préparation physique, posturologie…"
           />
         </View>
 
@@ -409,28 +409,13 @@ export function AccountScreen() {
           <RowDivider />
           <ListRow
             label="Mentions légales"
-            onPress={() =>
-              showAlert(
-                "Mentions légales",
-                "BodyOrthox est un outil d'aide à la décision clinique. " +
-                  "Il ne constitue pas un dispositif médical certifié au sens du règlement EU MDR 2017/745. " +
-                  "Les résultats doivent être validés par un professionnel de santé qualifié.",
-              )
-            }
+            onPress={() => navigation.navigate("Legal")}
             testID="legal-button"
           />
           <RowDivider />
           <ListRow
             label="Politique de confidentialité"
-            onPress={() =>
-              showAlert(
-                "Politique de confidentialité",
-                "BodyOrthox respecte le Règlement Général sur la Protection des Données (RGPD). " +
-                  "Toutes les données patients sont stockées localement sur votre appareil. " +
-                  "Aucune donnée personnelle n'est transmise à des serveurs externes. " +
-                  "Vous pouvez exporter ou supprimer vos données à tout moment depuis les paramètres.",
-              )
-            }
+            onPress={() => navigation.navigate("Legal")}
             testID="privacy-button"
           />
           <RowDivider />

@@ -110,7 +110,7 @@ describe("Results", () => {
     it("expose un label accessible sur le champ de notes", () => {
       const { getByTestId } = render(<Results data={SAMPLE_RESULTS} />);
       expect(getByTestId("clinical-notes-input").props.accessibilityLabel).toBe(
-        "Notes cliniques du praticien",
+        "Notes du praticien",
       );
     });
 

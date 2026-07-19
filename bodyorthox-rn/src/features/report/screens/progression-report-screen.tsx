@@ -98,7 +98,7 @@ export function ProgressionReportScreen() {
         testID="progression-report-screen"
       >
         <Text style={styles.title} testID="progression-report-title">
-          Rapport de Progression Clinique
+          Rapport de progression
         </Text>
 
         {/* Summary card */}

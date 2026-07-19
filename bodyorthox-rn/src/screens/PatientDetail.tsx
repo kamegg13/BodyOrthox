@@ -19,6 +19,10 @@ import {
   SectionLabel,
 } from "../components";
 import {
+  hkaRangeShortLabel,
+  type HkaRangeStatus,
+} from "../shared/domain/hka-range";
+import {
   colors,
   fonts,
   fontSize,
@@ -33,7 +37,8 @@ export interface AnalysisHistoryItem {
   readonly date: string;
   readonly type: string;
   readonly hka?: string;
-  readonly severity: "normal" | "moderate" | "severe";
+  /** Position factuelle vs plage de référence — aucune gravité (non-DM). */
+  readonly range: HkaRangeStatus;
 }
 
 export interface PatientDetailData {
@@ -171,7 +176,7 @@ export function PatientDetail({
         showsVerticalScrollIndicator={false}
       >
         <Card style={styles.diagnosisCard}>
-          <Text style={styles.eyebrow}>Diagnostic principal</Text>
+          <Text style={styles.eyebrow}>Motif / contexte</Text>
           <Text style={styles.diagnosisDesc}>{data.diagnosisDescription}</Text>
         </Card>
 
@@ -296,11 +301,6 @@ function HistoryRow({
   item: AnalysisHistoryItem;
   onPress?: () => void;
 }) {
-  const sevColor: BadgeColor =
-    item.severity === "normal" ? "green" : item.severity === "moderate" ? "amber" : "red";
-  const sevLabel =
-    item.severity === "normal" ? "Normal" : item.severity === "moderate" ? "Modéré" : "Sévère";
-
   return (
     <Pressable
       onPress={onPress}
@@ -317,7 +317,7 @@ function HistoryRow({
       </View>
       <View style={styles.historyRight}>
         <Text style={styles.historyDate}>{item.date}</Text>
-        <Badge label={sevLabel} color={sevColor} />
+        <Badge label={hkaRangeShortLabel(item.range)} color="navy" />
       </View>
     </Pressable>
   );
@@ -530,9 +530,9 @@ export const SAMPLE_PATIENT_DETAIL: PatientDetailData = {
   diagnosisDescription:
     "Scoliose idiopathique adolescente — Cobb 18° suivi longitudinal.",
   history: [
-    { id: "h1", date: "24 avr 2026", type: "Posture complète · 4 vues", hka: "173° / 177°", severity: "moderate" },
-    { id: "h2", date: "10 mars 2026", type: "Sagittal seul", severity: "normal" },
-    { id: "h3", date: "05 janv 2026", type: "Posture complète · 4 vues", hka: "172° / 177°", severity: "severe" },
+    { id: "h1", date: "24 avr 2026", type: "Posture complète · 4 vues", hka: "173° / 177°", range: "out_of_range" },
+    { id: "h2", date: "10 mars 2026", type: "Sagittal seul", range: "in_range" },
+    { id: "h3", date: "05 janv 2026", type: "Posture complète · 4 vues", hka: "172° / 177°", range: "out_of_range" },
   ],
   analysisCount: 3,
 };

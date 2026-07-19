@@ -83,17 +83,6 @@ const SEX_OPTIONS: readonly { value: "male" | "female" | "other"; label: string 
   { value: "other", label: "Non precise" },
 ];
 
-const DIAGNOSIS_OPTIONS: readonly string[] = [
-  "Scoliose",
-  "Genu varum",
-  "Genu valgum",
-  "Lombalgie chronique",
-  "Bilan de gonarthrose",
-  "Suivi post-operatoire",
-  "Bilan postural sportif",
-  "Autre",
-];
-
 const LATERALITY_OPTIONS: readonly { value: Laterality; label: string }[] = [
   { value: "right", label: "Droitier" },
   { value: "left", label: "Gaucher" },
@@ -230,7 +219,6 @@ export function NewPatient({
     return skipConsents ? [true, true, true] : [false, false, false];
   });
   const [showSexPicker, setShowSexPicker] = useState(false);
-  const [showDxPicker, setShowDxPicker] = useState(false);
   const [clinicalOpen, setClinicalOpen] = useState<boolean>(
     isEdit ||
       Boolean(
@@ -666,18 +654,18 @@ export function NewPatient({
           </View>
         </View>
 
-        <SectionLabel style={styles.sectionGap}>Clinique</SectionLabel>
+        <SectionLabel style={styles.sectionGap}>Contexte</SectionLabel>
         <View style={{ gap: 12 }}>
-          <SelectField
-            label="Diagnostic principal"
-            placeholder="Choisir un diagnostic..."
-            value={diagnosis || undefined}
-            onPress={() => setShowDxPicker(true)}
+          <Field
+            label="Motif / contexte"
+            placeholder="Ex. bilan postural, suivi sportif…"
+            value={diagnosis}
+            onChangeText={setDiagnosis}
             testID="np-diagnosis"
           />
           <Field
-            label="Médecin référent"
-            placeholder="Dr. ..."
+            label="Professionnel référent"
+            placeholder="Nom du professionnel…"
             icon="user"
             value={referring}
             onChangeText={setReferring}
@@ -688,7 +676,7 @@ export function NewPatient({
             <View style={styles.textarea}>
               <TextInput
                 multiline
-                placeholder="Notes cliniques initiales..."
+                placeholder="Notes initiales..."
                 placeholderTextColor={colors.textMuted}
                 style={styles.textareaInput}
                 value={observations}
@@ -850,17 +838,6 @@ export function NewPatient({
           setSex(v as NewPatientFormValues["sex"]);
           setShowSexPicker(false);
           markTouched("sex");
-        }}
-      />
-      <PickerModal
-        visible={showDxPicker}
-        title="Diagnostic principal"
-        options={DIAGNOSIS_OPTIONS.map((s) => ({ value: s, label: s }))}
-        selectedValue={diagnosis || undefined}
-        onClose={() => setShowDxPicker(false)}
-        onSelect={(v) => {
-          setDiagnosis(v);
-          setShowDxPicker(false);
         }}
       />
     </View>
