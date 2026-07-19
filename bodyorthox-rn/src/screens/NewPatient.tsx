@@ -1,67 +1,22 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import {
-  Modal,
-  Pressable,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import React from "react";
+import { Pressable, ScrollView, StatusBar, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  Btn,
-  Field,
-  Icon,
-  NavBar,
-  SectionLabel,
-  SelectField,
-} from "../components";
-import {
-  colors,
-  fonts,
-  fontSize,
-  fontWeight,
-  radius,
-  shadows,
-  sizes,
-  spacing,
-} from "../theme/tokens";
-import { getKeyValueStorage } from "../core/storage/key-value-storage";
+import { Btn, ChoiceChips, Field, Icon, NavBar, SectionLabel, SelectField } from "../components";
+import { colors } from "../theme/tokens";
 import { PainEditor } from "../features/patients/components/pain-editor";
-import type {
-  ActivityLevel,
-  Laterality,
-  PainEntry,
-} from "../features/patients/domain/patient";
+import type { ActivityLevel, Laterality } from "../features/patients/domain/patient";
+import { PickerModal } from "./new-patient/new-patient-picker-modal";
+import { styles } from "./new-patient/new-patient.styles";
+import { formatIsoDateForDisplay, labelForSex } from "./new-patient/new-patient-validation";
+import {
+  useNewPatientForm,
+  type NewPatientFormValues,
+  type NewPatientMode,
+  type NewPatientSubmitAction,
+} from "./new-patient/use-new-patient-form";
 
-export interface NewPatientFormValues {
-  readonly firstName: string;
-  readonly lastName: string;
-  readonly sex: "male" | "female" | "other" | null;
-  readonly dateOfBirth: string;
-  readonly heightCm: number | null;
-  readonly weightKg: number | null;
-  readonly diagnosis: string;
-  readonly referringPhysician: string;
-  readonly observations: string;
-  /** Profil clinique — facultatif, saisi à la création ou complété en édition. */
-  readonly laterality: Laterality | null;
-  readonly activityLevel: ActivityLevel | null;
-  readonly sport: string;
-  readonly pains: PainEntry[];
-  /** Consentement granulaire (RGPD) — preuve par finalité. */
-  readonly consentStorage: boolean;
-  readonly consentPhotoCapture: boolean;
-  readonly consentPdfExport: boolean;
-  /** Horodatage de la collecte de consentement — `null` si non recueilli dans cet écran. */
-  readonly consentDate: string | null;
-}
-
-export type NewPatientMode = "create" | "edit";
-/** Distingue le CTA principal (déclenche la capture) du CTA secondaire (enregistre sans capturer). */
-export type NewPatientSubmitAction = "primary" | "secondary";
+export type { NewPatientFormValues, NewPatientMode, NewPatientSubmitAction };
+export { NEW_PATIENT_DRAFT_KEY, clearNewPatientDraft } from "./new-patient/new-patient-draft";
 
 interface NewPatientProps {
   readonly mode?: NewPatientMode;
@@ -95,79 +50,6 @@ const ACTIVITY_OPTIONS: readonly { value: ActivityLevel; label: string }[] = [
   { value: "athlete", label: "Athlète" },
 ];
 
-/** Clé de persistance du brouillon — un seul brouillon de création à la fois. */
-export const NEW_PATIENT_DRAFT_KEY = "new_patient_draft_v1";
-
-/** Délai de debounce avant l'écriture du brouillon (évite d'écrire à chaque frappe). */
-const DRAFT_DEBOUNCE_MS = 1000;
-
-type TouchableFieldKey = "firstName" | "lastName" | "sex" | "dob";
-
-interface NewPatientDraftV1 {
-  readonly firstName: string;
-  readonly lastName: string;
-  readonly sex: NewPatientFormValues["sex"];
-  readonly dob: string;
-  readonly heightCm: string;
-  readonly weightKg: string;
-  readonly diagnosis: string;
-  readonly referring: string;
-  readonly observations: string;
-  readonly laterality: Laterality | null;
-  readonly activityLevel: ActivityLevel | null;
-  readonly sport: string;
-  readonly pains: PainEntry[];
-}
-
-function isDraftEmpty(d: NewPatientDraftV1): boolean {
-  return (
-    !d.firstName &&
-    !d.lastName &&
-    !d.sex &&
-    !d.dob &&
-    !d.heightCm &&
-    !d.weightKg &&
-    !d.diagnosis &&
-    !d.referring &&
-    !d.observations &&
-    !d.laterality &&
-    !d.activityLevel &&
-    !d.sport &&
-    d.pains.length === 0
-  );
-}
-
-function readDraft(): NewPatientDraftV1 | null {
-  const raw = getKeyValueStorage().getItem(NEW_PATIENT_DRAFT_KEY);
-  if (!raw) return null;
-  try {
-    const parsed = JSON.parse(raw) as Partial<NewPatientDraftV1>;
-    return {
-      firstName: parsed.firstName ?? "",
-      lastName: parsed.lastName ?? "",
-      sex: parsed.sex ?? null,
-      dob: parsed.dob ?? "",
-      heightCm: parsed.heightCm ?? "",
-      weightKg: parsed.weightKg ?? "",
-      diagnosis: parsed.diagnosis ?? "",
-      referring: parsed.referring ?? "",
-      observations: parsed.observations ?? "",
-      laterality: parsed.laterality ?? null,
-      activityLevel: parsed.activityLevel ?? null,
-      sport: parsed.sport ?? "",
-      pains: parsed.pains ?? [],
-    };
-  } catch {
-    // Brouillon corrompu — ignoré silencieusement, comme s'il n'existait pas.
-    return null;
-  }
-}
-
-/** Purge le brouillon — à appeler après une création réussie ou un abandon confirmé. */
-export function clearNewPatientDraft(): void {
-  getKeyValueStorage().removeItem(NEW_PATIENT_DRAFT_KEY);
-}
-
 export function NewPatient({
   mode = "create",
   title,
@@ -184,362 +66,7 @@ export function NewPatient({
   const resolvedSubmitLabel =
     submitLabel ?? (isEdit ? "Enregistrer les modifications" : "Créer et capturer");
 
-  const [firstName, setFirstName] = useState(initialValues?.firstName ?? "");
-  const [lastName, setLastName] = useState(initialValues?.lastName ?? "");
-  const [sex, setSex] = useState<NewPatientFormValues["sex"]>(initialValues?.sex ?? null);
-  const [dob, setDob] = useState(formatIsoDateForDisplay(initialValues?.dateOfBirth));
-  const [heightCm, setHeightCm] = useState(
-    initialValues?.heightCm ? String(initialValues.heightCm) : "",
-  );
-  const [weightKg, setWeightKg] = useState(
-    initialValues?.weightKg ? String(initialValues.weightKg) : "",
-  );
-  const [diagnosis, setDiagnosis] = useState(initialValues?.diagnosis ?? "");
-  const [referring, setReferring] = useState(initialValues?.referringPhysician ?? "");
-  const [observations, setObservations] = useState(initialValues?.observations ?? "");
-  const [laterality, setLaterality] = useState<Laterality | null>(
-    initialValues?.laterality ?? null,
-  );
-  const [activityLevel, setActivityLevel] = useState<ActivityLevel | null>(
-    initialValues?.activityLevel ?? null,
-  );
-  const [sport, setSport] = useState(initialValues?.sport ?? "");
-  const [pains, setPains] = useState<PainEntry[]>(initialValues?.pains ?? []);
-  const [consents, setConsents] = useState<boolean[]>(() => {
-    if (isEdit) {
-      // Valeurs déjà recueillies — modifiables en édition (retrait possible,
-      // art. 7.3 RGPD).
-      return [
-        initialValues?.consentStorage ?? true,
-        initialValues?.consentPhotoCapture ?? true,
-        initialValues?.consentPdfExport ?? true,
-      ];
-    }
-    return [false, false, false];
-  });
-  const [showSexPicker, setShowSexPicker] = useState(false);
-  const [clinicalOpen, setClinicalOpen] = useState<boolean>(
-    isEdit ||
-      Boolean(
-        initialValues?.laterality ||
-          initialValues?.activityLevel ||
-          initialValues?.sport?.trim() ||
-          (initialValues?.pains && initialValues.pains.length > 0),
-      ),
-  );
-
-  const [touched, setTouched] = useState<Partial<Record<TouchableFieldKey, boolean>>>({});
-  const [submitAttempted, setSubmitAttempted] = useState(false);
-  const [draftRestored, setDraftRestored] = useState(false);
-
-  const firstNameRef = useRef<TextInput>(null);
-  const lastNameRef = useRef<TextInput>(null);
-  const dobRef = useRef<TextInput>(null);
-  const scrollRef = useRef<ScrollView>(null);
-  const sexWrapRef = useRef<View>(null);
-  const consentWrapRef = useRef<View>(null);
-
-  // Restaure un éventuel brouillon au montage — jamais en édition, et jamais
-  // pour un formulaire pré-rempli explicitement par l'appelant (duplication).
-  useEffect(() => {
-    if (isEdit || initialValues) return;
-    const draft = readDraft();
-    if (!draft || isDraftEmpty(draft)) return;
-    setFirstName(draft.firstName);
-    setLastName(draft.lastName);
-    setSex(draft.sex);
-    setDob(draft.dob);
-    setHeightCm(draft.heightCm);
-    setWeightKg(draft.weightKg);
-    setDiagnosis(draft.diagnosis);
-    setReferring(draft.referring);
-    setObservations(draft.observations);
-    setLaterality(draft.laterality);
-    setActivityLevel(draft.activityLevel);
-    setSport(draft.sport);
-    setPains(draft.pains);
-    if (draft.laterality || draft.activityLevel || draft.sport || draft.pains.length > 0) {
-      setClinicalOpen(true);
-    }
-    setDraftRestored(true);
-    // Montage uniquement — le brouillon n'est restauré qu'une fois.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Persiste le brouillon avec un léger debounce — jamais les consentements
-  // (preuve RGPD à recueillir fraîchement à chaque création), jamais en édition
-  // (un patient existant ne doit ni lire ni écraser le brouillon de création).
-  useEffect(() => {
-    if (isEdit) return;
-    const timer = setTimeout(() => {
-      const draft: NewPatientDraftV1 = {
-        firstName,
-        lastName,
-        sex,
-        dob,
-        heightCm,
-        weightKg,
-        diagnosis,
-        referring,
-        observations,
-        laterality,
-        activityLevel,
-        sport,
-        pains,
-      };
-      if (isDraftEmpty(draft)) {
-        getKeyValueStorage().removeItem(NEW_PATIENT_DRAFT_KEY);
-      } else {
-        getKeyValueStorage().setItem(NEW_PATIENT_DRAFT_KEY, JSON.stringify(draft));
-      }
-    }, DRAFT_DEBOUNCE_MS);
-    return () => clearTimeout(timer);
-  }, [
-    isEdit,
-    firstName,
-    lastName,
-    sex,
-    dob,
-    heightCm,
-    weightKg,
-    diagnosis,
-    referring,
-    observations,
-    laterality,
-    activityLevel,
-    sport,
-    pains,
-  ]);
-
-  const initialSnapshotRef = useRef(
-    JSON.stringify({
-      firstName: initialValues?.firstName ?? "",
-      lastName: initialValues?.lastName ?? "",
-      sex: initialValues?.sex ?? null,
-      dob: formatIsoDateForDisplay(initialValues?.dateOfBirth),
-      heightCm: initialValues?.heightCm ? String(initialValues.heightCm) : "",
-      weightKg: initialValues?.weightKg ? String(initialValues.weightKg) : "",
-      diagnosis: initialValues?.diagnosis ?? "",
-      referring: initialValues?.referringPhysician ?? "",
-      observations: initialValues?.observations ?? "",
-      laterality: initialValues?.laterality ?? null,
-      activityLevel: initialValues?.activityLevel ?? null,
-      sport: initialValues?.sport ?? "",
-      pains: initialValues?.pains ?? [],
-      consents: isEdit
-        ? [
-            initialValues?.consentStorage ?? true,
-            initialValues?.consentPhotoCapture ?? true,
-            initialValues?.consentPdfExport ?? true,
-          ]
-        : [false, false, false],
-    }),
-  );
-
-  const isDirty = useMemo(() => {
-    const current = JSON.stringify({
-      firstName,
-      lastName,
-      sex,
-      dob,
-      heightCm,
-      weightKg,
-      diagnosis,
-      referring,
-      observations,
-      laterality,
-      activityLevel,
-      sport,
-      pains,
-      consents,
-    });
-    return current !== initialSnapshotRef.current;
-  }, [
-    firstName,
-    lastName,
-    sex,
-    dob,
-    heightCm,
-    weightKg,
-    diagnosis,
-    referring,
-    observations,
-    laterality,
-    activityLevel,
-    sport,
-    pains,
-    consents,
-  ]);
-
-  useEffect(() => {
-    onDirtyChange?.(isDirty);
-  }, [isDirty, onDirtyChange]);
-
-  const allConsents = consents.every(Boolean);
-  // À la création, les 3 consentements sont requis. En édition ils restent
-  // affichés et MODIFIABLES (retrait possible à tout moment, art. 7.3 RGPD)
-  // mais ne bloquent pas l'enregistrement.
-  const consentsRequired = !isEdit;
-
-  const fieldErrors = useMemo(() => {
-    const e: Partial<Record<TouchableFieldKey, string>> = {};
-    if (!firstName.trim()) e.firstName = "Le prenom est requis.";
-    if (!lastName.trim()) e.lastName = "Le nom est requis.";
-    if (!sex) e.sex = "Le sexe est requis.";
-    if (!dob.trim()) e.dob = "La date de naissance est requise.";
-    else if (!isValidDob(dob)) e.dob = "Date invalide — format attendu JJ/MM/AAAA.";
-    return e;
-  }, [firstName, lastName, sex, dob]);
-
-  const missing = useMemo(() => {
-    const m: string[] = [];
-    if (fieldErrors.firstName) m.push("Prénom");
-    if (fieldErrors.lastName) m.push("Nom");
-    if (fieldErrors.sex) m.push("Sexe");
-    if (fieldErrors.dob) m.push("Naissance");
-    if (consentsRequired && !allConsents) m.push("Consentements");
-    return m;
-  }, [fieldErrors, allConsents, consentsRequired]);
-
-  const formValid = missing.length === 0;
-
-  function markTouched(key: TouchableFieldKey) {
-    setTouched((t) => (t[key] ? t : { ...t, [key]: true }));
-  }
-
-  function shownError(key: TouchableFieldKey): string | undefined {
-    return touched[key] || submitAttempted ? fieldErrors[key] : undefined;
-  }
-
-  function toggleConsent(i: number) {
-    setConsents((prev) => prev.map((v, j) => (j === i ? !v : v)));
-  }
-
-  /** Scroll best-effort vers une section sans TextInput focusable (Sexe, Consentements). */
-  function scrollIntoView(target: React.RefObject<View | null>) {
-    const node = target.current as unknown as {
-      measureLayout?: (
-        relativeNode: number,
-        onSuccess: (x: number, y: number) => void,
-        onFail?: () => void,
-      ) => void;
-    } | null;
-    const scrollNode = scrollRef.current as unknown as {
-      getInnerViewNode?: () => number;
-      scrollTo?: (opts: { y: number; animated: boolean }) => void;
-    } | null;
-    if (!node?.measureLayout || !scrollNode?.getInnerViewNode) return;
-    node.measureLayout(
-      scrollNode.getInnerViewNode(),
-      (_x, y) => scrollNode.scrollTo?.({ y: Math.max(y - 24, 0), animated: true }),
-      () => undefined,
-    );
-  }
-
-  function focusFirstInvalidField() {
-    if (fieldErrors.firstName) {
-      firstNameRef.current?.focus();
-      return;
-    }
-    if (fieldErrors.lastName) {
-      lastNameRef.current?.focus();
-      return;
-    }
-    if (fieldErrors.sex) {
-      scrollIntoView(sexWrapRef);
-      return;
-    }
-    if (fieldErrors.dob) {
-      dobRef.current?.focus();
-      return;
-    }
-    if (consentsRequired && !allConsents) {
-      scrollIntoView(consentWrapRef);
-    }
-  }
-
-  function handleClearDraft() {
-    setFirstName("");
-    setLastName("");
-    setSex(null);
-    setDob("");
-    setHeightCm("");
-    setWeightKg("");
-    setDiagnosis("");
-    setReferring("");
-    setObservations("");
-    setLaterality(null);
-    setActivityLevel(null);
-    setSport("");
-    setPains([]);
-    clearNewPatientDraft();
-    setDraftRestored(false);
-  }
-
-  function handleSubmit(action: NewPatientSubmitAction) {
-    if (isSubmitting) return;
-    setSubmitAttempted(true);
-    setTouched({ firstName: true, lastName: true, sex: true, dob: true });
-    if (!formValid) {
-      focusFirstInvalidField();
-      return;
-    }
-    const iso = parseDobToIso(dob);
-    if (!iso || !sex) return;
-    if (!isEdit) {
-      clearNewPatientDraft();
-      setDraftRestored(false);
-    }
-
-    // En édition, un changement de consentement (retrait ou ré-octroi) est
-    // ré-horodaté ; sinon la date de recueil d'origine est conservée.
-    const initialConsents = [
-      initialValues?.consentStorage ?? true,
-      initialValues?.consentPhotoCapture ?? true,
-      initialValues?.consentPdfExport ?? true,
-    ];
-    const consentsChanged = consents.some((c, i) => c !== initialConsents[i]);
-    const consentPayload = isEdit
-      ? {
-          storage: consents[0],
-          photo: consents[1],
-          pdf: consents[2],
-          date: consentsChanged
-            ? new Date().toISOString()
-            : initialValues?.consentDate ?? null,
-        }
-      : {
-          storage: consents[0],
-          photo: consents[1],
-          pdf: consents[2],
-          date: allConsents ? new Date().toISOString() : null,
-        };
-
-    onSave?.(
-      {
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        sex,
-        dateOfBirth: iso,
-        heightCm: parseNumberOrNull(heightCm),
-        weightKg: parseNumberOrNull(weightKg),
-        diagnosis: diagnosis.trim(),
-        referringPhysician: referring.trim(),
-        observations: observations.trim(),
-        laterality,
-        activityLevel,
-        sport: sport.trim(),
-        pains,
-        consentStorage: consentPayload.storage,
-        consentPhotoCapture: consentPayload.photo,
-        consentPdfExport: consentPayload.pdf,
-        consentDate: consentPayload.date,
-      },
-      action,
-    );
-  }
-
-  const showConsentError = submitAttempted && consentsRequired && !allConsents;
+  const form = useNewPatientForm({ mode, initialValues, isSubmitting, onSave, onDirtyChange });
 
   return (
     <View style={styles.root}>
@@ -550,20 +77,20 @@ export function NewPatient({
           back
           onBack={onCancel}
           action={isSubmitting ? "..." : "Enregistrer"}
-          onAction={isSubmitting ? undefined : () => handleSubmit("primary")}
+          onAction={isSubmitting ? undefined : () => form.handleSubmit("primary")}
         />
       </SafeAreaView>
 
       <ScrollView
-        ref={scrollRef}
+        ref={form.scrollRef}
         style={styles.body}
         contentContainerStyle={styles.bodyContent}
         showsVerticalScrollIndicator={false}
       >
-        {draftRestored ? (
+        {form.draftRestored ? (
           <View style={styles.draftBanner} testID="np-draft-banner">
             <Text style={styles.draftBannerText}>Brouillon restaure</Text>
-            <Pressable onPress={handleClearDraft} hitSlop={8} testID="np-draft-clear">
+            <Pressable onPress={form.handleClearDraft} hitSlop={8} testID="np-draft-clear">
               <Text style={styles.draftBannerAction}>Effacer</Text>
             </Pressable>
           </View>
@@ -574,61 +101,61 @@ export function NewPatient({
           <View style={styles.row2}>
             <View style={styles.col}>
               <Field
-                ref={firstNameRef}
+                ref={form.firstNameRef}
                 label="Prénom"
                 placeholder="Sophie"
-                value={firstName}
-                onChangeText={setFirstName}
-                onBlur={() => markTouched("firstName")}
-                error={shownError("firstName")}
+                value={form.firstName}
+                onChangeText={form.setFirstName}
+                onBlur={() => form.markTouched("firstName")}
+                error={form.shownError("firstName")}
                 autoCapitalize="words"
                 testID="np-first-name"
               />
             </View>
             <View style={styles.col}>
               <Field
-                ref={lastNameRef}
+                ref={form.lastNameRef}
                 label="Nom"
                 placeholder="Leclerc"
-                value={lastName}
-                onChangeText={setLastName}
-                onBlur={() => markTouched("lastName")}
-                error={shownError("lastName")}
+                value={form.lastName}
+                onChangeText={form.setLastName}
+                onBlur={() => form.markTouched("lastName")}
+                error={form.shownError("lastName")}
                 autoCapitalize="words"
                 testID="np-last-name"
               />
             </View>
           </View>
           <View style={styles.row2}>
-            <View style={styles.col} ref={sexWrapRef}>
+            <View style={styles.col} ref={form.sexWrapRef}>
               <SelectField
                 label="Sexe"
                 placeholder="Sélectionner"
-                value={sex ? labelForSex(sex) : undefined}
-                onPress={() => setShowSexPicker(true)}
+                value={form.sex ? labelForSex(form.sex) : undefined}
+                onPress={form.openSexPicker}
                 testID="np-sex"
               />
-              {shownError("sex") ? (
+              {form.shownError("sex") ? (
                 <Text
                   style={styles.selectError}
                   accessibilityRole="alert"
                   accessibilityLiveRegion="polite"
                   testID="np-sex-error"
                 >
-                  {shownError("sex")}
+                  {form.shownError("sex")}
                 </Text>
               ) : null}
             </View>
             <View style={styles.col}>
               <Field
-                ref={dobRef}
+                ref={form.dobRef}
                 label="Naissance"
                 placeholder="JJ/MM/AAAA"
                 icon="calendar"
-                value={dob}
-                onChangeText={(raw) => setDob(formatDobMask(raw))}
-                onBlur={() => markTouched("dob")}
-                error={shownError("dob")}
+                value={form.dob}
+                onChangeText={form.onDobChangeText}
+                onBlur={() => form.markTouched("dob")}
+                error={form.shownError("dob")}
                 type="number"
                 testID="np-dob"
               />
@@ -640,8 +167,8 @@ export function NewPatient({
                 label="Taille (cm)"
                 placeholder="165"
                 type="number"
-                value={heightCm}
-                onChangeText={setHeightCm}
+                value={form.heightCm}
+                onChangeText={form.setHeightCm}
                 testID="np-height"
               />
             </View>
@@ -650,8 +177,8 @@ export function NewPatient({
                 label="Poids (kg)"
                 placeholder="58"
                 type="number"
-                value={weightKg}
-                onChangeText={setWeightKg}
+                value={form.weightKg}
+                onChangeText={form.setWeightKg}
                 testID="np-weight"
               />
             </View>
@@ -663,16 +190,16 @@ export function NewPatient({
           <Field
             label="Motif / contexte"
             placeholder="Ex. bilan postural, suivi sportif…"
-            value={diagnosis}
-            onChangeText={setDiagnosis}
+            value={form.diagnosis}
+            onChangeText={form.setDiagnosis}
             testID="np-diagnosis"
           />
           <Field
             label="Professionnel référent"
             placeholder="Nom du professionnel…"
             icon="user"
-            value={referring}
-            onChangeText={setReferring}
+            value={form.referring}
+            onChangeText={form.setReferring}
             testID="np-referring-physician"
           />
           <View>
@@ -683,8 +210,8 @@ export function NewPatient({
                 placeholder="Notes initiales..."
                 placeholderTextColor={colors.textMuted}
                 style={styles.textareaInput}
-                value={observations}
-                onChangeText={setObservations}
+                value={form.observations}
+                onChangeText={form.setObservations}
               />
             </View>
           </View>
@@ -694,16 +221,16 @@ export function NewPatient({
           style={styles.sectionGap}
           right={
             <Pressable
-              onPress={() => setClinicalOpen((v) => !v)}
+              onPress={form.toggleClinicalOpen}
               hitSlop={8}
               accessibilityRole="button"
-              accessibilityState={{ expanded: clinicalOpen }}
+              accessibilityState={{ expanded: form.clinicalOpen }}
               accessibilityLabel={
-                clinicalOpen ? "Réduire le profil clinique" : "Déplier le profil clinique"
+                form.clinicalOpen ? "Réduire le profil clinique" : "Déplier le profil clinique"
               }
               testID="np-clinical-toggle"
             >
-              <View style={{ transform: [{ rotate: clinicalOpen ? "180deg" : "0deg" }] }}>
+              <View style={{ transform: [{ rotate: form.clinicalOpen ? "180deg" : "0deg" }] }}>
                 <Icon name="chevDown" size={16} color={colors.textMuted} />
               </View>
             </Pressable>
@@ -711,36 +238,36 @@ export function NewPatient({
         >
           {isEdit ? "Profil clinique" : "Profil clinique (optionnel)"}
         </SectionLabel>
-        {clinicalOpen ? (
+        {form.clinicalOpen ? (
           <View style={{ gap: 12 }} testID="np-clinical-section">
             <View>
               <Text style={styles.fieldLabel}>Latéralité</Text>
-              <ToggleChips
+              <ChoiceChips
                 options={LATERALITY_OPTIONS}
-                value={laterality}
-                onSelect={setLaterality}
+                value={form.laterality}
+                onChange={form.setLaterality}
                 testIDPrefix="np-laterality"
               />
             </View>
             <View>
               <Text style={styles.fieldLabel}>Niveau d'activité</Text>
-              <ToggleChips
+              <ChoiceChips
                 options={ACTIVITY_OPTIONS}
-                value={activityLevel}
-                onSelect={setActivityLevel}
+                value={form.activityLevel}
+                onChange={form.setActivityLevel}
                 testIDPrefix="np-activity"
               />
             </View>
             <Field
               label="Sport pratiqué"
               placeholder="Tennis, course à pied..."
-              value={sport}
-              onChangeText={setSport}
+              value={form.sport}
+              onChangeText={form.setSport}
               testID="np-sport"
             />
             <View>
               <Text style={styles.fieldLabel}>Douleurs</Text>
-              <PainEditor pains={pains} onChange={setPains} />
+              <PainEditor pains={form.pains} onChange={form.setPains} />
             </View>
           </View>
         ) : null}
@@ -753,37 +280,37 @@ export function NewPatient({
               : "Modifiables à tout moment (le retrait est enregistré et daté)."}
           </Text>
         ) : null}
-        <View style={styles.consentCard} ref={consentWrapRef}>
-              {[
-                "Stockage et traitement des donnees",
-                "Capture photo / video",
-                "Generation de rapport PDF",
-              ].map((label, i) => {
-                const checked = consents[i] === true;
-                return (
-                  <Pressable
-                    key={i}
-                    onPress={() => toggleConsent(i)}
-                    style={({ pressed }) => [
-                      styles.consentRow,
-                      i > 0 && styles.consentRowBorder,
-                      pressed && styles.pressed,
-                    ]}
-                    accessibilityRole="checkbox"
-                    accessibilityState={{ checked }}
-                    testID={`np-consent-${i}`}
-                  >
-                    <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
-                      {checked ? (
-                        <Icon name="check" size={12} color={colors.textInverse} strokeWidth={2.5} />
-                      ) : null}
-                    </View>
-                    <Text style={styles.consentLabel}>{label}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-        {showConsentError ? (
+        <View style={styles.consentCard} ref={form.consentWrapRef}>
+          {[
+            "Stockage et traitement des donnees",
+            "Capture photo / video",
+            "Generation de rapport PDF",
+          ].map((label, i) => {
+            const checked = form.consents[i] === true;
+            return (
+              <Pressable
+                key={i}
+                onPress={() => form.toggleConsent(i)}
+                style={({ pressed }) => [
+                  styles.consentRow,
+                  i > 0 && styles.consentRowBorder,
+                  pressed && styles.pressed,
+                ]}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked }}
+                testID={`np-consent-${i}`}
+              >
+                <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
+                  {checked ? (
+                    <Icon name="check" size={12} color={colors.textInverse} strokeWidth={2.5} />
+                  ) : null}
+                </View>
+                <Text style={styles.consentLabel}>{label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        {form.showConsentError ? (
           <Text
             style={styles.consentErrorText}
             accessibilityRole="alert"
@@ -803,7 +330,7 @@ export function NewPatient({
             label={resolvedSubmitLabel}
             icon={isEdit ? undefined : "camera"}
             disabled={isSubmitting}
-            onPress={() => handleSubmit("primary")}
+            onPress={() => form.handleSubmit("primary")}
             testID="np-submit"
           />
           {!isEdit ? (
@@ -811,7 +338,7 @@ export function NewPatient({
               label="Enregistrer sans capturer"
               variant="secondary"
               disabled={isSubmitting}
-              onPress={() => handleSubmit("secondary")}
+              onPress={() => form.handleSubmit("secondary")}
               testID="np-submit-secondary"
             />
           ) : null}
@@ -819,372 +346,13 @@ export function NewPatient({
       </SafeAreaView>
 
       <PickerModal
-        visible={showSexPicker}
+        visible={form.showSexPicker}
         title="Sexe"
         options={SEX_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
-        selectedValue={sex ?? undefined}
-        onClose={() => {
-          setShowSexPicker(false);
-          markTouched("sex");
-        }}
-        onSelect={(v) => {
-          setSex(v as NewPatientFormValues["sex"]);
-          setShowSexPicker(false);
-          markTouched("sex");
-        }}
+        selectedValue={form.sex ?? undefined}
+        onClose={form.closeSexPicker}
+        onSelect={(v) => form.selectSex(v as NewPatientFormValues["sex"])}
       />
     </View>
   );
 }
-
-interface PickerModalProps {
-  readonly visible: boolean;
-  readonly title: string;
-  readonly options: readonly { value: string; label: string }[];
-  readonly selectedValue?: string;
-  readonly onSelect: (value: string) => void;
-  readonly onClose: () => void;
-}
-
-function PickerModal({ visible, title, options, selectedValue, onSelect, onClose }: PickerModalProps) {
-  return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      {/* accessible={false} sur backdrop et carte : un Pressable est accessible
-          par défaut et APLATIT ses descendants en un seul élément — VoiceOver
-          (et Maestro) ne voyaient aucune option individuellement. */}
-      <Pressable style={styles.modalBackdrop} onPress={onClose} accessible={false}>
-        <Pressable
-          style={styles.modalCard}
-          onPress={() => undefined}
-          accessible={false}
-        >
-          <Text style={styles.modalTitle}>{title}</Text>
-          {options.map((opt) => {
-            const selected = opt.value === selectedValue;
-            return (
-              <Pressable
-                key={opt.value}
-                onPress={() => onSelect(opt.value)}
-                style={({ pressed }) => [
-                  styles.modalRow,
-                  pressed && styles.pressed,
-                ]}
-                accessibilityRole="button"
-                accessibilityState={{ selected }}
-                testID={`picker-option-${opt.value}`}
-              >
-                <Text style={[styles.modalRowLabel, selected && styles.modalRowLabelSelected]}>
-                  {opt.label}
-                </Text>
-                {selected ? (
-                  <Icon name="check" size={14} color={colors.accent} strokeWidth={2.25} />
-                ) : null}
-              </Pressable>
-            );
-          })}
-        </Pressable>
-      </Pressable>
-    </Modal>
-  );
-}
-
-interface ToggleChipsProps<T extends string> {
-  readonly options: readonly { value: T; label: string }[];
-  readonly value: T | null;
-  readonly onSelect: (value: T | null) => void;
-  readonly testIDPrefix: string;
-}
-
-/** Groupe de puces à sélection unique (déselectionnable) — latéralité, niveau d'activité. */
-function ToggleChips<T extends string>({
-  options,
-  value,
-  onSelect,
-  testIDPrefix,
-}: ToggleChipsProps<T>) {
-  return (
-    <View style={styles.chipsRow}>
-      {options.map((o) => {
-        const active = value === o.value;
-        return (
-          <Pressable
-            key={o.value}
-            onPress={() => onSelect(active ? null : o.value)}
-            style={({ pressed }) => [
-              styles.chip,
-              active && styles.chipActive,
-              pressed && styles.pressed,
-            ]}
-            accessibilityRole="radio"
-            accessibilityState={{ checked: active }}
-            testID={`${testIDPrefix}-${o.value}`}
-          >
-            <Text style={[styles.chipText, active && styles.chipTextActive]}>{o.label}</Text>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
-
-function labelForSex(s: "male" | "female" | "other"): string {
-  return s === "female" ? "Femme" : s === "male" ? "Homme" : "Non precise";
-}
-
-/** Convertit une date ISO (naissance ou consentement) en JJ/MM/AAAA pour affichage/saisie. */
-function formatIsoDateForDisplay(iso?: string | null): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const yyyy = String(d.getFullYear());
-  return `${dd}/${mm}/${yyyy}`;
-}
-
-function isValidDob(input: string): boolean {
-  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(input.trim());
-  if (!m) return false;
-  const dd = Number(m[1]);
-  const mm = Number(m[2]);
-  const yyyy = Number(m[3]);
-  if (mm < 1 || mm > 12 || dd < 1 || dd > 31 || yyyy < 1900) return false;
-  const d = new Date(yyyy, mm - 1, dd);
-  if (d.getTime() > Date.now()) return false;
-  return d.getFullYear() === yyyy && d.getMonth() === mm - 1 && d.getDate() === dd;
-}
-
-/** Insere automatiquement les "/" pendant la saisie : 010619 -> 01/06/19, etc. */
-function formatDobMask(raw: string): string {
-  const digits = raw.replace(/\D/g, "").slice(0, 8);
-  if (digits.length <= 2) return digits;
-  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
-}
-
-function parseNumberOrNull(input: string): number | null {
-  const trimmed = input.trim();
-  if (!trimmed) return null;
-  const n = Number(trimmed);
-  return Number.isFinite(n) && n > 0 ? n : null;
-}
-
-function parseDobToIso(input: string): string | null {
-  if (!isValidDob(input)) return null;
-  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(input.trim());
-  if (!m) return null;
-  const [, dd, mm, yyyy] = m;
-  return `${yyyy}-${mm}-${dd}`;
-}
-
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
-  headerSafe: { backgroundColor: colors.bgCard },
-  body: { flex: 1 },
-  bodyContent: {
-    paddingHorizontal: spacing.s14,
-    paddingTop: spacing.s18,
-    paddingBottom: spacing.s24,
-  },
-  row2: { flexDirection: "row", gap: 12 },
-  col: { flex: 1, minWidth: 0 },
-  sectionGap: { marginTop: spacing.s20 },
-  fieldLabel: {
-    fontFamily: fonts.sans,
-    fontSize: fontSize.eyebrow,
-    fontWeight: fontWeight.semiBold,
-    color: colors.textSecond,
-    marginBottom: 6,
-  },
-  textarea: {
-    minHeight: 72,
-    paddingHorizontal: 11,
-    paddingVertical: 14,
-    borderRadius: radius.field,
-    borderWidth: 1.5,
-    borderColor: colors.borderMid,
-    backgroundColor: colors.bgCard,
-  },
-  textareaInput: {
-    fontFamily: fonts.sans,
-    fontSize: fontSize.bodyLg,
-    color: colors.textPrimary,
-    padding: 0,
-    minHeight: 44,
-    textAlignVertical: "top",
-  },
-  chipsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.s8,
-  },
-  chip: {
-    paddingHorizontal: spacing.s12,
-    height: sizes.chip,
-    borderRadius: radius.chip,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bgCard,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  chipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  chipText: {
-    fontFamily: fonts.sans,
-    fontSize: fontSize.caption,
-    color: colors.textSecond,
-  },
-  chipTextActive: {
-    color: colors.textInverse,
-    fontWeight: fontWeight.semiBold,
-  },
-  consentCard: {
-    backgroundColor: colors.bgCard,
-    borderRadius: radius.cardLg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 14,
-    paddingHorizontal: 15,
-    ...shadows.sm,
-  },
-  consentRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingVertical: 7,
-  },
-  consentRowBorder: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-  },
-  pressed: { opacity: 0.85 },
-  checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    borderWidth: 1.5,
-    borderColor: colors.borderMid,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.bgCard,
-  },
-  checkboxChecked: {
-    backgroundColor: colors.accent,
-    borderColor: colors.accent,
-  },
-  consentLabel: {
-    flex: 1,
-    fontFamily: fonts.sans,
-    fontSize: 13,
-    color: colors.textSecond,
-  },
-  consentErrorText: {
-    marginTop: spacing.s8,
-    fontFamily: fonts.sans,
-    fontSize: fontSize.caption,
-    color: colors.red,
-  },
-  consentEditHint: {
-    marginTop: spacing.s8,
-    marginBottom: spacing.s8,
-    fontFamily: fonts.sans,
-    fontSize: fontSize.caption,
-    color: colors.textMuted,
-  },
-  selectError: {
-    fontFamily: fonts.sans,
-    fontSize: fontSize.caption,
-    color: colors.red,
-  },
-  draftBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: colors.amberLight,
-    borderRadius: radius.field,
-    paddingHorizontal: spacing.s12,
-    paddingVertical: spacing.s10,
-    marginBottom: spacing.s14,
-  },
-  draftBannerText: {
-    fontFamily: fonts.sans,
-    fontSize: fontSize.caption,
-    fontWeight: fontWeight.semiBold,
-    color: colors.amber,
-  },
-  draftBannerAction: {
-    fontFamily: fonts.sans,
-    fontSize: fontSize.caption,
-    fontWeight: fontWeight.bold,
-    color: colors.amber,
-    textDecorationLine: "underline",
-  },
-  actionBar: {
-    backgroundColor: colors.bgCard,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-    ...shadows.actionBar,
-  },
-  actionBarInner: {
-    paddingHorizontal: 18,
-    paddingTop: 12,
-    paddingBottom: 4,
-    gap: 8,
-  },
-  errorBanner: {
-    marginTop: spacing.s14,
-    padding: spacing.s12,
-    backgroundColor: colors.redLight,
-    color: colors.red,
-    borderRadius: radius.field,
-    fontFamily: fonts.sans,
-    fontSize: 13,
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(16,16,18,0.5)",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: spacing.s24,
-  },
-  modalCard: {
-    width: "100%",
-    maxWidth: 360,
-    backgroundColor: colors.bgCard,
-    borderRadius: radius.cardLg,
-    paddingVertical: spacing.s14,
-    paddingHorizontal: spacing.s8,
-    ...shadows.lg,
-  },
-  modalTitle: {
-    fontFamily: fonts.sans,
-    fontSize: fontSize.body,
-    fontWeight: fontWeight.bold,
-    color: colors.textPrimary,
-    paddingHorizontal: spacing.s12,
-    paddingBottom: spacing.s10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-    marginBottom: spacing.s8,
-  },
-  modalRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.s12,
-    paddingVertical: spacing.s12,
-    borderRadius: radius.iconSm,
-  },
-  modalRowLabel: {
-    fontFamily: fonts.sans,
-    fontSize: fontSize.bodyLg,
-    color: colors.textPrimary,
-  },
-  modalRowLabelSelected: {
-    color: colors.accent,
-    fontWeight: fontWeight.bold,
-  },
-});

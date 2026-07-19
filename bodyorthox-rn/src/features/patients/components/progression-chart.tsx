@@ -10,29 +10,27 @@ import {
 import { Analysis } from "../../capture/domain/analysis";
 import { Colors } from "../../../shared/design-system/colors";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
-import { formatDisplayDate } from "../../../shared/utils/date-utils";
 import { colors as tokenColors, fonts } from "../../../theme/tokens";
+import { ChoiceChips } from "../../../components/ChoiceChips";
 import {
   HKA_REF_MIN,
   HKA_REF_MAX,
-  hkaDeviation,
   hkaRangeShortLabel,
   type HkaRangeStatus,
 } from "../../../shared/domain/hka-range";
+import {
+  prepareChartData,
+  getAngleRange,
+  linearRegression,
+  angleRangeStatus,
+  generateYGraduations,
+} from "../domain/chart-math";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 type XAxisMode = "byAnalysis" | "byDate";
-
-interface ChartDataPoint {
-  readonly date: string;
-  readonly timestamp: number;
-  readonly kneeAngle: number;
-  readonly hipAngle: number;
-  readonly ankleAngle: number;
-}
 
 interface TooltipData {
   readonly x: number;
@@ -74,87 +72,6 @@ const SERIES: ReadonlyArray<{
   { key: "hipAngle", color: Colors.primary, label: "Hanche" },
   { key: "ankleAngle", color: Colors.textSecondary, label: "Cheville" },
 ];
-
-// ---------------------------------------------------------------------------
-// Pure helpers
-// ---------------------------------------------------------------------------
-
-function prepareChartData(
-  analyses: ReadonlyArray<Analysis>,
-): ReadonlyArray<ChartDataPoint> {
-  const sorted = [...analyses].sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-  );
-  return sorted.map((a) => ({
-    date: formatDisplayDate(new Date(a.createdAt)),
-    timestamp: new Date(a.createdAt).getTime(),
-    kneeAngle: a.angles.kneeAngle,
-    hipAngle: a.angles.hipAngle,
-    ankleAngle: a.angles.ankleAngle,
-  }));
-}
-
-function getAngleRange(data: ReadonlyArray<ChartDataPoint>): {
-  min: number;
-  max: number;
-} {
-  if (data.length === 0) return { min: 0, max: 180 };
-
-  const allValues = data.flatMap((d) => [
-    d.kneeAngle,
-    d.hipAngle,
-    d.ankleAngle,
-  ]);
-  const rawMin = Math.min(...allValues);
-  const rawMax = Math.max(...allValues);
-
-  // Extend range to include normal zone if it overlaps or is near
-  const extendedMin = Math.min(rawMin, HKA_REF_MIN);
-  const extendedMax = Math.max(rawMax, HKA_REF_MAX);
-
-  // Round to nearest 10 for clean graduations
-  const min = Math.max(0, Math.floor((extendedMin - 5) / 10) * 10);
-  const max = Math.min(360, Math.ceil((extendedMax + 5) / 10) * 10);
-
-  return { min, max };
-}
-
-function linearRegression(points: ReadonlyArray<{ x: number; y: number }>): {
-  slope: number;
-  intercept: number;
-} {
-  const n = points.length;
-  if (n < 2) return { slope: 0, intercept: points[0]?.y ?? 0 };
-
-  const sumX = points.reduce((s, p) => s + p.x, 0);
-  const sumY = points.reduce((s, p) => s + p.y, 0);
-  const sumXY = points.reduce((s, p) => s + p.x * p.y, 0);
-  const sumX2 = points.reduce((s, p) => s + p.x * p.x, 0);
-  const denom = n * sumX2 - sumX * sumX;
-
-  if (denom === 0) return { slope: 0, intercept: sumY / n };
-
-  const slope = (n * sumXY - sumX * sumY) / denom;
-  const intercept = (sumY - slope * sumX) / n;
-  return { slope, intercept };
-}
-
-/** Position factuelle d'un angle vs plage de référence — mêmes bornes que hka-range.ts. */
-function angleRangeStatus(angle: number): HkaRangeStatus {
-  const deviation = hkaDeviation(angle);
-  if (deviation === null) return "unavailable";
-  return deviation === 0 ? "in_range" : "out_of_range";
-}
-
-/** Generate Y-axis graduation values every 10 degrees */
-function generateYGraduations(min: number, max: number): ReadonlyArray<number> {
-  const graduations: number[] = [];
-  const start = Math.ceil(min / 10) * 10;
-  for (let v = start; v <= max; v += 10) {
-    graduations.push(v);
-  }
-  return graduations;
-}
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -261,6 +178,15 @@ function ReferenceZoneLegend() {
   );
 }
 
+const X_AXIS_MODE_OPTIONS: ReadonlyArray<{
+  value: XAxisMode;
+  label: string;
+  testID: string;
+}> = [
+  { value: "byAnalysis", label: "Par analyse", testID: "toggle-by-analysis" },
+  { value: "byDate", label: "Par date", testID: "toggle-by-date" },
+];
+
 function SegmentedControl({
   mode,
   onChange,
@@ -269,46 +195,15 @@ function SegmentedControl({
   readonly onChange: (mode: XAxisMode) => void;
 }) {
   return (
-    <View style={styles.segmentedWrapper} testID="x-axis-toggle">
-      <Pressable
-        style={[
-          styles.segmentButton,
-          mode === "byAnalysis" && styles.segmentButtonActive,
-        ]}
-        onPress={() => onChange("byAnalysis")}
-        testID="toggle-by-analysis"
-        accessibilityRole="button"
-        accessibilityState={{ selected: mode === "byAnalysis" }}
-      >
-        <Text
-          style={[
-            styles.segmentText,
-            mode === "byAnalysis" && styles.segmentTextActive,
-          ]}
-        >
-          Par analyse
-        </Text>
-      </Pressable>
-      <Pressable
-        style={[
-          styles.segmentButton,
-          mode === "byDate" && styles.segmentButtonActive,
-        ]}
-        onPress={() => onChange("byDate")}
-        testID="toggle-by-date"
-        accessibilityRole="button"
-        accessibilityState={{ selected: mode === "byDate" }}
-      >
-        <Text
-          style={[
-            styles.segmentText,
-            mode === "byDate" && styles.segmentTextActive,
-          ]}
-        >
-          Par date
-        </Text>
-      </Pressable>
-    </View>
+    <ChoiceChips
+      variant="segmented"
+      options={X_AXIS_MODE_OPTIONS}
+      value={mode}
+      onChange={(next) => {
+        if (next) onChange(next);
+      }}
+      testID="x-axis-toggle"
+    />
   );
 }
 
@@ -751,37 +646,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.mono,
     fontSize: 9,
     textAlign: "center",
-  },
-  // Segmented control
-  segmentedWrapper: {
-    flexDirection: "row",
-    alignSelf: "center",
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.md,
-    padding: 2,
-  },
-  segmentButton: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs + 2,
-    borderRadius: BorderRadius.md - 2,
-  },
-  // Ombre quasi nulle — la hiérarchie vient du trait, pas de l'ombre.
-  segmentButtonActive: {
-    backgroundColor: Colors.backgroundCard,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  segmentText: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: Colors.textSecondary,
-  },
-  segmentTextActive: {
-    color: Colors.primary,
-    fontWeight: "600",
   },
   // Tooltip — ombre quasi nulle, hairline pour le détachement du fond.
   tooltip: {
