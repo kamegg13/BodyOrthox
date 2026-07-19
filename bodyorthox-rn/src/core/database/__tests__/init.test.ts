@@ -15,6 +15,7 @@ jest.mock('../database.native', () => ({
   createDatabase: () => ({
     initialize: mockInitialize,
     execute: jest.fn(),
+    transaction: jest.fn(),
     close: jest.fn(),
   }),
 }));

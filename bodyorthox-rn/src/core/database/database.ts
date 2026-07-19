@@ -9,9 +9,21 @@ export interface QueryResult {
   insertId?: number;
 }
 
+/** Poignée passée au callback de `IDatabase.transaction` — mêmes requêtes que `IDatabase`, sans `initialize`/`close`. */
+export interface ITransaction {
+  execute(sql: string, params?: unknown[]): Promise<QueryResult>;
+}
+
 export interface IDatabase {
   initialize(): Promise<void>;
   execute(sql: string, params?: unknown[]): Promise<QueryResult>;
+  /**
+   * Exécute `fn` de façon atomique : si `fn` lève, TOUTES les requêtes émises
+   * via `tx.execute()` sont annulées (rollback), sur natif comme sur web.
+   * Utilisé pour les suppressions RGPD multi-tables (art. 17) où une
+   * suppression partielle silencieuse est inacceptable.
+   */
+  transaction(fn: (tx: ITransaction) => Promise<void>): Promise<void>;
   close(): Promise<void>;
 }
 

@@ -222,4 +222,12 @@ export class SqlitePatientRepository implements IPatientRepository {
     await this.db.execute(`DELETE FROM analyses WHERE patient_id = ?`, [id]);
     await this.db.execute(`DELETE FROM patients WHERE id = ?`, [id]);
   }
+
+  /** Nombre total de patients — utilisé par l'écran Compte (données). */
+  async count(): Promise<number> {
+    const result = await this.db.execute(
+      `SELECT COUNT(*) as count FROM patients`,
+    );
+    return Number(result.rows[0]?.["count"] ?? 0);
+  }
 }

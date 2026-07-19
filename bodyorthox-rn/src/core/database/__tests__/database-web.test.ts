@@ -276,4 +276,68 @@ describe("WebDatabase", () => {
       expect(localStorageMock.getItem("bodyorthox_db")).not.toBeNull();
     });
   });
+
+  describe("transaction", () => {
+    it("commits all writes performed inside the callback", async () => {
+      await db.execute(
+        "INSERT INTO patients (id, name, date_of_birth, morphological_profile, created_at) VALUES (?, ?, ?, ?, ?)",
+        ["p1", "Jean", "1990-01-01", null, "2024-01-01T00:00:00Z"],
+      );
+
+      await db.transaction(async (tx) => {
+        await tx.execute("DELETE FROM patients WHERE id = ?", ["p1"]);
+      });
+
+      const result = await db.execute("SELECT * FROM patients");
+      expect(result.rows).toHaveLength(0);
+    });
+
+    it("rolls back ALL writes when the callback throws mid-way (atomic erasure)", async () => {
+      await db.execute(
+        `INSERT INTO analyses
+           (id, patient_id, knee_angle, hip_angle, ankle_angle,
+            confidence_score, ml_corrected, manual_correction_joint, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ["a1", "p1", 170, 175, 90, 0.9, 0, null, "2024-01-01T00:00:00Z"],
+      );
+      await db.execute(
+        "INSERT INTO patients (id, name, date_of_birth, morphological_profile, created_at) VALUES (?, ?, ?, ?, ?)",
+        ["p1", "Jean", "1990-01-01", null, "2024-01-01T00:00:00Z"],
+      );
+
+      await expect(
+        db.transaction(async (tx) => {
+          // Suppression RGPD : analyses puis patients — on simule un crash
+          // ENTRE les deux, comme le ferait un OOM natif.
+          await tx.execute("DELETE FROM analyses");
+          throw new Error("crash simulé avant la suppression des patients");
+        }),
+      ).rejects.toThrow("crash simulé");
+
+      const analyses = await db.execute("SELECT * FROM analyses");
+      const patients = await db.execute("SELECT * FROM patients");
+      expect(analyses.rows).toHaveLength(1);
+      expect(patients.rows).toHaveLength(1);
+    });
+
+    it("persists the rolled-back state to localStorage (no partial write survives close)", async () => {
+      await db.execute(
+        "INSERT INTO patients (id, name, date_of_birth, morphological_profile, created_at) VALUES (?, ?, ?, ?, ?)",
+        ["p1", "Jean", "1990-01-01", null, "2024-01-01T00:00:00Z"],
+      );
+
+      await expect(
+        db.transaction(async (tx) => {
+          await tx.execute("DELETE FROM patients WHERE id = ?", ["p1"]);
+          throw new Error("crash simulé");
+        }),
+      ).rejects.toThrow();
+
+      const reloaded = createDatabase("test.db");
+      await reloaded.initialize();
+      const result = await reloaded.execute("SELECT * FROM patients");
+      expect(result.rows).toHaveLength(1);
+      await reloaded.close();
+    });
+  });
 });

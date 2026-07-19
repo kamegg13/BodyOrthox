@@ -1,7 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {
-  Alert,
-  Platform,
   ScrollView,
   StyleSheet,
   Switch,
@@ -28,49 +26,32 @@ import {
   isBiometricLockEnabled,
   setBiometricLockEnabled,
 } from "../../../core/security/biometric-lock-setting";
+import { getKeyValueStorage } from "../../../core/storage/key-value-storage";
+import { getDatabase } from "../../../core/database/init";
+import { showAlert, showConfirm } from "../../../shared/ui/alerts";
+import { deleteAllData } from "../../../core/database/data-erasure";
+import { SqlitePatientRepository } from "../../patients/data/sqlite-patient-repository";
+import { SqliteAnalysisRepository } from "../../capture/data/sqlite-analysis-repository";
+import { buildExportPayload, exportFileName } from "../domain/data-export";
+import { shareExportFile } from "../data/export-service";
 
 // ---------------------------------------------------------------------------
-// localStorage helpers (web-safe)
+// Stockage clé/valeur (web-safe ET natif — `localStorage` seul ne persiste
+// rien sur iOS/Android, voir key-value-storage.ts)
 // ---------------------------------------------------------------------------
-function getStoredValue(key: string, fallback: string): string {
+function getProfileValue(key: string, fallback: string): string {
   try {
-    if (typeof localStorage !== "undefined") {
-      return localStorage.getItem(key) ?? fallback;
-    }
+    return getKeyValueStorage().getItem(key) ?? fallback;
   } catch {
-    // ignore
+    return fallback;
   }
-  return fallback;
 }
 
-function setStoredValue(key: string, value: string): void {
+function setProfileValue(key: string, value: string): void {
   try {
-    if (typeof localStorage !== "undefined") {
-      localStorage.setItem(key, value);
-    }
+    getKeyValueStorage().setItem(key, value);
   } catch {
-    // ignore quota errors
-  }
-}
-
-function showAlert(title: string, message: string) {
-  if (Platform.OS === "web") {
-    window.alert(`${title}\n\n${message}`);
-  } else {
-    Alert.alert(title, message);
-  }
-}
-
-function showConfirm(title: string, message: string, onConfirm: () => void) {
-  if (Platform.OS === "web") {
-    if (window.confirm(`${title}\n\n${message}`)) {
-      onConfirm();
-    }
-  } else {
-    Alert.alert(title, message, [
-      { text: "Annuler", style: "cancel" },
-      { text: "Supprimer", style: "destructive", onPress: onConfirm },
-    ]);
+    // best-effort — la valeur reste valable pour la session
   }
 }
 
@@ -82,7 +63,7 @@ function RowDivider() {
   return <View style={styles.divider} />;
 }
 
-/** Champ profil praticien persisté dans le localStorage (web-safe). */
+/** Champ profil praticien persisté via le seam clé/valeur (web ET natif). */
 function ProfileInput({
   label,
   storageKey,
@@ -95,13 +76,13 @@ function ProfileInput({
   readonly placeholder: string;
 }) {
   const [value, setValue] = useState(() =>
-    getStoredValue(storageKey, defaultValue),
+    getProfileValue(storageKey, defaultValue),
   );
 
   const handleChange = useCallback(
     (text: string) => {
       setValue(text);
-      setStoredValue(storageKey, text);
+      setProfileValue(storageKey, text);
     },
     [storageKey],
   );
@@ -193,16 +174,13 @@ export function AccountScreen() {
 
   async function loadCounts() {
     try {
-      const { getDatabase } = await import("../../../core/database/init");
       const db = getDatabase();
-      const pResult = await db.execute(
-        "SELECT COUNT(*) as count FROM patients",
-      );
-      const aResult = await db.execute(
-        "SELECT COUNT(*) as count FROM analyses",
-      );
-      setPatientCount(Number(pResult.rows[0]?.["count"] ?? 0));
-      setAnalysisCount(Number(aResult.rows[0]?.["count"] ?? 0));
+      const [patients, analyses] = await Promise.all([
+        new SqlitePatientRepository(db).count(),
+        new SqliteAnalysisRepository(db).count(),
+      ]);
+      setPatientCount(patients);
+      setAnalysisCount(analyses);
     } catch {
       // DB not ready — keep defaults
     }
@@ -210,61 +188,64 @@ export function AccountScreen() {
 
   // Export complet (droit à la portabilité, art. 20 RGPD) : JSON généré
   // on-device puis remis à l'utilisateur (share sheet natif / téléchargement
-  // web). Imports dynamiques comme loadCounts : la base n'est disponible
-  // qu'après initializeDatabase().
+  // web).
   async function handleExportAllData() {
     try {
-      const [{ getDatabase }, patientRepoMod, analysisRepoMod, domain, service] =
-        await Promise.all([
-          import("../../../core/database/init"),
-          import("../../patients/data/sqlite-patient-repository"),
-          import("../../capture/data/sqlite-analysis-repository"),
-          import("../domain/data-export"),
-          import("../data/export-service"),
-        ]);
       const db = getDatabase();
       const exportedAt = new Date().toISOString();
-      const payload = await domain.buildExportPayload(
-        new patientRepoMod.SqlitePatientRepository(db),
-        new analysisRepoMod.SqliteAnalysisRepository(db),
+      const payload = await buildExportPayload(
+        new SqlitePatientRepository(db),
+        new SqliteAnalysisRepository(db),
         exportedAt,
       );
-      const result = await service.shareExportFile(
+      const result = await shareExportFile(
         JSON.stringify(payload, null, 2),
-        domain.exportFileName(exportedAt),
+        exportFileName(exportedAt),
       );
       if (result.kind === "error") {
+        console.error("[AccountScreen] export failed:", result.message);
         showAlert("Export", result.message);
       }
-    } catch {
+    } catch (error) {
+      console.error("[AccountScreen] export failed:", error);
       showAlert("Export", "Impossible d'exporter les données.");
     }
   }
 
+  // Suppression complète (droit à l'effacement, art. 17 RGPD) : déléguée à
+  // `deleteAllData`, atomique sur natif ET web (voir data-erasure.ts) — un
+  // crash entre les deux tables ne doit jamais laisser de suppression
+  // partielle silencieuse.
   async function handleDeleteAllData() {
     showConfirm(
       "Supprimer toutes les données",
       "Cette action est irréversible. Toutes les données patients et analyses seront supprimées.",
       async () => {
         try {
-          const { getDatabase } = await import("../../../core/database/init");
-          const db = getDatabase();
-          await db.execute("DELETE FROM analyses");
-          await db.execute("DELETE FROM patients");
-          setPatientCount(0);
-          setAnalysisCount(0);
+          await deleteAllData(getDatabase());
+          // Les compteurs sont rechargés depuis les repositories plutôt que
+          // remis à zéro localement : ils reflètent l'état réel après
+          // suppression, y compris si le domaine évolue.
+          await loadCounts();
           showAlert("Succès", "Toutes les données ont été supprimées.");
-        } catch {
+        } catch (error) {
+          console.error("[AccountScreen] deleteAllData failed:", error);
           showAlert("Erreur", "Impossible de supprimer les données.");
         }
       },
+      { confirmLabel: "Supprimer", destructive: true },
     );
   }
 
   function handleLogout() {
-    showConfirm("Déconnexion", "Voulez-vous vous déconnecter ?", () => {
-      logout();
-    });
+    showConfirm(
+      "Déconnexion",
+      "Voulez-vous vous déconnecter ?",
+      () => {
+        logout();
+      },
+      { confirmLabel: "Se déconnecter" },
+    );
   }
 
   return (

@@ -163,4 +163,12 @@ export class SqliteAnalysisRepository implements IAnalysisRepository {
   async delete(id: string): Promise<void> {
     await this.db.execute(`DELETE FROM analyses WHERE id = ?`, [id]);
   }
+
+  /** Nombre total d'analyses — utilisé par l'écran Compte (données). */
+  async count(): Promise<number> {
+    const result = await this.db.execute(
+      `SELECT COUNT(*) as count FROM analyses`,
+    );
+    return Number(result.rows[0]?.["count"] ?? 0);
+  }
 }
