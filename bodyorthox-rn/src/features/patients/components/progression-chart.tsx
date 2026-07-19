@@ -12,6 +12,13 @@ import { Colors } from "../../../shared/design-system/colors";
 import { Spacing, BorderRadius } from "../../../shared/design-system/spacing";
 import { formatDisplayDate } from "../../../shared/utils/date-utils";
 import { colors as tokenColors, fonts } from "../../../theme/tokens";
+import {
+  HKA_REF_MIN,
+  HKA_REF_MAX,
+  hkaDeviation,
+  hkaRangeShortLabel,
+  type HkaRangeStatus,
+} from "../../../shared/domain/hka-range";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -33,7 +40,8 @@ interface TooltipData {
   readonly date: string;
   readonly joint: string;
   readonly angle: number;
-  readonly status: string;
+  /** Position factuelle vs plage de référence — aucune sémantique de gravité (non-DM). */
+  readonly status: HkaRangeStatus;
 }
 
 interface ProgressionChartProps {
@@ -47,8 +55,6 @@ interface ProgressionChartProps {
 const CHART_HEIGHT = 250;
 const DOT_SIZE = 10;
 const LINE_WIDTH = 3;
-const HKA_NORMAL_MIN = 175;
-const HKA_NORMAL_MAX = 180;
 // Zone « dans la plage » — fond/hairline sémantiques tokens (pas de rgba
 // ad hoc) : mêmes couleurs que le Badge « green ».
 const NORMAL_ZONE_COLOR = tokenColors.greenLight;
@@ -103,8 +109,8 @@ function getAngleRange(data: ReadonlyArray<ChartDataPoint>): {
   const rawMax = Math.max(...allValues);
 
   // Extend range to include normal zone if it overlaps or is near
-  const extendedMin = Math.min(rawMin, HKA_NORMAL_MIN);
-  const extendedMax = Math.max(rawMax, HKA_NORMAL_MAX);
+  const extendedMin = Math.min(rawMin, HKA_REF_MIN);
+  const extendedMax = Math.max(rawMax, HKA_REF_MAX);
 
   // Round to nearest 10 for clean graduations
   const min = Math.max(0, Math.floor((extendedMin - 5) / 10) * 10);
@@ -133,10 +139,11 @@ function linearRegression(points: ReadonlyArray<{ x: number; y: number }>): {
   return { slope, intercept };
 }
 
-function angleStatus(angle: number): string {
-  return angle >= HKA_NORMAL_MIN && angle <= HKA_NORMAL_MAX
-    ? "Normal"
-    : "Hors norme";
+/** Position factuelle d'un angle vs plage de référence — mêmes bornes que hka-range.ts. */
+function angleRangeStatus(angle: number): HkaRangeStatus {
+  const deviation = hkaDeviation(angle);
+  if (deviation === null) return "unavailable";
+  return deviation === 0 ? "in_range" : "out_of_range";
 }
 
 /** Generate Y-axis graduation values every 10 degrees */
@@ -245,11 +252,11 @@ function LegendItem({
   );
 }
 
-function NormalZoneLegend() {
+function ReferenceZoneLegend() {
   return (
     <View style={styles.legendItem}>
       <View style={styles.normalZoneLegendSwatch} />
-      <Text style={styles.legendText}>Zone normale</Text>
+      <Text style={styles.legendText}>{hkaRangeShortLabel("in_range")}</Text>
     </View>
   );
 }
@@ -328,11 +335,11 @@ function Tooltip({ data }: { readonly data: TooltipData }) {
         style={[
           styles.tooltipStatus,
           {
-            color: data.status === "Normal" ? Colors.success : Colors.error,
+            color: data.status === "in_range" ? Colors.success : Colors.error,
           },
         ]}
       >
-        {data.status}
+        {hkaRangeShortLabel(data.status)}
       </Text>
       {/* Arrow */}
       <View
@@ -408,7 +415,7 @@ export function ProgressionChart({ analyses }: ProgressionChartProps) {
       date: point.date,
       joint: seriesLabel,
       angle,
-      status: angleStatus(angle),
+      status: angleRangeStatus(angle),
     });
   }
 
@@ -429,8 +436,8 @@ export function ProgressionChart({ analyses }: ProgressionChartProps) {
   const hasLayout = chartWidth > 0;
 
   // Normal zone pixel coordinates
-  const normalZoneTop = angleToY(HKA_NORMAL_MAX);
-  const normalZoneBottom = angleToY(HKA_NORMAL_MIN);
+  const normalZoneTop = angleToY(HKA_REF_MAX);
+  const normalZoneBottom = angleToY(HKA_REF_MIN);
   const normalZoneHeight = normalZoneBottom - normalZoneTop;
   const normalZoneVisible =
     normalZoneTop < CHART_HEIGHT && normalZoneBottom > 0;
@@ -448,7 +455,7 @@ export function ProgressionChart({ analyses }: ProgressionChartProps) {
         {SERIES.map((s) => (
           <LegendItem key={s.key} color={s.color} label={s.label} />
         ))}
-        <NormalZoneLegend />
+        <ReferenceZoneLegend />
       </View>
 
       {/* Chart area */}
@@ -479,7 +486,7 @@ export function ProgressionChart({ analyses }: ProgressionChartProps) {
         </View>
 
         {/* Chart content */}
-        <View style={styles.chartArea} onLayout={handleLayout}>
+        <View style={styles.chartArea} onLayout={handleLayout} testID="progression-chart-area">
           {/* Reference lines for each graduation */}
           {graduations.map((val) => (
             <View

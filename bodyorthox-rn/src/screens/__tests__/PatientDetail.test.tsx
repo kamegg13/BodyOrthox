@@ -1,7 +1,14 @@
 import React from "react";
-import { Alert } from "react-native";
+import { Alert, Platform } from "react-native";
 import { render, fireEvent } from "@testing-library/react-native";
 import { PatientDetail, SAMPLE_PATIENT_DETAIL, buildHeroMeta } from "../PatientDetail";
+
+// Évite la pollution inter-tests : Alert.alert espionné garde son historique
+// d'appels tant qu'il n'est pas restauré (jest.spyOn réutilise le même mock).
+afterEach(() => {
+  Platform.OS = "ios";
+  jest.restoreAllMocks();
+});
 
 describe("PatientDetail — zone dangereuse", () => {
   it("renders the archive and delete actions, separated from normal actions", () => {
@@ -73,6 +80,62 @@ describe("PatientDetail — zone dangereuse", () => {
     fireEvent.press(getByTestId("archive-button"));
 
     expect(onArchive).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("PatientDetail — zone dangereuse sur web (Alert.alert est un no-op sur react-native-web)", () => {
+  it("archive via window.confirm, sans passer par Alert.alert", () => {
+    Platform.OS = "web";
+    const alertSpy = jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
+    const windowConfirmSpy = jest.fn().mockReturnValue(true);
+    (global as unknown as { confirm: jest.Mock }).confirm = windowConfirmSpy;
+    const onArchive = jest.fn();
+    const { getByTestId } = render(
+      <PatientDetail data={SAMPLE_PATIENT_DETAIL} onArchive={onArchive} />,
+    );
+
+    fireEvent.press(getByTestId("archive-button"));
+
+    expect(windowConfirmSpy).toHaveBeenCalledWith(
+      expect.stringContaining(SAMPLE_PATIENT_DETAIL.name),
+    );
+    expect(onArchive).toHaveBeenCalledTimes(1);
+    expect(alertSpy).not.toHaveBeenCalled();
+  });
+
+  it("supprime via window.confirm, sans passer par Alert.alert", () => {
+    Platform.OS = "web";
+    const alertSpy = jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
+    const windowConfirmSpy = jest.fn().mockReturnValue(true);
+    (global as unknown as { confirm: jest.Mock }).confirm = windowConfirmSpy;
+    const onDelete = jest.fn();
+    const { getByTestId } = render(
+      <PatientDetail data={SAMPLE_PATIENT_DETAIL} onDelete={onDelete} />,
+    );
+
+    fireEvent.press(getByTestId("delete-button"));
+
+    expect(windowConfirmSpy).toHaveBeenCalledWith(
+      expect.stringContaining(SAMPLE_PATIENT_DETAIL.name),
+    );
+    expect(onDelete).toHaveBeenCalledTimes(1);
+    expect(alertSpy).not.toHaveBeenCalled();
+  });
+
+  it("n'archive ni ne supprime quand window.confirm est refusé", () => {
+    Platform.OS = "web";
+    (global as unknown as { confirm: jest.Mock }).confirm = jest.fn().mockReturnValue(false);
+    const onArchive = jest.fn();
+    const onDelete = jest.fn();
+    const { getByTestId } = render(
+      <PatientDetail data={SAMPLE_PATIENT_DETAIL} onArchive={onArchive} onDelete={onDelete} />,
+    );
+
+    fireEvent.press(getByTestId("archive-button"));
+    fireEvent.press(getByTestId("delete-button"));
+
+    expect(onArchive).not.toHaveBeenCalled();
+    expect(onDelete).not.toHaveBeenCalled();
   });
 });
 

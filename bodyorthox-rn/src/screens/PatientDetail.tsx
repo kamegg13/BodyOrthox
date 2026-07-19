@@ -1,6 +1,5 @@
 import React, { useCallback } from "react";
 import {
-  Alert,
   Pressable,
   ScrollView,
   StatusBar,
@@ -22,6 +21,7 @@ import {
   hkaRangeShortLabel,
   type HkaRangeStatus,
 } from "../shared/domain/hka-range";
+import { showConfirm } from "../shared/ui/alerts";
 import {
   colors,
   fonts,
@@ -93,24 +93,20 @@ export function PatientDetail({
   onDelete,
 }: PatientDetailProps) {
   const handleArchivePress = useCallback(() => {
-    Alert.alert(
+    showConfirm(
       "Archiver le patient",
       `Voulez-vous archiver ${data.name} ? Il ne sera plus visible dans la liste principale des patients actifs, mais ses données sont conservées.`,
-      [
-        { text: "Annuler", style: "cancel" },
-        { text: "Archiver", onPress: () => onArchive?.() },
-      ],
+      () => onArchive?.(),
+      { confirmLabel: "Archiver" },
     );
   }, [data.name, onArchive]);
 
   const handleDeletePress = useCallback(() => {
-    Alert.alert(
+    showConfirm(
       "Supprimer le patient",
       `Voulez-vous vraiment supprimer définitivement ${data.name} ? Cette action est irréversible : toutes les données et analyses associées seront effacées (droit à l'effacement RGPD).`,
-      [
-        { text: "Annuler", style: "cancel" },
-        { text: "Supprimer", style: "destructive", onPress: () => onDelete?.() },
-      ],
+      () => onDelete?.(),
+      { confirmLabel: "Supprimer", destructive: true },
     );
   }, [data.name, onDelete]);
 

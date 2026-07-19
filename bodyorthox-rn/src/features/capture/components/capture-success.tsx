@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Btn } from "../../../components/Btn";
 import { HkaMeasureCard } from "../../../components/HkaMeasureCard";
+import { LegalDisclaimer } from "../../../components/LegalDisclaimer";
 import {
   colors,
   fonts,
@@ -36,7 +37,6 @@ import {
   type DisplayedImageLayout,
 } from "../../../shared/utils/image-dimensions";
 import type { AnatomicalValidation } from "../data/anatomical-validation";
-import { LEGAL_CONSTANTS } from "../../../core/legal/legal-constants";
 
 interface CaptureSuccessProps {
   capturedImageUrl: string | null;
@@ -271,10 +271,8 @@ export function CaptureSuccess({
           <DetailRow label="Cheville" value={currentAngles.ankleAngle} />
         </View>
 
-        {/* Non-DM legal disclaimer */}
-        <Text style={styles.disclaimer} testID="capture-success-disclaimer">
-          {LEGAL_CONSTANTS.mdrDisclaimer}
-        </Text>
+        {/* Mention légale non-DM — composant partagé (cf. LegalDisclaimer.tsx) */}
+        <LegalDisclaimer testID="capture-success-disclaimer" />
       </ScrollView>
 
       <SafeAreaView edges={["bottom"]} style={styles.actionBar}>
@@ -511,13 +509,5 @@ const styles = StyleSheet.create({
     color: colors.textSecond,
     fontFamily: fonts.sans,
     fontSize: 15,
-  },
-  disclaimer: {
-    color: colors.textSecond,
-    fontFamily: fonts.sans,
-    fontSize: 11,
-    textAlign: "center",
-    lineHeight: 15,
-    marginTop: spacing.s8,
   },
 });
