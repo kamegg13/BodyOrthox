@@ -1,7 +1,4 @@
-import {
-  validateAnatomicalProportions,
-  type AnatomicalValidation,
-} from "../anatomical-validation";
+import { validateAnatomicalProportions } from "../anatomical-validation";
 import type { PoseLandmarks } from "../angle-calculator";
 
 /**

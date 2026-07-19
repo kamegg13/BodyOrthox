@@ -375,7 +375,7 @@ describe("mergeRoiResults", () => {
       z: 0,
       visibility: 0.9,
     }));
-    const roi = Array.from({ length: 33 }, (_, i) => ({
+    const roi = Array.from({ length: 33 }, (_, _i) => ({
       x: 0.99,
       y: 0.99,
       z: 0,

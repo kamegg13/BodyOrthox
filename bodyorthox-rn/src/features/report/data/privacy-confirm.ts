@@ -12,7 +12,6 @@ const PRIVACY_MESSAGE =
 export function confirmPrivacyBeforeShare(): Promise<boolean> {
   if (Platform.OS === "web") {
     return Promise.resolve(
-      // eslint-disable-next-line no-alert
       (globalThis as any).window.confirm(`${PRIVACY_TITLE}\n\n${PRIVACY_MESSAGE}`),
     );
   }

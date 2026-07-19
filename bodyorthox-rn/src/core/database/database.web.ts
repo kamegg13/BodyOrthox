@@ -13,7 +13,6 @@ const DEBUG_DB =
 
 function dbLog(...args: unknown[]): void {
   if (DEBUG_DB) {
-    // eslint-disable-next-line no-console
     console.log("[WebDB]", ...args);
   }
 }

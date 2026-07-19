@@ -321,7 +321,7 @@ describe("NewPatient — brouillon (autosave)", () => {
   });
 
   it("le bandeau « Effacer » vide le formulaire et purge le brouillon", async () => {
-    const { getByTestId, getByText, unmount } = render(<NewPatient onSave={jest.fn()} />);
+    const { getByTestId, unmount } = render(<NewPatient onSave={jest.fn()} />);
     fireEvent.changeText(getByTestId("np-first-name"), "Sophie");
 
     await waitFor(
@@ -334,7 +334,7 @@ describe("NewPatient — brouillon (autosave)", () => {
     );
     unmount();
 
-    const { getByTestId: getByTestId2, getByText: getByText2 } = render(
+    const { getByTestId: getByTestId2 } = render(
       <NewPatient onSave={jest.fn()} />,
     );
     expect(getByTestId2("np-first-name").props.value).toBe("Sophie");

@@ -115,7 +115,6 @@ describe("WebNotificationService", () => {
     });
 
     it("returns false when Notification API is undefined", async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (globalThis as any).Notification = undefined;
       const freshService = new WebNotificationService();
       const result = await freshService.requestPermission();
@@ -139,7 +138,6 @@ describe("WebNotificationService", () => {
     });
 
     it("returns false when Notification API is undefined", async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (globalThis as any).Notification = undefined;
       const freshService = new WebNotificationService();
       const result = await freshService.isPermitted();
@@ -167,7 +165,6 @@ describe("WebNotificationService", () => {
     });
 
     it("returns error when Notification API is undefined", async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (globalThis as any).Notification = undefined;
       const freshService = new WebNotificationService();
       const result = await freshService.sendAnalysisReady(

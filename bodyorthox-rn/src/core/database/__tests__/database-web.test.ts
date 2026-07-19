@@ -23,7 +23,6 @@ const localStorageMock = (() => {
 Object.defineProperty(global, "localStorage", { value: localStorageMock });
 
 import { createDatabase } from "../database.web";
-import { ALL_MIGRATIONS } from "../schema";
 
 describe("WebDatabase", () => {
   let db: ReturnType<typeof createDatabase>;

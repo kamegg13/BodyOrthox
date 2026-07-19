@@ -90,7 +90,7 @@ export function formatPractitionerName(user: { firstName?: string; lastName?: st
   }
   const local = user.email.split("@")[0] ?? "";
   if (!local) return "Praticien";
-  const parts = local.split(/[._\-]/).filter(Boolean);
+  const parts = local.split(/[._-]/).filter(Boolean);
   const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
   return withDoctorPrefix(parts.map(cap).join(" "));
 }

@@ -29,5 +29,8 @@ jobs:
       - name: TypeScript check
         run: npx tsc --noEmit
 
+      - name: Lint
+        run: npm run lint
+
       - name: Run tests
         run: npx jest --ci --coverage --passWithNoTests --testTimeout=30000
