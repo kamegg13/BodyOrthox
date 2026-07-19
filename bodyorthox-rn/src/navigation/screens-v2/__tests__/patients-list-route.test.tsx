@@ -1,8 +1,8 @@
 import React from "react";
 import { render, fireEvent } from "@testing-library/react-native";
-import { PatientList } from "../PatientList";
-import { usePatientsStore } from "../../features/patients/store/patients-store";
-import type { Patient } from "../../features/patients/domain/patient";
+import { PatientList, PatientsListRoute } from "../patients-list-route";
+import { usePatientsStore } from "../../../features/patients/store/patients-store";
+import type { Patient } from "../../../features/patients/domain/patient";
 
 const mockPatient: Patient = {
   id: "p1",
@@ -133,5 +133,31 @@ describe("PatientList", () => {
       fireEvent.press(getByText("Jean Dupont"));
       expect(onPatientPress).toHaveBeenCalledWith(mockPatient);
     });
+  });
+});
+
+const mockNavigate = jest.fn();
+
+jest.mock("@react-navigation/native", () => ({
+  useNavigation: () => ({ navigate: mockNavigate }),
+}));
+
+describe("PatientsListRoute", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    resetStore();
+  });
+
+  it("navigue vers CreatePatient pour l'action « Nouveau patient »", () => {
+    const { getByLabelText } = render(<PatientsListRoute />);
+    fireEvent.press(getByLabelText("Nouveau patient"));
+    expect(mockNavigate).toHaveBeenCalledWith("CreatePatient");
+  });
+
+  it("navigue vers PatientDetail avec le bon patientId au tap sur une ligne", () => {
+    resetStore({ patients: [mockPatient], filteredPatients: [mockPatient] });
+    const { getByText } = render(<PatientsListRoute />);
+    fireEvent.press(getByText("Jean Dupont"));
+    expect(mockNavigate).toHaveBeenCalledWith("PatientDetail", { patientId: "p1" });
   });
 });

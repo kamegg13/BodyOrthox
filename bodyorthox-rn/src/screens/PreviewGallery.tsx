@@ -1,10 +1,10 @@
 import React from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { Dashboard } from "./Dashboard";
-import { PatientList } from "./PatientList";
+import { Dashboard } from "../navigation/screens-v2/dashboard-route";
+import { PatientList } from "../navigation/screens-v2/patients-list-route";
 import { PatientDetail, SAMPLE_PATIENT_DETAIL } from "./PatientDetail";
 import { NewPatient } from "./NewPatient";
-import { Processing } from "./Processing";
+import { Processing } from "../navigation/screens-v2/processing-route";
 import { Results, SAMPLE_RESULTS } from "./Results";
 import { Report, SAMPLE_REPORT } from "./Report";
 import {
