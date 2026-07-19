@@ -191,7 +191,7 @@ export function Report({ data, onBack, onShare, onDownload, onSend }: ReportProp
             <View style={styles.tableHeader}>
               <Text style={[styles.thLabel, { flex: 1 }]}>Angle</Text>
               <Text style={[styles.thNum, { width: 52 }]}>Valeur</Text>
-              <Text style={[styles.thNum, { width: 52 }]}>Norme</Text>
+              <Text style={[styles.thNum, { width: 52 }]}>Réf.</Text>
               <Text style={[styles.thNum, { width: 56 }]}>Δ</Text>
             </View>
             {data.rows.map((row, i) => (
