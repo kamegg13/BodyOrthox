@@ -153,4 +153,43 @@ describe("buildProgressionSynthesisSummary — synthèse honnête", () => {
     expect(html).toContain(summary.leftTrendText);
     expect(html).toContain(summary.rightTrendText);
   });
+
+  // ── Test anti-dérive : aperçu écran et export PDF partagent UN SEUL
+  // calcul (computeSynthesis) — ce test échouerait si l'un des deux
+  // rendus recalculait first/last/trend indépendamment de l'autre.
+  it("reste cohérente avec le PDF même quand une seule des deux jambes a une mesure exploitable", () => {
+    const analyses: Analysis[] = [
+      makeAnalysis({
+        id: "a1",
+        createdAt: "2026-01-01T00:00:00.000Z",
+        bilateralAngles: {
+          left: { kneeAngle: 176, hipAngle: 175, ankleAngle: 174 },
+          right: { kneeAngle: 177, hipAngle: 176, ankleAngle: 175 },
+          leftHKA: 172.0,
+          rightHKA: 0,
+        },
+      }),
+      makeAnalysis({
+        id: "a2",
+        createdAt: "2026-02-01T00:00:00.000Z",
+        bilateralAngles: {
+          left: { kneeAngle: 176, hipAngle: 175, ankleAngle: 174 },
+          right: { kneeAngle: 177, hipAngle: 176, ankleAngle: 175 },
+          leftHKA: 174.5,
+          rightHKA: 0,
+        },
+      }),
+    ];
+
+    const summary = buildProgressionSynthesisSummary(analyses);
+    expect(summary.available).toBe(true);
+    expect(summary.leftTrendText).toBeDefined();
+    expect(summary.rightTrendText).toBeUndefined();
+
+    const data = buildProgressionReportData(mockPatient, analyses);
+    const html = generateProgressionReportHtml(data);
+    expect(html).toContain(summary.leftTrendText);
+    expect(html).toContain("HKA Gauche");
+    expect(html).not.toContain("HKA Droite</strong>");
+  });
 });
