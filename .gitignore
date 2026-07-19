@@ -1,5 +1,8 @@
 .worktrees/
 
+# Screenshots résiduels de runs E2E locaux (les scénarios trackés vivent dans bodyorthox-rn/e2e/)
+/e2e/
+
 # Outils locaux (session Claude, symlink vault Obsidian)
 .claude/
 docs/obsidian
