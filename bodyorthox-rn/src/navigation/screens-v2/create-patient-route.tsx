@@ -8,7 +8,7 @@ import {
   clearNewPatientDraft,
   type NewPatientFormValues,
   type NewPatientSubmitAction,
-} from "../../screens/NewPatient";
+} from "../../screens/new-patient/new-patient";
 import { usePatientsStore } from "../../features/patients/store/patients-store";
 import type { CreatePatientInput, MorphologicalProfile } from "../../features/patients/domain/patient";
 

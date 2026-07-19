@@ -2,7 +2,7 @@ import React from "react";
 import { Alert } from "react-native";
 import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import { CreatePatientRoute, formValuesToCreateInput } from "../create-patient-route";
-import { NEW_PATIENT_DRAFT_KEY, type NewPatientFormValues } from "../../../screens/NewPatient";
+import { NEW_PATIENT_DRAFT_KEY, type NewPatientFormValues } from "../../../screens/new-patient/new-patient";
 import {
   getKeyValueStorage,
   setKeyValueStorage,

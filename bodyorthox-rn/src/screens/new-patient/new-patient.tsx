@@ -1,22 +1,22 @@
 import React from "react";
 import { Pressable, ScrollView, StatusBar, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Btn, ChoiceChips, Field, Icon, NavBar, SectionLabel, SelectField } from "../components";
-import { colors } from "../theme/tokens";
-import { PainEditor } from "../features/patients/components/pain-editor";
-import type { ActivityLevel, Laterality } from "../features/patients/domain/patient";
-import { PickerModal } from "./new-patient/new-patient-picker-modal";
-import { styles } from "./new-patient/new-patient.styles";
-import { formatIsoDateForDisplay, labelForSex } from "./new-patient/new-patient-validation";
+import { Btn, ChoiceChips, Field, Icon, NavBar, SectionLabel, SelectField } from "../../components";
+import { colors } from "../../theme/tokens";
+import { PainEditor } from "../../features/patients/components/pain-editor";
+import type { ActivityLevel, Laterality } from "../../features/patients/domain/patient";
+import { PickerModal } from "./new-patient-picker-modal";
+import { styles } from "./new-patient.styles";
+import { formatIsoDateForDisplay, labelForSex } from "./new-patient-validation";
 import {
   useNewPatientForm,
   type NewPatientFormValues,
   type NewPatientMode,
   type NewPatientSubmitAction,
-} from "./new-patient/use-new-patient-form";
+} from "./use-new-patient-form";
 
 export type { NewPatientFormValues, NewPatientMode, NewPatientSubmitAction };
-export { NEW_PATIENT_DRAFT_KEY, clearNewPatientDraft } from "./new-patient/new-patient-draft";
+export { NEW_PATIENT_DRAFT_KEY, clearNewPatientDraft } from "./new-patient-draft";
 
 interface NewPatientProps {
   readonly mode?: NewPatientMode;

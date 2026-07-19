@@ -5,7 +5,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RouteProp } from "@react-navigation/native";
 import type { RootStackParamList } from "../../../navigation/types";
 import { usePatientsStore } from "../store/patients-store";
-import { NewPatient, type NewPatientFormValues } from "../../../screens/NewPatient";
+import { NewPatient, type NewPatientFormValues } from "../../../screens/new-patient/new-patient";
 import type { MorphologicalProfile, UpdatePatientInput } from "../domain/patient";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
