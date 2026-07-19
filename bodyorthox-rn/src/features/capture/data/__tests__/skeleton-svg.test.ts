@@ -7,6 +7,7 @@
  * the pdf ») ; les labels doivent rester des éléments HTML.
  */
 import { generateSkeletonOverlayHtml } from "../skeleton-svg";
+import { LEG_COLORS, PELVIS_GUIDE_COLOR } from "../../domain/skeleton-spec";
 import type {
   PoseLandmarks,
   BilateralAngles,
@@ -36,14 +37,14 @@ describe("generateSkeletonOverlayHtml", () => {
     expect(svg).toContain("<svg");
     // Contrainte Android : aucun <text> SVG dans l'overlay
     expect(svg).not.toContain("<text");
-    // Jambe gauche (vert) : hanche 23 (40%,50%) → genou 25 (40%,70%)
+    // Jambe gauche : hanche 23 (40%,50%) → genou 25 (40%,70%)
     expect(svg).toContain('x1="40%" y1="50%" x2="40%" y2="70%"');
-    expect(svg).toContain("#34D399");
-    // Jambe droite (cyan) : genou 26 (60%,70%) → cheville 28 (60%,90%)
+    expect(svg).toContain(LEG_COLORS.left);
+    // Jambe droite : genou 26 (60%,70%) → cheville 28 (60%,90%)
     expect(svg).toContain('x1="60%" y1="70%" x2="60%" y2="90%"');
-    expect(svg).toContain("#22D3EE");
-    // Guide bassin en pointillés (ambre)
-    expect(svg).toContain("#FBBF24");
+    expect(svg).toContain(LEG_COLORS.right);
+    // Guide bassin en pointillés
+    expect(svg).toContain(PELVIS_GUIDE_COLOR);
     expect(svg).toContain("stroke-dasharray");
   });
 

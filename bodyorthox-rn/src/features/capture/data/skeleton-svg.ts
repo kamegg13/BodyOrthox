@@ -16,10 +16,13 @@
  * (l'overlay épouse la boîte de l'image, les épaisseurs restent en px).
  */
 import type { PoseLandmarks, BilateralAngles } from "./angle-calculator";
+import { LEG_COLORS, PELVIS_GUIDE_COLOR } from "../domain/skeleton-spec";
 
-const LEFT_COLOR = "#34D399"; // jambe gauche — vert santé vif
-const RIGHT_COLOR = "#22D3EE"; // jambe droite — cyan secondaire
-const GUIDE_COLOR = "#FBBF24"; // ligne de référence bassin — ambre vif
+// Couleurs partagées avec l'overlay écran (skeleton-overlay.tsx) et le
+// canvas web (skeleton-canvas.ts) : voir domain/skeleton-spec.ts.
+const LEFT_COLOR = LEG_COLORS.left; // jambe gauche — vert santé vif
+const RIGHT_COLOR = LEG_COLORS.right; // jambe droite — cyan secondaire
+const GUIDE_COLOR = PELVIS_GUIDE_COLOR; // ligne de référence bassin — ambre vif
 
 /** 0.4 → "40%" (précision 2 décimales, zéros superflus retirés). */
 function pct(normalized: number): string {

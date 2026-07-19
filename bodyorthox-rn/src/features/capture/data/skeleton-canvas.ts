@@ -7,14 +7,17 @@
  */
 import { Platform } from "react-native";
 import type { PoseLandmarks, BilateralAngles } from "./angle-calculator";
+import { LEG_COLORS, PELVIS_GUIDE_COLOR } from "../domain/skeleton-spec";
 
 /**
  * Couleurs d'overlay v4 « Accessible & Ethical » — variantes vives de la
  * palette (lisibles sur photo, les labels portent le côté en texte G/D).
+ * Partagées avec l'overlay écran (skeleton-overlay.tsx) et le SVG du PDF
+ * (skeleton-svg.ts) : voir domain/skeleton-spec.ts.
  */
-const LEFT_COLOR = "#34D399"; // jambe gauche — vert santé vif
-const RIGHT_COLOR = "#22D3EE"; // jambe droite — cyan secondaire
-const GUIDE_COLOR = "#FBBF24"; // ligne de référence bassin — ambre vif
+const LEFT_COLOR = LEG_COLORS.left; // jambe gauche — vert santé vif
+const RIGHT_COLOR = LEG_COLORS.right; // jambe droite — cyan secondaire
+const GUIDE_COLOR = PELVIS_GUIDE_COLOR; // ligne de référence bassin — ambre vif
 
 export function drawSkeletonOnCanvas(
   ctx: CanvasRenderingContext2D,
