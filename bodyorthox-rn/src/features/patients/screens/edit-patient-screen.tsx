@@ -99,6 +99,16 @@ export function EditPatientScreen() {
           dateOfBirth: values.dateOfBirth,
           morphologicalProfile,
           ...(values.referringPhysician ? { referringPhysician: values.referringPhysician } : {}),
+          // Consentements modifiables en édition (retrait possible, art. 7.3
+          // RGPD) — le formulaire ré-horodate consentDate à chaque changement.
+          consentStorage: values.consentStorage,
+          consentPhotoCapture: values.consentPhotoCapture,
+          consentPdfExport: values.consentPdfExport,
+          consentGiven:
+            values.consentStorage &&
+            values.consentPhotoCapture &&
+            values.consentPdfExport,
+          ...(values.consentDate ? { consentDate: values.consentDate } : {}),
         };
         await updatePatient(patientId, input);
         navigation.goBack();

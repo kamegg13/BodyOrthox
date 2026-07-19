@@ -208,6 +208,39 @@ export function AccountScreen() {
     }
   }
 
+  // Export complet (droit à la portabilité, art. 20 RGPD) : JSON généré
+  // on-device puis remis à l'utilisateur (share sheet natif / téléchargement
+  // web). Imports dynamiques comme loadCounts : la base n'est disponible
+  // qu'après initializeDatabase().
+  async function handleExportAllData() {
+    try {
+      const [{ getDatabase }, patientRepoMod, analysisRepoMod, domain, service] =
+        await Promise.all([
+          import("../../../core/database/init"),
+          import("../../patients/data/sqlite-patient-repository"),
+          import("../../capture/data/sqlite-analysis-repository"),
+          import("../domain/data-export"),
+          import("../data/export-service"),
+        ]);
+      const db = getDatabase();
+      const exportedAt = new Date().toISOString();
+      const payload = await domain.buildExportPayload(
+        new patientRepoMod.SqlitePatientRepository(db),
+        new analysisRepoMod.SqliteAnalysisRepository(db),
+        exportedAt,
+      );
+      const result = await service.shareExportFile(
+        JSON.stringify(payload, null, 2),
+        domain.exportFileName(exportedAt),
+      );
+      if (result.kind === "error") {
+        showAlert("Export", result.message);
+      }
+    } catch {
+      showAlert("Export", "Impossible d'exporter les données.");
+    }
+  }
+
   async function handleDeleteAllData() {
     showConfirm(
       "Supprimer toutes les données",
@@ -379,12 +412,7 @@ export function AccountScreen() {
           <RowDivider />
           <ListRow
             label="Exporter toutes les données"
-            onPress={() =>
-              showAlert(
-                "Exporter",
-                "L'export de données sera disponible prochainement.",
-              )
-            }
+            onPress={handleExportAllData}
             testID="export-data-button"
           />
           <RowDivider />
