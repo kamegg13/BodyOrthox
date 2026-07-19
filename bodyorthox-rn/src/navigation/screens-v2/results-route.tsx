@@ -23,6 +23,7 @@ import { usePatientsStore } from "../../features/patients/store/patients-store";
 import { patientDisplayName } from "../../features/patients/domain/patient";
 import { calculateBilateralAngles, classifyHKA } from "../../features/capture/data/angle-calculator";
 import type { PoseLandmarks, BilateralAngles } from "../../features/capture/data/angle-calculator";
+import { hkaRangeLabel, hkaRangeStatus } from "../../shared/domain/hka-range";
 import {
   composeSkeletonImage,
   shouldOverlayLiveSkeleton,
@@ -262,7 +263,7 @@ function buildResultsData(
     sided("ankle", "Angle cheville", (s) => s.ankleAngle, analysis.angles.ankleAngle, 0),
   ];
 
-  const severity = severityFromAnalysis(leftHKA, rightHKA);
+  const rangeStatus = hkaRangeStatus(leftHKA, rightHKA);
   const date = new Date(analysis.createdAt).toLocaleDateString("fr-FR", {
     day: "2-digit",
     month: "short",
@@ -274,7 +275,7 @@ function buildResultsData(
     patientName,
     date,
     type,
-    severity,
+    rangeStatus,
     hka,
     postural,
     confidenceScore: analysis.confidenceScore,
@@ -306,20 +307,6 @@ function angleOrNull(value: number): number | null {
   return round(value);
 }
 
-function severityFromAnalysis(
-  leftHKA: number | null,
-  rightHKA: number | null,
-): "normal" | "moderate" | "severe" | "unavailable" {
-  const deltas = [leftHKA, rightHKA]
-    .filter((v): v is number => v !== null)
-    .map((v) => Math.abs(180 - v));
-  if (deltas.length === 0) return "unavailable";
-  const worst = Math.max(...deltas);
-  if (worst < 2) return "normal";
-  if (worst < 6) return "moderate";
-  return "severe";
-}
-
 function round(value: number): number {
   return Math.round(value * 10) / 10;
 }
@@ -330,13 +317,13 @@ function formatShareText(d: ResultsData): string {
   const lines = [
     `Patient : ${d.patientName}`,
     `Date : ${d.date}`,
-    `Severite : ${d.severity}`,
-    `HKA gauche : ${fmt(d.hka.left.value, d.hka.left.unit)}  (norme ${d.hka.left.norm}°)`,
-    `HKA droit : ${fmt(d.hka.right.value, d.hka.right.unit)}  (norme ${d.hka.right.norm}°)`,
+    `HKA : ${hkaRangeLabel(d.rangeStatus)}`,
+    `HKA gauche : ${fmt(d.hka.left.value, d.hka.left.unit)}  (réf. ${d.hka.left.norm}°)`,
+    `HKA droit : ${fmt(d.hka.right.value, d.hka.right.unit)}  (réf. ${d.hka.right.norm}°)`,
     "",
     ...d.postural.map(
       (m) =>
-        `${m.label} : G ${fmt(m.left, m.unit)} / D ${fmt(m.right, m.unit)}  (norme ${m.norm}${m.unit})`,
+        `${m.label} : G ${fmt(m.left, m.unit)} / D ${fmt(m.right, m.unit)}  (réf. ${m.norm}${m.unit})`,
     ),
   ];
   return lines.join("\n");

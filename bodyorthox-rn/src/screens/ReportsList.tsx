@@ -9,7 +9,11 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Badge, type BadgeColor, EmptyState, Icon, SectionLabel } from "../components";
+import { Badge, EmptyState, Icon, SectionLabel } from "../components";
+import {
+  hkaRangeShortLabel,
+  type HkaRangeStatus,
+} from "../shared/domain/hka-range";
 import {
   colors,
   fonts,
@@ -27,21 +31,21 @@ export interface ReportListItem {
   readonly patientName: string;
   readonly date: string;
   readonly hkaSummary?: string;
-  readonly severity: "normal" | "moderate" | "severe";
+  /** Position factuelle vs plage de référence — aucune gravité (non-DM). */
+  readonly range: HkaRangeStatus;
 }
 
-export type ReportSeverityFilter = "all" | "normal" | "moderate" | "severe";
+export type ReportRangeFilter = "all" | "in_range" | "out_of_range";
 
-interface SeverityChipDef {
-  readonly value: ReportSeverityFilter;
+interface RangeChipDef {
+  readonly value: ReportRangeFilter;
   readonly label: string;
 }
 
-const SEVERITY_CHIPS: readonly SeverityChipDef[] = [
+const RANGE_CHIPS: readonly RangeChipDef[] = [
   { value: "all", label: "Tous" },
-  { value: "normal", label: "Normal" },
-  { value: "moderate", label: "Modéré" },
-  { value: "severe", label: "Sévère" },
+  { value: "in_range", label: "Dans la plage" },
+  { value: "out_of_range", label: "Hors plage" },
 ];
 
 interface ReportsListProps {
@@ -50,8 +54,8 @@ interface ReportsListProps {
   readonly hasAnyReports: boolean;
   readonly searchQuery: string;
   readonly onSearchChange: (query: string) => void;
-  readonly severityFilter: ReportSeverityFilter;
-  readonly onSeverityFilterChange: (filter: ReportSeverityFilter) => void;
+  readonly rangeFilter: ReportRangeFilter;
+  readonly onRangeFilterChange: (filter: ReportRangeFilter) => void;
   readonly onItemPress?: (item: ReportListItem) => void;
 }
 
@@ -60,8 +64,8 @@ export function ReportsList({
   hasAnyReports,
   searchQuery,
   onSearchChange,
-  severityFilter,
-  onSeverityFilterChange,
+  rangeFilter,
+  onRangeFilterChange,
   onItemPress,
 }: ReportsListProps) {
   return (
@@ -96,12 +100,12 @@ export function ReportsList({
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.chipsContent}
           >
-            {SEVERITY_CHIPS.map((chip) => {
-              const active = severityFilter === chip.value;
+            {RANGE_CHIPS.map((chip) => {
+              const active = rangeFilter === chip.value;
               return (
                 <Pressable
                   key={chip.value}
-                  onPress={() => onSeverityFilterChange(chip.value)}
+                  onPress={() => onRangeFilterChange(chip.value)}
                   style={({ pressed }) => [
                     styles.chip,
                     active && styles.chipActive,
@@ -109,7 +113,7 @@ export function ReportsList({
                   ]}
                   accessibilityRole="button"
                   accessibilityState={{ selected: active }}
-                  testID={`reports-severity-chip-${chip.value}`}
+                  testID={`reports-range-chip-${chip.value}`}
                 >
                   <Text style={[styles.chipLabel, active && styles.chipLabelActive]}>
                     {chip.label}
@@ -164,10 +168,6 @@ function ReportRow({
   item: ReportListItem;
   onPress?: () => void;
 }) {
-  const sevColor: BadgeColor =
-    item.severity === "normal" ? "green" : item.severity === "moderate" ? "amber" : "red";
-  const sevLabel =
-    item.severity === "normal" ? "Normal" : item.severity === "moderate" ? "Modéré" : "Sévère";
   return (
     <Pressable
       onPress={onPress}
@@ -187,7 +187,7 @@ function ReportRow({
           {item.hkaSummary ? ` · ${item.hkaSummary}` : ""}
         </Text>
       </View>
-      <Badge label={sevLabel} color={sevColor} />
+      <Badge label={hkaRangeShortLabel(item.range)} color="navy" />
     </Pressable>
   );
 }

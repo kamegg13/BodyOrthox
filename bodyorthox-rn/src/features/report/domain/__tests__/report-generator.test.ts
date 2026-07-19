@@ -207,7 +207,10 @@ describe("generateReportHtml", () => {
   it("should include the MDR disclaimer", () => {
     const data = buildReportData(mockAnalysis, mockPatient);
     const html = generateReportHtml(data);
-    expect(html).toContain(LEGAL_CONSTANTS.mdrDisclaimer);
+    // Le HTML échappe les apostrophes du disclaimer (escapeHtml).
+    expect(html).toContain(
+      LEGAL_CONSTANTS.mdrDisclaimer.replace(/'/g, "&#039;"),
+    );
   });
 
   it("should include clinic name", () => {

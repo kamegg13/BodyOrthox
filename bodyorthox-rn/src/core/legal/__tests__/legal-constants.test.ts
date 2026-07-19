@@ -5,12 +5,17 @@ describe("LEGAL_CONSTANTS", () => {
     expect(LEGAL_CONSTANTS.mdrDisclaimer).toBeDefined();
   });
 
-  it("should contain key EU MDR compliance phrases", () => {
+  it("affirme le positionnement non-DM sans vocabulaire Règle 11", () => {
     const d = LEGAL_CONSTANTS.mdrDisclaimer;
     expect(d).toContain("BodyOrthox");
-    expect(d).toContain("documentation clinique");
-    expect(d).toContain("diagnostic medical");
-    expect(d).toContain("jugement clinique du praticien");
+    expect(d).toContain("mesure et de documentation");
+    expect(d).toContain("ne constitue pas un dispositif médical");
+    expect(d).toContain("ni diagnostic, ni recommandation de traitement");
+    // Formulations interdites : déclencheurs de qualification DM (Règle 11)
+    // ou insinuation d'un DM « non certifié ».
+    expect(d).not.toMatch(/aide à la décision/i);
+    expect(d).not.toMatch(/certifié/i);
+    expect(d).not.toMatch(/clinique/i);
   });
 
   it("should be a non-empty string", () => {

@@ -43,7 +43,7 @@ export function PatientTimelineScreen() {
   return (
     <View style={styles.root}>
       <SafeAreaView edges={["top"]} style={styles.headerSafe}>
-        <NavBar title="Progression clinique" back onBack={() => navigation.goBack()} />
+        <NavBar title="Progression" back onBack={() => navigation.goBack()} />
       </SafeAreaView>
 
       <ScrollView

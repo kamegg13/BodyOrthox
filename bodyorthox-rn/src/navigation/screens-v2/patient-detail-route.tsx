@@ -18,6 +18,7 @@ import {
   type Patient,
 } from "../../features/patients/domain/patient";
 import type { Analysis } from "../../features/capture/domain/analysis";
+import { hkaRangeStatus } from "../../shared/domain/hka-range";
 import { showToast } from "../../shared/toast/toast-store";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -205,7 +206,7 @@ export function buildDetailData(patient: Patient, analyses: readonly Analysis[])
   const diagnosisDescription =
     patient.morphologicalProfile?.pathology?.trim() ||
     patient.morphologicalProfile?.notes?.trim() ||
-    "Aucun diagnostic renseigné.";
+    "Aucun motif renseigné.";
 
   return {
     name: patientDisplayName(patient),
@@ -237,27 +238,14 @@ function buildHistory(analyses: readonly Analysis[]): readonly AnalysisHistoryIt
         ba && ba.leftHKA && ba.rightHKA
           ? `${Math.round(ba.leftHKA)}° / ${Math.round(ba.rightHKA)}°`
           : undefined;
-      const sev = severityFromAnalysis(a);
       return {
         id: a.id,
         date: dateLabel,
         type: "Posture · analyse complète",
         ...(hka ? { hka } : {}),
-        severity: sev,
+        range: hkaRangeStatus(ba?.leftHKA, ba?.rightHKA),
       };
     });
-}
-
-function severityFromAnalysis(a: Analysis): "normal" | "moderate" | "severe" {
-  const ba = a.bilateralAngles;
-  if (!ba) return "normal";
-  const worstDelta = Math.max(
-    Math.abs(180 - ba.leftHKA),
-    Math.abs(180 - ba.rightHKA),
-  );
-  if (worstDelta < 2) return "normal";
-  if (worstDelta < 6) return "moderate";
-  return "severe";
 }
 
 function formatShortDob(iso: string): string {

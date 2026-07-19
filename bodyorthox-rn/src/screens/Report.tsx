@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { AngleScale, Badge, Btn, Icon, Logo, NavBar } from "../components";
+import { AngleScale, Badge, Btn, Icon, LegalDisclaimer, Logo, NavBar } from "../components";
 import {
   colors,
   fonts,
@@ -37,7 +37,8 @@ export interface ReportRow {
   readonly value: string;
   readonly norm: string;
   readonly delta: string;
-  readonly severity: "normal" | "moderate" | "severe" | "unavailable";
+  /** Neutre : mesuré ou non — aucune classification de gravité (non-DM). */
+  readonly status: "measured" | "unavailable";
   /**
    * Mesure brute (non formatée) et plage de référence pour le rendu d'un
    * `AngleScale` sous la ligne. Réservé aux lignes HKA — absent pour les
@@ -55,8 +56,8 @@ export interface ReportData {
   readonly date: string;
   readonly practitioner: string;
   readonly practitionerId: string;
-  readonly severityLabel: string;
-  readonly severityColor: "green" | "amber" | "red" | "navy";
+  /** Position factuelle des HKA vs plage de référence (libellé neutre). */
+  readonly rangeLabel: string;
   readonly rows: readonly ReportRow[];
   readonly capturedImageUrl?: string;
   /** Fourni quand le squelette doit être superposé à la capture. */
@@ -129,7 +130,7 @@ export function Report({ data, onBack, onShare, onDownload, onSend }: ReportProp
                   {data.practitioner} · {data.practitionerId}
                 </Text>
               </View>
-              <Badge label={data.severityLabel} color={data.severityColor} />
+              <Badge label={data.rangeLabel} color="navy" />
             </View>
             {data.confidenceScore !== undefined &&
             data.confidenceScore < LOW_CONFIDENCE_THRESHOLD ? (
@@ -139,8 +140,8 @@ export function Report({ data, onBack, onShare, onDownload, onSend }: ReportProp
               >
                 <Badge label="Confiance faible" color="amber" icon="clock" />
                 <Text style={styles.confidenceText}>
-                  Confiance de détection faible lors de la capture — à vérifier
-                  avant usage clinique.
+                  Confiance de détection faible lors de la capture — mesures à
+                  vérifier avant utilisation.
                 </Text>
               </View>
             ) : null}
@@ -190,7 +191,7 @@ export function Report({ data, onBack, onShare, onDownload, onSend }: ReportProp
             <View style={styles.tableHeader}>
               <Text style={[styles.thLabel, { flex: 1 }]}>Angle</Text>
               <Text style={[styles.thNum, { width: 52 }]}>Valeur</Text>
-              <Text style={[styles.thNum, { width: 52 }]}>Norme</Text>
+              <Text style={[styles.thNum, { width: 52 }]}>Réf.</Text>
               <Text style={[styles.thNum, { width: 56 }]}>Δ</Text>
             </View>
             {data.rows.map((row, i) => (
@@ -199,7 +200,7 @@ export function Report({ data, onBack, onShare, onDownload, onSend }: ReportProp
           </View>
 
           <View style={[styles.section, styles.sectionBorder]}>
-            <Text style={styles.eyebrow}>Conclusion clinique</Text>
+            <Text style={styles.eyebrow}>Synthèse du praticien</Text>
             {data.clinicalNotes ? (
               <Text style={styles.conclusionText} testID="report-conclusion-text">
                 {data.clinicalNotes}
@@ -209,7 +210,7 @@ export function Report({ data, onBack, onShare, onDownload, onSend }: ReportProp
                 style={styles.conclusionEmptyText}
                 testID="report-conclusion-empty"
               >
-                Aucune interprétation clinique saisie.
+                Aucune note du praticien saisie.
               </Text>
             )}
             <View style={styles.footer}>
@@ -223,6 +224,8 @@ export function Report({ data, onBack, onShare, onDownload, onSend }: ReportProp
             </View>
           </View>
         </View>
+
+        <LegalDisclaimer testID="report-disclaimer" />
       </ScrollView>
 
       <SafeAreaView edges={["bottom"]} style={styles.actionBar}>
@@ -246,22 +249,10 @@ export function Report({ data, onBack, onShare, onDownload, onSend }: ReportProp
 }
 
 function ReportRowView({ row, index }: { row: ReportRow; index: number }) {
-  const sevColor =
-    row.severity === "unavailable"
-      ? colors.textMuted
-      : row.severity === "normal"
-      ? colors.green
-      : row.severity === "moderate"
-      ? colors.amber
-      : colors.red;
-  const sevBg =
-    row.severity === "unavailable"
-      ? colors.bgSubtle
-      : row.severity === "normal"
-      ? colors.greenLight
-      : row.severity === "moderate"
-      ? colors.amberLight
-      : colors.redLight;
+  // Pill d'écart volontairement neutre : l'écart est un fait chiffré,
+  // pas un jugement — aucune couleur de gravité (non-DM).
+  const deltaColor =
+    row.status === "unavailable" ? colors.textMuted : colors.textSecond;
   const hasScale = row.angleRefMin !== undefined && row.angleRefMax !== undefined;
   return (
     <View style={styles.tableRowGroup}>
@@ -271,8 +262,8 @@ function ReportRowView({ row, index }: { row: ReportRow; index: number }) {
         </Text>
         <Text style={[styles.tdValue, { width: 52 }]}>{row.value}</Text>
         <Text style={[styles.tdNorm, { width: 52 }]}>{row.norm}</Text>
-        <View style={[styles.deltaPill, { width: 56, backgroundColor: sevBg }]}>
-          <Text style={[styles.deltaText, { color: sevColor }]}>{row.delta}</Text>
+        <View style={[styles.deltaPill, { width: 56, backgroundColor: colors.bgSubtle }]}>
+          <Text style={[styles.deltaText, { color: deltaColor }]}>{row.delta}</Text>
         </View>
       </View>
       {hasScale ? (
@@ -523,15 +514,14 @@ export const SAMPLE_REPORT: ReportData = {
   date: "24 avr 2026",
   practitioner: "Dr. Jean Martin",
   practitionerId: "RPPS 12345678901",
-  severityLabel: "Modéré",
-  severityColor: "amber",
+  rangeLabel: "Hors plage 175–180°",
   rows: [
     {
       label: "HKA gauche",
       value: "173°",
       norm: "180°",
       delta: "−7°",
-      severity: "severe",
+      status: "measured",
       angleValue: 173,
       angleRefMin: 175,
       angleRefMax: 180,
@@ -541,13 +531,13 @@ export const SAMPLE_REPORT: ReportData = {
       value: "177°",
       norm: "180°",
       delta: "−3°",
-      severity: "moderate",
+      status: "measured",
       angleValue: 177,
       angleRefMin: 175,
       angleRefMax: 180,
     },
-    { label: "Inclin. épaules", value: "4°", norm: "0°", delta: "+4°", severity: "moderate" },
-    { label: "Inclin. bassin",  value: "9°", norm: "5°", delta: "+4°", severity: "moderate" },
-    { label: "Cobb rachis",     value: "18°", norm: "10°", delta: "+8°", severity: "severe" },
+    { label: "Inclin. épaules", value: "4°", norm: "0°", delta: "+4°", status: "measured" },
+    { label: "Inclin. bassin",  value: "9°", norm: "5°", delta: "+4°", status: "measured" },
+    { label: "Inclin. tronc",   value: "8°", norm: "0°", delta: "+8°", status: "measured" },
   ],
 };

@@ -3,11 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BodyOrthox — L'analyse HKA orthopédique, dans votre poche — par Antidote Sport</title>
-<meta name="description" content="BodyOrthox est l'app que les orthopédistes utilisent pour réaliser une analyse HKA (hanche–genou–cheville) en cabinet, à partir d'une simple photo de face. Édité par Antidote Sport. Actuellement en version Alpha sur invitation.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>BodyOrthox — La mesure HKA objective, dans votre poche — par Antidote Sport</title>
+<meta name="description" content="BodyOrthox mesure l'angle HKA (hanche–genou–cheville) à partir d'une simple photo de face, en local sur votre appareil. Un outil de mesure et de documentation posturale pour les professionnels. Édité par Antidote Sport. Actuellement en version Alpha sur invitation.">
+<!-- Polices auto-hébergées (RGPD : aucune requête vers Google Fonts) -->
+<link href="assets/fonts/fonts.css" rel="stylesheet">
 <style>
 /* ─── DESIGN TOKENS (aligned with bodyorthox-rn/src/theme/tokens.ts) ── */
 :root{
@@ -460,8 +459,8 @@ footer{padding:64px 0 40px;border-top:1px solid var(--border);margin-top:80px}
           <span class="dot" aria-hidden="true"></span>
           <span>Version Alpha · sur invitation · gratuite</span>
         </div>
-        <h1 class="display hero-title">L'analyse <em>HKA</em>, dans la poche de l'orthopédiste.</h1>
-        <p class="lead hero-sub">BodyOrthox mesure l'alignement hanche–genou–cheville à partir d'une simple photo de face. Édité par Antidote Sport, conçu pour le cabinet d'orthopédie.</p>
+        <h1 class="display hero-title">La mesure <em>HKA</em>, dans votre poche.</h1>
+        <p class="lead hero-sub">BodyOrthox mesure l'alignement hanche–genou–cheville à partir d'une simple photo de face, en local sur votre appareil. Un outil de mesure et de documentation posturale, édité par Antidote Sport.</p>
         <div class="hero-ctas">
           <a href="#cta" class="btn btn-primary btn-lg">
             Demander une démo
@@ -476,13 +475,17 @@ footer{padding:64px 0 40px;border-top:1px solid var(--border);margin-top:80px}
           </div>
           <div class="trust-item">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
-            <span>Serveurs sécurisés en France</span>
+            <span>Mesures 100 % sur votre appareil</span>
           </div>
           <div class="trust-item">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
             <span>Données chiffrées (RGPD)</span>
           </div>
         </div>
+        <p style="margin-top:14px;font-size:12.5px;color:var(--text-3,#5B6B7F);max-width:520px">
+          BodyOrthox est un outil de mesure et de documentation. Il ne constitue pas un
+          dispositif médical et ne fournit pas de diagnostic.
+        </p>
       </div>
 
       <!-- Phone Mockup -->
@@ -593,24 +596,24 @@ footer{padding:64px 0 40px;border-top:1px solid var(--border);margin-top:80px}
   <div class="wrap">
     <div class="section-head">
       <span class="eyebrow">Le constat</span>
-      <h2 class="h2">Mesurer l'axe HKA en cabinet reste long, cher et imprécis.</h2>
-      <p class="lead">Les outils d'analyse de l'alignement hanche–genou–cheville restent réservés au plateau technique. Vous méritez un outil aussi rigoureux, mais utilisable en consultation.</p>
+      <h2 class="h2">Mesurer et documenter l'alignement postural reste long et fastidieux.</h2>
+      <p class="lead">Suivre l'alignement hanche–genou–cheville sur le terrain demande du matériel, du temps et de la constance. Vous méritez un outil de mesure simple, objectif et reproductible.</p>
     </div>
     <div class="problem-grid">
       <article class="problem-card">
         <div class="num">01 — MATÉRIEL</div>
-        <h3 class="h3">Goniomètres et radios</h3>
-        <p>L'évaluation HKA classique passe par une radio EOS ou pangonogramme : irradiante, coûteuse, programmée — pas adaptée à un suivi rapproché en consultation.</p>
+        <h3 class="h3">Des outils dispersés</h3>
+        <p>Mesures manuelles, photos non standardisées, notes éparpillées : documenter une posture demande plusieurs outils qui ne se parlent pas.</p>
       </article>
       <article class="problem-card">
         <div class="num">02 — TEMPS</div>
-        <h3 class="h3">Une mesure, un rendez-vous</h3>
-        <p>Entre la prescription d'imagerie, l'attente du compte-rendu et la consultation de restitution, votre patient perd des semaines avant d'avoir un chiffre objectif.</p>
+        <h3 class="h3">Des minutes précieuses</h3>
+        <p>Mesurer, reporter les valeurs, mettre en forme un compte-rendu : chaque bilan postural consomme un temps que vous n'avez pas.</p>
       </article>
       <article class="problem-card">
-        <div class="num">03 — RIGUEUR</div>
-        <h3 class="h3">Mesures à l'œil</h3>
-        <p>Sans repères objectifs, l'évaluation visuelle d'un valgus ou varus dépend de votre œil et de votre fatigue du jour. Le suivi clinique reste subjectif.</p>
+        <div class="num">03 — CONSTANCE</div>
+        <h3 class="h3">Des mesures peu reproductibles</h3>
+        <p>Sans protocole standardisé ni repères fixes, deux mesures du même alignement peuvent diverger. Le suivi dans le temps perd en fiabilité.</p>
       </article>
     </div>
   </div>
@@ -621,8 +624,8 @@ footer{padding:64px 0 40px;border-top:1px solid var(--border);margin-top:80px}
   <div class="wrap">
     <div class="section-head">
       <span class="eyebrow">La solution</span>
-      <h2 class="h2">Tout votre cabinet biomécanique. Dans une app.</h2>
-      <p class="lead">Quatre piliers conçus pour la rigueur clinique et la rapidité du terrain.</p>
+      <h2 class="h2">Toute votre mesure posturale. Dans une app.</h2>
+      <p class="lead">Quatre piliers conçus pour la rigueur de la mesure et la rapidité du terrain.</p>
     </div>
 
     <div class="feature-list">
@@ -635,7 +638,7 @@ footer{padding:64px 0 40px;border-top:1px solid var(--border);margin-top:80px}
           <p class="lead">Un squelette anatomique en surimpression vous guide en temps réel pour le cadrage. Une seule vue de face suffit pour l'analyse HKA — pas de pose multiple à réaliser.</p>
           <ul class="feature-points">
             <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Détection automatique des repères hanche, genou, cheville</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Guide de cadrage adaptatif — patient debout, vue de face</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Guide de cadrage adaptatif — personne debout, vue de face</li>
             <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Aucun matériel additionnel — votre smartphone suffit</li>
           </ul>
         </div>
@@ -674,13 +677,13 @@ footer{padding:64px 0 40px;border-top:1px solid var(--border);margin-top:80px}
       <!-- Feature 2: Patients -->
       <div class="feature-row reverse">
         <div class="feature-text">
-          <span class="eyebrow">Gestion patients</span>
+          <span class="eyebrow">Gestion des dossiers</span>
           <h2 class="h2">Vos dossiers, organisés. Pas votre paperasse.</h2>
-          <p class="lead">Tous vos patients dans une vue unique. Historique des bilans, photos, mesures, et évolution dans le temps — à portée d'un tap.</p>
+          <p class="lead">Toutes les personnes que vous suivez dans une vue unique. Historique des bilans, photos, mesures, et évolution dans le temps — à portée d'un tap.</p>
           <ul class="feature-points">
             <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Recherche instantanée par nom, motif de consultation ou date</li>
             <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Comparaison de bilans avant/après côte à côte</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Données chiffrées et hébergées en France, conformes RGPD</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Données chiffrées, stockées uniquement sur votre appareil (RGPD)</li>
           </ul>
         </div>
         <div class="feature-visual">
@@ -689,7 +692,7 @@ footer{padding:64px 0 40px;border-top:1px solid var(--border);margin-top:80px}
               <div class="viz-avatar">MB</div>
               <div class="viz-list-text">
                 <div class="viz-list-name">Marc Bertrand</div>
-                <div class="viz-list-meta">42 ans · Scoliose lombaire</div>
+                <div class="viz-list-meta">42 ans · Bilan postural</div>
               </div>
               <span class="viz-list-tag">M+3</span>
             </div>
@@ -705,7 +708,7 @@ footer{padding:64px 0 40px;border-top:1px solid var(--border);margin-top:80px}
               <div class="viz-avatar amber">JL</div>
               <div class="viz-list-text">
                 <div class="viz-list-name">Julien Leroy</div>
-                <div class="viz-list-meta">36 ans · Cervicalgie chronique</div>
+                <div class="viz-list-meta">36 ans · Suivi trail</div>
               </div>
               <span class="viz-list-tag">M+6</span>
             </div>
@@ -713,7 +716,7 @@ footer{padding:64px 0 40px;border-top:1px solid var(--border);margin-top:80px}
               <div class="viz-avatar">AM</div>
               <div class="viz-list-text">
                 <div class="viz-list-name">Anne Moreau</div>
-                <div class="viz-list-meta">54 ans · Hyperlordose</div>
+                <div class="viz-list-meta">54 ans · Suivi M+12</div>
               </div>
               <span class="viz-list-tag">M+12</span>
             </div>
@@ -726,11 +729,11 @@ footer{padding:64px 0 40px;border-top:1px solid var(--border);margin-top:80px}
         <div class="feature-text">
           <span class="eyebrow">Analyse HKA</span>
           <h2 class="h2">Des mesures objectives. À chaque cliché.</h2>
-          <p class="lead">Notre moteur calcule automatiquement les angles hanche, genou et cheville sur la photo de face. Plus de mesure manuelle au goniomètre, plus de chiffres oubliés.</p>
+          <p class="lead">Notre moteur calcule automatiquement les angles hanche, genou et cheville sur la photo de face. Des valeurs chiffrées, reproductibles, prêtes à documenter.</p>
           <ul class="feature-points">
             <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Angles hanche, genou, cheville chiffrés en degrés</li>
             <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Mesure des asymétries gauche / droite</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Repères seuils ajustables selon votre pratique</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Plage de référence affichée à côté de chaque mesure</li>
           </ul>
         </div>
         <div class="feature-visual teal">
@@ -741,19 +744,19 @@ footer{padding:64px 0 40px;border-top:1px solid var(--border);margin-top:80px}
             </div>
             <div class="viz-report-row">
               <span class="viz-report-label">Hanche · gauche</span>
-              <span class="viz-report-value ok">88°</span>
+              <span class="viz-report-value">88°</span>
             </div>
             <div class="viz-report-row">
               <span class="viz-report-label">Hanche · droite</span>
-              <span class="viz-report-value warn">86°</span>
+              <span class="viz-report-value">86°</span>
             </div>
             <div class="viz-report-row">
               <span class="viz-report-label">Genou · gauche</span>
-              <span class="viz-report-value ok">178°</span>
+              <span class="viz-report-value">178°</span>
             </div>
             <div class="viz-report-row">
               <span class="viz-report-label">Genou · droite</span>
-              <span class="viz-report-value warn">174°</span>
+              <span class="viz-report-value">174°</span>
             </div>
             <div class="viz-report-row">
               <span class="viz-report-label">Cheville · bilat.</span>
@@ -767,10 +770,10 @@ footer{padding:64px 0 40px;border-top:1px solid var(--border);margin-top:80px}
       <div class="feature-row reverse">
         <div class="feature-text">
           <span class="eyebrow">Rapport PDF</span>
-          <h2 class="h2">Un rapport HKA clinique. Prêt à imprimer.</h2>
-          <p class="lead">Compte-rendu PDF signé, à votre marque, généré en un tap. Partagez-le au patient, au médecin correspondant ou au kiné par mail sécurisé.</p>
+          <h2 class="h2">Un rapport HKA soigné. Prêt à imprimer.</h2>
+          <p class="lead">Compte-rendu PDF signé, à votre marque, généré en un tap. Partagez-le à la personne suivie ou à un confrère, par le canal de votre choix.</p>
           <ul class="feature-points">
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Photo annotée, angles HKA chiffrés, synthèse clinique</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Photo annotée, angles HKA chiffrés, synthèse des mesures</li>
             <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Personnalisation logo, en-tête, signature numérique</li>
             <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Export sécurisé, partage par email ou impression</li>
           </ul>
@@ -815,7 +818,7 @@ footer{padding:64px 0 40px;border-top:1px solid var(--border);margin-top:80px}
       <div class="step">
         <div class="step-num">01</div>
         <h3 class="h3">Vous photographiez</h3>
-        <p>Le patient debout, vue de face. Le guide de cadrage vous indique exactement quand déclencher. 30 secondes, top chrono.</p>
+        <p>La personne debout, vue de face. Le guide de cadrage vous indique exactement quand déclencher. 30 secondes, top chrono.</p>
       </div>
       <div class="step">
         <div class="step-num">02</div>
@@ -825,7 +828,7 @@ footer{padding:64px 0 40px;border-top:1px solid var(--border);margin-top:80px}
       <div class="step">
         <div class="step-num">03</div>
         <h3 class="h3">Vous partagez</h3>
-        <p>Un PDF clinique à votre marque, prêt à imprimer ou envoyer. Le patient repart avec son bilan HKA en main.</p>
+        <p>Un PDF soigné à votre marque, prêt à imprimer ou envoyer. La personne repart avec son bilan HKA en main.</p>
       </div>
     </div>
   </div>
@@ -850,7 +853,7 @@ footer{padding:64px 0 40px;border-top:1px solid var(--border);margin-top:80px}
         </div>
         <div class="trust-stat">
           <div class="trust-num">FR</div>
-          <div class="trust-label">Hébergement sécurisé en France</div>
+          <div class="trust-label">Mesures stockées sur votre appareil</div>
         </div>
       </div>
     </div>
@@ -863,7 +866,7 @@ footer{padding:64px 0 40px;border-top:1px solid var(--border);margin-top:80px}
     <div class="section-head">
       <span class="eyebrow">Accès Alpha</span>
       <h2 class="h2">Gratuit, sur invitation — pendant toute la phase de test.</h2>
-      <p class="lead">BodyOrthox est en version Alpha : nous l'ouvrons à un cercle restreint d'orthopédistes pour affiner l'outil avec les praticiens qui l'utilisent. Pas encore de tarification publique.</p>
+      <p class="lead">BodyOrthox est en version Alpha : nous l'ouvrons à un cercle restreint de professionnels du mouvement et de la posture pour affiner l'outil avec ceux qui l'utilisent. Pas encore de tarification publique.</p>
     </div>
 
     <div class="pricing-grid" style="grid-template-columns:1fr 1fr;max-width:880px">
@@ -873,7 +876,7 @@ footer{padding:64px 0 40px;border-top:1px solid var(--border);margin-top:80px}
           <span class="num">Gratuit</span>
           <span class="per">· phase de test</span>
         </div>
-        <p class="price-desc">Pour les orthopédistes qui veulent contribuer au design clinique de l'outil.</p>
+        <p class="price-desc">Pour les professionnels qui veulent contribuer au design de l'outil.</p>
         <ul class="price-features">
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Accès complet à l'analyse HKA sur photo de face</li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Patients et rapports illimités pendant l'Alpha</li>
@@ -891,7 +894,7 @@ footer{padding:64px 0 40px;border-top:1px solid var(--border);margin-top:80px}
         <p class="price-desc">La grille tarifaire publique sera définie à la sortie de l'Alpha, avec les premiers utilisateurs.</p>
         <ul class="price-features">
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Conditions préférentielles pour les testeurs Alpha</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Formules cabinet et clinique en cours de design</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Formules individuelles et structures en cours de design</li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Contactez Antidote Sport pour en discuter</li>
         </ul>
         <a href="#cta" class="btn btn-secondary btn-md">Nous contacter</a>
@@ -910,7 +913,7 @@ footer{padding:64px 0 40px;border-top:1px solid var(--border);margin-top:80px}
     <div class="faq-list">
       <details>
         <summary>À qui s'adresse BodyOrthox ?</summary>
-        <div class="faq-body">BodyOrthox est conçu pour les orthopédistes en cabinet ou en consultation hospitalière qui souhaitent objectiver l'alignement des membres inférieurs (axe HKA) sans recourir systématiquement à l'imagerie.</div>
+        <div class="faq-body">BodyOrthox est conçu pour les professionnels du mouvement et de la posture (préparateurs physiques, posturologues, coachs sportifs, professionnels du sport-santé) qui veulent mesurer et documenter l'alignement des membres inférieurs (axe HKA) de façon simple et reproductible. C'est un outil de mesure et de documentation : il ne fournit aucun diagnostic.</div>
       </details>
       <details>
         <summary>Comment rejoindre le programme Alpha ?</summary>
@@ -921,12 +924,12 @@ footer{padding:64px 0 40px;border-top:1px solid var(--border);margin-top:80px}
         <div class="faq-body">Un smartphone récent (iOS 14+ ou Android 10+). BodyOrthox tire parti du capteur photo natif. Aucun trépied ni accessoire spécifique requis.</div>
       </details>
       <details>
-        <summary>Mes données patient sont-elles sécurisées ?</summary>
-        <div class="faq-body">Oui. Les données — photos, mesures, dossiers — sont chiffrées et hébergées sur des serveurs sécurisés situés en France. Conformes RGPD. Antidote Sport est responsable de traitement et n'utilise les données qu'à des fins de service et d'amélioration de l'outil.</div>
+        <summary>Mes données sont-elles sécurisées ?</summary>
+        <div class="faq-body">Oui. Les dossiers — photos, mesures, notes — sont stockés uniquement sur votre appareil, dans une base chiffrée : ils ne transitent jamais par nos serveurs et Antidote Sport n'y a pas accès. Vous êtes responsable du traitement de ces données au sens du RGPD ; l'app intègre le recueil de consentement, l'export et la suppression. Seuls votre compte (e-mail) et vos messages de feedback transitent par nos serveurs.</div>
       </details>
       <details>
         <summary>Quelle précision peut-on attendre de la mesure HKA ?</summary>
-        <div class="faq-body">L'analyse HKA par photo de face est conçue pour la mesure et le suivi de l'alignement des membres inférieurs. Elle fournit une mesure géométrique destinée au professionnel de santé, qui en assure l'interprétation. Elle ne remplace pas un pangonogramme ou une mesure EOS, mais permet un suivi rapproché à coût et irradiation nuls. BodyOrthox n'établit aucun diagnostic et ne constitue pas un dispositif médical.</div>
+        <div class="faq-body">L'analyse HKA par photo de face fournit une mesure géométrique reproductible de l'alignement, affichée à côté d'une plage de référence issue de la littérature. C'est une mesure destinée au professionnel, qui en assure l'interprétation. BodyOrthox n'établit aucun diagnostic, ne recommande aucun traitement et ne constitue pas un dispositif médical.</div>
       </details>
       <details>
         <summary>Quel sera le tarif après l'Alpha ?</summary>
@@ -940,7 +943,7 @@ footer{padding:64px 0 40px;border-top:1px solid var(--border);margin-top:80px}
 <section id="cta" style="padding-bottom:80px">
   <div class="final-cta">
     <span class="eyebrow" style="color:#B2E8E2;display:inline-block;margin-bottom:18px">Programme Alpha · sur invitation</span>
-    <h2 class="h2">Rejoignez les premiers orthopédistes<br/>à mesurer l'HKA en cabinet.</h2>
+    <h2 class="h2">Rejoignez les premiers professionnels<br/>à mesurer l'HKA sur le terrain.</h2>
     <p class="lead">Demandez une démo : on échange sur votre pratique, on vous montre l'app, et si le profil colle, vous rejoignez le cercle Alpha — gratuitement, le temps de la phase de test.</p>
     <div class="final-ctas">
       <a href="mailto:contact@antidote-sport.fr?subject=Demande%20de%20d%C3%A9mo%20BodyOrthox" class="btn btn-primary btn-lg">
@@ -975,22 +978,22 @@ footer{padding:64px 0 40px;border-top:1px solid var(--border);margin-top:80px}
       <div class="problem-card" style="text-align:left">
         <h3 class="h3" style="margin-bottom:14px">Hébergement</h3>
         <p style="color:var(--text-2);font-size:15px;line-height:1.7">
-          Hébergeur : <strong>[à compléter]</strong> (hébergement sécurisé en France).
+          Hébergeur du site web : <strong>[à compléter]</strong>. Les données de l'application ne sont pas hébergées : elles restent sur l'appareil de l'utilisateur.
         </p>
       </div>
 
       <div id="rgpd" class="problem-card" style="text-align:left">
         <h3 class="h3" style="margin-bottom:14px">Protection des données (RGPD)</h3>
         <p style="color:var(--text-2);font-size:15px;line-height:1.7">
-          Les données de santé éventuellement traitées le sont conformément au RGPD ; les mesures sont réalisées et stockées localement sur l'appareil du professionnel ; aucune donnée n'est transmise sans consentement.<br>
-          Pour toute question relative à vos données ou pour exercer vos droits (accès, rectification, effacement), contactez notre délégué à la protection des données : <strong>[contact à compléter]</strong>.
+          Les mesures, photos et dossiers créés dans l'application sont réalisés et stockés uniquement sur l'appareil du professionnel, dans une base chiffrée : ils ne transitent jamais par les serveurs d'Antidote Sport, qui n'y a pas accès. Le professionnel utilisateur est responsable du traitement de ces données ; l'application intègre le recueil de consentement, l'export et la suppression. Seuls le compte utilisateur (e-mail) et les messages de feedback sont traités par Antidote Sport, en tant que responsable de traitement, à des fins d'authentification et d'amélioration de l'outil.<br>
+          Pour toute question relative à vos données ou pour exercer vos droits (accès, rectification, effacement, portabilité), contactez : <strong>[contact à compléter]</strong>. Vous pouvez adresser une réclamation à la CNIL (cnil.fr).
         </p>
       </div>
 
       <div class="problem-card" style="text-align:left;border-color:var(--border-mid)">
         <h3 class="h3" style="margin-bottom:14px">Statut de l'outil</h3>
         <p style="color:var(--text-2);font-size:15px;line-height:1.7">
-          BodyOrthox est un outil de mesure et de documentation à destination des professionnels de santé. Il ne constitue pas un dispositif médical et ne fournit pas de diagnostic. Les mesures géométriques produites sont destinées au professionnel de santé, qui en assure l'interprétation clinique.
+          BodyOrthox est un outil de mesure et de documentation à destination des professionnels. Il ne constitue pas un dispositif médical : il ne fournit ni diagnostic, ni recommandation de traitement. Les mesures géométriques produites sont destinées au professionnel, qui en assure l'interprétation. L'application n'a pas de finalité d'identification biométrique ni de catégorisation des personnes.
         </p>
       </div>
 
@@ -1009,7 +1012,7 @@ footer{padding:64px 0 40px;border-top:1px solid var(--border);margin-top:80px}
           </span>
           <span class="logo-text">Antidote Sport</span>
         </a>
-        <p class="footer-tagline">BodyOrthox — l'analyse HKA orthopédique sur photo de face, par Antidote Sport. Édité en France, hébergement sécurisé en France.</p>
+        <p class="footer-tagline">BodyOrthox — la mesure HKA sur photo de face, par Antidote Sport. Un outil de mesure et de documentation, sans diagnostic. Édité en France, données sur votre appareil.</p>
       </div>
       <div class="footer-col">
         <h4>Produit</h4>
@@ -1035,7 +1038,7 @@ footer{padding:64px 0 40px;border-top:1px solid var(--border);margin-top:80px}
     </div>
     <div class="footer-bottom">
       <span>© 2026 Antidote Sport · BodyOrthox · Tous droits réservés</span>
-      <span>Édité et hébergé en France.</span>
+      <span>Édité en France · Vos mesures restent sur votre appareil.</span>
     </div>
   </div>
 </footer>

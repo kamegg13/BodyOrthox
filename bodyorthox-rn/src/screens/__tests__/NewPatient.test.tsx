@@ -73,19 +73,46 @@ describe("NewPatient — consentements RGPD & médecin référent", () => {
     expect(values.referringPhysician).toBe("Dr. Martin");
   });
 
-  it("ne transmet pas de consentement quand skipConsents est actif", () => {
-    const onSave = jest.fn();
-    const { getByTestId, getByText } = render(<NewPatient onSave={onSave} skipConsents />);
-    fillRequiredFields(getByTestId, getByText);
+  const editInitialValues = {
+    firstName: "Jean",
+    lastName: "Dupont",
+    sex: "male" as const,
+    dateOfBirth: "1990-01-01",
+    consentStorage: true,
+    consentPhotoCapture: true,
+    consentPdfExport: true,
+    consentDate: "2026-01-01T00:00:00.000Z",
+  };
 
+  it("en édition, permet de retirer un consentement et ré-horodate le changement (art. 7.3)", () => {
+    const onSave = jest.fn();
+    const { getByTestId } = render(
+      <NewPatient mode="edit" onSave={onSave} initialValues={editInitialValues} />,
+    );
+
+    fireEvent.press(getByTestId("np-consent-2"));
     fireEvent.press(getByTestId("np-submit"));
 
     expect(onSave).toHaveBeenCalledTimes(1);
     const values = onSave.mock.calls[0][0];
-    expect(values.consentStorage).toBe(false);
-    expect(values.consentPhotoCapture).toBe(false);
+    expect(values.consentStorage).toBe(true);
+    expect(values.consentPhotoCapture).toBe(true);
     expect(values.consentPdfExport).toBe(false);
-    expect(values.consentDate).toBeNull();
+    expect(values.consentDate).toEqual(expect.any(String));
+    expect(values.consentDate).not.toBe("2026-01-01T00:00:00.000Z");
+  });
+
+  it("en édition, conserve la date de recueil d'origine si rien ne change", () => {
+    const onSave = jest.fn();
+    const { getByTestId } = render(
+      <NewPatient mode="edit" onSave={onSave} initialValues={editInitialValues} />,
+    );
+
+    fireEvent.press(getByTestId("np-submit"));
+
+    const values = onSave.mock.calls[0][0];
+    expect(values.consentPdfExport).toBe(true);
+    expect(values.consentDate).toBe("2026-01-01T00:00:00.000Z");
   });
 });
 
@@ -439,24 +466,25 @@ describe("NewPatient — mode édition", () => {
     expect(queryByTestId("np-submit-secondary")).toBeNull();
   });
 
-  it("ne montre pas les cases de consentement, mais leur date de recueil en lecture seule", () => {
-    const { queryByTestId, getByTestId, getByText } = render(
+  it("montre les cases de consentement modifiables avec la date de recueil (art. 7.3)", () => {
+    const { getByTestId, getByText } = render(
       <NewPatient mode="edit" initialValues={EDIT_INITIAL_VALUES} onSave={jest.fn()} />,
     );
-    expect(queryByTestId("np-consent-0")).toBeNull();
-    expect(getByTestId("np-consent-readonly")).toBeTruthy();
-    expect(getByText(/Consentement recueilli le \d{2}\/\d{2}\/\d{4}/)).toBeTruthy();
+    expect(getByTestId("np-consent-0")).toBeTruthy();
+    expect(getByTestId("np-consent-edit-hint")).toBeTruthy();
+    expect(getByText(/Recueillis le \d{2}\/\d{2}\/\d{4}/)).toBeTruthy();
   });
 
-  it("indique l'absence de date quand le consentement n'a pas de date connue", () => {
-    const { getByText } = render(
+  it("reste modifiable même sans date de recueil connue", () => {
+    const { getByTestId, getByText } = render(
       <NewPatient
         mode="edit"
         initialValues={{ ...EDIT_INITIAL_VALUES, consentDate: null }}
         onSave={jest.fn()}
       />,
     );
-    expect(getByText(/date non renseignée/)).toBeTruthy();
+    expect(getByTestId("np-consent-0")).toBeTruthy();
+    expect(getByText(/Modifiables à tout moment/)).toBeTruthy();
   });
 
   it("déplie le profil clinique par défaut", () => {

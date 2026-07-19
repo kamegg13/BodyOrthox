@@ -70,7 +70,7 @@ describe("PatientTimelineScreen", () => {
     const { getByText } = render(<PatientTimelineScreen />);
     await waitFor(
       () => {
-        expect(getByText("Progression clinique")).toBeTruthy();
+        expect(getByText("Progression")).toBeTruthy();
       },
       { timeout: 10000 },
     );

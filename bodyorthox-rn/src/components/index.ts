@@ -13,8 +13,7 @@ export {
   HkaMeasureCard,
   HKA_REF_MIN,
   HKA_REF_MAX,
-  severity,
-  sevTone,
+  measureTone,
   type HkaSideMeasure,
 } from "./HkaMeasureCard";
 export { ZoomableImage } from "./ZoomableImage";
@@ -25,4 +24,5 @@ export { ListRow } from "./ListRow";
 export { EmptyState, type StateTone } from "./EmptyState";
 export { ErrorState } from "./ErrorState";
 export { LoadingState } from "./LoadingState";
+export { LegalDisclaimer } from "./LegalDisclaimer";
 export { PatientPickerModal } from "./PatientPickerModal";

@@ -105,11 +105,11 @@ describe("ReportsListRoute — recherche et filtre", () => {
     });
   });
 
-  it("filtre les rapports par sévérité", async () => {
+  it("filtre les rapports par position vs plage de référence", async () => {
     const { getByTestId, findByText, queryByText } = render(<ReportsListRoute />);
     await findByText("Jean Dupont");
 
-    fireEvent.press(getByTestId("reports-severity-chip-severe"));
+    fireEvent.press(getByTestId("reports-range-chip-out_of_range"));
 
     await waitFor(() => {
       expect(queryByText("Jean Dupont")).toBeNull();

@@ -8,14 +8,14 @@ const items: readonly ReportListItem[] = [
     patientId: "patient-1",
     patientName: "Jean Dupont",
     date: "24 avr 2026",
-    severity: "normal",
+    range: "in_range",
   },
   {
     analysisId: "a2",
     patientId: "patient-2",
     patientName: "Sophie Leclerc",
     date: "20 avr 2026",
-    severity: "severe",
+    range: "out_of_range",
   },
 ];
 
@@ -30,8 +30,8 @@ describe("ReportsList", () => {
           hasAnyReports
           searchQuery=""
           onSearchChange={noop}
-          severityFilter="all"
-          onSeverityFilterChange={noop}
+          rangeFilter="all"
+          onRangeFilterChange={noop}
         />,
       );
       expect(getByTestId("reports-search-input")).toBeTruthy();
@@ -45,8 +45,8 @@ describe("ReportsList", () => {
           hasAnyReports
           searchQuery=""
           onSearchChange={onSearchChange}
-          severityFilter="all"
-          onSeverityFilterChange={noop}
+          rangeFilter="all"
+          onRangeFilterChange={noop}
         />,
       );
       fireEvent.changeText(getByTestId("reports-search-input"), "Sophie");
@@ -60,8 +60,8 @@ describe("ReportsList", () => {
           hasAnyReports
           searchQuery="zzz"
           onSearchChange={noop}
-          severityFilter="all"
-          onSeverityFilterChange={noop}
+          rangeFilter="all"
+          onRangeFilterChange={noop}
         />,
       );
       expect(getByTestId("reports-empty-search")).toBeTruthy();
@@ -75,8 +75,8 @@ describe("ReportsList", () => {
           hasAnyReports={false}
           searchQuery=""
           onSearchChange={noop}
-          severityFilter="all"
-          onSeverityFilterChange={noop}
+          rangeFilter="all"
+          onRangeFilterChange={noop}
         />,
       );
       expect(getByTestId("reports-empty-none")).toBeTruthy();
@@ -84,40 +84,40 @@ describe("ReportsList", () => {
     });
   });
 
-  describe("filtre sévérité", () => {
-    it("affiche les 4 chips avec 'Tous' actif par défaut", () => {
+  describe("filtre plage de référence", () => {
+    it("affiche les chips avec 'Tous' actif par défaut", () => {
       const { getByTestId } = render(
         <ReportsList
           items={items}
           hasAnyReports
           searchQuery=""
           onSearchChange={noop}
-          severityFilter="all"
-          onSeverityFilterChange={noop}
+          rangeFilter="all"
+          onRangeFilterChange={noop}
         />,
       );
-      expect(getByTestId("reports-severity-chip-all").props.accessibilityState.selected).toBe(
+      expect(getByTestId("reports-range-chip-all").props.accessibilityState.selected).toBe(
         true,
       );
       expect(
-        getByTestId("reports-severity-chip-severe").props.accessibilityState.selected,
+        getByTestId("reports-range-chip-out_of_range").props.accessibilityState.selected,
       ).toBe(false);
     });
 
-    it("appelle onSeverityFilterChange au tap sur un chip", () => {
-      const onSeverityFilterChange = jest.fn();
+    it("appelle onRangeFilterChange au tap sur un chip", () => {
+      const onRangeFilterChange = jest.fn();
       const { getByTestId } = render(
         <ReportsList
           items={items}
           hasAnyReports
           searchQuery=""
           onSearchChange={noop}
-          severityFilter="all"
-          onSeverityFilterChange={onSeverityFilterChange}
+          rangeFilter="all"
+          onRangeFilterChange={onRangeFilterChange}
         />,
       );
-      fireEvent.press(getByTestId("reports-severity-chip-severe"));
-      expect(onSeverityFilterChange).toHaveBeenCalledWith("severe");
+      fireEvent.press(getByTestId("reports-range-chip-out_of_range"));
+      expect(onRangeFilterChange).toHaveBeenCalledWith("out_of_range");
     });
   });
 
@@ -130,8 +130,8 @@ describe("ReportsList", () => {
           hasAnyReports
           searchQuery=""
           onSearchChange={noop}
-          severityFilter="all"
-          onSeverityFilterChange={noop}
+          rangeFilter="all"
+          onRangeFilterChange={noop}
           onItemPress={onItemPress}
         />,
       );

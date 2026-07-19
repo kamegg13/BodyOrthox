@@ -601,7 +601,7 @@ export function generateProgressionReportHtml(
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Rapport de Progression Clinique — ${escapeHtml(data.patientName)}</title>
+  <title>Rapport de progression — ${escapeHtml(data.patientName)}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #222; background: #fff; padding: 24px; }
@@ -636,7 +636,7 @@ export function generateProgressionReportHtml(
 
   <!-- PAGE 1 : Graphes + Synthèse -->
   <div class="header">
-    <h1>Rapport de Progression Clinique — ${escapeHtml(data.patientName)}</h1>
+    <h1>Rapport de progression — ${escapeHtml(data.patientName)}</h1>
     <div class="subtitle">Antidote Boost — Suivi HKA sur ${sessionCount} séance${sessionCount > 1 ? "s" : ""}</div>
   </div>
 

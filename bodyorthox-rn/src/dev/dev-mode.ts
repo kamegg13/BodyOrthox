@@ -144,7 +144,7 @@ const SEED_PATIENTS: Patient[] = [
       sex: "female",
       heightCm: 165,
       weightKg: 58,
-      pathology: "Scoliose idiopathique adolescente",
+      pathology: "Bilan postural — pratique danse",
       pains: [
         { id: "x", location: "back", side: "left", intensity: 4, type: "chronic" },
       ],
@@ -168,7 +168,7 @@ const SEED_PATIENTS: Patient[] = [
       sex: "female",
       heightCm: 162,
       weightKg: 55,
-      pathology: "Suivi post-operatoire genou",
+      pathology: "Suivi préparation trail",
       activityLevel: "moderate",
     },
   }),

@@ -94,7 +94,7 @@ describe("Report", () => {
         <Report data={SAMPLE_REPORT} />,
       );
       expect(getByTestId("report-conclusion-empty")).toHaveTextContent(
-        "Aucune interprétation clinique saisie.",
+        "Aucune note du praticien saisie.",
       );
       expect(queryByTestId("report-conclusion-text")).toBeNull();
     });

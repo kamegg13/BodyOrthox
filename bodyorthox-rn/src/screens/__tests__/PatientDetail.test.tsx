@@ -132,9 +132,9 @@ describe("PatientDetail — données non renseignées", () => {
     expect(queryByText(/0\s*kg/)).toBeNull();
   });
 
-  it("n'affiche « Diagnostic principal » qu'une seule fois (eyebrow, pas de doublon)", () => {
+  it("n'affiche « Motif / contexte » qu'une seule fois (eyebrow, pas de doublon)", () => {
     const { getAllByText } = render(<PatientDetail data={SAMPLE_PATIENT_DETAIL} />);
-    expect(getAllByText("Diagnostic principal")).toHaveLength(1);
+    expect(getAllByText("Motif / contexte")).toHaveLength(1);
   });
 });
 

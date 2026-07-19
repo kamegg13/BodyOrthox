@@ -11,17 +11,20 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Badge,
-  type BadgeColor,
   Btn,
   HkaMeasureCard,
   HKA_REF_MIN,
   HKA_REF_MAX,
   Icon,
+  LegalDisclaimer,
   NavBar,
   SectionLabel,
-  sevTone,
   ZoomableImage,
 } from "../components";
+import {
+  hkaRangeShortLabel,
+  type HkaRangeStatus,
+} from "../shared/domain/hka-range";
 import {
   colors,
   fonts,
@@ -67,7 +70,8 @@ export interface ResultsData {
   readonly patientName: string;
   readonly date: string;
   readonly type: string;
-  readonly severity: "normal" | "moderate" | "severe" | "unavailable";
+  /** Position factuelle des HKA vs plage de référence — aucune gravité (non-DM). */
+  readonly rangeStatus: HkaRangeStatus;
   readonly hka: { readonly left: AngleMeasurement; readonly right: AngleMeasurement };
   readonly postural: readonly PosturalMeasurement[];
   readonly capturedImageUrl?: string;
@@ -106,22 +110,9 @@ export function Results({
   notesSaveStatus = "idle",
   notesSaveError,
 }: ResultsProps) {
-  const sevColor: BadgeColor =
-    data.severity === "unavailable"
-      ? "navy"
-      : data.severity === "normal"
-      ? "green"
-      : data.severity === "moderate"
-      ? "amber"
-      : "red";
-  const sevLabel =
-    data.severity === "unavailable"
-      ? "Indisponible"
-      : data.severity === "normal"
-      ? "Normal"
-      : data.severity === "moderate"
-      ? "Modéré"
-      : "Sévère";
+  // Badge factuel unique — libellé et couleur identiques quel que soit le
+  // résultat : la position vs plage est une information, pas une alerte.
+  const rangeBadgeLabel = hkaRangeShortLabel(data.rangeStatus);
 
   // Notes cliniques — état local pour la réactivité de saisie ; la sauvegarde
   // (débounce + flush au blur) est orchestrée par le conteneur (results-route).
@@ -192,9 +183,7 @@ export function Results({
               {data.date} · {data.type}
             </Text>
           </View>
-          {data.severity === "normal" || data.severity === "unavailable" ? (
-            <Badge label={sevLabel} color={sevColor} />
-          ) : null}
+          <Badge label={rangeBadgeLabel} color="navy" />
         </View>
 
         {data.confidenceScore !== undefined &&
@@ -212,30 +201,11 @@ export function Results({
           </View>
         ) : null}
 
-        {data.severity === "moderate" || data.severity === "severe" ? (
-          <View
-            style={[
-              styles.sevBand,
-              data.severity === "severe" && styles.sevBandSevere,
-            ]}
-            testID="severity-band"
-          >
-            <Icon
-              name="alert"
-              size={16}
-              color={data.severity === "severe" ? colors.red : colors.amberMid}
-              strokeWidth={1.6}
-            />
-            <Text style={styles.sevBandText} numberOfLines={2}>
-              <Text
-                style={[
-                  styles.sevBandLabel,
-                  { color: data.severity === "severe" ? colors.red : colors.amberMid },
-                ]}
-              >
-                {`Écart ${sevLabel.toLowerCase()}`}
-              </Text>
-              {outOfNormDetail(data)}
+        {data.rangeStatus === "out_of_range" ? (
+          <View style={styles.rangeBand} testID="range-band">
+            <Text style={styles.rangeBandText} numberOfLines={2}>
+              <Text style={styles.rangeBandLabel}>Hors plage de référence</Text>
+              {outOfRangeDetail(data)}
             </Text>
           </View>
         ) : null}
@@ -306,7 +276,7 @@ export function Results({
         <View style={styles.notes}>
           <TextInput
             multiline
-            placeholder="Ajouter une interprétation clinique…"
+            placeholder="Ajouter une note ou observation…"
             placeholderTextColor={colors.textMuted}
             style={styles.notesInput}
             value={notes}
@@ -319,7 +289,7 @@ export function Results({
               setNotesFocused(false);
               onNotesBlur?.(notes);
             }}
-            accessibilityLabel="Notes cliniques du praticien"
+            accessibilityLabel="Notes du praticien"
             testID="clinical-notes-input"
           />
         </View>
@@ -334,6 +304,8 @@ export function Results({
             {notesFeedback}
           </Text>
         ) : null}
+
+        <LegalDisclaimer testID="results-disclaimer" />
       </ScrollView>
 
       <SafeAreaView edges={["bottom"]} style={styles.actionBar}>
@@ -351,15 +323,15 @@ export function Results({
 
 // ────────────────────────────────────────────────────────────
 
-/** Détail des genoux hors plage de référence — « — genou gauche hors norme ». */
-function outOfNormDetail(data: ResultsData): string {
+/** Détail factuel des côtés hors plage — « — HKA gauche hors plage ». */
+function outOfRangeDetail(data: ResultsData): string {
   const out = (m: AngleMeasurement) =>
     m.value !== null && (m.value < HKA_REF_MIN || m.value > HKA_REF_MAX);
   const left = out(data.hka.left);
   const right = out(data.hka.right);
-  if (left && right) return " — genoux gauche et droit hors norme";
-  if (left) return " — genou gauche hors norme";
-  if (right) return " — genou droit hors norme";
+  if (left && right) return " — HKA gauche et droit hors plage 175–180°";
+  if (left) return " — HKA gauche hors plage 175–180°";
+  if (right) return " — HKA droit hors plage 175–180°";
   return "";
 }
 
@@ -375,7 +347,7 @@ function PosturalRow({ m, first }: { m: PosturalMeasurement; first: boolean }) {
       <View style={{ flex: 1 }}>
         <Text style={angleStyles.rowLabel}>{m.label}</Text>
         <Text style={angleStyles.rowNorm}>
-          norme {m.norm}
+          réf. {m.norm}
           {m.unit}
         </Text>
       </View>
@@ -394,12 +366,10 @@ function PosturalSide({
   side: "left" | "right";
 }) {
   const value = side === "left" ? m.left : m.right;
-  const tone = sevTone(value, m.norm, m.unit);
   return (
     <View style={angleStyles.sideWrap}>
       <Text style={angleStyles.sideTag}>{side === "left" ? "G" : "D"}</Text>
       <View style={angleStyles.rowValueWrap}>
-        <Icon name={tone.icon} size={13} color={tone.color} strokeWidth={1.8} />
         <Text style={angleStyles.rowValue} testID={`postural-${m.key}-${side}`}>
           {value === null ? "—" : `${value}${m.unit}`}
         </Text>
@@ -462,28 +432,26 @@ const styles = StyleSheet.create({
     fontSize: fontSize.caption,
     color: colors.textPrimary,
   },
-  sevBand: {
+  // Bande d'information factuelle — styles volontairement neutres (aucune
+  // couleur d'alerte : la position vs plage n'est pas un jugement).
+  rangeBand: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.s9,
-    backgroundColor: colors.amberLight,
+    backgroundColor: colors.bgSubtle,
     borderWidth: 1.5,
-    borderColor: "rgba(180,83,9,0.25)",
+    borderColor: colors.border,
     borderRadius: radius.field,
     paddingVertical: spacing.s11,
     paddingHorizontal: spacing.s14,
   },
-  sevBandSevere: {
-    backgroundColor: colors.redLight,
-    borderColor: "rgba(220,38,38,0.3)",
-  },
-  sevBandText: {
+  rangeBandText: {
     flex: 1,
     fontFamily: fonts.sans,
     fontSize: fontSize.body,
     color: colors.textPrimary,
   },
-  sevBandLabel: {
+  rangeBandLabel: {
     fontWeight: fontWeight.semiBold,
   },
   heroPreview: {
@@ -615,7 +583,7 @@ export const SAMPLE_RESULTS: ResultsData = {
   patientName: "Sophie Leclerc",
   date: "24 avr 2026",
   type: "Analyse posturale complète",
-  severity: "moderate",
+  rangeStatus: "out_of_range",
   hka: {
     left:  { key: "hka-l", label: "HKA gauche", value: 173, norm: 180, unit: "°" },
     right: { key: "hka-r", label: "HKA droit",  value: 177, norm: 180, unit: "°" },

@@ -7,9 +7,14 @@ import type { RouteProp } from "@react-navigation/native";
 import type { RootStackParamList } from "../../../navigation/types";
 import { NavBar } from "../../../components/NavBar";
 import { Btn } from "../../../components/Btn";
-import { Badge, type BadgeColor } from "../../../components/Badge";
+import { Badge } from "../../../components/Badge";
+import {
+  hkaRangeShortLabel,
+  hkaRangeStatus,
+} from "../../../shared/domain/hka-range";
 import { Icon } from "../../../components/icons";
 import { EmptyState } from "../../../components/EmptyState";
+import { LegalDisclaimer } from "../../../components/LegalDisclaimer";
 import {
   colors,
   fonts,
@@ -129,6 +134,8 @@ export function ProgressionSelectionScreen() {
             onPress={() => toggle(item.id)}
           />
         ))}
+
+        <LegalDisclaimer testID="progression-selection-disclaimer" />
       </ScrollView>
 
       <SafeAreaView edges={["bottom"]} style={styles.footer}>
@@ -167,8 +174,9 @@ function SelectionRow({
     ba && ba.leftHKA && ba.rightHKA
       ? `HKA ${Math.round(ba.leftHKA)}° / ${Math.round(ba.rightHKA)}°`
       : undefined;
-  const sevColor: BadgeColor = severityColor(analysis);
-  const sevLabel = severityLabel(analysis);
+  const rangeLabel = hkaRangeShortLabel(
+    hkaRangeStatus(ba?.leftHKA, ba?.rightHKA),
+  );
 
   return (
     <Pressable
@@ -193,27 +201,9 @@ function SelectionRow({
           {hkaSummary ?? "HKA indisponible"}
         </Text>
       </View>
-      <Badge label={sevLabel} color={sevColor} />
+      <Badge label={rangeLabel} color="navy" />
     </Pressable>
   );
-}
-
-function severityColor(a: Analysis): BadgeColor {
-  const ba = a.bilateralAngles;
-  if (!ba || !ba.leftHKA || !ba.rightHKA) return "navy";
-  const worstDelta = Math.max(Math.abs(180 - ba.leftHKA), Math.abs(180 - ba.rightHKA));
-  if (worstDelta < 2) return "green";
-  if (worstDelta < 6) return "amber";
-  return "red";
-}
-
-function severityLabel(a: Analysis): string {
-  const ba = a.bilateralAngles;
-  if (!ba || !ba.leftHKA || !ba.rightHKA) return "Indisponible";
-  const worstDelta = Math.max(Math.abs(180 - ba.leftHKA), Math.abs(180 - ba.rightHKA));
-  if (worstDelta < 2) return "Normal";
-  if (worstDelta < 6) return "Modéré";
-  return "Sévère";
 }
 
 const styles = StyleSheet.create({

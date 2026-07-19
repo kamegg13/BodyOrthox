@@ -67,7 +67,6 @@ interface NewPatientProps {
   readonly mode?: NewPatientMode;
   readonly title?: string;
   readonly initialValues?: Partial<NewPatientFormValues>;
-  readonly skipConsents?: boolean;
   readonly submitLabel?: string;
   readonly isSubmitting?: boolean;
   readonly errorMessage?: string | null;
@@ -81,17 +80,6 @@ const SEX_OPTIONS: readonly { value: "male" | "female" | "other"; label: string 
   { value: "female", label: "Femme" },
   { value: "male", label: "Homme" },
   { value: "other", label: "Non precise" },
-];
-
-const DIAGNOSIS_OPTIONS: readonly string[] = [
-  "Scoliose",
-  "Genu varum",
-  "Genu valgum",
-  "Lombalgie chronique",
-  "Bilan de gonarthrose",
-  "Suivi post-operatoire",
-  "Bilan postural sportif",
-  "Autre",
 ];
 
 const LATERALITY_OPTIONS: readonly { value: Laterality; label: string }[] = [
@@ -184,7 +172,6 @@ export function NewPatient({
   mode = "create",
   title,
   initialValues,
-  skipConsents = false,
   submitLabel,
   isSubmitting = false,
   errorMessage,
@@ -220,17 +207,17 @@ export function NewPatient({
   const [pains, setPains] = useState<PainEntry[]>(initialValues?.pains ?? []);
   const [consents, setConsents] = useState<boolean[]>(() => {
     if (isEdit) {
-      // Déjà recueillis par ailleurs — l'écran d'édition ne les recapture pas.
+      // Valeurs déjà recueillies — modifiables en édition (retrait possible,
+      // art. 7.3 RGPD).
       return [
         initialValues?.consentStorage ?? true,
         initialValues?.consentPhotoCapture ?? true,
         initialValues?.consentPdfExport ?? true,
       ];
     }
-    return skipConsents ? [true, true, true] : [false, false, false];
+    return [false, false, false];
   });
   const [showSexPicker, setShowSexPicker] = useState(false);
-  const [showDxPicker, setShowDxPicker] = useState(false);
   const [clinicalOpen, setClinicalOpen] = useState<boolean>(
     isEdit ||
       Boolean(
@@ -345,9 +332,7 @@ export function NewPatient({
             initialValues?.consentPhotoCapture ?? true,
             initialValues?.consentPdfExport ?? true,
           ]
-        : skipConsents
-          ? [true, true, true]
-          : [false, false, false],
+        : [false, false, false],
     }),
   );
 
@@ -391,9 +376,10 @@ export function NewPatient({
   }, [isDirty, onDirtyChange]);
 
   const allConsents = consents.every(Boolean);
-  // En édition, les consentements ont déjà été recueillis ailleurs : jamais
-  // requis, jamais ré-affichés sous forme de cases à cocher.
-  const consentsRequired = !isEdit && !skipConsents;
+  // À la création, les 3 consentements sont requis. En édition ils restent
+  // affichés et MODIFIABLES (retrait possible à tout moment, art. 7.3 RGPD)
+  // mais ne bloquent pas l'enregistrement.
+  const consentsRequired = !isEdit;
 
   const fieldErrors = useMemo(() => {
     const e: Partial<Record<TouchableFieldKey, string>> = {};
@@ -505,23 +491,29 @@ export function NewPatient({
       setDraftRestored(false);
     }
 
-    // En édition, les consentements ne sont jamais recapturés : on renvoie
-    // tels quels ceux déjà recueillis (jamais fabriqués côté formulaire).
+    // En édition, un changement de consentement (retrait ou ré-octroi) est
+    // ré-horodaté ; sinon la date de recueil d'origine est conservée.
+    const initialConsents = [
+      initialValues?.consentStorage ?? true,
+      initialValues?.consentPhotoCapture ?? true,
+      initialValues?.consentPdfExport ?? true,
+    ];
+    const consentsChanged = consents.some((c, i) => c !== initialConsents[i]);
     const consentPayload = isEdit
       ? {
           storage: consents[0],
           photo: consents[1],
           pdf: consents[2],
-          date: initialValues?.consentDate ?? null,
+          date: consentsChanged
+            ? new Date().toISOString()
+            : initialValues?.consentDate ?? null,
         }
-      : skipConsents
-        ? { storage: false, photo: false, pdf: false, date: null }
-        : {
-            storage: consents[0],
-            photo: consents[1],
-            pdf: consents[2],
-            date: allConsents ? new Date().toISOString() : null,
-          };
+      : {
+          storage: consents[0],
+          photo: consents[1],
+          pdf: consents[2],
+          date: allConsents ? new Date().toISOString() : null,
+        };
 
     onSave?.(
       {
@@ -666,18 +658,18 @@ export function NewPatient({
           </View>
         </View>
 
-        <SectionLabel style={styles.sectionGap}>Clinique</SectionLabel>
+        <SectionLabel style={styles.sectionGap}>Contexte</SectionLabel>
         <View style={{ gap: 12 }}>
-          <SelectField
-            label="Diagnostic principal"
-            placeholder="Choisir un diagnostic..."
-            value={diagnosis || undefined}
-            onPress={() => setShowDxPicker(true)}
+          <Field
+            label="Motif / contexte"
+            placeholder="Ex. bilan postural, suivi sportif…"
+            value={diagnosis}
+            onChangeText={setDiagnosis}
             testID="np-diagnosis"
           />
           <Field
-            label="Médecin référent"
-            placeholder="Dr. ..."
+            label="Professionnel référent"
+            placeholder="Nom du professionnel…"
             icon="user"
             value={referring}
             onChangeText={setReferring}
@@ -688,7 +680,7 @@ export function NewPatient({
             <View style={styles.textarea}>
               <TextInput
                 multiline
-                placeholder="Notes cliniques initiales..."
+                placeholder="Notes initiales..."
                 placeholderTextColor={colors.textMuted}
                 style={styles.textareaInput}
                 value={observations}
@@ -753,10 +745,15 @@ export function NewPatient({
           </View>
         ) : null}
 
-        {consentsRequired ? (
-          <>
-            <SectionLabel style={styles.sectionGap}>Consentements patient</SectionLabel>
-            <View style={styles.consentCard} ref={consentWrapRef}>
+        <SectionLabel style={styles.sectionGap}>Consentements patient</SectionLabel>
+        {isEdit ? (
+          <Text style={styles.consentEditHint} testID="np-consent-edit-hint">
+            {initialValues?.consentDate
+              ? `Recueillis le ${formatIsoDateForDisplay(initialValues.consentDate)} — modifiables à tout moment (le retrait est enregistré et daté).`
+              : "Modifiables à tout moment (le retrait est enregistré et daté)."}
+          </Text>
+        ) : null}
+        <View style={styles.consentCard} ref={consentWrapRef}>
               {[
                 "Stockage et traitement des donnees",
                 "Capture photo / video",
@@ -786,31 +783,15 @@ export function NewPatient({
                 );
               })}
             </View>
-            {showConsentError ? (
-              <Text
-                style={styles.consentErrorText}
-                accessibilityRole="alert"
-                accessibilityLiveRegion="polite"
-                testID="np-consent-error"
-              >
-                Les 3 consentements sont requis pour creer le patient.
-              </Text>
-            ) : null}
-          </>
-        ) : null}
-
-        {isEdit ? (
-          <>
-            <SectionLabel style={styles.sectionGap}>Consentement patient</SectionLabel>
-            <View style={styles.consentReadonlyCard} testID="np-consent-readonly">
-              <Icon name="check" size={14} color={colors.green} strokeWidth={2.5} />
-              <Text style={styles.consentReadonlyText}>
-                {initialValues?.consentDate
-                  ? `Consentement recueilli le ${formatIsoDateForDisplay(initialValues.consentDate)}`
-                  : "Consentement recueilli (date non renseignée)"}
-              </Text>
-            </View>
-          </>
+        {showConsentError ? (
+          <Text
+            style={styles.consentErrorText}
+            accessibilityRole="alert"
+            accessibilityLiveRegion="polite"
+            testID="np-consent-error"
+          >
+            Les 3 consentements sont requis pour creer le patient.
+          </Text>
         ) : null}
 
         {errorMessage ? <Text style={styles.errorBanner}>{errorMessage}</Text> : null}
@@ -850,17 +831,6 @@ export function NewPatient({
           setSex(v as NewPatientFormValues["sex"]);
           setShowSexPicker(false);
           markTouched("sex");
-        }}
-      />
-      <PickerModal
-        visible={showDxPicker}
-        title="Diagnostic principal"
-        options={DIAGNOSIS_OPTIONS.map((s) => ({ value: s, label: s }))}
-        selectedValue={diagnosis || undefined}
-        onClose={() => setShowDxPicker(false)}
-        onSelect={(v) => {
-          setDiagnosis(v);
-          setShowDxPicker(false);
         }}
       />
     </View>
@@ -1117,21 +1087,12 @@ const styles = StyleSheet.create({
     fontSize: fontSize.caption,
     color: colors.red,
   },
-  consentReadonlyCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: colors.greenLight,
-    borderRadius: radius.cardLg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 14,
-  },
-  consentReadonlyText: {
-    flex: 1,
+  consentEditHint: {
+    marginTop: spacing.s8,
+    marginBottom: spacing.s8,
     fontFamily: fonts.sans,
-    fontSize: 13,
-    color: colors.textSecond,
+    fontSize: fontSize.caption,
+    color: colors.textMuted,
   },
   selectError: {
     fontFamily: fonts.sans,

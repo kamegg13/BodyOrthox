@@ -72,7 +72,7 @@ function HkaPhoneIllustration() {
         {/* HKA angle label */}
         <View style={illustrationStyles.angleLabel}>
           <Text style={illustrationStyles.angleDegree}>174°</Text>
-          <Text style={illustrationStyles.angleType}>Genu varum</Text>
+          <Text style={illustrationStyles.angleType}>Angle HKA</Text>
         </View>
         {/* Dashed HKA axis line */}
         <View style={illustrationStyles.axisLine} />
@@ -238,7 +238,7 @@ export function OnboardingScreen() {
         {/* Page 1: Analyse HKA (mockup 10) */}
         <OnboardingPage
           title="Analysez les angles articulaires en 30 secondes"
-          subtitle="Une photo. Un résultat clinique. Un rapport PDF."
+          subtitle="Une photo. Une mesure objective. Un rapport PDF."
           illustration={<HkaPhoneIllustration />}
           features={PAGE_1_FEATURES}
           testID="onboarding-page-result"

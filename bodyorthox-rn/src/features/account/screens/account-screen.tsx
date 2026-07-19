@@ -208,6 +208,39 @@ export function AccountScreen() {
     }
   }
 
+  // Export complet (droit à la portabilité, art. 20 RGPD) : JSON généré
+  // on-device puis remis à l'utilisateur (share sheet natif / téléchargement
+  // web). Imports dynamiques comme loadCounts : la base n'est disponible
+  // qu'après initializeDatabase().
+  async function handleExportAllData() {
+    try {
+      const [{ getDatabase }, patientRepoMod, analysisRepoMod, domain, service] =
+        await Promise.all([
+          import("../../../core/database/init"),
+          import("../../patients/data/sqlite-patient-repository"),
+          import("../../capture/data/sqlite-analysis-repository"),
+          import("../domain/data-export"),
+          import("../data/export-service"),
+        ]);
+      const db = getDatabase();
+      const exportedAt = new Date().toISOString();
+      const payload = await domain.buildExportPayload(
+        new patientRepoMod.SqlitePatientRepository(db),
+        new analysisRepoMod.SqliteAnalysisRepository(db),
+        exportedAt,
+      );
+      const result = await service.shareExportFile(
+        JSON.stringify(payload, null, 2),
+        domain.exportFileName(exportedAt),
+      );
+      if (result.kind === "error") {
+        showAlert("Export", result.message);
+      }
+    } catch {
+      showAlert("Export", "Impossible d'exporter les données.");
+    }
+  }
+
   async function handleDeleteAllData() {
     showConfirm(
       "Supprimer toutes les données",
@@ -321,13 +354,13 @@ export function AccountScreen() {
             label="Cabinet"
             storageKey="practitioner_cabinet"
             defaultValue=""
-            placeholder="Cabinet d'orthopédie"
+            placeholder="Nom du cabinet / structure"
           />
           <ProfileInput
             label="Spécialité"
             storageKey="practitioner_specialty"
-            defaultValue="Orthopédie"
-            placeholder="Orthopédie"
+            defaultValue=""
+            placeholder="Ex. préparation physique, posturologie…"
           />
         </View>
 
@@ -379,12 +412,7 @@ export function AccountScreen() {
           <RowDivider />
           <ListRow
             label="Exporter toutes les données"
-            onPress={() =>
-              showAlert(
-                "Exporter",
-                "L'export de données sera disponible prochainement.",
-              )
-            }
+            onPress={handleExportAllData}
             testID="export-data-button"
           />
           <RowDivider />
@@ -409,28 +437,13 @@ export function AccountScreen() {
           <RowDivider />
           <ListRow
             label="Mentions légales"
-            onPress={() =>
-              showAlert(
-                "Mentions légales",
-                "BodyOrthox est un outil d'aide à la décision clinique. " +
-                  "Il ne constitue pas un dispositif médical certifié au sens du règlement EU MDR 2017/745. " +
-                  "Les résultats doivent être validés par un professionnel de santé qualifié.",
-              )
-            }
+            onPress={() => navigation.navigate("Legal")}
             testID="legal-button"
           />
           <RowDivider />
           <ListRow
             label="Politique de confidentialité"
-            onPress={() =>
-              showAlert(
-                "Politique de confidentialité",
-                "BodyOrthox respecte le Règlement Général sur la Protection des Données (RGPD). " +
-                  "Toutes les données patients sont stockées localement sur votre appareil. " +
-                  "Aucune donnée personnelle n'est transmise à des serveurs externes. " +
-                  "Vous pouvez exporter ou supprimer vos données à tout moment depuis les paramètres.",
-              )
-            }
+            onPress={() => navigation.navigate("Legal")}
             testID="privacy-button"
           />
           <RowDivider />

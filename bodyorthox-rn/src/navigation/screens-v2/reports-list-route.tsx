@@ -5,8 +5,9 @@ import type { RootStackParamList } from "../types";
 import {
   ReportsList,
   type ReportListItem,
-  type ReportSeverityFilter,
+  type ReportRangeFilter,
 } from "../../screens/ReportsList";
+import { hkaRangeStatus } from "../../shared/domain/hka-range";
 import { LoadingState } from "../../components/LoadingState";
 import { ErrorState } from "../../components/ErrorState";
 import { useAnalysisRepository } from "../../shared/hooks/use-analysis-repository";
@@ -39,8 +40,8 @@ function matchesSearch(item: ReportListItem, query: string): boolean {
   );
 }
 
-function matchesSeverity(item: ReportListItem, filter: ReportSeverityFilter): boolean {
-  return filter === "all" || item.severity === filter;
+function matchesRange(item: ReportListItem, filter: ReportRangeFilter): boolean {
+  return filter === "all" || item.range === filter;
 }
 
 export function ReportsListRoute() {
@@ -54,7 +55,7 @@ export function ReportsListRoute() {
   const [allItems, setAllItems] = useState<readonly ReportListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [severityFilter, setSeverityFilter] = useState<ReportSeverityFilter>("all");
+  const [rangeFilter, setRangeFilter] = useState<ReportRangeFilter>("all");
 
   useEffect(() => {
     loadPatients();
@@ -87,9 +88,9 @@ export function ReportsListRoute() {
   const filteredItems = useMemo(
     () =>
       allItems.filter(
-        (item) => matchesSearch(item, searchQuery) && matchesSeverity(item, severityFilter),
+        (item) => matchesSearch(item, searchQuery) && matchesRange(item, rangeFilter),
       ),
-    [allItems, searchQuery, severityFilter],
+    [allItems, searchQuery, rangeFilter],
   );
 
   const handleItemPress = useCallback(
@@ -122,8 +123,8 @@ export function ReportsListRoute() {
       hasAnyReports={allItems.length > 0}
       searchQuery={searchQuery}
       onSearchChange={setSearchQuery}
-      severityFilter={severityFilter}
-      onSeverityFilterChange={setSeverityFilter}
+      rangeFilter={rangeFilter}
+      onRangeFilterChange={setRangeFilter}
       onItemPress={handleItemPress}
     />
   );
@@ -140,14 +141,13 @@ function buildItem(patient: Patient, a: Analysis): ReportListItem {
     ba && ba.leftHKA && ba.rightHKA
       ? `HKA ${Math.round(ba.leftHKA)}° / ${Math.round(ba.rightHKA)}°`
       : undefined;
-  const worst = ba ? Math.max(Math.abs(180 - ba.leftHKA), Math.abs(180 - ba.rightHKA)) : 0;
-  const severity: ReportListItem["severity"] = worst < 2 ? "normal" : worst < 6 ? "moderate" : "severe";
+  const range = hkaRangeStatus(ba?.leftHKA, ba?.rightHKA);
   return {
     analysisId: a.id,
     patientId: patient.id,
     patientName: patientDisplayName(patient),
     date,
     ...(hkaSummary ? { hkaSummary } : {}),
-    severity,
+    range,
   };
 }
