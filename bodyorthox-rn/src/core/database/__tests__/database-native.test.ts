@@ -23,6 +23,7 @@ const mockedGetKey = jest.mocked(getOrCreateEncryptionKey);
 interface MockDb {
   execute: jest.Mock;
   close: jest.Mock;
+  transaction: jest.Mock;
 }
 
 /** Simule une base op-sqlite dont PRAGMA user_version vaut `userVersion`. */
@@ -34,7 +35,14 @@ function mockOpSqliteDb(userVersion = 0): MockDb {
     }
     return { rows: [], rowsAffected: 0 };
   });
-  return { execute, close: jest.fn() };
+  // Par défaut : exécute le callback avec une transaction stub (comportement
+  // op-sqlite réel — voir la doc du type `Transaction`, execute → QueryResult).
+  const transaction = jest.fn(
+    async (fn: (tx: { execute: jest.Mock }) => Promise<void>) => {
+      await fn({ execute: jest.fn().mockResolvedValue({ rows: [], rowsAffected: 0 }) });
+    },
+  );
+  return { execute, close: jest.fn(), transaction };
 }
 
 function migrationCalls(db: MockDb): string[] {
@@ -166,5 +174,51 @@ describe("NativeDatabase (op-sqlite)", () => {
     await database.close();
 
     expect(db.close).toHaveBeenCalled();
+  });
+
+  describe("transaction", () => {
+    it("délègue à db.transaction() (op-sqlite) et mappe les résultats en QueryResult", async () => {
+      const db = mockOpSqliteDb();
+      const txExecute = jest
+        .fn()
+        .mockResolvedValue({ rows: [{ id: "p1" }], rowsAffected: 1, insertId: 7 });
+      db.transaction.mockImplementation(
+        async (fn: (tx: { execute: jest.Mock }) => Promise<void>) => {
+          await fn({ execute: txExecute });
+        },
+      );
+      mockedOpen.mockReturnValueOnce(db as never);
+      const database = createDatabase("test.db");
+      await database.initialize();
+
+      let mapped: unknown;
+      await database.transaction(async (tx) => {
+        mapped = await tx.execute("DELETE FROM analyses");
+      });
+
+      expect(db.transaction).toHaveBeenCalledTimes(1);
+      expect(txExecute).toHaveBeenCalledWith("DELETE FROM analyses", []);
+      expect(mapped).toEqual({ rows: [{ id: "p1" }], rowsAffected: 1, insertId: 7 });
+    });
+
+    it("propage le rejet quand op-sqlite annule la transaction (rollback)", async () => {
+      const db = mockOpSqliteDb();
+      db.transaction.mockRejectedValue(new Error("rollback"));
+      mockedOpen.mockReturnValueOnce(db as never);
+      const database = createDatabase("test.db");
+      await database.initialize();
+
+      await expect(
+        database.transaction(async () => {
+          /* jamais atteint : db.transaction() rejette avant */
+        }),
+      ).rejects.toThrow("rollback");
+    });
+
+    it("refuse transaction() avant initialize()", async () => {
+      await expect(
+        createDatabase("test.db").transaction(async () => {}),
+      ).rejects.toThrow(/not initialized/i);
+    });
   });
 });

@@ -229,4 +229,28 @@ describe("SqliteAnalysisRepository", () => {
       );
     });
   });
+
+  describe("count", () => {
+    it("returns the row count from a SELECT COUNT(*) query", async () => {
+      const db = createMockDb([{ count: 5 }]);
+      const repo = new SqliteAnalysisRepository(db);
+
+      const total = await repo.count();
+
+      expect(total).toBe(5);
+      expect(db.execute).toHaveBeenCalledWith(
+        expect.stringContaining("SELECT COUNT(*)"),
+      );
+      expect(db.execute).toHaveBeenCalledWith(
+        expect.stringContaining("FROM analyses"),
+      );
+    });
+
+    it("returns 0 when the table is empty", async () => {
+      const db = createMockDb([{ count: 0 }]);
+      const repo = new SqliteAnalysisRepository(db);
+
+      expect(await repo.count()).toBe(0);
+    });
+  });
 });

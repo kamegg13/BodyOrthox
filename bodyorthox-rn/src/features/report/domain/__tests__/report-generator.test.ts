@@ -41,13 +41,6 @@ const mockAnalysis: Analysis = {
   manualCorrectionJoint: null,
 };
 
-const mockAnalysisWithCorrection: Analysis = {
-  ...mockAnalysis,
-  id: "analysis-2",
-  manualCorrectionApplied: true,
-  manualCorrectionJoint: "knee",
-};
-
 // ─── generateReportFileName ──────────────────────────────────
 
 describe("generateReportFileName", () => {

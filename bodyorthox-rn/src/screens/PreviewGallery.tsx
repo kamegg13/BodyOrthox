@@ -1,12 +1,15 @@
 import React from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { Dashboard } from "./Dashboard";
-import { PatientList } from "./PatientList";
-import { PatientDetail, SAMPLE_PATIENT_DETAIL } from "./PatientDetail";
-import { NewPatient } from "./NewPatient";
-import { Processing } from "./Processing";
-import { Results, SAMPLE_RESULTS } from "./Results";
-import { Report, SAMPLE_REPORT } from "./Report";
+import { Dashboard } from "../navigation/screens-v2/dashboard-route";
+import { PatientList } from "../navigation/screens-v2/patients-list-route";
+import { PatientDetail } from "../navigation/screens-v2/patient-detail-route";
+import { SAMPLE_PATIENT_DETAIL } from "./__fixtures__/patient-detail";
+import { NewPatient } from "./new-patient/new-patient";
+import { Processing } from "../navigation/screens-v2/processing-route";
+import { Results } from "../navigation/screens-v2/results-route";
+import { SAMPLE_RESULTS } from "./__fixtures__/results";
+import { Report } from "../navigation/screens-v2/report-route";
+import { SAMPLE_REPORT } from "./__fixtures__/report";
 import {
   colors,
   fonts,

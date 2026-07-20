@@ -28,7 +28,7 @@ jest.mock("../../store/patients-store", () => ({
   ),
 }));
 
-jest.mock("../../../../screens/NewPatient", () => ({
+jest.mock("../../../../screens/new-patient/new-patient", () => ({
   NewPatient: ({ mode, initialValues }: any) =>
     require("react").createElement(require("react-native").View, {
       testID: `patient-form-${mode}`,

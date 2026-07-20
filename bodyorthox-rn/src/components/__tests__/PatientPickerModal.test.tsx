@@ -199,7 +199,6 @@ describe("PatientPickerModal", () => {
         onClose={onClose}
       />,
     );
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { Modal } = require("react-native");
     const modal = UNSAFE_getByType(Modal);
     modal.props.onRequestClose();

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { colors, fonts, fontWeight } from "../../../theme/tokens";
 import type { PoseLandmarks, BilateralAngles } from "../data/angle-calculator";
+import { LEG_CONNECTIONS, LEG_COLORS } from "../domain/skeleton-spec";
 
 /**
  * Full MediaPipe Pose skeleton connections (33 landmarks).
@@ -37,17 +38,9 @@ const POSE_CONNECTIONS: ReadonlyArray<readonly [number, number]> = [
   [16, 20],
   [16, 22], // right hand
 
-  // Legs
-  [23, 25],
-  [25, 27], // left leg
-  [24, 26],
-  [26, 28], // right leg
-  [27, 29],
-  [29, 31],
-  [27, 31], // left foot
-  [28, 30],
-  [30, 32],
-  [28, 32], // right foot
+  // Legs (jambe gauche/droite : voir domain/skeleton-spec.ts)
+  ...LEG_CONNECTIONS.left,
+  ...LEG_CONNECTIONS.right,
 ];
 
 /** Body region classification for color coding */
@@ -62,23 +55,18 @@ const HAND_INDICES = new Set([17, 18, 19, 20, 21, 22]);
 /** Wrist indices (colored red like hands) */
 const WRIST_INDICES = new Set([15, 16]);
 
+/** Connexions par jambe (clés `"from-to"`), dérivées de domain/skeleton-spec. */
+function toConnectionKeys(
+  pairs: ReadonlyArray<readonly [number, number]>,
+): Set<string> {
+  return new Set(pairs.map(([from, to]) => `${from}-${to}`));
+}
+
 /** Left leg connections (from index) */
-const LEFT_LEG_CONNECTIONS = new Set([
-  "23-25",
-  "25-27",
-  "27-29",
-  "29-31",
-  "27-31",
-]);
+const LEFT_LEG_CONNECTIONS = toConnectionKeys(LEG_CONNECTIONS.left);
 
 /** Right leg connections (from index) */
-const RIGHT_LEG_CONNECTIONS = new Set([
-  "24-26",
-  "26-28",
-  "28-30",
-  "30-32",
-  "28-32",
-]);
+const RIGHT_LEG_CONNECTIONS = toConnectionKeys(LEG_CONNECTIONS.right);
 
 /** Hand connections */
 const HAND_CONNECTIONS = new Set([
@@ -115,21 +103,28 @@ function getConnectionRegion(from: number, to: number): BodyRegion {
 
 /**
  * Couleurs de tracé (visualisation pose-estimation), pas du chrome UI.
- * `face` et `leftLeg` sont déjà des blancs-alpha : migrés vers les tokens
- * `white50`/`white70`. `upperBody` (rose), `hand` (rouge vif) et `rightLeg`
- * (bleu) sont volontairement CONSERVÉS hors tokens : ce sont les seules
- * couleurs qui distinguent visuellement les régions anatomiques et surtout
- * la jambe gauche (blanc) de la jambe droite (bleu) — une distinction
- * fonctionnelle critique en lecture clinique. Les remplacer par de l'encre/
- * accent/gris hairline ferait perdre cette lisibilité gauche/droite.
+ * `leftLeg`/`rightLeg` viennent de domain/skeleton-spec.ts : mêmes couleurs
+ * que le PDF (vert/cyan) — la jambe gauche/droite doit être identique quelle
+ * que soit la surface de rendu (écran ou rapport). `face` reste un blanc-alpha
+ * (token `white50`) ; `upperBody` (rose) et `hand` (rouge vif) sont des
+ * nuances écran-only volontairement conservées hors tokens, propres à la
+ * lecture du squelette complet sur l'overlay live.
  */
 const REGION_LINE_COLORS: Record<BodyRegion, string> = {
   face: colors.white50,
   upperBody: "rgba(255, 150, 150, 0.8)",
   hand: "rgba(255, 50, 50, 0.9)",
-  leftLeg: colors.white70,
-  rightLeg: "rgba(80, 120, 255, 0.8)",
+  leftLeg: LEG_COLORS.left,
+  rightLeg: LEG_COLORS.right,
 };
+
+/**
+ * Couleur de tracé d'une connexion osseuse, par région anatomique.
+ * Exporté pour les tests de cohérence inter-surfaces (écran ↔ PDF).
+ */
+export function getConnectionColor(from: number, to: number): string {
+  return REGION_LINE_COLORS[getConnectionRegion(from, to)];
+}
 
 /** Dot color based on landmark category (mêmes règles que REGION_LINE_COLORS ci-dessus). */
 function getDotColor(index: number): string {

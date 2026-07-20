@@ -1,5 +1,5 @@
 import React from "react";
-import { render, waitFor } from "@testing-library/react-native";
+import { render } from "@testing-library/react-native";
 import { ProgressionReportScreen } from "../progression-report-screen";
 import { Analysis } from "../../../capture/domain/analysis";
 import { Patient } from "../../../patients/domain/patient";

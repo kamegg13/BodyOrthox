@@ -90,7 +90,7 @@ describe("PatientTimelineScreen", () => {
     });
     mockGetForPatient.mockReturnValue(pendingPromise);
 
-    const { getByTestId, queryByTestId } = render(<PatientTimelineScreen />);
+    const { queryByTestId } = render(<PatientTimelineScreen />);
 
     // LoadingSpinner renders with fullScreen, check it does not show timeline-screen
     expect(queryByTestId("timeline-screen")).toBeNull();

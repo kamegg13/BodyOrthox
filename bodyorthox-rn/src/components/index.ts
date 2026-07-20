@@ -1,4 +1,5 @@
 export { Btn, type BtnVariant } from "./Btn";
+export { ChoiceChips, type ChoiceOption } from "./ChoiceChips";
 export { Field } from "./Field";
 export { SelectField } from "./SelectField";
 export { Badge, type BadgeColor } from "./Badge";

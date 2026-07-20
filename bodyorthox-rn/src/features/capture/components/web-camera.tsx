@@ -141,7 +141,7 @@ export const WebCamera = forwardRef<WebCameraRef, WebCameraProps>(
           container.removeChild(video);
         }
       };
-    }, [retryKey, facingMode]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [retryKey, facingMode]);
 
     if (Platform.OS !== "web") {
       return null;

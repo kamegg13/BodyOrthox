@@ -2,6 +2,8 @@ import { Analysis } from "../../capture/domain/analysis";
 import { hkaLabel } from "../../capture/data/angle-calculator";
 import { Patient, patientDisplayName } from "../../patients/domain/patient";
 import { LEGAL_CONSTANTS } from "../../../core/legal/legal-constants";
+import { escapeHtml, angleColor, fmt } from "./report-html-helpers";
+import { generateSvgChart } from "./svg-chart-builder";
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -9,30 +11,6 @@ export interface ProgressionReportData {
   readonly patientName: string;
   readonly analyses: ReadonlyArray<Analysis>;
   readonly disclaimer: string;
-}
-
-// ─── HTML escaping ────────────────────────────────────────────
-
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-// ─── Color helpers ────────────────────────────────────────────
-
-function angleColor(value: number, min: number, max: number): string {
-  if (value === 0) return "#46707F";
-  if (value >= min && value <= max) return "#059669";
-  const dev = value < min ? min - value : value - max;
-  return dev <= 5 ? "#B45309" : "#DC2626";
-}
-
-function fmt(v: number): string {
-  return v === 0 ? "—" : `${v.toFixed(1)}°`;
 }
 
 // ─── Build report data ────────────────────────────────────────
@@ -60,128 +38,6 @@ export function generateProgressionReportFileName(patientName: string): string {
   return `${sanitized}_ProgressionHKA_${dateStr}.pdf`;
 }
 
-// ─── SVG chart helpers ─────────────────────────────────────────
-
-const PAD_LEFT = 50;
-const PAD_RIGHT = 20;
-const PAD_TOP = 20;
-const PAD_BOTTOM = 50;
-
-interface ChartConfig {
-  readonly width: number;
-  readonly height: number;
-  readonly yMin: number;
-  readonly yMax: number;
-}
-
-function projectY(val: number, cfg: ChartConfig): number {
-  const chartH = cfg.height - PAD_TOP - PAD_BOTTOM;
-  return PAD_TOP + chartH - ((val - cfg.yMin) / (cfg.yMax - cfg.yMin)) * chartH;
-}
-
-function projectX(index: number, total: number, cfg: ChartConfig): number {
-  const chartW = cfg.width - PAD_LEFT - PAD_RIGHT;
-  if (total <= 1) return PAD_LEFT + chartW / 2;
-  return PAD_LEFT + (index / (total - 1)) * chartW;
-}
-
-function formatDateShort(isoStr: string): string {
-  const d = new Date(isoStr);
-  const day = String(d.getDate()).padStart(2, "0");
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  return `${day}/${month}`;
-}
-
-function buildGridAndAxes(cfg: ChartConfig, tickStep: number): string {
-  const chartH = cfg.height - PAD_TOP - PAD_BOTTOM;
-  const chartW = cfg.width - PAD_LEFT - PAD_RIGHT;
-  const lines: string[] = [];
-
-  // Horizontal grid lines
-  for (let v = cfg.yMin; v <= cfg.yMax; v += tickStep) {
-    const y = projectY(v, cfg);
-    lines.push(
-      `<line x1="${PAD_LEFT}" y1="${y.toFixed(1)}" x2="${PAD_LEFT + chartW}" y2="${y.toFixed(1)}" stroke="#e5e7eb" stroke-dasharray="4,3" stroke-width="0.8"/>`,
-    );
-    lines.push(
-      `<text x="${PAD_LEFT - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end" font-size="9" fill="#46707F">${v}°</text>`,
-    );
-  }
-
-  // Y axis
-  lines.push(
-    `<line x1="${PAD_LEFT}" y1="${PAD_TOP}" x2="${PAD_LEFT}" y2="${PAD_TOP + chartH}" stroke="#164E63" stroke-width="1.5"/>`,
-  );
-  // X axis
-  lines.push(
-    `<line x1="${PAD_LEFT}" y1="${PAD_TOP + chartH}" x2="${PAD_LEFT + chartW}" y2="${PAD_TOP + chartH}" stroke="#164E63" stroke-width="1.5"/>`,
-  );
-
-  return lines.join("\n  ");
-}
-
-/**
- * Build polyline + circles for a series of values.
- * Only renders points where value > 0 to avoid off-chart spikes.
- * Does NOT emit X-axis date labels — call buildDateLabels once per chart.
- */
-function buildPolyline(
-  values: number[],
-  cfg: ChartConfig,
-  color: string,
-): string {
-  const total = values.length;
-  const validEntries = values
-    .map((v, i) => ({ v, i }))
-    .filter(({ v }) => v > 0);
-
-  if (validEntries.length === 0) return "";
-
-  const points = validEntries
-    .map(({ v, i }) => `${projectX(i, total, cfg).toFixed(1)},${projectY(v, cfg).toFixed(1)}`)
-    .join(" ");
-
-  const polyline =
-    validEntries.length > 1
-      ? `<polyline fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" points="${points}"/>`
-      : "";
-
-  const circles = validEntries
-    .map(({ v, i }) => {
-      const cx = projectX(i, total, cfg).toFixed(1);
-      const cy = projectY(v, cfg).toFixed(1);
-      const label = `${v.toFixed(1)}°`;
-      return `<circle cx="${cx}" cy="${cy}" r="4" fill="${color}" stroke="white" stroke-width="1.5"/>
-  <text x="${cx}" y="${(Number(cy) - 7).toFixed(1)}" text-anchor="middle" font-size="8" fill="${color}">${label}</text>`;
-    })
-    .join("\n  ");
-
-  return `${polyline}\n  ${circles}`;
-}
-
-/**
- * Emit X-axis date labels once per chart — not per series.
- */
-function buildDateLabels(
-  analyses: ReadonlyArray<Analysis>,
-  cfg: ChartConfig,
-): string {
-  const n = analyses.length;
-  const altLabels = n > 6;
-
-  return analyses
-    .map((a, i) => {
-      if (altLabels && i % 2 !== 0) return "";
-      const cx = projectX(i, n, cfg);
-      const cy = cfg.height - PAD_BOTTOM + 14;
-      const label = formatDateShort(a.createdAt);
-      return altLabels
-        ? `<text x="${cx.toFixed(1)}" y="${cy}" font-size="8" fill="#46707F" transform="rotate(-45,${cx.toFixed(1)},${cy})" text-anchor="end">${label}</text>`
-        : `<text x="${cx.toFixed(1)}" y="${cy}" font-size="8" fill="#46707F" text-anchor="middle">${label}</text>`;
-    })
-    .join("\n  ");
-}
-
 // ─── HKA SVG chart ─────────────────────────────────────────────
 
 export function generateHkaSvgChart(
@@ -198,45 +54,36 @@ export function generateHkaSvgChart(
     (a) => a.bilateralAngles?.rightHKA ?? a.angles.kneeAngle,
   );
 
-  const allHka = [...leftValues, ...rightValues].filter((v) => v > 0);
-  if (allHka.length === 0) return "";
-
-  const rawMin = Math.min(...allHka, 173);
-  const rawMax = Math.max(...allHka, 182);
-  const yMin = Math.floor((rawMin - 2) / 5) * 5;
-  const yMax = Math.ceil((rawMax + 2) / 5) * 5;
-
-  const cfg: ChartConfig = { width, height, yMin, yMax };
-  const chartW = width - PAD_LEFT - PAD_RIGHT;
-
-  const normalRectY = projectY(180, cfg).toFixed(1);
-  const normalRectH = (projectY(175, cfg) - projectY(180, cfg)).toFixed(1);
-
-  const gridAndAxes = buildGridAndAxes(cfg, 5);
-
-  const normalRect = `<rect x="${PAD_LEFT}" y="${normalRectY}" width="${chartW}" height="${normalRectH}" fill="#D9F2E5" stroke="#059669" stroke-width="0.5" opacity="0.7"/>
-  <text x="${PAD_LEFT + chartW - 4}" y="${(Number(normalRectY) + 10).toFixed(1)}" text-anchor="end" font-size="8" fill="#059669" opacity="0.8">Plage de référence</text>`;
-
-  const leftPolyline = buildPolyline(leftValues, cfg, "#059669");
-  const rightPolyline = buildPolyline(rightValues, cfg, "#0891B2");
-  const dateLabels = buildDateLabels(analyses, cfg);
-
-  const legendY = height - 8;
-  const legend = `<rect x="${PAD_LEFT}" y="${legendY - 6}" width="10" height="10" fill="#059669" rx="2"/>
-  <text x="${PAD_LEFT + 14}" y="${legendY + 2}" font-size="9" fill="#164E63">HKA Gauche</text>
-  <rect x="${PAD_LEFT + 90}" y="${legendY - 6}" width="10" height="10" fill="#0891B2" rx="2"/>
-  <text x="${PAD_LEFT + 104}" y="${legendY + 2}" font-size="9" fill="#164E63">HKA Droite</text>
-  <rect x="${PAD_LEFT + 180}" y="${legendY - 6}" width="10" height="10" fill="#D9F2E5" stroke="#059669" stroke-width="0.8" rx="2"/>
-  <text x="${PAD_LEFT + 194}" y="${legendY + 2}" font-size="9" fill="#164E63">Plage de référence (175–180°)</text>`;
-
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-  ${normalRect}
-  ${gridAndAxes}
-  ${leftPolyline}
-  ${rightPolyline}
-  ${dateLabels}
-  ${legend}
-</svg>`;
+  return generateSvgChart(analyses, {
+    width,
+    height,
+    yFloorMin: 173,
+    yFloorMax: 182,
+    tickStep: 5,
+    normalRange: {
+      min: 175,
+      max: 180,
+      fill: "#D9F2E5",
+      stroke: "#059669",
+      opacity: 0.7,
+      label: "Plage de référence",
+    },
+    series: [
+      { color: "#059669", values: leftValues },
+      { color: "#0891B2", values: rightValues },
+    ],
+    legend: [
+      { xOffset: 0, color: "#059669", label: "HKA Gauche" },
+      { xOffset: 90, color: "#0891B2", label: "HKA Droite" },
+      {
+        xOffset: 180,
+        color: "#D9F2E5",
+        strokeColor: "#059669",
+        strokeWidth: 0.8,
+        label: "Plage de référence (175–180°)",
+      },
+    ],
+  });
 }
 
 // ─── Knee SVG chart (bilateral joint angles) ───────────────────
@@ -256,42 +103,28 @@ function generateKneeSvgChart(
     (a) => a.bilateralAngles!.right.kneeAngle,
   );
 
-  const allVals = [...leftKneeValues, ...rightKneeValues].filter((v) => v > 0);
-  if (allVals.length === 0) return "";
-
-  const rawMin = Math.min(...allVals, 168);
-  const rawMax = Math.max(...allVals, 182);
-  const yMin = Math.floor((rawMin - 2) / 5) * 5;
-  const yMax = Math.ceil((rawMax + 2) / 5) * 5;
-
-  const cfg: ChartConfig = { width, height, yMin, yMax };
-  const chartW = width - PAD_LEFT - PAD_RIGHT;
-
-  const normalRectY = projectY(180, cfg).toFixed(1);
-  const normalRectH = (projectY(170, cfg) - projectY(180, cfg)).toFixed(1);
-
-  const gridAndAxes = buildGridAndAxes(cfg, 5);
-
-  const normalRect = `<rect x="${PAD_LEFT}" y="${normalRectY}" width="${chartW}" height="${normalRectH}" fill="#D7F5FA" stroke="#0891B2" stroke-width="0.5" opacity="0.6"/>`;
-
-  const leftPolyline = buildPolyline(leftKneeValues, cfg, "#059669");
-  const rightPolyline = buildPolyline(rightKneeValues, cfg, "#0891B2");
-  const dateLabels = buildDateLabels(withBilateral, cfg);
-
-  const legendY = height - 8;
-  const legend = `<rect x="${PAD_LEFT}" y="${legendY - 6}" width="10" height="10" fill="#059669" rx="2"/>
-  <text x="${PAD_LEFT + 14}" y="${legendY + 2}" font-size="9" fill="#164E63">Genou Gauche</text>
-  <rect x="${PAD_LEFT + 100}" y="${legendY - 6}" width="10" height="10" fill="#0891B2" rx="2"/>
-  <text x="${PAD_LEFT + 114}" y="${legendY + 2}" font-size="9" fill="#164E63">Genou Droite</text>`;
-
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-  ${normalRect}
-  ${gridAndAxes}
-  ${leftPolyline}
-  ${rightPolyline}
-  ${dateLabels}
-  ${legend}
-</svg>`;
+  return generateSvgChart(withBilateral, {
+    width,
+    height,
+    yFloorMin: 168,
+    yFloorMax: 182,
+    tickStep: 5,
+    normalRange: {
+      min: 170,
+      max: 180,
+      fill: "#D7F5FA",
+      stroke: "#0891B2",
+      opacity: 0.6,
+    },
+    series: [
+      { color: "#059669", values: leftKneeValues },
+      { color: "#0891B2", values: rightKneeValues },
+    ],
+    legend: [
+      { xOffset: 0, color: "#059669", label: "Genou Gauche" },
+      { xOffset: 100, color: "#0891B2", label: "Genou Droite" },
+    ],
+  });
 }
 
 // ─── Trend & synthesis section ─────────────────────────────────
@@ -374,20 +207,37 @@ export interface ProgressionSynthesisSummary {
   readonly rightTrendText?: string;
 }
 
+interface SynthesisSide {
+  readonly first: number;
+  readonly last: number;
+  readonly trendText: string;
+}
+
+interface SynthesisComputation {
+  readonly available: boolean;
+  readonly firstDate?: string;
+  readonly lastDate?: string;
+  readonly sessionCount: number;
+  readonly left?: SynthesisSide;
+  readonly right?: SynthesisSide;
+}
+
 /**
- * Synthèse d'évolution honnête entre la première et la dernière analyse
- * sélectionnée — même calcul que celui utilisé dans le PDF exporté
- * (`generateTrendText`), pour que l'aperçu et l'export ne puissent jamais
- * diverger. `available: false` quand il n'y a pas assez de données pour
- * comparer (moins de 2 séances, ou aucune mesure HKA exploitable).
+ * Seul point de calcul de la synthèse d'évolution (première → dernière
+ * analyse sélectionnée) : `buildProgressionSynthesisSummary` (aperçu écran)
+ * et `buildSynthesisSection` (PDF exporté) consomment tous deux cette même
+ * fonction, pour que l'aperçu et l'export ne puissent jamais diverger.
+ * `available: false` quand il n'y a pas assez de données pour comparer
+ * (moins de 2 séances, ou aucune mesure HKA exploitable).
  */
-export function buildProgressionSynthesisSummary(
+function computeSynthesis(
   analyses: ReadonlyArray<Analysis>,
-): ProgressionSynthesisSummary {
-  if (analyses.length < 2) return { available: false };
+): SynthesisComputation {
+  const sessionCount = analyses.length;
+  if (sessionCount < 2) return { available: false, sessionCount };
 
   const first = analyses[0];
-  const last = analyses[analyses.length - 1];
+  const last = analyses[sessionCount - 1];
 
   const firstLeft = first.bilateralAngles?.leftHKA ?? 0;
   const firstRight = first.bilateralAngles?.rightHKA ?? 0;
@@ -397,65 +247,61 @@ export function buildProgressionSynthesisSummary(
   const hasLeft = firstLeft !== 0 && lastLeft !== 0;
   const hasRight = firstRight !== 0 && lastRight !== 0;
 
-  if (!hasLeft && !hasRight) return { available: false };
+  if (!hasLeft && !hasRight) return { available: false, sessionCount };
 
   return {
     available: true,
+    sessionCount,
     firstDate: first.createdAt.slice(0, 10),
     lastDate: last.createdAt.slice(0, 10),
-    ...(hasLeft ? { leftTrendText: generateTrendText(firstLeft, lastLeft) } : {}),
-    ...(hasRight ? { rightTrendText: generateTrendText(firstRight, lastRight) } : {}),
+    ...(hasLeft
+      ? { left: { first: firstLeft, last: lastLeft, trendText: generateTrendText(firstLeft, lastLeft) } }
+      : {}),
+    ...(hasRight
+      ? { right: { first: firstRight, last: lastRight, trendText: generateTrendText(firstRight, lastRight) } }
+      : {}),
   };
 }
 
+export function buildProgressionSynthesisSummary(
+  analyses: ReadonlyArray<Analysis>,
+): ProgressionSynthesisSummary {
+  const s = computeSynthesis(analyses);
+  if (!s.available) return { available: false };
+
+  return {
+    available: true,
+    firstDate: s.firstDate,
+    lastDate: s.lastDate,
+    ...(s.left ? { leftTrendText: s.left.trendText } : {}),
+    ...(s.right ? { rightTrendText: s.right.trendText } : {}),
+  };
+}
+
+function buildSynthesisRow(label: string, side: SynthesisSide): string {
+  const deltaVal = side.last - side.first;
+  const sign = deltaVal >= 0 ? "+" : "";
+  const trendColor = "#164E63";
+  return `<tr>
+        <td><strong>${label}</strong></td>
+        <td>${fmt(side.first)}</td>
+        <td>${fmt(side.last)}</td>
+        <td style="color:${trendColor};font-weight:600">${sign}${deltaVal.toFixed(1)}°</td>
+        <td style="color:${trendColor};font-weight:600">${escapeHtml(side.trendText)}</td>
+      </tr>`;
+}
+
 function buildSynthesisSection(analyses: ReadonlyArray<Analysis>): string {
-  if (analyses.length < 2) return "";
+  const s = computeSynthesis(analyses);
+  if (!s.available) return "";
 
-  const first = analyses[0];
-  const last = analyses[analyses.length - 1];
+  const rows: string[] = [
+    ...(s.left ? [buildSynthesisRow("HKA Gauche", s.left)] : []),
+    ...(s.right ? [buildSynthesisRow("HKA Droite", s.right)] : []),
+  ];
 
-  const firstLeft = first.bilateralAngles?.leftHKA ?? 0;
-  const firstRight = first.bilateralAngles?.rightHKA ?? 0;
-  const lastLeft = last.bilateralAngles?.leftHKA ?? 0;
-  const lastRight = last.bilateralAngles?.rightHKA ?? 0;
-
-  const hasLeft = firstLeft !== 0 && lastLeft !== 0;
-  const hasRight = firstRight !== 0 && lastRight !== 0;
-
-  if (!hasLeft && !hasRight) return "";
-
-  const rows: string[] = [];
-
-  if (hasLeft) {
-    const trend = generateTrendText(firstLeft, lastLeft);
-    const deltaVal = lastLeft - firstLeft;
-    const sign = deltaVal >= 0 ? "+" : "";
-    const trendColor = "#164E63";
-    rows.push(`<tr>
-        <td><strong>HKA Gauche</strong></td>
-        <td>${fmt(firstLeft)}</td>
-        <td>${fmt(lastLeft)}</td>
-        <td style="color:${trendColor};font-weight:600">${sign}${deltaVal.toFixed(1)}°</td>
-        <td style="color:${trendColor};font-weight:600">${escapeHtml(trend)}</td>
-      </tr>`);
-  }
-
-  if (hasRight) {
-    const trend = generateTrendText(firstRight, lastRight);
-    const deltaVal = lastRight - firstRight;
-    const sign = deltaVal >= 0 ? "+" : "";
-    const trendColor = "#164E63";
-    rows.push(`<tr>
-        <td><strong>HKA Droite</strong></td>
-        <td>${fmt(firstRight)}</td>
-        <td>${fmt(lastRight)}</td>
-        <td style="color:${trendColor};font-weight:600">${sign}${deltaVal.toFixed(1)}°</td>
-        <td style="color:${trendColor};font-weight:600">${escapeHtml(trend)}</td>
-      </tr>`);
-  }
-
-  const firstDateStr = escapeHtml(first.createdAt.slice(0, 10));
-  const lastDateStr = escapeHtml(last.createdAt.slice(0, 10));
+  const firstDateStr = escapeHtml(s.firstDate!);
+  const lastDateStr = escapeHtml(s.lastDate!);
 
   return `<div class="section">
     <h2>Synthèse de Progression</h2>
@@ -464,7 +310,7 @@ function buildSynthesisSection(analyses: ReadonlyArray<Analysis>): string {
         <tr>
           <th>Mesure</th>
           <th>Séance 1 (${firstDateStr})</th>
-          <th>Séance ${analyses.length} (${lastDateStr})</th>
+          <th>Séance ${s.sessionCount} (${lastDateStr})</th>
           <th>Delta</th>
           <th>Tendance</th>
         </tr>

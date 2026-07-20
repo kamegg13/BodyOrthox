@@ -1,0 +1,8 @@
+node_modules
+web-dist
+coverage
+ios
+android
+e2e
+package-lock.json
+*.lock

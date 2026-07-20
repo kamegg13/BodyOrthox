@@ -13,7 +13,7 @@
  * Corollaire : `ALL_MIGRATIONS` est APPEND-ONLY (voir schema.ts).
  */
 import { open, DB, Scalar } from "@op-engineering/op-sqlite";
-import { IDatabase, QueryResult } from "./database";
+import { IDatabase, ITransaction, QueryResult } from "./database";
 import { ALL_MIGRATIONS } from "./schema";
 import { getOrCreateEncryptionKey } from "./encryption-key";
 
@@ -72,6 +72,29 @@ class NativeDatabase implements IDatabase {
       rowsAffected: result.rowsAffected ?? 0,
       ...(result.insertId != null ? { insertId: result.insertId } : {}),
     };
+  }
+
+  /**
+   * `db.transaction()` d'op-sqlite fait le vrai travail : rollback SQLite
+   * complet si `fn` lève. On se contente de mapper `tx.execute()` au même
+   * format que `execute()`.
+   */
+  async transaction(fn: (tx: ITransaction) => Promise<void>): Promise<void> {
+    if (!this.db) {
+      throw new Error("Database not initialized. Call initialize() first.");
+    }
+    await this.db.transaction(async (tx) => {
+      await fn({
+        execute: async (sql: string, params: unknown[] = []) => {
+          const result = await tx.execute(sql, params as Scalar[]);
+          return {
+            rows: (result.rows ?? []) as Record<string, unknown>[],
+            rowsAffected: result.rowsAffected ?? 0,
+            ...(result.insertId != null ? { insertId: result.insertId } : {}),
+          };
+        },
+      });
+    });
   }
 
   async close(): Promise<void> {

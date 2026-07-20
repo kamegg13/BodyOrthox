@@ -1,13 +1,13 @@
 import React from "react";
 import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import { TextInput } from "react-native";
-import { NewPatient, NEW_PATIENT_DRAFT_KEY, type NewPatientFormValues } from "../NewPatient";
+import { NewPatient, NEW_PATIENT_DRAFT_KEY, type NewPatientFormValues } from "../new-patient";
 import {
   getKeyValueStorage,
   setKeyValueStorage,
   __resetKeyValueStorage,
   type KeyValueStorage,
-} from "../../core/storage/key-value-storage";
+} from "../../../core/storage/key-value-storage";
 
 function makeMemoryStorage(): KeyValueStorage {
   const map = new Map<string, string>();
@@ -253,7 +253,7 @@ describe("NewPatient — brouillon (autosave)", () => {
       () => {
         expect(
           JSON.parse(
-            require("../../core/storage/key-value-storage")
+            require("../../../core/storage/key-value-storage")
               .getKeyValueStorage()
               .getItem(NEW_PATIENT_DRAFT_KEY) ?? "null",
           )?.firstName,
@@ -280,7 +280,7 @@ describe("NewPatient — brouillon (autosave)", () => {
     await waitFor(
       () => {
         const draft = JSON.parse(
-          require("../../core/storage/key-value-storage")
+          require("../../../core/storage/key-value-storage")
             .getKeyValueStorage()
             .getItem(NEW_PATIENT_DRAFT_KEY) ?? "null",
         );
@@ -306,7 +306,7 @@ describe("NewPatient — brouillon (autosave)", () => {
     await waitFor(
       () => {
         expect(
-          require("../../core/storage/key-value-storage").getKeyValueStorage().getItem(NEW_PATIENT_DRAFT_KEY),
+          require("../../../core/storage/key-value-storage").getKeyValueStorage().getItem(NEW_PATIENT_DRAFT_KEY),
         ).not.toBeNull();
       },
       { timeout: 2000 },
@@ -316,25 +316,25 @@ describe("NewPatient — brouillon (autosave)", () => {
 
     expect(onSave).toHaveBeenCalledTimes(1);
     expect(
-      require("../../core/storage/key-value-storage").getKeyValueStorage().getItem(NEW_PATIENT_DRAFT_KEY),
+      require("../../../core/storage/key-value-storage").getKeyValueStorage().getItem(NEW_PATIENT_DRAFT_KEY),
     ).toBeNull();
   });
 
   it("le bandeau « Effacer » vide le formulaire et purge le brouillon", async () => {
-    const { getByTestId, getByText, unmount } = render(<NewPatient onSave={jest.fn()} />);
+    const { getByTestId, unmount } = render(<NewPatient onSave={jest.fn()} />);
     fireEvent.changeText(getByTestId("np-first-name"), "Sophie");
 
     await waitFor(
       () => {
         expect(
-          require("../../core/storage/key-value-storage").getKeyValueStorage().getItem(NEW_PATIENT_DRAFT_KEY),
+          require("../../../core/storage/key-value-storage").getKeyValueStorage().getItem(NEW_PATIENT_DRAFT_KEY),
         ).not.toBeNull();
       },
       { timeout: 2000 },
     );
     unmount();
 
-    const { getByTestId: getByTestId2, getByText: getByText2 } = render(
+    const { getByTestId: getByTestId2 } = render(
       <NewPatient onSave={jest.fn()} />,
     );
     expect(getByTestId2("np-first-name").props.value).toBe("Sophie");
@@ -342,7 +342,7 @@ describe("NewPatient — brouillon (autosave)", () => {
 
     expect(getByTestId2("np-first-name").props.value).toBe("");
     expect(
-      require("../../core/storage/key-value-storage").getKeyValueStorage().getItem(NEW_PATIENT_DRAFT_KEY),
+      require("../../../core/storage/key-value-storage").getKeyValueStorage().getItem(NEW_PATIENT_DRAFT_KEY),
     ).toBeNull();
   });
 });

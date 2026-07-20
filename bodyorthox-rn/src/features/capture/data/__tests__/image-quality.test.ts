@@ -5,11 +5,6 @@ import { analyzeImageQuality, ImageQualityError } from "../image-quality";
  * We simulate pixel data to test brightness, contrast, and sharpness logic.
  */
 
-interface MockCanvasContext {
-  drawImage: jest.Mock;
-  getImageData: jest.Mock;
-}
-
 function createMockImage(width: number, height: number): HTMLImageElement {
   return {
     naturalWidth: width,

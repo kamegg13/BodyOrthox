@@ -3,7 +3,7 @@
  * For browser testing: uses an in-memory SQLite compiled to WASM (sql.js).
  * Data is persisted to localStorage between sessions.
  */
-import { IDatabase, QueryResult } from "./database";
+import { IDatabase, ITransaction, QueryResult } from "./database";
 import { matchesWhere } from "./sql-where";
 
 // Active only in local development. Disabled in test and production so that
@@ -13,7 +13,6 @@ const DEBUG_DB =
 
 function dbLog(...args: unknown[]): void {
   if (DEBUG_DB) {
-    // eslint-disable-next-line no-console
     console.log("[WebDB]", ...args);
   }
 }
@@ -254,6 +253,32 @@ class WebDatabase implements IDatabase {
       rows: [],
       rowsAffected: initial - (this.tables.get(tableName)?.length ?? 0),
     };
+  }
+
+  /**
+   * Pas de vrai moteur SQL ici : l'atomicité est simulée par snapshot/restore
+   * de `this.tables`. Le JS est mono-thread, donc aucune écriture concurrente
+   * ne peut s'intercaler pendant `fn` — un rollback complet sur erreur suffit
+   * à garantir « tout ou rien », comme une vraie transaction SQLite.
+   */
+  async transaction(fn: (tx: ITransaction) => Promise<void>): Promise<void> {
+    const snapshot = this.cloneTables();
+    try {
+      await fn({ execute: (sql, params) => this.execute(sql, params) });
+    } catch (error) {
+      this.tables = snapshot;
+      this.persist();
+      throw error;
+    }
+  }
+
+  private cloneTables(): Map<string, Record<string, unknown>[]> {
+    return new Map(
+      Array.from(this.tables.entries()).map(([table, rows]) => [
+        table,
+        rows.map((row) => ({ ...row })),
+      ]),
+    );
   }
 
   private persist(): void {

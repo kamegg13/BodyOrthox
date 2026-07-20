@@ -1,4 +1,4 @@
-import { Colors, ColorKey } from '../colors';
+import { Colors } from '../colors';
 
 describe('Colors', () => {
   it('exports all required brand colors', () => {
