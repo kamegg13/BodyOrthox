@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   captureImage: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   captureCaptionOverlay: {
     position: "absolute",
