@@ -98,7 +98,7 @@ export function GuidedCameraOverlay({
 
 const styles = StyleSheet.create({
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     justifyContent: "space-between",
   },
   rgpdBanner: {
